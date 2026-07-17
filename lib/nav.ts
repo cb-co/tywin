@@ -20,3 +20,11 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/insights", label: "Insights", icon: LineChart },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
+
+export const MOBILE_PRIMARY_HREFS: string[] = [
+  "/",
+  "/accounts",
+  "/transactions",
+  "/budgets",
+  "/insights",
+];

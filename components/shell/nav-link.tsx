@@ -7,7 +7,10 @@ import type { NavItem } from "@/lib/nav";
 
 export function NavLink({ item, variant }: { item: NavItem; variant: "side" | "bottom" }) {
   const pathname = usePathname();
-  const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+  const active =
+    item.href === "/"
+      ? pathname === "/"
+      : pathname === item.href || pathname.startsWith(item.href + "/");
   const Icon = item.icon;
   return (
     <Link

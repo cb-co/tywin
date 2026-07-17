@@ -1,10 +1,7 @@
-import { NAV_ITEMS } from "@/lib/nav";
+import { NAV_ITEMS, MOBILE_PRIMARY_HREFS } from "@/lib/nav";
 import { NavLink } from "./nav-link";
 
-// Show the 5 most-used destinations on the mobile bottom bar.
-const MOBILE_ITEMS = NAV_ITEMS.filter((i) =>
-  ["/", "/accounts", "/transactions", "/budgets", "/insights"].includes(i.href),
-);
+const MOBILE_ITEMS = NAV_ITEMS.filter((i) => MOBILE_PRIMARY_HREFS.includes(i.href));
 
 export function BottomNav() {
   return (
