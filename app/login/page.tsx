@@ -1,26 +1,74 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { LoginForm } from "@/components/auth/login-form";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Logo, Wordmark } from "@/components/brand/logo";
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (user) redirect("/");
 
+  const { error } = await searchParams;
+
   return (
-    <main className="flex min-h-dvh items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-2xl">Welcome back</CardTitle>
-          <CardDescription>Sign in to your finance tracker.</CardDescription>
-        </CardHeader>
-        <CardContent>
+    <main className="grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">
+      {/* Brand panel */}
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-primary p-10 text-primary-foreground lg:flex">
+        <div className="flex items-center gap-2.5">
+          <Logo variant="ghost" />
+          <span className="font-serif text-lg font-semibold tracking-tight">Tywin</span>
+        </div>
+        <div className="relative z-10 max-w-md space-y-4">
+          <h2 className="font-serif text-4xl font-semibold leading-[1.1] tracking-tight">
+            Every account, card, and colón in one calm view.
+          </h2>
+          <p className="text-primary-foreground/75">
+            Track balances, budgets, and subscriptions across currencies, and
+            never miss a payment date again.
+          </p>
+        </div>
+        <p className="relative z-10 text-xs text-primary-foreground/60">
+          Private by design. Your data, your eyes only.
+        </p>
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-28 -top-28 h-96 w-96 rounded-full border border-primary-foreground/10"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-10 bottom-20 h-64 w-64 rounded-full border border-primary-foreground/10"
+        />
+      </div>
+
+      {/* Form panel */}
+      <div className="flex items-center justify-center p-6">
+        <div className="w-full max-w-sm space-y-8">
+          <div className="flex items-center gap-2.5 lg:hidden">
+            <Logo />
+            <Wordmark />
+          </div>
+          <div className="space-y-1.5">
+            <h1 className="font-serif text-3xl font-semibold tracking-tight">
+              Welcome back
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Sign in to pick up where you left off.
+            </p>
+          </div>
+          {error ? (
+            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              That sign-in link didn&apos;t work. Please try again.
+            </p>
+          ) : null}
           <LoginForm />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </main>
   );
 }

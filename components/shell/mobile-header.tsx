@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MoreHorizontal } from "lucide-react";
 import { NAV_ITEMS, MOBILE_PRIMARY_HREFS } from "@/lib/nav";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Logo, Wordmark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,7 +18,10 @@ const OVERFLOW_ITEMS = NAV_ITEMS.filter(
 export function MobileHeader() {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-card/95 px-4 backdrop-blur md:hidden">
-      <span className="font-semibold">Finance</span>
+      <Link href="/" className="flex items-center gap-2">
+        <Logo className="h-7 w-7" />
+        <Wordmark className="text-base" />
+      </Link>
       <div className="flex items-center gap-1">
         <ThemeToggle />
         <DropdownMenu>
