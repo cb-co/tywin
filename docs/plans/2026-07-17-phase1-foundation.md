@@ -199,7 +199,7 @@ git commit -m "feat: add system/light/dark theming with no-FOUC toggle"
 - Create: `lib/supabase/client.ts`, `lib/supabase/server.ts`, `lib/supabase/middleware.ts`, `middleware.ts`, `.env.local` (local, git-ignored), `.env.example`.
 
 **Interfaces:**
-- Consumes: env vars `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+- Consumes: env vars `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (Supabase's current publishable-key naming; the value is a client-safe `sb_publishable_...` key). `.env.local` already exists with real values.
 - Produces:
   - `createClient()` (browser) from `@/lib/supabase/client`.
   - `createClient()` (async, server) from `@/lib/supabase/server` — RLS-enforcing, cookie-bound.
@@ -217,10 +217,10 @@ Create `.env.example`:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 ```
 
-Create `.env.local` with the real project URL + anon key (from `supabase` skill / Vercel–Supabase integration). Confirm `.env.local` is git-ignored (it is by default with create-next-app).
+`.env.local` already exists at the repo root with the real project URL + publishable key (created by the controller) and is git-ignored. Do NOT overwrite it. For `.env.example` to be committable, add a negated ignore rule to `.gitignore` (`!.env.example`) since create-next-app ignores `.env*`.
 
 - [ ] **Step 3: Browser client**
 
@@ -232,7 +232,7 @@ import { createBrowserClient } from "@supabase/ssr";
 export function createClient() {
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
   );
 }
 ```
@@ -249,7 +249,7 @@ export async function createClient() {
   const cookieStore = await cookies();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
       cookies: {
         getAll() {
@@ -285,7 +285,7 @@ export async function updateSession(request: NextRequest) {
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
       cookies: {
         getAll() {
