@@ -28,9 +28,9 @@ with movements as (
   group by a.id, a.user_id, a.currency, a.starting_balance
 )
 select account_id, user_id, currency,
-       starting_balance + net_amount as balance,
-       net_base_amount               as base_movement,
-       starting_balance + net_amount as balance_own_currency
+       starting_balance,
+       starting_balance + net_amount as balance,   -- own currency
+       net_base_amount               as base_movement
 from movements;
 
 -- Credit-card status ----------------------------------------------------
@@ -80,6 +80,9 @@ from public.accounts a
 where a.type = 'loan';
 
 -- Net worth (base currency) ---------------------------------------------
+-- base_movement is already converted via each transaction's rate; starting_balance
+-- is treated at par to base (rate 1). A proper FX conversion of foreign-currency
+-- starting balances needs a rates table and is deferred to Insights (Phase 7).
 create view public.net_worth
 with (security_invoker = true) as
 select p.id as user_id,

@@ -898,9 +898,9 @@ with movements as (
   group by a.id, a.user_id, a.currency, a.starting_balance
 )
 select account_id, user_id, currency,
-       starting_balance + net_amount as balance,
-       net_base_amount               as base_movement,
-       starting_balance + net_amount as balance_own_currency
+       starting_balance,
+       starting_balance + net_amount as balance,   -- own currency
+       net_base_amount               as base_movement
 from movements;
 
 -- Credit-card status ----------------------------------------------------
@@ -1258,6 +1258,8 @@ git commit -m "feat(db): generate and wire Supabase Database types"
 - **`net_worth_history`** (spec §4/§6 "net worth over time"): a point-in-time series needs either periodic snapshots or a balance-as-of-date function; it is an **Insights (Phase 7)** concern and depends on charting decisions. Building it now would be speculative. Flag it in the Phase 7 plan.
 - **`subscriptions.next_charge_date`** and card **estimated next due date** as fully-computed calendar math: `card_status` exposes the closing/due days and latest due date; turning day-of-month + cycle into the next concrete date is trivial in the UI/Server Action layer and is done in Accounts (Phase 3) / Subscriptions (Phase 6) where the calendar rules live. The schema carries every input field.
 - **Data API exposure:** if the project's Data API does not auto-expose new `public` tables, grant `select/insert/update/delete` to `authenticated` per the Supabase skill; RLS still gates rows. Verify in Task 2's apply step and add grants if the app gets empty results despite correct RLS.
+
+**Post-apply hardening (added during execution):** two follow-up migrations pin `search_path = ''` on the five trigger functions and revoke `EXECUTE` on the SECURITY DEFINER functions (`handle_new_user`, `seed_default_categories`) from `public`, `anon`, and `authenticated` — clearing advisor lints 0011/0028/0029. Remaining advisor findings (`rls_auto_enable`, leaked-password protection) are pre-existing / dashboard settings, not from this schema.
 
 **Placeholder scan:** No "TODO/TBD/handle edge cases" in steps; every migration is complete SQL; every verification is a runnable block with expected output.
 
