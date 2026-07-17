@@ -48,7 +48,7 @@ export default function OverviewPage() {
           Add your first account and every balance, in any currency, rolls up
           here in your base currency.
         </p>
-        <Button className="mt-5" render={<Link href="/accounts" />}>
+        <Button className="mt-5" nativeButton={false} render={<Link href="/accounts" />}>
           Add an account
           <ArrowUpRight className="size-4" />
         </Button>
