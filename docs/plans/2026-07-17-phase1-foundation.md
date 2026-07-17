@@ -93,11 +93,13 @@ git commit -m "chore: initialize shadcn/ui with base components"
 
 **Files:**
 - Create: `components/theme-provider.tsx`, `components/theme-toggle.tsx`.
-- Modify: `app/layout.tsx` (wrap in provider, `suppressHydrationWarning`), `app/globals.css` (confirm `.dark` token block exists from shadcn).
+- Modify: `app/layout.tsx` (wrap in provider, `suppressHydrationWarning`), `app/globals.css` (confirm `.dark` token block exists from shadcn; fix the self-referential `--font-sans`).
 
 **Interfaces:**
-- Consumes: `Button`, `DropdownMenu` from Task 2.
+- Consumes: `Button`, `DropdownMenu` from Task 2 — these are the **Base UI** (`@base-ui/react`) shadcn variant. Composition uses the **`render` prop**, NOT Radix's `asChild`.
 - Produces: `<ThemeProvider>` wrapping the app; `<ThemeToggle />` cycling system/light/dark; `next-themes` `useTheme()` available app-wide.
+
+> **Base UI note:** the installed shadcn components are Base UI-based. Where Radix would use `<Trigger asChild><Button/></Trigger>`, Base UI uses `<Trigger render={<Button/>}>{children}</Trigger>` — the trigger's children render inside the element passed to `render`. `lucide-react` v1 exports both `Moon` and `MoonIcon`; the bare names used below are valid.
 
 - [ ] **Step 1: Install next-themes**
 
@@ -139,6 +141,8 @@ import { Toaster } from "@/components/ui/sonner";
 // </html>
 ```
 
+Then fix the self-referential font token left by shadcn init in `app/globals.css`: inside the `@theme inline` block, change `--font-sans: var(--font-sans);` to `--font-sans: var(--font-geist-sans);` (and, if present, `--font-mono: var(--font-mono);` to `--font-mono: var(--font-geist-mono);`) so the app uses the Geist fonts defined in `app/layout.tsx`.
+
 - [ ] **Step 4: Create the theme toggle**
 
 Create `components/theme-toggle.tsx`:
@@ -160,11 +164,11 @@ export function ThemeToggle() {
   const { setTheme } = useTheme();
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Toggle theme">
-          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-        </Button>
+      <DropdownMenuTrigger
+        render={<Button variant="ghost" size="icon" aria-label="Toggle theme" />}
+      >
+        <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+        <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => setTheme("light")}>Light</DropdownMenuItem>
