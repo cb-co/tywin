@@ -3,18 +3,26 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import type { NavItem } from "@/lib/nav";
 
-export function NavLink({ item, variant }: { item: NavItem; variant: "side" | "bottom" }) {
+export function NavLink({
+  href,
+  label,
+  variant,
+  children,
+}: {
+  href: string;
+  label: string;
+  variant: "side" | "bottom";
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
   const active =
-    item.href === "/"
+    href === "/"
       ? pathname === "/"
-      : pathname === item.href || pathname.startsWith(item.href + "/");
-  const Icon = item.icon;
+      : pathname === href || pathname.startsWith(href + "/");
   return (
     <Link
-      href={item.href}
+      href={href}
       className={cn(
         "flex items-center gap-3 rounded-md text-sm font-medium transition-colors",
         variant === "side" && "px-3 py-2 hover:bg-accent hover:text-accent-foreground",
@@ -23,8 +31,8 @@ export function NavLink({ item, variant }: { item: NavItem; variant: "side" | "b
         variant === "side" && active && "bg-accent text-accent-foreground",
       )}
     >
-      <Icon className="h-5 w-5 shrink-0" />
-      <span className={cn(variant === "bottom" && "text-[10px]")}>{item.label}</span>
+      {children}
+      <span className={cn(variant === "bottom" && "text-[10px]")}>{label}</span>
     </Link>
   );
 }

@@ -7,7 +7,9 @@ export function BottomNav() {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t bg-card/95 backdrop-blur md:hidden">
       {MOBILE_ITEMS.map((item) => (
-        <NavLink key={item.href} item={item} variant="bottom" />
+        <NavLink key={item.href} href={item.href} label={item.label} variant="bottom">
+          <item.icon className="h-5 w-5 shrink-0" />
+        </NavLink>
       ))}
     </nav>
   );

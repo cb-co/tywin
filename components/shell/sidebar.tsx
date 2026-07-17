@@ -8,7 +8,9 @@ export function Sidebar({ email }: { email: string }) {
       <div className="flex h-14 items-center gap-2 border-b px-4 font-semibold">Finance</div>
       <nav className="flex flex-1 flex-col gap-1 p-3">
         {NAV_ITEMS.map((item) => (
-          <NavLink key={item.href} item={item} variant="side" />
+          <NavLink key={item.href} href={item.href} label={item.label} variant="side">
+            <item.icon className="h-5 w-5 shrink-0" />
+          </NavLink>
         ))}
       </nav>
       <div className="flex items-center justify-between border-t p-3">
