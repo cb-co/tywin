@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowLeftRight } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { getAccountById, getCurrencies, getCardGroups } from "@/lib/accounts/queries";
+import { getAccountTransactions, getQuickAddData } from "@/lib/transactions/queries";
+import { AccountActivity } from "@/components/accounts/account-activity";
 import { createClient } from "@/lib/supabase/server";
 import { accountTypeMeta, type AccountType } from "@/lib/accounts/meta";
 import { formatMoney, formatPercent, formatDayOfMonth } from "@/lib/format";
@@ -10,7 +12,6 @@ import { ReconcilePanel } from "@/components/accounts/reconcile-panel";
 import { AmortizationTable } from "@/components/accounts/amortization-table";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { EmptyState } from "@/components/empty-state";
 
 export default async function AccountDetailPage({
   params,
@@ -18,10 +19,12 @@ export default async function AccountDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [account, currencies, cardGroups] = await Promise.all([
+  const [account, currencies, cardGroups, activity, quickAddData] = await Promise.all([
     getAccountById(id),
     getCurrencies(),
     getCardGroups(),
+    getAccountTransactions(id),
+    getQuickAddData(),
   ]);
   if (!account) notFound();
 
@@ -176,15 +179,7 @@ export default async function AccountDetailPage({
         </dl>
       </Card>
 
-      {/* Transactions history — arrives in Phase 4 */}
-      <div className="space-y-3">
-        <h2 className="font-serif text-lg font-medium">Recent activity</h2>
-        <EmptyState
-          icon={<ArrowLeftRight className="size-6" />}
-          title="No activity yet"
-          description="Transactions for this account will appear here once Quick-Add ships in the next phase."
-        />
-      </div>
+      <AccountActivity accountId={account.id} transactions={activity} data={quickAddData} />
     </div>
   );
 }

@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { TRANSACTION_TYPES, type TransactionType } from "@/lib/transactions/schema";
-import { createTransaction } from "@/app/(app)/transactions/actions";
-import type { QuickAddData } from "@/lib/transactions/queries";
+import { createTransaction, updateTransaction } from "@/app/(app)/transactions/actions";
+import type { QuickAddData, TransactionWithRefs } from "@/lib/transactions/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,32 +53,63 @@ function nowLocal() {
   return new Date(d.getTime() - off * 60000).toISOString().slice(0, 16);
 }
 
+function toLocal(iso: string) {
+  const d = new Date(iso);
+  const off = d.getTimezoneOffset();
+  return new Date(d.getTime() - off * 60000).toISOString().slice(0, 16);
+}
+
 export function TransactionForm({
   data,
+  mode = "create",
+  transaction,
+  defaultAccountId,
   onSuccess,
 }: {
   data: QuickAddData;
+  mode?: "create" | "edit";
+  transaction?: TransactionWithRefs;
+  defaultAccountId?: string;
   onSuccess?: () => void;
 }) {
   const { accounts, categories, currencies, baseCurrency } = data;
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const isEdit = mode === "edit";
+
+  const firstAccount = accounts.find((a) => a.id === defaultAccountId) ?? accounts[0];
 
   const { register, handleSubmit, control, setValue, getValues } = useForm<FormValues>({
-    defaultValues: {
-      type: "expense",
-      account_id: accounts[0]?.id ?? "",
-      to_account_id: "",
-      category_id: categories[0]?.id ?? "",
-      amount: "",
-      currency: accounts[0]?.currency ?? baseCurrency,
-      exchange_rate: "1",
-      include_tax: false,
-      include_commission: !(accounts[0]?.network_fee_optional ?? true),
-      budget_only: false,
-      occurred_at: nowLocal(),
-      description: "",
-    },
+    defaultValues: transaction
+      ? {
+          type: transaction.type,
+          account_id: transaction.account_id,
+          to_account_id: transaction.to_account_id ?? "",
+          category_id:
+            transaction.category_id ?? (transaction.type === "payment" ? "none" : ""),
+          amount: String(transaction.amount),
+          currency: transaction.currency,
+          exchange_rate: String(transaction.exchange_rate),
+          include_tax: transaction.include_tax,
+          include_commission: transaction.include_commission,
+          budget_only: transaction.budget_only,
+          occurred_at: toLocal(transaction.occurred_at),
+          description: transaction.description ?? "",
+        }
+      : {
+          type: "expense",
+          account_id: firstAccount?.id ?? "",
+          to_account_id: "",
+          category_id: categories[0]?.id ?? "",
+          amount: "",
+          currency: firstAccount?.currency ?? baseCurrency,
+          exchange_rate: "1",
+          include_tax: false,
+          include_commission: !(firstAccount?.network_fee_optional ?? true),
+          budget_only: false,
+          occurred_at: nowLocal(),
+          description: "",
+        },
   });
 
   const type = (useWatch({ control, name: "type" }) ?? "expense") as TransactionType;
@@ -90,9 +121,10 @@ export function TransactionForm({
   const dst = accounts.find((a) => a.id === toAccountId);
   const rateLocked = currency === baseCurrency;
 
-  // Smart defaults: currency + commission follow the source account.
+  // Smart defaults: currency + commission follow the source account (create only —
+  // in edit, currency/rate are immutable and saved toggles are preserved).
   useEffect(() => {
-    if (!src) return;
+    if (isEdit || !src) return;
     setValue("currency", src.currency);
     setValue("include_commission", !src.network_fee_optional);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -100,6 +132,7 @@ export function TransactionForm({
 
   // Tax defaults on: only for a payment into a loan account.
   useEffect(() => {
+    if (isEdit) return;
     setValue("include_tax", type === "payment" && dst?.type === "loan");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, toAccountId, accountId]);
@@ -125,12 +158,15 @@ export function TransactionForm({
         to_account_id: values.type === "payment" ? values.to_account_id : "",
         category_id: values.type === "income" || values.category_id === "none" ? "" : values.category_id,
       };
-      const result = await createTransaction(payload);
+      const result =
+        isEdit && transaction
+          ? await updateTransaction(transaction.id, payload)
+          : await createTransaction(payload);
       if (result.error) {
         toast.error(result.error);
         return;
       }
-      toast.success("Transaction saved");
+      toast.success(isEdit ? "Transaction updated" : "Transaction saved");
       onSuccess?.();
       router.refresh();
     });
@@ -180,7 +216,7 @@ export function TransactionForm({
             control={control}
             name="currency"
             render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
+              <Select value={field.value} onValueChange={field.onChange} disabled={isEdit}>
                 <SelectTrigger className="w-28">
                   <SelectValue />
                 </SelectTrigger>
@@ -200,7 +236,7 @@ export function TransactionForm({
             <Label htmlFor="exchange_rate" className="text-xs font-normal text-muted-foreground">
               1 {currency} =
             </Label>
-            <Input id="exchange_rate" type="number" step="0.00000001" min="0" className="h-8 w-32" {...register("exchange_rate")} />
+            <Input id="exchange_rate" type="number" step="0.00000001" min="0" className="h-8 w-32" disabled={isEdit} {...register("exchange_rate")} />
             <span className="text-xs text-muted-foreground">{baseCurrency}</span>
           </div>
         ) : null}
@@ -340,7 +376,7 @@ export function TransactionForm({
       </div>
 
       <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? "Saving…" : "Save transaction"}
+        {pending ? "Saving…" : isEdit ? "Save changes" : "Save transaction"}
       </Button>
     </form>
   );

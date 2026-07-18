@@ -1,6 +1,7 @@
-import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Trash2 } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Trash2, Pencil } from "lucide-react";
 import { formatMoney } from "@/lib/format";
-import type { TransactionWithRefs } from "@/lib/transactions/queries";
+import type { TransactionWithRefs, QuickAddData } from "@/lib/transactions/queries";
+import { TransactionDialog } from "./transaction-dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -12,10 +13,12 @@ const TYPE_ICON = {
 
 export function TransactionRow({
   txn,
+  data,
   onDelete,
   pending,
 }: {
   txn: TransactionWithRefs;
+  data: QuickAddData;
   onDelete: (id: string) => void;
   pending: boolean;
 }) {
@@ -79,16 +82,28 @@ export function TransactionRow({
         ) : null}
       </div>
 
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        aria-label="Delete transaction"
-        className="text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
-        onClick={() => onDelete(txn.id)}
-        disabled={pending}
-      >
-        <Trash2 className="size-4" />
-      </Button>
+      <div className="flex items-center opacity-0 transition-opacity group-hover:opacity-100">
+        <TransactionDialog
+          mode="edit"
+          transaction={txn}
+          data={data}
+          trigger={
+            <Button variant="ghost" size="icon-sm" aria-label="Edit transaction" className="text-muted-foreground">
+              <Pencil className="size-4" />
+            </Button>
+          }
+        />
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Delete transaction"
+          className="text-muted-foreground hover:text-destructive"
+          onClick={() => onDelete(txn.id)}
+          disabled={pending}
+        >
+          <Trash2 className="size-4" />
+        </Button>
+      </div>
     </div>
   );
 }

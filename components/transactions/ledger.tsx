@@ -27,13 +27,12 @@ const dayFormatter = new Intl.DateTimeFormat("en-US", {
 
 export function Ledger({
   transactions,
-  accounts,
-  categories,
+  data,
 }: {
   transactions: TransactionWithRefs[];
-  accounts: QuickAddData["accounts"];
-  categories: QuickAddData["categories"];
+  data: QuickAddData;
 }) {
+  const { accounts, categories } = data;
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [type, setType] = useState("all");
@@ -146,7 +145,7 @@ export function Ledger({
               </p>
               <div className="divide-y">
                 {rows.map((txn) => (
-                  <TransactionRow key={txn.id} txn={txn} onDelete={onDelete} pending={pending} />
+                  <TransactionRow key={txn.id} txn={txn} data={data} onDelete={onDelete} pending={pending} />
                 ))}
               </div>
             </div>

@@ -11,7 +11,7 @@ export default async function TransactionsPage() {
         title="Transactions"
         description="Every expense, income, and payment in one ledger."
       />
-      <Ledger transactions={transactions} accounts={data.accounts} categories={data.categories} />
+      <Ledger transactions={transactions} data={data} />
     </div>
   );
 }

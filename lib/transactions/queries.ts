@@ -29,6 +29,20 @@ export async function getTransactions(filters: TxnFilters = {}) {
 
 export type TransactionWithRefs = Awaited<ReturnType<typeof getTransactions>>[number];
 
+/** Transactions touching an account as either source or destination. */
+export async function getAccountTransactions(accountId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("transactions")
+    .select(
+      "*, account:accounts!transactions_account_id_fkey(id,name,currency,type), to_account:accounts!transactions_to_account_id_fkey(id,name), category:categories!transactions_category_id_fkey(id,name,emoji,color)",
+    )
+    .or(`account_id.eq.${accountId},to_account_id.eq.${accountId}`)
+    .order("occurred_at", { ascending: false })
+    .limit(100);
+  return data ?? [];
+}
+
 export type QuickAddAccount = {
   id: string;
   name: string;
