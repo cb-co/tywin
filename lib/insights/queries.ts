@@ -1,4 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
+import { addMonths, monthStart } from "@/lib/budgets/month";
+
+function daysInMonth(monthIso: string): number {
+  const [y, m] = monthIso.split("-").map(Number);
+  return new Date(y, m, 0).getDate();
+}
 
 const CHART_FALLBACK = [
   "var(--chart-1)",
@@ -24,6 +30,7 @@ export type Insights = {
   utilization: { name: string; pct: number }[];
   loans: { name: string; paidPct: number }[];
   totalSpend: number;
+  pace: { day: number; thisMonth: number | null; lastMonth: number | null }[];
 };
 
 export async function getInsights(month: string): Promise<Insights> {
@@ -37,6 +44,7 @@ export async function getInsights(month: string): Promise<Insights> {
     { data: cats },
     { data: accounts },
     { data: profile },
+    { data: expenses },
   ] = await Promise.all([
     supabase.rpc("spend_distribution", { p_month: month }),
     supabase.rpc("category_usage", { p_month: month }),
@@ -46,7 +54,40 @@ export async function getInsights(month: string): Promise<Insights> {
     supabase.from("categories").select("id,name,color"),
     supabase.from("accounts").select("id,name"),
     supabase.from("profiles").select("base_currency").maybeSingle(),
+    supabase
+      .from("transactions")
+      .select("base_total_amount,occurred_at")
+      .eq("type", "expense")
+      .eq("budget_only", false)
+      .gte("occurred_at", addMonths(month, -1))
+      .lt("occurred_at", addMonths(month, 1)),
   ]);
+
+  // Cumulative spend by day-of-month, this month vs last.
+  const prevMonth = addMonths(month, -1);
+  const thisArr = new Array(31).fill(0);
+  const lastArr = new Array(31).fill(0);
+  for (const e of expenses ?? []) {
+    const d = new Date(e.occurred_at);
+    const iso = monthStart(d);
+    const day = d.getDate();
+    if (iso === month) thisArr[day - 1] += Number(e.base_total_amount ?? 0);
+    else if (iso === prevMonth) lastArr[day - 1] += Number(e.base_total_amount ?? 0);
+  }
+  const thisDays = daysInMonth(month);
+  const lastDays = daysInMonth(prevMonth);
+  const pace: Insights["pace"] = [];
+  let ct = 0;
+  let cl = 0;
+  for (let i = 0; i < 31; i++) {
+    ct += thisArr[i];
+    cl += lastArr[i];
+    pace.push({
+      day: i + 1,
+      thisMonth: i < thisDays ? Math.round(ct * 100) / 100 : null,
+      lastMonth: i < lastDays ? Math.round(cl * 100) / 100 : null,
+    });
+  }
 
   const catById = new Map((cats ?? []).map((c) => [c.id, c]));
   const acctById = new Map((accounts ?? []).map((a) => [a.id, a.name]));
@@ -98,5 +139,6 @@ export async function getInsights(month: string): Promise<Insights> {
     utilization,
     loans: loanRows,
     totalSpend: distribution.reduce((s, d) => s + d.value, 0),
+    pace,
   };
 }

@@ -8,6 +8,7 @@ import { SpendDonut } from "@/components/insights/spend-donut";
 import { CashflowChart } from "@/components/insights/cashflow-chart";
 import { BudgetBars } from "@/components/insights/budget-bars";
 import { DebtHealth } from "@/components/insights/debt-health";
+import { SpendingPace } from "@/components/insights/spending-pace";
 
 function ChartCard({
   title,
@@ -65,6 +66,9 @@ export default async function InsightsPage({
         </ChartCard>
         <ChartCard title="Cash flow" className="lg:col-span-2">
           <CashflowChart data={insights.trend} currency={cur} />
+        </ChartCard>
+        <ChartCard title="Spending pace" className="lg:col-span-2">
+          <SpendingPace data={insights.pace} currency={cur} />
         </ChartCard>
         <ChartCard title="Expenses vs budget" className="lg:col-span-2">
           <BudgetBars data={insights.budgetBars} currency={cur} />
