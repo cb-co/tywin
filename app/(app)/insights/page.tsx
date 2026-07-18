@@ -1,19 +1,75 @@
-import { LineChart } from "lucide-react";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
-import { EmptyState } from "@/components/empty-state";
+import { Card } from "@/components/ui/card";
+import { getInsights } from "@/lib/insights/queries";
+import { normalizeMonth, addMonths, monthLabel } from "@/lib/budgets/month";
+import { SpendDonut } from "@/components/insights/spend-donut";
+import { CashflowChart } from "@/components/insights/cashflow-chart";
+import { BudgetBars } from "@/components/insights/budget-bars";
+import { DebtHealth } from "@/components/insights/debt-health";
 
-export default function InsightsPage() {
+function ChartCard({
+  title,
+  className,
+  children,
+}: {
+  title: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <Card className={`p-6 ${className ?? ""}`}>
+      <h2 className="mb-4 font-serif text-lg font-medium text-foreground">{title}</h2>
+      {children}
+    </Card>
+  );
+}
+
+export default async function InsightsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }>;
+}) {
+  const { month: monthParam } = await searchParams;
+  const month = normalizeMonth(monthParam);
+  const insights = await getInsights(month);
+  const cur = insights.baseCurrency;
+
+  const navLink =
+    "flex size-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
+
+  return (
+    <div className="mx-auto max-w-5xl space-y-8">
       <PageHeader
         title="Insights"
         description="Where your money goes: distribution, budget pace, and cash flow."
       />
-      <EmptyState
-        icon={<LineChart className="size-6" />}
-        title="Nothing to chart yet"
-        description="Log a few transactions and your spending distribution, budget progress, and trends will appear here."
-      />
+
+      <div className="flex items-center gap-2">
+        <Link href={`/insights?month=${addMonths(month, -1)}`} aria-label="Previous month" className={navLink}>
+          <ChevronLeft className="size-4" />
+        </Link>
+        <span className="min-w-40 text-center font-serif text-lg font-medium">{monthLabel(month)}</span>
+        <Link href={`/insights?month=${addMonths(month, 1)}`} aria-label="Next month" className={navLink}>
+          <ChevronRight className="size-4" />
+        </Link>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ChartCard title="Spend distribution">
+          <SpendDonut data={insights.distribution} total={insights.totalSpend} currency={cur} />
+        </ChartCard>
+        <ChartCard title="Credit & debt health">
+          <DebtHealth utilization={insights.utilization} loans={insights.loans} />
+        </ChartCard>
+        <ChartCard title="Cash flow" className="lg:col-span-2">
+          <CashflowChart data={insights.trend} currency={cur} />
+        </ChartCard>
+        <ChartCard title="Expenses vs budget" className="lg:col-span-2">
+          <BudgetBars data={insights.budgetBars} currency={cur} />
+        </ChartCard>
+      </div>
     </div>
   );
 }
