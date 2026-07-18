@@ -1,22 +1,24 @@
-import { PieChart } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
-import { EmptyState } from "@/components/empty-state";
-import { Button } from "@/components/ui/button";
+import { BudgetGrid } from "@/components/budgets/budget-grid";
+import { getBudgetOverview } from "@/lib/budgets/queries";
+import { normalizeMonth } from "@/lib/budgets/month";
 
-export default function BudgetsPage() {
+export default async function BudgetsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }>;
+}) {
+  const { month: monthParam } = await searchParams;
+  const month = normalizeMonth(monthParam);
+  const overview = await getBudgetOverview(month);
+
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <div className="mx-auto max-w-3xl space-y-8">
       <PageHeader
         title="Budgets"
         description="A monthly budget per category, with what's used and what's left."
-        actions={<Button>New category</Button>}
       />
-      <EmptyState
-        icon={<PieChart className="size-6" />}
-        title="No categories yet"
-        description="Create categories like Groceries or Fuel, set a monthly budget, and track spending against it."
-        action={<Button>Create a category</Button>}
-      />
+      <BudgetGrid month={month} overview={overview} />
     </div>
   );
 }
