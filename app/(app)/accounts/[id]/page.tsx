@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { getAccountById, getCurrencies, getCardGroups } from "@/lib/accounts/queries";
 import { getAccountTransactions, getQuickAddData } from "@/lib/transactions/queries";
 import { AccountActivity } from "@/components/accounts/account-activity";
+import { BalanceChart } from "@/components/accounts/balance-chart";
 import { createClient } from "@/lib/supabase/server";
 import { accountTypeMeta, type AccountType } from "@/lib/accounts/meta";
 import { formatMoney, formatPercent, formatDayOfMonth } from "@/lib/format";
@@ -133,6 +134,18 @@ export default async function AccountDetailPage({
           </>
         )}
       </Card>
+
+      {!isCardType && !isLoanType ? (
+        <Card className="p-6">
+          <h2 className="mb-4 font-serif text-lg font-medium text-foreground">Balance over time</h2>
+          <BalanceChart
+            accountId={account.id}
+            startingBalance={account.starting_balance}
+            currency={currency}
+            transactions={activity}
+          />
+        </Card>
+      ) : null}
 
       {isCardType ? (
         <ReconcilePanel

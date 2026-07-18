@@ -74,6 +74,25 @@ export async function createCategory(input: unknown): Promise<Result> {
   return { id: data.id };
 }
 
+export async function updateCategory(id: string, input: unknown): Promise<Result> {
+  const parsed = categorySchema.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  const { supabase, user } = await requireUser();
+  if (!user) return { error: "You're not signed in." };
+  const { error } = await supabase
+    .from("categories")
+    .update({
+      name: parsed.data.name,
+      emoji: parsed.data.emoji || null,
+      color: parsed.data.color || null,
+    })
+    .eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/budgets");
+  revalidatePath("/");
+  return { id };
+}
+
 export async function deleteCategory(id: string): Promise<Result> {
   const { supabase, user } = await requireUser();
   if (!user) return { error: "You're not signed in." };

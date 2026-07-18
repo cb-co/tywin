@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Plus, Trash2, CopyPlus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2, CopyPlus, Pencil } from "lucide-react";
 import { setBudget, deleteCategory, copyPreviousMonth } from "@/app/(app)/budgets/actions";
 import { addMonths, monthLabel } from "@/lib/budgets/month";
 import { formatMoney } from "@/lib/format";
@@ -169,16 +169,27 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
                     if (e.key === "Enter") (e.target as HTMLInputElement).blur();
                   }}
                 />
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={`Delete ${row.name}`}
-                  className="text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
-                  onClick={() => onDelete(row.category_id)}
-                  disabled={pending}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
+                <div className="flex items-center opacity-0 transition-opacity group-hover:opacity-100">
+                  <CategoryDialog
+                    mode="edit"
+                    category={row}
+                    trigger={
+                      <Button variant="ghost" size="icon-sm" aria-label={`Edit ${row.name}`} className="text-muted-foreground">
+                        <Pencil className="size-4" />
+                      </Button>
+                    }
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={`Delete ${row.name}`}
+                    className="text-muted-foreground hover:text-destructive"
+                    onClick={() => onDelete(row.category_id)}
+                    disabled={pending}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           ))}
