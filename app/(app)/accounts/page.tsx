@@ -1,12 +1,13 @@
 import { PageHeader } from "@/components/page-header";
 import { AccountGallery } from "@/components/accounts/account-gallery";
-import { getAccountsWithStatus, getCurrencies } from "@/lib/accounts/queries";
+import { getAccountsWithStatus, getCurrencies, getCardGroups } from "@/lib/accounts/queries";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AccountsPage() {
-  const [accounts, currencies] = await Promise.all([
+  const [accounts, currencies, cardGroups] = await Promise.all([
     getAccountsWithStatus(),
     getCurrencies(),
+    getCardGroups(),
   ]);
 
   const supabase = await createClient();
@@ -25,6 +26,7 @@ export default async function AccountsPage() {
       <AccountGallery
         accounts={accounts}
         currencies={currencies}
+        cardGroups={cardGroups}
         baseCurrency={baseCurrency}
       />
     </div>

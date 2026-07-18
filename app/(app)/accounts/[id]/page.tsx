@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowLeftRight } from "lucide-react";
-import { getAccountById, getCurrencies } from "@/lib/accounts/queries";
+import { getAccountById, getCurrencies, getCardGroups } from "@/lib/accounts/queries";
 import { createClient } from "@/lib/supabase/server";
 import { accountTypeMeta, type AccountType } from "@/lib/accounts/meta";
 import { formatMoney, formatPercent, formatDayOfMonth } from "@/lib/format";
@@ -18,7 +18,11 @@ export default async function AccountDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [account, currencies] = await Promise.all([getAccountById(id), getCurrencies()]);
+  const [account, currencies, cardGroups] = await Promise.all([
+    getAccountById(id),
+    getCurrencies(),
+    getCardGroups(),
+  ]);
   if (!account) notFound();
 
   const supabase = await createClient();
@@ -73,7 +77,12 @@ export default async function AccountDetailPage({
             </p>
           </div>
         </div>
-        <AccountDetailActions account={account} currencies={currencies} baseCurrency={baseCurrency} />
+        <AccountDetailActions
+          account={account}
+          currencies={currencies}
+          cardGroups={cardGroups}
+          baseCurrency={baseCurrency}
+        />
       </div>
 
       {/* Hero figure */}

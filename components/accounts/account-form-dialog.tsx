@@ -4,9 +4,15 @@ import { useState, useTransition } from "react";
 import { useForm, useWatch, Controller } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { CREATABLE_TYPES, ACCOUNT_TYPE_META, isCard, isLoan, type AccountType } from "@/lib/accounts/meta";
-import { createAccount, updateAccount } from "@/app/(app)/accounts/actions";
-import type { AccountWithStatus, CurrencyRow } from "@/lib/accounts/queries";
+import {
+  CREATABLE_TYPES,
+  ACCOUNT_TYPE_META,
+  isCard,
+  isLoan,
+  type AccountType,
+} from "@/lib/accounts/meta";
+import { createAccount, updateAccount, createCardGroup } from "@/app/(app)/accounts/actions";
+import type { AccountWithStatus, CurrencyRow, CardGroupRow } from "@/lib/accounts/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,6 +46,7 @@ type FormValues = {
   statement_closing_day: string;
   payment_due_day: string;
   current_balance: string;
+  card_group_id: string;
   principal: string;
   interest_rate: string;
   term_months: string;
@@ -62,6 +69,7 @@ function defaultsFor(account: AccountWithStatus | undefined, baseCurrency: strin
     statement_closing_day: str(account?.statement_closing_day),
     payment_due_day: str(account?.payment_due_day),
     current_balance: str(account?.current_balance) || "0",
+    card_group_id: account?.card_group_id ?? "none",
     principal: str(account?.principal),
     interest_rate: str(account?.interest_rate),
     term_months: str(account?.term_months),
@@ -74,17 +82,20 @@ export function AccountFormDialog({
   mode,
   account,
   currencies,
+  cardGroups,
   baseCurrency = "USD",
   trigger,
 }: {
   mode: "create" | "edit";
   account?: AccountWithStatus;
   currencies: CurrencyRow[];
+  cardGroups: CardGroupRow[];
   baseCurrency?: string;
   trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [newGroupName, setNewGroupName] = useState("");
   const router = useRouter();
 
   const { register, handleSubmit, control, reset } = useForm<FormValues>({
@@ -92,22 +103,42 @@ export function AccountFormDialog({
   });
 
   const type = (useWatch({ control, name: "type" }) ?? "checking") as AccountType;
+  const groupSel = useWatch({ control, name: "card_group_id" }) ?? "none";
   const card = isCard(type);
   const loan = isLoan(type);
 
   function onOpenChange(next: boolean) {
     setOpen(next);
-    if (next) reset(defaultsFor(account, baseCurrency));
+    if (next) {
+      reset(defaultsFor(account, baseCurrency));
+      setNewGroupName("");
+    }
   }
 
   function onSubmit(values: FormValues) {
-    // Empty strings -> undefined so zod defaults/optionals and the required
-    // refinements behave correctly on the server.
-    const clean = Object.fromEntries(
-      Object.entries(values).map(([k, v]) => [k, v === "" ? undefined : v]),
-    ) as Record<string, unknown>;
-
     startTransition(async () => {
+      let cardGroupId = values.card_group_id;
+      if (values.type === "credit_card" && cardGroupId === "new") {
+        if (!newGroupName.trim()) {
+          toast.error("Name the new card group, or pick “No group”.");
+          return;
+        }
+        const created = await createCardGroup(newGroupName.trim());
+        if (created.error) {
+          toast.error(created.error);
+          return;
+        }
+        cardGroupId = created.id!;
+      }
+      const normalizedGroup = cardGroupId === "none" || cardGroupId === "new" ? "" : cardGroupId;
+
+      const clean = Object.fromEntries(
+        Object.entries({ ...values, card_group_id: normalizedGroup }).map(([k, v]) => [
+          k,
+          v === "" ? undefined : v,
+        ]),
+      ) as Record<string, unknown>;
+
       const result =
         mode === "create"
           ? await createAccount(clean as never)
@@ -221,6 +252,39 @@ export function AccountFormDialog({
                 <div className="space-y-2">
                   <Label htmlFor="payment_due_day">Payment due day</Label>
                   <Input id="payment_due_day" type="number" min="1" max="31" {...register("payment_due_day")} />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>Card group</Label>
+                  <Controller
+                    control={control}
+                    name="card_group_id"
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No group</SelectItem>
+                          {cardGroups.map((g) => (
+                            <SelectItem key={g.id} value={g.id}>
+                              {g.name}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="new">New group…</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {groupSel === "new" ? (
+                    <Input
+                      placeholder="Group name (e.g. Visa Signature)"
+                      value={newGroupName}
+                      onChange={(e) => setNewGroupName(e.target.value)}
+                    />
+                  ) : null}
+                  <p className="text-xs text-muted-foreground">
+                    Group two currency lines of the same physical card so they render as one.
+                  </p>
                 </div>
               </>
             ) : null}

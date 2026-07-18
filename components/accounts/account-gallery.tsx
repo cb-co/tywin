@@ -1,30 +1,45 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Plus, Wallet } from "lucide-react";
 import { AccountCard } from "./account-card";
+import { CardGroupTile } from "./card-group-tile";
 import { AccountFormDialog } from "./account-form-dialog";
-import { ACCOUNT_GROUPS } from "@/lib/accounts/meta";
-import type { AccountWithStatus, CurrencyRow } from "@/lib/accounts/queries";
-import { accountTypeMeta } from "@/lib/accounts/meta";
+import { ACCOUNT_GROUPS, accountTypeMeta } from "@/lib/accounts/meta";
+import type {
+  AccountWithStatus,
+  CurrencyRow,
+  CardGroupRow,
+} from "@/lib/accounts/queries";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
-import { Wallet } from "lucide-react";
+
+/** Cluster credit cards by card_group_id; solo cards keep a unique key. */
+function clusterCards(items: AccountWithStatus[]) {
+  const map = new Map<string, AccountWithStatus[]>();
+  const order: string[] = [];
+  for (const a of items) {
+    const key = a.card_group_id ?? `solo:${a.id}`;
+    if (!map.has(key)) {
+      map.set(key, []);
+      order.push(key);
+    }
+    map.get(key)!.push(a);
+  }
+  return order.map((key) => ({ key, items: map.get(key)! }));
+}
 
 export function AccountGallery({
   accounts,
   currencies,
+  cardGroups,
   baseCurrency,
 }: {
   accounts: AccountWithStatus[];
   currencies: CurrencyRow[];
+  cardGroups: CardGroupRow[];
   baseCurrency: string;
 }) {
-  const addButton = (
-    <Button>
-      <Plus className="size-4" />
-      Add account
-    </Button>
-  );
+  const groupName = new Map(cardGroups.map((g) => [g.id, g.name]));
 
   if (accounts.length === 0) {
     return (
@@ -36,6 +51,7 @@ export function AccountGallery({
           <AccountFormDialog
             mode="create"
             currencies={currencies}
+            cardGroups={cardGroups}
             baseCurrency={baseCurrency}
             trigger={
               <Button>
@@ -60,8 +76,14 @@ export function AccountGallery({
         <AccountFormDialog
           mode="create"
           currencies={currencies}
+          cardGroups={cardGroups}
           baseCurrency={baseCurrency}
-          trigger={addButton}
+          trigger={
+            <Button>
+              <Plus className="size-4" />
+              Add account
+            </Button>
+          }
         />
       </div>
 
@@ -72,9 +94,21 @@ export function AccountGallery({
             <span className="text-xs text-muted-foreground">{group.blurb}</span>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {group.items.map((account) => (
-              <AccountCard key={account.id} account={account} />
-            ))}
+            {group.key === "cards"
+              ? clusterCards(group.items).map((cluster) =>
+                  cluster.items.length >= 2 ? (
+                    <CardGroupTile
+                      key={cluster.key}
+                      name={groupName.get(cluster.key) ?? "Card group"}
+                      accounts={cluster.items}
+                    />
+                  ) : (
+                    <AccountCard key={cluster.key} account={cluster.items[0]} />
+                  ),
+                )
+              : group.items.map((account) => (
+                  <AccountCard key={account.id} account={account} />
+                ))}
           </div>
         </section>
       ))}

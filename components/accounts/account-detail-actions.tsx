@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Archive, ArchiveRestore, Pencil, Trash2 } from "lucide-react";
 import { archiveAccount, deleteAccount } from "@/app/(app)/accounts/actions";
 import { AccountFormDialog } from "./account-form-dialog";
-import type { AccountWithStatus, CurrencyRow } from "@/lib/accounts/queries";
+import type { AccountWithStatus, CurrencyRow, CardGroupRow } from "@/lib/accounts/queries";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,10 +21,12 @@ import {
 export function AccountDetailActions({
   account,
   currencies,
+  cardGroups,
   baseCurrency,
 }: {
   account: AccountWithStatus;
   currencies: CurrencyRow[];
+  cardGroups: CardGroupRow[];
   baseCurrency: string;
 }) {
   const router = useRouter();
@@ -63,6 +65,7 @@ export function AccountDetailActions({
         mode="edit"
         account={account}
         currencies={currencies}
+        cardGroups={cardGroups}
         baseCurrency={baseCurrency}
         trigger={
           <Button variant="outline" size="sm">
