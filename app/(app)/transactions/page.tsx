@@ -1,19 +1,17 @@
-import { ArrowLeftRight } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
-import { EmptyState } from "@/components/empty-state";
+import { Ledger } from "@/components/transactions/ledger";
+import { getTransactions, getQuickAddData } from "@/lib/transactions/queries";
 
-export default function TransactionsPage() {
+export default async function TransactionsPage() {
+  const [transactions, data] = await Promise.all([getTransactions(), getQuickAddData()]);
+
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <div className="mx-auto max-w-4xl space-y-8">
       <PageHeader
         title="Transactions"
-        description="Every expense, income, and transfer between your accounts."
+        description="Every expense, income, and payment in one ledger."
       />
-      <EmptyState
-        icon={<ArrowLeftRight className="size-6" />}
-        title="No transactions yet"
-        description="Once you add an account, use Quick Add to log expenses, income, and payments. They'll appear here."
-      />
+      <Ledger transactions={transactions} accounts={data.accounts} categories={data.categories} />
     </div>
   );
 }

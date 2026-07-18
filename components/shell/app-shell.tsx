@@ -5,12 +5,14 @@ import { MobileHeader } from "./mobile-header";
 import { QuickAddProvider } from "@/components/quick-add/quick-add-provider";
 import { QuickAddButton } from "@/components/quick-add/quick-add-button";
 import { QuickAddDialog } from "@/components/quick-add/quick-add-dialog";
+import { getQuickAddData } from "@/lib/transactions/queries";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const quickAddData = await getQuickAddData();
 
   return (
     <QuickAddProvider>
@@ -22,7 +24,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         </div>
         <BottomNav />
         <QuickAddButton />
-        <QuickAddDialog />
+        <QuickAddDialog data={quickAddData} />
       </div>
     </QuickAddProvider>
   );

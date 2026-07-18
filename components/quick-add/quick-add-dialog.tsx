@@ -2,18 +2,18 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useQuickAdd } from "./quick-add-provider";
+import { TransactionForm } from "@/components/transactions/transaction-form";
+import type { QuickAddData } from "@/lib/transactions/queries";
 
-export function QuickAddDialog() {
+export function QuickAddDialog({ data }: { data: QuickAddData }) {
   const { open, setOpen } = useQuickAdd();
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent>
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Quick add</DialogTitle>
+          <DialogTitle className="font-serif text-xl">Quick add</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-muted-foreground">
-          Transaction forms arrive in Phase 4.
-        </p>
+        <TransactionForm data={data} onSuccess={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   );
