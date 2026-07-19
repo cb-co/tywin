@@ -38,6 +38,7 @@ type FormValues = {
   name: string;
   type: AccountType;
   currency: string;
+  bank: string;
   starting_balance: string;
   transfer_tax_rate: string;
   network_fee_amount: string;
@@ -61,6 +62,7 @@ function defaultsFor(account: AccountWithStatus | undefined, baseCurrency: strin
     name: account?.name ?? "",
     type: (account?.type as AccountType) ?? "checking",
     currency: account?.currency ?? baseCurrency,
+    bank: account?.bank ?? "",
     starting_balance: str(account?.starting_balance) || "0",
     transfer_tax_rate: str(account?.transfer_tax_rate) || "0.002",
     network_fee_amount: str(account?.network_fee_amount) || "0",
@@ -175,6 +177,14 @@ export function AccountFormDialog({
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="name">Name</Label>
               <Input id="name" placeholder="e.g. Banco Popular checking" {...register("name")} required />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="bank">Bank / institution</Label>
+              <Input id="bank" placeholder="e.g. Banco Popular" {...register("bank")} />
+              <p className="text-xs text-muted-foreground">
+                Transfers between accounts at the same bank skip the network fee.
+              </p>
             </div>
 
             <div className="space-y-2">

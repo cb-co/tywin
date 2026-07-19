@@ -8,6 +8,7 @@ export const accountInput = z
     currency: z.string().trim().length(3, "Use a 3-letter code").toUpperCase(),
     starting_balance: z.coerce.number().finite().default(0),
     color: z.string().trim().max(9).optional().or(z.literal("")),
+    bank: z.string().trim().max(60).optional().or(z.literal("")),
 
     // Fee settings (all types)
     transfer_tax_rate: z.coerce.number().min(0).max(1).default(0.002),

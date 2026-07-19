@@ -120,20 +120,25 @@ export function TransactionForm({
   const src = accounts.find((a) => a.id === accountId);
   const dst = accounts.find((a) => a.id === toAccountId);
   const rateLocked = currency === baseCurrency;
+  const sameBankPayment =
+    type === "payment" &&
+    !!src?.bank &&
+    !!dst?.bank &&
+    src.bank.trim().toLowerCase() === dst.bank.trim().toLowerCase();
 
-  // Smart defaults: currency + commission follow the source account (create only —
-  // in edit, currency/rate are immutable and saved toggles are preserved).
+  // Currency follows the source account (create only — in edit it's immutable).
   useEffect(() => {
     if (isEdit || !src) return;
     setValue("currency", src.currency);
-    setValue("include_commission", !src.network_fee_optional);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accountId]);
 
-  // Tax defaults on: only for a payment into a loan account.
+  // Smart defaults: tax on for a payment into a loan; network fee on only for a
+  // cross-bank obligatory transfer (same-bank transfers are free).
   useEffect(() => {
-    if (isEdit) return;
+    if (isEdit || !src) return;
     setValue("include_tax", type === "payment" && dst?.type === "loan");
+    setValue("include_commission", !sameBankPayment && !src.network_fee_optional);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, toAccountId, accountId]);
 
@@ -341,8 +346,10 @@ export function TransactionForm({
               <ToggleRow
                 id="include_commission"
                 label="Apply network fee"
-                checked={field.value}
+                hint={sameBankPayment ? "Free within the same bank" : undefined}
+                checked={field.value && !sameBankPayment}
                 onChange={field.onChange}
+                disabled={sameBankPayment}
               />
             )}
           />
@@ -385,20 +392,25 @@ export function TransactionForm({
 function ToggleRow({
   id,
   label,
+  hint,
   checked,
   onChange,
+  disabled,
 }: {
   id: string;
   label: string;
+  hint?: string;
   checked: boolean;
   onChange: (v: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between gap-3">
       <Label htmlFor={id} className="font-normal text-muted-foreground">
         {label}
+        {hint ? <span className="ml-1.5 text-xs text-success">{hint}</span> : null}
       </Label>
-      <Switch id={id} checked={checked} onCheckedChange={onChange} />
+      <Switch id={id} checked={checked} onCheckedChange={onChange} disabled={disabled} />
     </div>
   );
 }

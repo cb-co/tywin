@@ -41,6 +41,7 @@ export type Database = {
     Tables: {
       accounts: {
         Row: {
+          bank: string | null
           card_group_id: string | null
           color: string | null
           created_at: string
@@ -69,6 +70,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          bank?: string | null
           card_group_id?: string | null
           color?: string | null
           created_at?: string
@@ -97,6 +99,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          bank?: string | null
           card_group_id?: string | null
           color?: string | null
           created_at?: string

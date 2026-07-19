@@ -22,6 +22,7 @@ function toColumns(v: AccountInput) {
     type: v.type,
     starting_balance: v.starting_balance,
     color: orNull(v.color),
+    bank: orNull(v.bank),
     transfer_tax_rate: v.transfer_tax_rate,
     network_fee_amount: v.network_fee_amount,
     network_fee_optional: v.network_fee_optional,
