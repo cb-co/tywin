@@ -33,7 +33,8 @@
     "createAccount": "Crear cuenta",
     "needAccount": "¿No tienes cuenta? Regístrate",
     "haveAccount": "¿Ya tienes cuenta? Inicia sesión",
-    "confirmEmail": "Revisa tu correo para confirmar tu cuenta."
+    "confirmEmail": "Revisa tu correo para confirmar tu cuenta.",
+    "passwordRules": "Mínimo {min} caracteres, con mayúsculas, minúsculas, un número y un símbolo."
   },
   "Errors": {
     "title": "Algo salió mal",

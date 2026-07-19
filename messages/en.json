@@ -33,7 +33,8 @@
     "createAccount": "Create account",
     "needAccount": "Need an account? Sign up",
     "haveAccount": "Have an account? Sign in",
-    "confirmEmail": "Check your email to confirm your account."
+    "confirmEmail": "Check your email to confirm your account.",
+    "passwordRules": "At least {min} characters, with upper and lower case, a number, and a symbol."
   },
   "Errors": {
     "title": "Something went wrong",
