@@ -7,6 +7,7 @@ import {
   cardStatementInput,
   type AccountInput,
 } from "@/lib/accounts/schema";
+import { dbError } from "@/lib/errors";
 
 type Result = { error?: string; id?: string };
 
@@ -65,7 +66,7 @@ export async function createAccount(input: AccountInput): Promise<Result> {
     .select("id")
     .single();
 
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "createAccount") };
   revalidatePath("/accounts");
   revalidatePath("/");
   return { id: data.id };
@@ -80,7 +81,7 @@ export async function updateAccount(id: string, input: AccountInput): Promise<Re
 
   // currency is immutable — never included in the update payload.
   const { error } = await supabase.from("accounts").update(toColumns(parsed.data)).eq("id", id);
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "updateAccount") };
   revalidatePath("/accounts");
   revalidatePath(`/accounts/${id}`);
   revalidatePath("/");
@@ -94,7 +95,7 @@ export async function archiveAccount(id: string, archived: boolean): Promise<Res
     .from("accounts")
     .update({ is_archived: archived })
     .eq("id", id);
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "archiveAccount") };
   revalidatePath("/accounts");
   revalidatePath("/");
   return { id };
@@ -104,7 +105,7 @@ export async function deleteAccount(id: string): Promise<Result> {
   const { supabase, user } = await requireUser();
   if (!user) return { error: "You're not signed in." };
   const { error } = await supabase.from("accounts").delete().eq("id", id);
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "deleteAccount") };
   revalidatePath("/accounts");
   revalidatePath("/");
   return {};
@@ -130,7 +131,7 @@ export async function createBank(name: string): Promise<Result> {
     .insert({ name: trimmed, user_id: user.id })
     .select("id")
     .single();
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "createBank") };
   revalidatePath("/accounts");
   return { id: data.id };
 }
@@ -145,7 +146,7 @@ export async function createCardGroup(name: string): Promise<Result> {
     .insert({ name: trimmed, user_id: user.id })
     .select("id")
     .single();
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "createCardGroup") };
   revalidatePath("/accounts");
   return { id: data.id };
 }
@@ -162,7 +163,7 @@ export async function addCardStatement(input: unknown): Promise<Result> {
     due_date: orNull(due_date),
     user_id: user.id,
   });
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "addCardStatement") };
   revalidatePath(`/accounts/${account_id}`);
   revalidatePath("/accounts");
   return { id: account_id };
@@ -176,7 +177,7 @@ export async function setCardBalance(id: string, balance: number): Promise<Resul
     .from("accounts")
     .update({ current_balance: balance })
     .eq("id", id);
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "setCardBalance") };
   revalidatePath(`/accounts/${id}`);
   revalidatePath("/accounts");
   revalidatePath("/");

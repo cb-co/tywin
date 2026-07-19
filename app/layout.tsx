@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Inter } from "next/font/google";
+import { headers } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
@@ -31,6 +32,9 @@ export default async function RootLayout({
 }>) {
   const locale = await getLocale();
   const messages = await getMessages();
+  // Set per request by the proxy. Both inline scripts below must carry it
+  // or the CSP will block them before first paint.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
     <html
@@ -43,9 +47,17 @@ export default async function RootLayout({
             at all. Rendered here because this is a Server Component: React
             warns about scripts rendered from Client Components, and this one
             has to execute during parse to be worth anything. */}
-        <script dangerouslySetInnerHTML={{ __html: SPLASH_SKIP_SCRIPT }} />
+        {/* suppressHydrationWarning because the browser deliberately hides
+            nonce values from DOM reads (it returns ""), so React sees the
+            server's real nonce and the client's empty one as a mismatch. */}
+        <script
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: SPLASH_SKIP_SCRIPT }}
+        />
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider
+            nonce={nonce}
             attribute="class"
             defaultTheme="system"
             enableSystem

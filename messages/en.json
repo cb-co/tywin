@@ -400,7 +400,12 @@
     "none": "None",
     "loading": "Loading…",
     "notSignedIn": "You're not signed in.",
-    "invalidInput": "Invalid input"
+    "invalidInput": "Invalid input",
+    "errorGeneric": "That didn't work. Please try again.",
+    "errorDuplicate": "That already exists.",
+    "errorReference": "That refers to something that no longer exists.",
+    "errorRequired": "A required field is missing.",
+    "errorInvalidValue": "That value isn't valid."
   },
   "Welcome": {
     "stepName": "Your name",

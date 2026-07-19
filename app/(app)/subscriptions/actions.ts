@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { subscriptionInput, type SubscriptionInput } from "@/lib/subscriptions/schema";
+import { dbError } from "@/lib/errors";
 
 type Result = { error?: string; id?: string };
 
@@ -44,7 +45,7 @@ export async function createSubscription(input: unknown): Promise<Result> {
     .insert({ ...toRow(parsed.data), currency: parsed.data.currency, user_id: user.id })
     .select("id")
     .single();
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "createSubscription") };
   revalidate();
   return { id: data.id };
 }
@@ -59,7 +60,7 @@ export async function updateSubscription(id: string, input: unknown): Promise<Re
     .from("subscriptions")
     .update({ ...toRow(parsed.data), currency: parsed.data.currency })
     .eq("id", id);
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "updateSubscription") };
   revalidate();
   return { id };
 }
@@ -69,7 +70,7 @@ export async function deleteSubscription(id: string): Promise<Result> {
   const { supabase, user } = await requireUser();
   if (!user) return { error: t("notSignedIn") };
   const { error } = await supabase.from("subscriptions").delete().eq("id", id);
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "deleteSubscription") };
   revalidate();
   return {};
 }
@@ -79,7 +80,7 @@ export async function setSubscriptionActive(id: string, active: boolean): Promis
   const { supabase, user } = await requireUser();
   if (!user) return { error: t("notSignedIn") };
   const { error } = await supabase.from("subscriptions").update({ is_active: active }).eq("id", id);
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "setSubscriptionActive") };
   revalidate();
   return { id };
 }
@@ -114,7 +115,7 @@ export async function addCharge(id: string): Promise<Result> {
     description: sub.name,
     subscription_id: sub.id,
   });
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "addCharge") };
   revalidatePath("/subscriptions");
   revalidatePath("/transactions");
   revalidatePath("/accounts");

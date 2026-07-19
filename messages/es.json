@@ -400,7 +400,12 @@
     "none": "Ninguno",
     "loading": "Cargando…",
     "notSignedIn": "No has iniciado sesión.",
-    "invalidInput": "Entrada inválida"
+    "invalidInput": "Entrada inválida",
+    "errorGeneric": "No se pudo completar. Inténtalo de nuevo.",
+    "errorDuplicate": "Eso ya existe.",
+    "errorReference": "Eso hace referencia a algo que ya no existe.",
+    "errorRequired": "Falta un campo obligatorio.",
+    "errorInvalidValue": "Ese valor no es válido."
   },
   "Welcome": {
     "stepName": "Tu nombre",

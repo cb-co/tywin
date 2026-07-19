@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { dbError } from "@/lib/errors";
 
 export async function updateBaseCurrency(code: string): Promise<{ error?: string }> {
   const t = await getTranslations("Common");
@@ -18,7 +19,7 @@ export async function updateBaseCurrency(code: string): Promise<{ error?: string
     .from("profiles")
     .update({ base_currency: code })
     .eq("id", user.id);
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "updateBaseCurrency") };
   revalidatePath("/", "layout");
   return {};
 }
@@ -47,7 +48,7 @@ export async function updateDisplayName(name: string): Promise<{ error?: string 
     .from("profiles")
     .update({ display_name: trimmed || null })
     .eq("id", user.id);
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "updateDisplayName") };
   revalidatePath("/", "layout");
   return {};
 }

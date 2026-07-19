@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { dbError } from "@/lib/errors";
 
 /** Stamps onboarding as done. Called only after the first account exists, so
  *  the gate cannot release someone into an empty dashboard. */
@@ -20,7 +21,7 @@ export async function finishOnboarding(): Promise<{ error?: string }> {
     .from("accounts")
     .select("id", { count: "exact", head: true })
     .eq("is_archived", false);
-  if (countError) return { error: countError.message };
+  if (countError) return { error: await dbError(countError, "finishOnboarding") };
 
   const tw = await getTranslations("Welcome");
   if (!count) return { error: tw("errorNoAccount") };
@@ -29,7 +30,7 @@ export async function finishOnboarding(): Promise<{ error?: string }> {
     .from("profiles")
     .update({ onboarded_at: new Date().toISOString() })
     .eq("id", user.id);
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "finishOnboarding") };
 
   revalidatePath("/", "layout");
   return {};

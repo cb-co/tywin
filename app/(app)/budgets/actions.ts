@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { addMonths } from "@/lib/budgets/month";
+import { dbError } from "@/lib/errors";
 
 type Result = { error?: string; id?: string };
 
@@ -35,7 +36,7 @@ export async function setBudget(input: unknown): Promise<Result> {
       { user_id: user.id, ...parsed.data },
       { onConflict: "category_id,month" },
     );
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "setBudget") };
   revalidatePath("/budgets");
   revalidatePath("/");
   return {};
@@ -75,7 +76,7 @@ export async function createCategory(input: unknown): Promise<Result> {
     })
     .select("id")
     .single();
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "createCategory") };
   revalidatePath("/budgets");
   return { id: data.id };
 }
@@ -95,7 +96,7 @@ export async function updateCategory(id: string, input: unknown): Promise<Result
       color: parsed.data.color || null,
     })
     .eq("id", id);
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "updateCategory") };
   revalidatePath("/budgets");
   revalidatePath("/");
   return { id };
@@ -106,7 +107,7 @@ export async function deleteCategory(id: string): Promise<Result> {
   const { supabase, user } = await requireUser();
   if (!user) return { error: t("notSignedIn") };
   const { error } = await supabase.from("categories").delete().eq("id", id);
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "deleteCategory") };
   revalidatePath("/budgets");
   revalidatePath("/");
   return {};
@@ -137,7 +138,7 @@ export async function copyPreviousMonth(month: string): Promise<Result> {
     })),
     { onConflict: "category_id,month" },
   );
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "copyPreviousMonth") };
   revalidatePath("/budgets");
   return {};
 }

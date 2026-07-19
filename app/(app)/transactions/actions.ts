@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { transactionInput, type TransactionInput } from "@/lib/transactions/schema";
+import { dbError } from "@/lib/errors";
 
 type Result = { error?: string; id?: string };
 
@@ -58,7 +59,7 @@ export async function createTransaction(input: unknown): Promise<Result> {
     .select("id")
     .single();
 
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "createTransaction") };
   revalidate();
   return { id: data.id };
 }
@@ -73,7 +74,7 @@ export async function updateTransaction(id: string, input: unknown): Promise<Res
 
   // Never send currency/exchange_rate — the DB forbids changing them.
   const { error } = await supabase.from("transactions").update(toRow(parsed.data)).eq("id", id);
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "updateTransaction") };
   revalidate();
   return { id };
 }
@@ -83,7 +84,7 @@ export async function deleteTransaction(id: string): Promise<Result> {
   const { supabase, user } = await requireUser();
   if (!user) return { error: t("notSignedIn") };
   const { error } = await supabase.from("transactions").delete().eq("id", id);
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, "deleteTransaction") };
   revalidate();
   return {};
 }
