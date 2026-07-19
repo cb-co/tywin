@@ -22,7 +22,7 @@ export default async function LoginPage({
       <div className="relative hidden flex-col justify-between overflow-hidden bg-primary p-10 text-primary-foreground lg:flex">
         <div className="flex items-center gap-2.5">
           <Logo variant="ghost" />
-          <span className="font-serif text-lg font-semibold tracking-tight">Tywin</span>
+          <span className="font-serif text-lg font-semibold tracking-tight">Cashly</span>
         </div>
         <div className="relative z-10 max-w-md space-y-4">
           <h2 className="font-serif text-4xl font-semibold leading-[1.1] tracking-tight">

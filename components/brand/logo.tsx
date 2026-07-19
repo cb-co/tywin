@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Tywin brand mark — a serif "T" monogram struck in ivory on a deep-emerald
+ * Cashly brand mark — a serif "C" monogram struck in ivory on a deep-emerald
  * tile and edged with a hairline of gold. Shares the Fraunces face with the
  * wordmark, so the lockup reads as one thing; the emerald + gold pairing is
  * the wealth cue, not a generic app glyph.
@@ -33,7 +33,7 @@ export function Logo({
         className="pointer-events-none absolute inset-0 rounded-[inherit] shadow-[inset_0_1px_0_rgba(255,255,255,0.22)]"
       />
       <span className="font-serif text-[1.2rem] font-semibold leading-none tracking-tight">
-        T
+        C
       </span>
     </span>
   );
@@ -47,7 +47,7 @@ export function Wordmark({ className }: { className?: string }) {
         className,
       )}
     >
-      Tywin
+      Cashly
     </span>
   );
 }

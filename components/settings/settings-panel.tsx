@@ -96,7 +96,7 @@ export function SettingsPanel({
         </Button>
       </Row>
 
-      <Row title="Session" description="Sign out of Tywin on this device.">
+      <Row title="Session" description="Sign out of Cashly on this device.">
         <form action="/auth/signout" method="post">
           <Button type="submit" variant="outline" size="sm">
             <LogOut className="size-4" />

@@ -17,7 +17,7 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Tywin · Personal Finance",
+  title: "Cashly · Personal Finance",
   description: "Track accounts, budgets, credit cards, and subscriptions.",
 };
 
