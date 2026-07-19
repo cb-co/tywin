@@ -401,5 +401,31 @@
     "loading": "Cargando…",
     "notSignedIn": "No has iniciado sesión.",
     "invalidInput": "Entrada inválida"
+  },
+  "Welcome": {
+    "stepName": "Tu nombre",
+    "stepCurrency": "Moneda base",
+    "stepAccount": "Primera cuenta",
+    "stepCounter": "Paso {current} de {total}",
+    "nameTitle": "¿Cómo te llamamos?",
+    "nameBody": "Se usa para saludarte en el resumen y para identificar tu cuenta.",
+    "nameLabel": "Nombre para mostrar",
+    "namePlaceholder": "Tu nombre",
+    "currencyTitle": "Elige tu moneda base",
+    "currencyBody": "El patrimonio neto y todos los totales se convierten a esta moneda.",
+    "currencyLabel": "Moneda base",
+    "currencyHint": "Cada cuenta puede tener su propia moneda. Esta es a la que se suma todo.",
+    "accountTitle": "Añade tu primera cuenta",
+    "accountBody": "Con una cuenta basta para empezar. Luego puedes añadir tarjetas, préstamos y propiedades.",
+    "accountTypeLabel": "Tipo",
+    "accountNameLabel": "Nombre de la cuenta",
+    "accountNamePlaceholder": "Ahorros principal",
+    "accountCurrencyLabel": "Moneda",
+    "accountBalanceLabel": "Saldo actual",
+    "backButton": "Atrás",
+    "continueButton": "Continuar",
+    "finishButton": "Finalizar",
+    "toastReady": "Todo listo",
+    "errorNoAccount": "Añade una cuenta antes de finalizar."
   }
 }

@@ -401,5 +401,31 @@
     "loading": "Loading…",
     "notSignedIn": "You're not signed in.",
     "invalidInput": "Invalid input"
+  },
+  "Welcome": {
+    "stepName": "Your name",
+    "stepCurrency": "Base currency",
+    "stepAccount": "First account",
+    "stepCounter": "Step {current} of {total}",
+    "nameTitle": "What should we call you?",
+    "nameBody": "Used to greet you on the overview and to label your account.",
+    "nameLabel": "Display name",
+    "namePlaceholder": "Your name",
+    "currencyTitle": "Pick your base currency",
+    "currencyBody": "Net worth and every dashboard total convert into this currency.",
+    "currencyLabel": "Base currency",
+    "currencyHint": "Accounts can each hold their own currency. This is the one everything rolls up into.",
+    "accountTitle": "Add your first account",
+    "accountBody": "One account is enough to start. You can add cards, loans, and property later.",
+    "accountTypeLabel": "Type",
+    "accountNameLabel": "Account name",
+    "accountNamePlaceholder": "Main savings",
+    "accountCurrencyLabel": "Currency",
+    "accountBalanceLabel": "Current balance",
+    "backButton": "Back",
+    "continueButton": "Continue",
+    "finishButton": "Finish setup",
+    "toastReady": "You are all set",
+    "errorNoAccount": "Add an account before finishing setup."
   }
 }
