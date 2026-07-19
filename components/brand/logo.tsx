@@ -21,7 +21,7 @@ export function Logo({
       className={cn(
         "relative inline-flex h-8 w-8 shrink-0 select-none items-center justify-center overflow-hidden rounded-[0.6rem]",
         variant === "solid"
-          ? "bg-gradient-to-br from-[#262a28] to-[#141614] text-[#f1efe8] shadow-sm ring-1 ring-white/10"
+          ? "bg-[#e7e1d3] text-[#2b2f2c] shadow-sm ring-1 ring-black/[0.07] dark:bg-gradient-to-br dark:from-[#262a28] dark:to-[#141614] dark:text-[#f1efe8] dark:ring-white/10"
           : "bg-primary-foreground/10 text-primary-foreground ring-1 ring-primary-foreground/20",
         className,
       )}
@@ -30,7 +30,7 @@ export function Logo({
       {/* subtle top edge highlight */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-[inherit] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+        className="pointer-events-none absolute inset-0 rounded-[inherit] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
       />
       <Coins className="h-[56%] w-[56%]" strokeWidth={2} />
     </span>
