@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CreditCard, ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
 import { formatMoney, formatPercent } from "@/lib/format";
 import type { AccountWithStatus } from "@/lib/accounts/queries";
@@ -12,6 +13,7 @@ export function CardGroupTile({
   name: string;
   accounts: AccountWithStatus[];
 }) {
+  const t = useTranslations("Accounts");
   return (
     <Card className="h-full gap-0 p-5">
       <div className="flex items-center gap-3">
@@ -20,7 +22,7 @@ export function CardGroupTile({
         </span>
         <div className="min-w-0">
           <p className="truncate font-medium text-foreground">{name}</p>
-          <p className="text-xs text-muted-foreground">{accounts.length} currency lines</p>
+          <p className="text-xs text-muted-foreground">{t("currencyLines", { count: accounts.length })}</p>
         </div>
       </div>
       <div className="mt-3 divide-y">
@@ -36,7 +38,7 @@ export function CardGroupTile({
               <div>
                 <p className="text-sm font-medium text-foreground">{a.currency}</p>
                 {util !== null ? (
-                  <p className="text-xs text-muted-foreground">{formatPercent(util)} used</p>
+                  <p className="text-xs text-muted-foreground">{t("usedPercent", { pct: formatPercent(util) })}</p>
                 ) : null}
               </div>
               <div className="flex items-center gap-2">

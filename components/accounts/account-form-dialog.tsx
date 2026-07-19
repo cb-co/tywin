@@ -4,9 +4,9 @@ import { useState, useTransition } from "react";
 import { useForm, useWatch, Controller } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import {
   CREATABLE_TYPES,
-  ACCOUNT_TYPE_META,
   isCard,
   isLoan,
   type AccountType,
@@ -114,6 +114,9 @@ export function AccountFormDialog({
   const [newGroupName, setNewGroupName] = useState("");
   const [newBankName, setNewBankName] = useState("");
   const router = useRouter();
+  const t = useTranslations("AccountForm");
+  const tType = useTranslations("AccountTypes");
+  const tc = useTranslations("Common");
 
   const { register, handleSubmit, control, reset } = useForm<FormValues>({
     defaultValues: defaultsFor(account, baseCurrency),
@@ -127,13 +130,13 @@ export function AccountFormDialog({
 
   // Value→label maps so the trigger shows names (not raw ids) when closed.
   const bankItems: Record<string, string> = {
-    none: "No bank",
-    new: "New bank…",
+    none: t("noBank"),
+    new: t("newBank"),
     ...Object.fromEntries(banks.map((b) => [b.id, b.name])),
   };
   const groupItems: Record<string, string> = {
-    none: "No group",
-    new: "New group…",
+    none: t("noGroup"),
+    new: t("newGroup"),
     ...Object.fromEntries(cardGroups.map((g) => [g.id, g.name])),
   };
   const currencyItems: Record<string, string> = Object.fromEntries(
@@ -154,7 +157,7 @@ export function AccountFormDialog({
       let cardGroupId = values.card_group_id;
       if (values.type === "credit_card" && cardGroupId === "new") {
         if (!newGroupName.trim()) {
-          toast.error("Name the new card group, or pick “No group”.");
+          toast.error(t("toastNameGroupOrNone"));
           return;
         }
         const created = await createCardGroup(newGroupName.trim());
@@ -169,7 +172,7 @@ export function AccountFormDialog({
       let bankId = values.bank_id;
       if (bankId === "new") {
         if (!newBankName.trim()) {
-          toast.error("Name the new bank, or pick “No bank”.");
+          toast.error(t("toastNameBankOrNone"));
           return;
         }
         const created = await createBank(newBankName.trim());
@@ -195,7 +198,7 @@ export function AccountFormDialog({
         toast.error(result.error);
         return;
       }
-      toast.success(mode === "create" ? "Account added" : "Account updated");
+      toast.success(mode === "create" ? t("toastAccountAdded") : t("toastAccountUpdated"));
       setOpen(false);
       router.refresh();
     });
@@ -207,26 +210,26 @@ export function AccountFormDialog({
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-xl">
-            {mode === "create" ? "Add an account" : "Edit account"}
+            {mode === "create" ? t("addTitle") : t("editTitle")}
           </DialogTitle>
           <DialogDescription>
             {card
-              ? "Credit-card balance is reconciled from statements and payments."
+              ? t("descriptionCard")
               : loan
-                ? "Loan payoff is tracked from payments into the loan."
-                : "Balance is derived from your transactions."}
+                ? t("descriptionLoan")
+                : t("descriptionOther")}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" placeholder="e.g. Banco Popular checking" {...register("name")} required />
+              <Label htmlFor="name">{t("nameLabel")}</Label>
+              <Input id="name" placeholder={t("namePlaceholder")} {...register("name")} required />
             </div>
 
             <div className="space-y-2 sm:col-span-2">
-              <Label>Bank / institution</Label>
+              <Label>{t("bankLabel")}</Label>
               <Controller
                 control={control}
                 name="bank_id"
@@ -236,31 +239,31 @@ export function AccountFormDialog({
                       <SelectValue>{(value: string) => bankItems[value] ?? value}</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">No bank</SelectItem>
+                      <SelectItem value="none">{t("noBank")}</SelectItem>
                       {banks.map((b) => (
                         <SelectItem key={b.id} value={b.id}>
                           {b.name}
                         </SelectItem>
                       ))}
-                      <SelectItem value="new">New bank…</SelectItem>
+                      <SelectItem value="new">{t("newBank")}</SelectItem>
                     </SelectContent>
                   </Select>
                 )}
               />
               {bankSel === "new" ? (
                 <Input
-                  placeholder="Bank name (e.g. Banco Popular)"
+                  placeholder={t("bankNamePlaceholder")}
                   value={newBankName}
                   onChange={(e) => setNewBankName(e.target.value)}
                 />
               ) : null}
               <p className="text-xs text-muted-foreground">
-                Transfers between accounts at the same bank skip the network fee.
+                {t("bankHint")}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label>Type</Label>
+              <Label>{t("typeLabel")}</Label>
               <Controller
                 control={control}
                 name="type"
@@ -268,13 +271,13 @@ export function AccountFormDialog({
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger className="w-full">
                       <SelectValue>
-                        {(value: AccountType) => ACCOUNT_TYPE_META[value]?.label ?? value}
+                        {(value: AccountType) => tType(value) ?? value}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      {CREATABLE_TYPES.map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {ACCOUNT_TYPE_META[t].label}
+                      {CREATABLE_TYPES.map((accType) => (
+                        <SelectItem key={accType} value={accType}>
+                          {tType(accType)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -284,7 +287,7 @@ export function AccountFormDialog({
             </div>
 
             <div className="space-y-2">
-              <Label>Currency</Label>
+              <Label>{t("currencyLabel")}</Label>
               <Controller
                 control={control}
                 name="currency"
@@ -308,13 +311,13 @@ export function AccountFormDialog({
                 )}
               />
               {mode === "edit" ? (
-                <p className="text-xs text-muted-foreground">Currency can&apos;t be changed.</p>
+                <p className="text-xs text-muted-foreground">{t("currencyLockedHint")}</p>
               ) : null}
             </div>
 
             {!card && !loan ? (
               <div className="space-y-2">
-                <Label htmlFor="starting_balance">Starting balance</Label>
+                <Label htmlFor="starting_balance">{t("startingBalanceLabel")}</Label>
                 <Input id="starting_balance" type="number" step="0.01" {...register("starting_balance")} />
               </div>
             ) : null}
@@ -322,23 +325,23 @@ export function AccountFormDialog({
             {card ? (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="current_balance">Current balance owed</Label>
+                  <Label htmlFor="current_balance">{t("currentBalanceOwedLabel")}</Label>
                   <Input id="current_balance" type="number" step="0.01" min="0" {...register("current_balance")} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="credit_limit">Credit limit</Label>
+                  <Label htmlFor="credit_limit">{t("creditLimitLabel")}</Label>
                   <Input id="credit_limit" type="number" step="0.01" min="0" {...register("credit_limit")} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="statement_closing_day">Statement closing day</Label>
+                  <Label htmlFor="statement_closing_day">{t("statementClosingDayLabel")}</Label>
                   <Input id="statement_closing_day" type="number" min="1" max="31" {...register("statement_closing_day")} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="payment_due_day">Payment due day</Label>
+                  <Label htmlFor="payment_due_day">{t("paymentDueDayLabel")}</Label>
                   <Input id="payment_due_day" type="number" min="1" max="31" {...register("payment_due_day")} />
                 </div>
                 <div className="space-y-2 sm:col-span-2">
-                  <Label>Card group</Label>
+                  <Label>{t("cardGroupLabel")}</Label>
                   <Controller
                     control={control}
                     name="card_group_id"
@@ -348,26 +351,26 @@ export function AccountFormDialog({
                           <SelectValue>{(value: string) => groupItems[value] ?? value}</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">No group</SelectItem>
+                          <SelectItem value="none">{t("noGroup")}</SelectItem>
                           {cardGroups.map((g) => (
                             <SelectItem key={g.id} value={g.id}>
                               {g.name}
                             </SelectItem>
                           ))}
-                          <SelectItem value="new">New group…</SelectItem>
+                          <SelectItem value="new">{t("newGroup")}</SelectItem>
                         </SelectContent>
                       </Select>
                     )}
                   />
                   {groupSel === "new" ? (
                     <Input
-                      placeholder="Group name (e.g. Visa Signature)"
+                      placeholder={t("groupNamePlaceholder")}
                       value={newGroupName}
                       onChange={(e) => setNewGroupName(e.target.value)}
                     />
                   ) : null}
                   <p className="text-xs text-muted-foreground">
-                    Group two currency lines of the same physical card so they render as one.
+                    {t("groupHint")}
                   </p>
                 </div>
               </>
@@ -377,47 +380,41 @@ export function AccountFormDialog({
               <>
                 <div className="space-y-2 sm:col-span-2">
                   <p className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
-                    Enter this loan as it stands today, not at origination: principal is what you
-                    currently owe, and term is how many installments are still left. Past rate
-                    changes or extra payments don&apos;t need to be re-entered — they&apos;re
-                    already reflected in today&apos;s balance. If you&apos;ve already paid some
-                    installments before adding this loan, fill in the original term below so the
-                    progress bar gives you credit for them — it&apos;s display-only and doesn&apos;t
-                    affect the balance or schedule.
+                    {t("loanHint")}
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="principal">Principal (current balance owed)</Label>
+                  <Label htmlFor="principal">{t("principalLabel")}</Label>
                   <Input id="principal" type="number" step="0.01" min="0" {...register("principal")} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="interest_rate">Annual interest rate (current)</Label>
-                  <Input id="interest_rate" type="number" step="0.0001" min="0" placeholder="0.115 = 11.5%" {...register("interest_rate")} />
+                  <Label htmlFor="interest_rate">{t("interestRateLabel")}</Label>
+                  <Input id="interest_rate" type="number" step="0.0001" min="0" placeholder={t("interestRatePlaceholder")} {...register("interest_rate")} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="term_months">Term (months remaining)</Label>
+                  <Label htmlFor="term_months">{t("termMonthsLabel")}</Label>
                   <Input id="term_months" type="number" min="1" {...register("term_months")} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="original_term_months">Original term (months, optional)</Label>
+                  <Label htmlFor="original_term_months">{t("originalTermMonthsLabel")}</Label>
                   <Input
                     id="original_term_months"
                     type="number"
                     min="1"
-                    placeholder="Leave blank if this is a brand-new loan"
+                    placeholder={t("originalTermPlaceholder")}
                     {...register("original_term_months")}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="installment_amount">Monthly installment</Label>
+                  <Label htmlFor="installment_amount">{t("installmentAmountLabel")}</Label>
                   <Input id="installment_amount" type="number" step="0.01" min="0" {...register("installment_amount")} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="payment_due_day">Payment due day</Label>
+                  <Label htmlFor="payment_due_day">{t("paymentDueDayLabel")}</Label>
                   <Input id="payment_due_day" type="number" min="1" max="31" {...register("payment_due_day")} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="start_date">Start date</Label>
+                  <Label htmlFor="start_date">{t("startDateLabel")}</Label>
                   <Input id="start_date" type="date" {...register("start_date")} />
                 </div>
               </>
@@ -426,14 +423,14 @@ export function AccountFormDialog({
 
           {/* Fee settings */}
           <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
-            <p className="text-sm font-medium">Transfer fees</p>
+            <p className="text-sm font-medium">{t("transferFeesHeading")}</p>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="transfer_tax_rate">Tax rate</Label>
-                <Input id="transfer_tax_rate" type="number" step="0.0001" min="0" placeholder="0.002 = 0.20%" {...register("transfer_tax_rate")} />
+                <Label htmlFor="transfer_tax_rate">{t("taxRateLabel")}</Label>
+                <Input id="transfer_tax_rate" type="number" step="0.0001" min="0" placeholder={t("taxRatePlaceholder")} {...register("transfer_tax_rate")} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="network_fee_amount">Network fee</Label>
+                <Label htmlFor="network_fee_amount">{t("networkFeeLabel")}</Label>
                 <Input id="network_fee_amount" type="number" step="0.01" min="0" {...register("network_fee_amount")} />
               </div>
             </div>
@@ -443,7 +440,7 @@ export function AccountFormDialog({
               render={({ field }) => (
                 <div className="flex items-center justify-between">
                   <Label htmlFor="network_fee_optional" className="font-normal text-muted-foreground">
-                    Network fee is optional (a free, slower option exists)
+                    {t("networkFeeOptionalLabel")}
                   </Label>
                   <Switch
                     id="network_fee_optional"
@@ -457,7 +454,7 @@ export function AccountFormDialog({
 
           <DialogFooter>
             <Button type="submit" disabled={pending}>
-              {pending ? "Saving…" : mode === "create" ? "Add account" : "Save changes"}
+              {pending ? tc("saving") : mode === "create" ? t("addAccountButton") : t("saveChangesButton")}
             </Button>
           </DialogFooter>
         </form>

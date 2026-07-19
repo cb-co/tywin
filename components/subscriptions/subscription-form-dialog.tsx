@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { BILLING_CYCLES, CYCLE_LABEL, type BillingCycle } from "@/lib/subscriptions/cycle";
 import { createSubscription, updateSubscription } from "@/app/(app)/subscriptions/actions";
 import type { QuickAddData } from "@/lib/transactions/queries";
@@ -69,6 +70,8 @@ export function SubscriptionFormDialog({
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
+  const t = useTranslations("SubscriptionForm");
+  const tc = useTranslations("Common");
   const { register, handleSubmit, control, reset } = useForm<Values>({
     defaultValues: defaults(subscription, baseCurrency),
   });
@@ -94,7 +97,7 @@ export function SubscriptionFormDialog({
         toast.error(result.error);
         return;
       }
-      toast.success(mode === "create" ? "Subscription added" : "Subscription updated");
+      toast.success(mode === "create" ? t("toastAdded") : t("toastUpdated"));
       setOpen(false);
       router.refresh();
     });
@@ -106,21 +109,21 @@ export function SubscriptionFormDialog({
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-xl">
-            {mode === "create" ? "New subscription" : "Edit subscription"}
+            {mode === "create" ? t("addTitle") : t("editTitle")}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" placeholder="Netflix" {...register("name")} required />
+              <Label htmlFor="name">{t("nameLabel")}</Label>
+              <Input id="name" placeholder={t("namePlaceholder")} {...register("name")} required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="brand">Brand (optional)</Label>
-              <Input id="brand" placeholder="Netflix, Inc." {...register("brand")} />
+              <Label htmlFor="brand">{t("brandLabel")}</Label>
+              <Input id="brand" placeholder={t("brandPlaceholder")} {...register("brand")} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="amount">Amount</Label>
+              <Label htmlFor="amount">{t("amountLabel")}</Label>
               <div className="flex gap-2">
                 <Input id="amount" type="number" step="0.01" min="0" className="flex-1" {...register("amount")} required />
                 <Controller
@@ -144,7 +147,7 @@ export function SubscriptionFormDialog({
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Billing cycle</Label>
+              <Label>{t("billingCycleLabel")}</Label>
               <Controller
                 control={control}
                 name="billing_cycle"
@@ -165,11 +168,11 @@ export function SubscriptionFormDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="anchor_day">Charge day</Label>
-              <Input id="anchor_day" type="number" min="1" max="31" placeholder="Day of month (1-7 weekly)" {...register("anchor_day")} />
+              <Label htmlFor="anchor_day">{t("chargeDayLabel")}</Label>
+              <Input id="anchor_day" type="number" min="1" max="31" placeholder={t("chargeDayPlaceholder")} {...register("anchor_day")} />
             </div>
             <div className="space-y-2">
-              <Label>Charge account</Label>
+              <Label>{t("chargeAccountLabel")}</Label>
               <Controller
                 control={control}
                 name="account_id"
@@ -179,7 +182,7 @@ export function SubscriptionFormDialog({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="none">{tc("none")}</SelectItem>
                       {accounts.map((a) => (
                         <SelectItem key={a.id} value={a.id}>
                           {a.name}
@@ -191,7 +194,7 @@ export function SubscriptionFormDialog({
               />
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label>Category</Label>
+              <Label>{t("categoryLabel")}</Label>
               <Controller
                 control={control}
                 name="category_id"
@@ -201,7 +204,7 @@ export function SubscriptionFormDialog({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="none">{tc("none")}</SelectItem>
                       {categories.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.emoji ? `${c.emoji} ` : ""}
@@ -221,7 +224,7 @@ export function SubscriptionFormDialog({
             render={({ field }) => (
               <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-3">
                 <Label htmlFor="is_active" className="font-normal">
-                  Active
+                  {t("activeLabel")}
                 </Label>
                 <Switch id="is_active" checked={field.value} onCheckedChange={field.onChange} />
               </div>
@@ -230,7 +233,7 @@ export function SubscriptionFormDialog({
 
           <DialogFooter>
             <Button type="submit" disabled={pending}>
-              {pending ? "Saving…" : mode === "create" ? "Add subscription" : "Save changes"}
+              {pending ? tc("saving") : mode === "create" ? t("addButton") : t("saveChangesButton")}
             </Button>
           </DialogFooter>
         </form>

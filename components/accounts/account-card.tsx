@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { formatMoney, formatPercent, formatDayOfMonth } from "@/lib/format";
@@ -14,6 +15,8 @@ function utilizationTone(pct: number) {
 }
 
 export function AccountCard({ account }: { account: AccountWithStatus }) {
+  const t = useTranslations("Accounts");
+  const tType = useTranslations("AccountTypes");
   const type = account.type as AccountType;
   const meta = accountTypeMeta(type);
   const Icon = meta.icon;
@@ -38,7 +41,7 @@ export function AccountCard({ account }: { account: AccountWithStatus }) {
             <div className="min-w-0">
               <p className="truncate font-medium text-foreground">{account.name}</p>
               <p className="text-xs text-muted-foreground">
-                {meta.label} · {currency}
+                {tType(type)} · {currency}
               </p>
             </div>
           </div>
@@ -66,7 +69,7 @@ export function AccountCard({ account }: { account: AccountWithStatus }) {
             <p className="figure text-2xl leading-none text-foreground">
               {formatMoney(account.balance ?? account.starting_balance, currency)}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">Current balance</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("currentBalance")}</p>
           </div>
         )}
       </Card>
@@ -87,12 +90,13 @@ function CardBody({
   dueDay: number | null;
   currency: string;
 }) {
+  const t = useTranslations("Accounts");
   return (
     <div className="mt-5 space-y-3">
       <div className="flex items-end justify-between">
         <div>
           <p className="figure text-2xl leading-none text-foreground">{formatMoney(owed, currency)}</p>
-          <p className="mt-1 text-xs text-muted-foreground">Owed</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t("owed")}</p>
         </div>
         {util !== null ? (
           <span className={cn("text-sm font-medium", utilizationTone(util))}>
@@ -102,8 +106,8 @@ function CardBody({
       </div>
       {util !== null ? <Progress value={Math.min(util, 100)} /> : null}
       <div className="flex justify-between text-xs text-muted-foreground">
-        <span>{limit ? `Limit ${formatMoney(limit, currency)}` : "No limit set"}</span>
-        {dueDay ? <span>Due the {formatDayOfMonth(dueDay)}</span> : null}
+        <span>{limit ? t("limitAmount", { amount: formatMoney(limit, currency) }) : t("noLimitSet")}</span>
+        {dueDay ? <span>{t("dueThe", { day: formatDayOfMonth(dueDay) })}</span> : null}
       </div>
     </div>
   );
@@ -122,17 +126,18 @@ function LoanBody({
   installment: number | null;
   currency: string;
 }) {
+  const t = useTranslations("Accounts");
   const pct = term && term > 0 ? Math.min((paid / term) * 100, 100) : 0;
   return (
     <div className="mt-5 space-y-3">
       <div>
         <p className="figure text-2xl leading-none text-foreground">{formatMoney(outstanding, currency)}</p>
-        <p className="mt-1 text-xs text-muted-foreground">Outstanding</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t("outstanding")}</p>
       </div>
       {term ? <Progress value={pct} /> : null}
       <div className="flex justify-between text-xs text-muted-foreground">
-        <span>{term ? `${paid} / ${term} paid` : `${paid} paid`}</span>
-        {installment ? <span>{formatMoney(installment, currency)}/mo</span> : null}
+        <span>{term ? t("paidOfTerm", { paid, term }) : t("paidOnly", { paid })}</span>
+        {installment ? <span>{t("perMonth", { amount: formatMoney(installment, currency) })}</span> : null}
       </div>
     </div>
   );

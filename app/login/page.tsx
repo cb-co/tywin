@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { LoginForm } from "@/components/auth/login-form";
 import { Logo, Wordmark } from "@/components/brand/logo";
@@ -15,6 +16,7 @@ export default async function LoginPage({
   if (user) redirect("/");
 
   const { error } = await searchParams;
+  const t = await getTranslations("Login");
 
   return (
     <main className="grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">
@@ -26,15 +28,12 @@ export default async function LoginPage({
         </div>
         <div className="relative z-10 max-w-md space-y-4">
           <h2 className="text-4xl font-semibold leading-[1.1] tracking-tight">
-            Every account, card, and colón in one calm view.
+            {t("heroTitle")}
           </h2>
-          <p className="text-primary-foreground/75">
-            Track balances, budgets, and subscriptions across currencies, and
-            never miss a payment date again.
-          </p>
+          <p className="text-primary-foreground/75">{t("heroBody")}</p>
         </div>
         <p className="relative z-10 text-xs text-primary-foreground/60">
-          Private by design. Your data, your eyes only.
+          {t("heroFootnote")}
         </p>
         <div
           aria-hidden
@@ -55,15 +54,13 @@ export default async function LoginPage({
           </div>
           <div className="space-y-1.5">
             <h1 className="text-3xl font-semibold tracking-tight">
-              Welcome back
+              {t("welcomeBack")}
             </h1>
-            <p className="text-sm text-muted-foreground">
-              Sign in to pick up where you left off.
-            </p>
+            <p className="text-sm text-muted-foreground">{t("welcomeBody")}</p>
           </div>
           {error ? (
             <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              That sign-in link didn&apos;t work. Please try again.
+              {t("linkError")}
             </p>
           ) : null}
           <LoginForm />

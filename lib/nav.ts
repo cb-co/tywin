@@ -9,16 +9,17 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-export type NavItem = { href: string; label: string; icon: LucideIcon };
+export type NavItem = { href: string; key: string; icon: LucideIcon };
 
+/** `key` looks up a label in the `Nav` messages namespace. */
 export const NAV_ITEMS: NavItem[] = [
-  { href: "/", label: "Overview", icon: LayoutDashboard },
-  { href: "/accounts", label: "Accounts", icon: Wallet },
-  { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
-  { href: "/budgets", label: "Budgets", icon: PieChart },
-  { href: "/subscriptions", label: "Subscriptions", icon: Repeat },
-  { href: "/insights", label: "Insights", icon: LineChart },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/", key: "overview", icon: LayoutDashboard },
+  { href: "/accounts", key: "accounts", icon: Wallet },
+  { href: "/transactions", key: "transactions", icon: ArrowLeftRight },
+  { href: "/budgets", key: "budgets", icon: PieChart },
+  { href: "/subscriptions", key: "subscriptions", icon: Repeat },
+  { href: "/insights", key: "insights", icon: LineChart },
+  { href: "/settings", key: "settings", icon: Settings },
 ];
 
 export const MOBILE_PRIMARY_HREFS: string[] = [

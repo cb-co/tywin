@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Search, ArrowLeftRight } from "lucide-react";
 import { deleteTransaction } from "@/app/(app)/transactions/actions";
 import type { TransactionWithRefs, QuickAddData } from "@/lib/transactions/queries";
@@ -35,6 +36,8 @@ export function Ledger({
   const { accounts, categories } = data;
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("Transactions");
+  const tType = useTranslations("TransactionTypes");
   const [type, setType] = useState("all");
   const [accountId, setAccountId] = useState("all");
   const [categoryId, setCategoryId] = useState("all");
@@ -67,7 +70,7 @@ export function Ledger({
       const result = await deleteTransaction(id);
       if (result.error) toast.error(result.error);
       else {
-        toast.success("Transaction deleted");
+        toast.success(t("transactionDeleted"));
         router.refresh();
       }
     });
@@ -79,7 +82,7 @@ export function Ledger({
         <div className="relative min-w-40 flex-1">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search descriptions"
+            placeholder={t("searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8"
@@ -90,10 +93,10 @@ export function Ledger({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All types</SelectItem>
-            {TRANSACTION_TYPES.map((t) => (
-              <SelectItem key={t} value={t}>
-                {t[0].toUpperCase() + t.slice(1)}
+            <SelectItem value="all">{t("allTypes")}</SelectItem>
+            {TRANSACTION_TYPES.map((tt) => (
+              <SelectItem key={tt} value={tt}>
+                {tType(tt)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -103,7 +106,7 @@ export function Ledger({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All accounts</SelectItem>
+            <SelectItem value="all">{t("allAccounts")}</SelectItem>
             {accounts.map((a) => (
               <SelectItem key={a.id} value={a.id}>
                 {a.name}
@@ -116,7 +119,7 @@ export function Ledger({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All categories</SelectItem>
+            <SelectItem value="all">{t("allCategories")}</SelectItem>
             {categories.map((c) => (
               <SelectItem key={c.id} value={c.id}>
                 {c.name}
@@ -129,11 +132,11 @@ export function Ledger({
       {filtered.length === 0 ? (
         <EmptyState
           icon={<ArrowLeftRight className="size-6" />}
-          title={transactions.length === 0 ? "No transactions yet" : "Nothing matches those filters"}
+          title={transactions.length === 0 ? t("emptyTitleNone") : t("emptyTitleFiltered")}
           description={
             transactions.length === 0
-              ? "Use Quick-Add (the + button or ⌘K) to log your first expense, income, or payment."
-              : "Try clearing a filter or search term."
+              ? t("emptyDescriptionNone")
+              : t("emptyDescriptionFiltered")
           }
         />
       ) : (

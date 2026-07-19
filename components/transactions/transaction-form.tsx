@@ -4,6 +4,7 @@ import { useEffect, useTransition } from "react";
 import { useForm, useWatch, Controller } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { TRANSACTION_TYPES, type TransactionType } from "@/lib/transactions/schema";
 import { createTransaction, updateTransaction } from "@/app/(app)/transactions/actions";
@@ -35,18 +36,6 @@ type FormValues = {
   description: string;
 };
 
-const TYPE_LABELS: Record<TransactionType, string> = {
-  expense: "Expense",
-  income: "Income",
-  payment: "Payment",
-};
-
-const SOURCE_LABEL: Record<TransactionType, string> = {
-  expense: "Paid from",
-  income: "Received into",
-  payment: "From",
-};
-
 function nowLocal() {
   const d = new Date();
   const off = d.getTimezoneOffset();
@@ -75,7 +64,16 @@ export function TransactionForm({
   const { accounts, categories, currencies, baseCurrency } = data;
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("TransactionForm");
+  const tType = useTranslations("TransactionTypes");
+  const tc = useTranslations("Common");
   const isEdit = mode === "edit";
+
+  const SOURCE_LABEL: Record<TransactionType, string> = {
+    expense: t("sourceLabelExpense"),
+    income: t("sourceLabelIncome"),
+    payment: t("sourceLabelPayment"),
+  };
 
   const firstAccount = accounts.find((a) => a.id === defaultAccountId) ?? accounts[0];
 
@@ -168,7 +166,7 @@ export function TransactionForm({
         toast.error(result.error);
         return;
       }
-      toast.success(isEdit ? "Transaction updated" : "Transaction saved");
+      toast.success(isEdit ? t("toastUpdated") : t("toastSaved"));
       onSuccess?.();
       router.refresh();
     });
@@ -177,7 +175,7 @@ export function TransactionForm({
   if (accounts.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        Add an account first — transactions need somewhere to land.
+        {t("noAccountsHint")}
       </p>
     );
   }
@@ -202,7 +200,7 @@ export function TransactionForm({
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                {TYPE_LABELS[t]}
+                {tType(t)}
               </button>
             ))}
           </div>
@@ -211,9 +209,9 @@ export function TransactionForm({
 
       {/* Amount + currency */}
       <div className="space-y-2">
-        <Label htmlFor="amount">Amount</Label>
+        <Label htmlFor="amount">{t("amountLabel")}</Label>
         <div className="flex gap-2">
-          <Input id="amount" type="number" step="0.01" min="0" placeholder="0.00" className="flex-1" {...register("amount")} required />
+          <Input id="amount" type="number" step="0.01" min="0" placeholder={t("amountPlaceholder")} className="flex-1" {...register("amount")} required />
           <Controller
             control={control}
             name="currency"
@@ -236,7 +234,7 @@ export function TransactionForm({
         {!rateLocked ? (
           <div className="flex items-center gap-2 pt-1">
             <Label htmlFor="exchange_rate" className="text-xs font-normal text-muted-foreground">
-              1 {currency} =
+              {t("exchangeRatePrefix", { currency })}
             </Label>
             <Input id="exchange_rate" type="number" step="0.00000001" min="0" className="h-8 w-32" disabled={isEdit} {...register("exchange_rate")} />
             <span className="text-xs text-muted-foreground">{baseCurrency}</span>
@@ -270,14 +268,14 @@ export function TransactionForm({
       {/* Destination (payment only) */}
       {type === "payment" ? (
         <div className="space-y-2">
-          <Label>To</Label>
+          <Label>{t("toLabel")}</Label>
           <Controller
             control={control}
             name="to_account_id"
             render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Choose destination" />
+                  <SelectValue placeholder={t("toPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {accounts
@@ -297,7 +295,10 @@ export function TransactionForm({
       {/* Category (expense + payment) */}
       {type !== "income" ? (
         <div className="space-y-2">
-          <Label>Category{type === "payment" ? " (optional)" : ""}</Label>
+          <Label>
+            {t("categoryLabel")}
+            {type === "payment" ? t("categoryOptionalSuffix") : ""}
+          </Label>
           <Controller
             control={control}
             name="category_id"
@@ -307,7 +308,7 @@ export function TransactionForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {type === "payment" ? <SelectItem value="none">No category</SelectItem> : null}
+                  {type === "payment" ? <SelectItem value="none">{t("noCategory")}</SelectItem> : null}
                   {categories.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.emoji ? `${c.emoji} ` : ""}
@@ -330,7 +331,7 @@ export function TransactionForm({
             render={({ field }) => (
               <ToggleRow
                 id="include_tax"
-                label="Apply transfer tax"
+                label={t("applyTaxLabel")}
                 checked={field.value}
                 onChange={field.onChange}
               />
@@ -342,8 +343,8 @@ export function TransactionForm({
             render={({ field }) => (
               <ToggleRow
                 id="include_commission"
-                label="Apply network fee"
-                hint={sameBankPayment ? "Free within the same bank" : undefined}
+                label={t("applyFeeLabel")}
+                hint={sameBankPayment ? t("freeSameBankHint") : undefined}
                 checked={field.value && !sameBankPayment}
                 onChange={field.onChange}
                 disabled={sameBankPayment}
@@ -357,7 +358,7 @@ export function TransactionForm({
               render={({ field }) => (
                 <ToggleRow
                   id="budget_only"
-                  label="Budget only (don't affect balance)"
+                  label={t("budgetOnlyLabel")}
                   checked={field.value}
                   onChange={field.onChange}
                 />
@@ -370,17 +371,17 @@ export function TransactionForm({
       {/* Date + description */}
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="occurred_at">Date</Label>
+          <Label htmlFor="occurred_at">{t("dateLabel")}</Label>
           <Input id="occurred_at" type="datetime-local" {...register("occurred_at")} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
-          <Input id="description" placeholder="Optional note" {...register("description")} />
+          <Label htmlFor="description">{t("descriptionLabel")}</Label>
+          <Input id="description" placeholder={t("descriptionPlaceholder")} {...register("description")} />
         </div>
       </div>
 
       <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? "Saving…" : isEdit ? "Save changes" : "Save transaction"}
+        {pending ? tc("saving") : isEdit ? t("saveChangesButton") : t("saveButton")}
       </Button>
     </form>
   );

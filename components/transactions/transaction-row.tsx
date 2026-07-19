@@ -1,4 +1,5 @@
 import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Trash2, Pencil } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { formatMoney } from "@/lib/format";
 import type { TransactionWithRefs, QuickAddData } from "@/lib/transactions/queries";
 import { TransactionDialog } from "./transaction-dialog";
@@ -22,13 +23,18 @@ export function TransactionRow({
   onDelete: (id: string) => void;
   pending: boolean;
 }) {
+  const t = useTranslations("Transactions");
+  const tType = useTranslations("TransactionTypes");
   const Icon = TYPE_ICON[txn.type];
   const category = txn.category;
   const account = txn.account;
   const toAccount = txn.to_account;
 
   const title =
-    txn.description || category?.name || (txn.type === "income" ? "Income" : account?.name) || "Transaction";
+    txn.description ||
+    category?.name ||
+    (txn.type === "income" ? tType("income") : account?.name) ||
+    t("transactionFallbackTitle");
 
   const subtitle =
     txn.type === "payment" && toAccount
@@ -63,7 +69,7 @@ export function TransactionRow({
           {title}
           {txn.budget_only ? (
             <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-              budget only
+              {t("budgetOnlyBadge")}
             </span>
           ) : null}
         </p>
@@ -76,7 +82,7 @@ export function TransactionRow({
         </p>
         {hasExtras ? (
           <p className="text-[11px] text-muted-foreground">
-            incl. {formatMoney(txn.tax_amount + txn.fee_amount, txn.currency)} fees
+            {t("inclFees", { amount: formatMoney(txn.tax_amount + txn.fee_amount, txn.currency) })}
           </p>
         ) : null}
       </div>
@@ -87,7 +93,7 @@ export function TransactionRow({
           transaction={txn}
           data={data}
           trigger={
-            <Button variant="ghost" size="icon-sm" aria-label="Edit transaction" className="text-muted-foreground">
+            <Button variant="ghost" size="icon-sm" aria-label={t("editAria")} className="text-muted-foreground">
               <Pencil className="size-4" />
             </Button>
           }
@@ -95,7 +101,7 @@ export function TransactionRow({
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label="Delete transaction"
+          aria-label={t("deleteAria")}
           className="text-muted-foreground hover:text-destructive"
           onClick={() => onDelete(txn.id)}
           disabled={pending}

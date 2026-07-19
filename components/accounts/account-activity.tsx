@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, ArrowLeftRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { deleteTransaction } from "@/app/(app)/transactions/actions";
 import { TransactionRow } from "@/components/transactions/transaction-row";
 import { TransactionDialog } from "@/components/transactions/transaction-dialog";
@@ -21,6 +22,7 @@ export function AccountActivity({
   transactions: TransactionWithRefs[];
   data: QuickAddData;
 }) {
+  const t = useTranslations("AccountDetail");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -29,7 +31,7 @@ export function AccountActivity({
       const result = await deleteTransaction(id);
       if (result.error) toast.error(result.error);
       else {
-        toast.success("Transaction deleted");
+        toast.success(t("transactionDeleted"));
         router.refresh();
       }
     });
@@ -38,7 +40,7 @@ export function AccountActivity({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-medium text-foreground">Recent activity</h2>
+        <h2 className="text-lg font-medium text-foreground">{t("recentActivity")}</h2>
         <TransactionDialog
           mode="create"
           defaultAccountId={accountId}
@@ -46,7 +48,7 @@ export function AccountActivity({
           trigger={
             <Button size="sm">
               <Plus className="size-4" />
-              Add transaction
+              {t("addTransaction")}
             </Button>
           }
         />
@@ -54,8 +56,8 @@ export function AccountActivity({
       {transactions.length === 0 ? (
         <EmptyState
           icon={<ArrowLeftRight className="size-6" />}
-          title="No activity yet"
-          description="Log an expense, income, or payment for this account to see it here."
+          title={t("noActivityTitle")}
+          description={t("noActivityDescription")}
         />
       ) : (
         <Card className="divide-y px-5 py-0">

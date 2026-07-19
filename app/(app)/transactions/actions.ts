@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { transactionInput, type TransactionInput } from "@/lib/transactions/schema";
 
@@ -38,11 +39,12 @@ function revalidate() {
 }
 
 export async function createTransaction(input: unknown): Promise<Result> {
+  const t = await getTranslations("Common");
   const parsed = transactionInput.safeParse(input);
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? t("invalidInput") };
 
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You're not signed in." };
+  if (!user) return { error: t("notSignedIn") };
 
   // currency + exchange_rate are set only on insert (immutable thereafter).
   const { data, error } = await supabase
@@ -62,11 +64,12 @@ export async function createTransaction(input: unknown): Promise<Result> {
 }
 
 export async function updateTransaction(id: string, input: unknown): Promise<Result> {
+  const t = await getTranslations("Common");
   const parsed = transactionInput.safeParse(input);
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? t("invalidInput") };
 
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You're not signed in." };
+  if (!user) return { error: t("notSignedIn") };
 
   // Never send currency/exchange_rate — the DB forbids changing them.
   const { error } = await supabase.from("transactions").update(toRow(parsed.data)).eq("id", id);
@@ -76,8 +79,9 @@ export async function updateTransaction(id: string, input: unknown): Promise<Res
 }
 
 export async function deleteTransaction(id: string): Promise<Result> {
+  const t = await getTranslations("Common");
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You're not signed in." };
+  if (!user) return { error: t("notSignedIn") };
   const { error } = await supabase.from("transactions").delete().eq("id", id);
   if (error) return { error: error.message };
   revalidate();

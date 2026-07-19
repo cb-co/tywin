@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getAccountById, getCurrencies, getCardGroups, getBanks } from "@/lib/accounts/queries";
 import { getAccountTransactions, getQuickAddData } from "@/lib/transactions/queries";
 import { AccountActivity } from "@/components/accounts/account-activity";
@@ -29,6 +30,9 @@ export default async function AccountDetailPage({
     getQuickAddData(),
   ]);
   if (!account) notFound();
+
+  const t = await getTranslations("AccountDetail");
+  const tType = await getTranslations("AccountTypes");
 
   const supabase = await createClient();
   const { data: profile } = await supabase
@@ -63,7 +67,7 @@ export default async function AccountDetailPage({
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="size-4" />
-        Accounts
+        {t("backLink")}
       </Link>
 
       <div className="flex flex-wrap items-start justify-between gap-4 border-b pb-5">
@@ -84,8 +88,8 @@ export default async function AccountDetailPage({
               {account.name}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {meta.label} · {currency}
-              {account.is_archived ? " · Archived" : ""}
+              {tType(type)} · {currency}
+              {account.is_archived ? ` · ${t("archived")}` : ""}
             </p>
           </div>
         </div>
@@ -102,14 +106,14 @@ export default async function AccountDetailPage({
       <Card className="p-7">
         {isCardType ? (
           <>
-            <p className="text-sm font-medium text-muted-foreground">Balance owed</p>
+            <p className="text-sm font-medium text-muted-foreground">{t("balanceOwed")}</p>
             <p className="figure mt-2 text-4xl leading-none text-foreground">
               {formatMoney(owed, currency)}
             </p>
             {util !== null ? (
               <div className="mt-4 max-w-sm space-y-2">
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Utilization</span>
+                  <span>{t("utilization")}</span>
                   <span>{formatPercent(util)}</span>
                 </div>
                 <Progress value={Math.min(util, 100)} />
@@ -117,13 +121,13 @@ export default async function AccountDetailPage({
             ) : null}
             {account.payment_due_day ? (
               <p className="mt-3 text-sm text-muted-foreground">
-                Payment due the {formatDayOfMonth(account.payment_due_day)} each month.
+                {t("paymentDueEachMonth", { day: formatDayOfMonth(account.payment_due_day) })}
               </p>
             ) : null}
           </>
         ) : isLoanType ? (
           <>
-            <p className="text-sm font-medium text-muted-foreground">Outstanding balance</p>
+            <p className="text-sm font-medium text-muted-foreground">{t("outstandingBalance")}</p>
             <p className="figure mt-2 text-4xl leading-none text-foreground">
               {formatMoney(outstanding, currency)}
             </p>
@@ -131,21 +135,23 @@ export default async function AccountDetailPage({
               <div className="mt-4 max-w-sm space-y-2">
                 <Progress value={Math.min((progressPaid / progressTerm) * 100, 100)} />
                 <p className="text-sm text-muted-foreground">
-                  {progressPaid} of {progressTerm} installments paid
+                  {t("installmentsPaidOfTerm", { paid: progressPaid, term: progressTerm })}
                 </p>
               </div>
             ) : (
-              <p className="mt-3 text-sm text-muted-foreground">{progressPaid} installments paid</p>
+              <p className="mt-3 text-sm text-muted-foreground">
+                {t("installmentsPaidOnly", { paid: progressPaid })}
+              </p>
             )}
           </>
         ) : (
           <>
-            <p className="text-sm font-medium text-muted-foreground">Current balance</p>
+            <p className="text-sm font-medium text-muted-foreground">{t("currentBalance")}</p>
             <p className="figure mt-2 text-4xl leading-none text-foreground">
               {formatMoney(account.balance ?? account.starting_balance, currency)}
             </p>
             <p className="mt-3 text-sm text-muted-foreground">
-              Derived from a starting balance of {formatMoney(account.starting_balance, currency)}.
+              {t("derivedFromStarting", { amount: formatMoney(account.starting_balance, currency) })}
             </p>
           </>
         )}
@@ -153,7 +159,7 @@ export default async function AccountDetailPage({
 
       {!isCardType && !isLoanType ? (
         <Card className="p-6">
-          <h2 className="mb-4 text-lg font-medium text-foreground">Balance over time</h2>
+          <h2 className="mb-4 text-lg font-medium text-foreground">{t("balanceOverTime")}</h2>
           <BalanceChart
             accountId={account.id}
             startingBalance={account.starting_balance}
@@ -175,7 +181,7 @@ export default async function AccountDetailPage({
 
       {isLoanType ? (
         <Card className="p-6">
-          <h2 className="text-lg font-medium">Amortization schedule</h2>
+          <h2 className="text-lg font-medium">{t("amortizationSchedule")}</h2>
           <div className="mt-4">
             <AmortizationTable
               principal={account.principal ?? 0}
@@ -191,19 +197,19 @@ export default async function AccountDetailPage({
 
       {/* Fee settings summary */}
       <Card className="p-6">
-        <h2 className="text-lg font-medium">Transfer fees</h2>
+        <h2 className="text-lg font-medium">{t("transferFees")}</h2>
         <dl className="mt-4 grid gap-4 sm:grid-cols-3 text-sm">
           <div>
-            <dt className="text-muted-foreground">Tax rate</dt>
+            <dt className="text-muted-foreground">{t("taxRate")}</dt>
             <dd className="tabular-nums">{formatPercent(account.transfer_tax_rate * 100)}</dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Network fee</dt>
+            <dt className="text-muted-foreground">{t("networkFee")}</dt>
             <dd className="tabular-nums">{formatMoney(account.network_fee_amount, currency)}</dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Fee is</dt>
-            <dd>{account.network_fee_optional ? "Optional" : "Obligatory"}</dd>
+            <dt className="text-muted-foreground">{t("feeIs")}</dt>
+            <dd>{account.network_fee_optional ? t("optional") : t("obligatory")}</dd>
           </div>
         </dl>
       </Card>

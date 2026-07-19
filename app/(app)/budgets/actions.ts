@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { addMonths } from "@/lib/budgets/month";
 
@@ -22,10 +23,11 @@ const setBudgetSchema = z.object({
 });
 
 export async function setBudget(input: unknown): Promise<Result> {
+  const t = await getTranslations("Common");
   const parsed = setBudgetSchema.safeParse(input);
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? t("invalidInput") };
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You're not signed in." };
+  if (!user) return { error: t("notSignedIn") };
 
   const { error } = await supabase
     .from("category_budgets")
@@ -39,17 +41,21 @@ export async function setBudget(input: unknown): Promise<Result> {
   return {};
 }
 
-const categorySchema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(40),
-  emoji: z.string().trim().max(8).optional().or(z.literal("")),
-  color: z.string().trim().max(9).optional().or(z.literal("")),
-});
+function categorySchema(nameRequiredMessage: string) {
+  return z.object({
+    name: z.string().trim().min(1, nameRequiredMessage).max(40),
+    emoji: z.string().trim().max(8).optional().or(z.literal("")),
+    color: z.string().trim().max(9).optional().or(z.literal("")),
+  });
+}
 
 export async function createCategory(input: unknown): Promise<Result> {
-  const parsed = categorySchema.safeParse(input);
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  const t = await getTranslations("Common");
+  const tb = await getTranslations("Budgets");
+  const parsed = categorySchema(tb("categoryNameRequired")).safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? t("invalidInput") };
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You're not signed in." };
+  if (!user) return { error: t("notSignedIn") };
 
   const { data: last } = await supabase
     .from("categories")
@@ -75,10 +81,12 @@ export async function createCategory(input: unknown): Promise<Result> {
 }
 
 export async function updateCategory(id: string, input: unknown): Promise<Result> {
-  const parsed = categorySchema.safeParse(input);
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  const t = await getTranslations("Common");
+  const tb = await getTranslations("Budgets");
+  const parsed = categorySchema(tb("categoryNameRequired")).safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? t("invalidInput") };
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You're not signed in." };
+  if (!user) return { error: t("notSignedIn") };
   const { error } = await supabase
     .from("categories")
     .update({
@@ -94,8 +102,9 @@ export async function updateCategory(id: string, input: unknown): Promise<Result
 }
 
 export async function deleteCategory(id: string): Promise<Result> {
+  const t = await getTranslations("Common");
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You're not signed in." };
+  if (!user) return { error: t("notSignedIn") };
   const { error } = await supabase.from("categories").delete().eq("id", id);
   if (error) return { error: error.message };
   revalidatePath("/budgets");
@@ -104,9 +113,11 @@ export async function deleteCategory(id: string): Promise<Result> {
 }
 
 export async function copyPreviousMonth(month: string): Promise<Result> {
-  if (!/^\d{4}-\d{2}-01$/.test(month)) return { error: "Bad month." };
+  const t = await getTranslations("Common");
+  const tb = await getTranslations("Budgets");
+  if (!/^\d{4}-\d{2}-01$/.test(month)) return { error: tb("badMonth") };
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You're not signed in." };
+  if (!user) return { error: t("notSignedIn") };
 
   const prev = addMonths(month, -1);
   const { data: prevBudgets } = await supabase
@@ -115,7 +126,7 @@ export async function copyPreviousMonth(month: string): Promise<Result> {
     .eq("month", prev);
 
   if (!prevBudgets || prevBudgets.length === 0)
-    return { error: "No budgets to copy from last month." };
+    return { error: tb("noBudgetsToCopy") };
 
   const { error } = await supabase.from("category_budgets").upsert(
     prevBudgets.map((b) => ({

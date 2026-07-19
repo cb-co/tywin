@@ -1,63 +1,45 @@
 import Link from "next/link";
 import { Wallet, PieChart, Repeat, ArrowUpRight, CalendarClock } from "lucide-react";
+import { getTranslations, getLocale } from "next-intl/server";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getOverview } from "@/lib/overview/queries";
 import { formatMoney, formatPercent } from "@/lib/format";
 
-const STARTERS = [
-  {
-    href: "/accounts",
-    icon: Wallet,
-    tint: "var(--chart-1)",
-    title: "Accounts & cards",
-    body: "Add bank accounts, credit cards, and loans to see balances and utilization.",
-  },
-  {
-    href: "/budgets",
-    icon: PieChart,
-    tint: "var(--chart-2)",
-    title: "Budgets",
-    body: "Set a monthly budget per category and watch what's used and what's left.",
-  },
-  {
-    href: "/subscriptions",
-    icon: Repeat,
-    tint: "var(--chart-3)",
-    title: "Subscriptions",
-    body: "Track recurring charges and their next payment dates in one place.",
-  },
+const STARTER_CARDS = [
+  { href: "/accounts", icon: Wallet, tint: "var(--chart-1)", key: "Accounts" as const },
+  { href: "/budgets", icon: PieChart, tint: "var(--chart-2)", key: "Budgets" as const },
+  { href: "/subscriptions", icon: Repeat, tint: "var(--chart-3)", key: "Subscriptions" as const },
 ];
-
-const upcomingFmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
 
 export default async function OverviewPage() {
   const o = await getOverview();
+  const t = await getTranslations("Overview");
+  const locale = await getLocale();
+  const upcomingFmt = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric" });
 
   if (!o.hasAccounts) {
     return (
       <div className="mx-auto max-w-5xl space-y-8">
-        <PageHeader title="Good to see you" description="Your money at a glance, once your accounts are set up." />
+        <PageHeader title={t("greetingTitle")} description={t("greetingDescription")} />
         <Card className="relative overflow-hidden p-7">
           <div
             aria-hidden
             className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary/5"
           />
-          <p className="text-sm font-medium text-muted-foreground">Net worth</p>
+          <p className="text-sm font-medium text-muted-foreground">{t("netWorth")}</p>
           <p className="figure mt-2 text-5xl leading-none text-foreground">
             {formatMoney(0, o.baseCurrency)}
           </p>
-          <p className="mt-3 max-w-md text-sm text-muted-foreground">
-            Add your first account and every balance, in any currency, rolls up here in your base currency.
-          </p>
+          <p className="mt-3 max-w-md text-sm text-muted-foreground">{t("netWorthEmptyBody")}</p>
           <Button className="mt-5" nativeButton={false} render={<Link href="/accounts" />}>
-            Add an account
+            {t("addAccount")}
             <ArrowUpRight className="size-4" />
           </Button>
         </Card>
         <div className="grid gap-4 sm:grid-cols-3">
-          {STARTERS.map(({ href, icon: Icon, tint, title, body }) => (
+          {STARTER_CARDS.map(({ href, icon: Icon, tint, key }) => (
             <Link key={href} href={href} className="group">
               <Card className="h-full p-5 transition-colors group-hover:border-primary/40">
                 <span
@@ -66,8 +48,8 @@ export default async function OverviewPage() {
                 >
                   <Icon className="size-5" />
                 </span>
-                <p className="mt-4 text-lg font-medium text-foreground">{title}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{body}</p>
+                <p className="mt-4 text-lg font-medium text-foreground">{t(`starter${key}Title`)}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{t(`starter${key}Body`)}</p>
               </Card>
             </Link>
           ))}
@@ -80,7 +62,7 @@ export default async function OverviewPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
-      <PageHeader title="Overview" description="Your money at a glance." />
+      <PageHeader title={t("title")} description={t("description")} />
 
       {/* Net worth hero */}
       <Card className="relative overflow-hidden p-7">
@@ -88,25 +70,27 @@ export default async function OverviewPage() {
           aria-hidden
           className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary/5"
         />
-        <p className="text-sm font-medium text-muted-foreground">Net worth</p>
+        <p className="text-sm font-medium text-muted-foreground">{t("netWorth")}</p>
         <p className="figure mt-2 text-5xl leading-none text-foreground">
           {formatMoney(o.netWorth, o.baseCurrency)}
         </p>
-        <p className="mt-3 text-sm text-muted-foreground">Assets minus cards and loans, in {o.baseCurrency}.</p>
+        <p className="mt-3 text-sm text-muted-foreground">
+          {t("netWorthBody", { currency: o.baseCurrency })}
+        </p>
       </Card>
 
       {/* Stat cards */}
       <div className="grid gap-4 sm:grid-cols-3">
         <Card className="p-5">
-          <p className="text-xs text-muted-foreground">Income this month</p>
+          <p className="text-xs text-muted-foreground">{t("incomeThisMonth")}</p>
           <p className="figure mt-1.5 text-2xl text-success">{formatMoney(o.monthIncome, o.baseCurrency)}</p>
         </Card>
         <Card className="p-5">
-          <p className="text-xs text-muted-foreground">Spending this month</p>
+          <p className="text-xs text-muted-foreground">{t("spendingThisMonth")}</p>
           <p className="figure mt-1.5 text-2xl text-foreground">{formatMoney(o.monthExpense, o.baseCurrency)}</p>
         </Card>
         <Card className="p-5">
-          <p className="text-xs text-muted-foreground">Budget used</p>
+          <p className="text-xs text-muted-foreground">{t("budgetUsed")}</p>
           <p className="figure mt-1.5 text-2xl text-foreground">
             {o.totalBudget > 0 ? formatPercent(budgetPct) : "—"}
           </p>
@@ -121,11 +105,9 @@ export default async function OverviewPage() {
 
       {/* Upcoming rail */}
       <div className="space-y-3">
-        <h2 className="text-lg font-medium text-foreground">Upcoming</h2>
+        <h2 className="text-lg font-medium text-foreground">{t("upcoming")}</h2>
         {o.upcoming.length === 0 ? (
-          <Card className="p-6 text-sm text-muted-foreground">
-            No card due dates, loan installments, or subscription charges scheduled.
-          </Card>
+          <Card className="p-6 text-sm text-muted-foreground">{t("upcomingEmpty")}</Card>
         ) : (
           <Card className="divide-y p-0">
             {o.upcoming.map((item) => (

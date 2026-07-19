@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { buildSchedule } from "@/lib/accounts/amortization";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -18,11 +19,12 @@ export function AmortizationTable({
   currency: string;
   installmentsPaid: number;
 }) {
+  const t = useTranslations("AccountDetail");
   const rows = buildSchedule({ principal, annualRate, termMonths, installment });
   if (rows.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        Add a principal, rate, and term to see the amortization schedule.
+        {t("addPrincipalRateTerm")}
       </p>
     );
   }
@@ -32,11 +34,11 @@ export function AmortizationTable({
       <table className="w-full min-w-[28rem] text-sm">
         <thead>
           <tr className="border-b text-left text-xs text-muted-foreground">
-            <th className="w-10 py-2 pr-3 font-medium">#</th>
-            <th className="py-2 pr-4 font-medium">Payment</th>
-            <th className="py-2 pr-4 font-medium">Interest</th>
-            <th className="py-2 pr-4 font-medium">Principal</th>
-            <th className="py-2 text-right font-medium">Balance</th>
+            <th className="w-10 py-2 pr-3 font-medium">{t("columnNumber")}</th>
+            <th className="py-2 pr-4 font-medium">{t("columnPayment")}</th>
+            <th className="py-2 pr-4 font-medium">{t("columnInterest")}</th>
+            <th className="py-2 pr-4 font-medium">{t("columnPrincipal")}</th>
+            <th className="py-2 text-right font-medium">{t("columnBalance")}</th>
           </tr>
         </thead>
         <tbody className="divide-y">

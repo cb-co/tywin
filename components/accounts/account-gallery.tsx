@@ -1,10 +1,11 @@
 "use client";
 
 import { Plus, Wallet } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { AccountCard } from "./account-card";
 import { CardGroupTile } from "./card-group-tile";
 import { AccountFormDialog } from "./account-form-dialog";
-import { ACCOUNT_GROUPS, accountTypeMeta } from "@/lib/accounts/meta";
+import { ACCOUNT_GROUPS, accountTypeMeta, type GroupKey } from "@/lib/accounts/meta";
 import type {
   AccountWithStatus,
   CurrencyRow,
@@ -42,14 +43,20 @@ export function AccountGallery({
   banks: BankRow[];
   baseCurrency: string;
 }) {
+  const t = useTranslations("Accounts");
   const groupName = new Map(cardGroups.map((g) => [g.id, g.name]));
+  const groupLabels: Record<GroupKey, { title: string; blurb: string }> = {
+    cash: { title: t("groupCashTitle"), blurb: t("groupCashBlurb") },
+    cards: { title: t("groupCardsTitle"), blurb: t("groupCardsBlurb") },
+    loans: { title: t("groupLoansTitle"), blurb: t("groupLoansBlurb") },
+  };
 
   if (accounts.length === 0) {
     return (
       <EmptyState
         icon={<Wallet className="size-6" />}
-        title="No accounts yet"
-        description="Add your first account to start tracking balances, credit-card utilization, and loan payoff."
+        title={t("emptyTitle")}
+        description={t("emptyDescription")}
         action={
           <AccountFormDialog
             mode="create"
@@ -60,7 +67,7 @@ export function AccountGallery({
             trigger={
               <Button>
                 <Plus className="size-4" />
-                Add your first account
+                {t("addFirstAccount")}
               </Button>
             }
           />
@@ -86,7 +93,7 @@ export function AccountGallery({
           trigger={
             <Button>
               <Plus className="size-4" />
-              Add account
+              {t("addAccount")}
             </Button>
           }
         />
@@ -95,8 +102,8 @@ export function AccountGallery({
       {groups.map((group) => (
         <section key={group.key} className="space-y-4">
           <div className="flex items-baseline justify-between">
-            <h2 className="text-lg font-medium text-foreground">{group.title}</h2>
-            <span className="text-xs text-muted-foreground">{group.blurb}</span>
+            <h2 className="text-lg font-medium text-foreground">{groupLabels[group.key].title}</h2>
+            <span className="text-xs text-muted-foreground">{groupLabels[group.key].blurb}</span>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {group.key === "cards"
@@ -104,7 +111,7 @@ export function AccountGallery({
                   cluster.items.length >= 2 ? (
                     <CardGroupTile
                       key={cluster.key}
-                      name={groupName.get(cluster.key) ?? "Card group"}
+                      name={groupName.get(cluster.key) ?? t("cardGroupFallbackName")}
                       accounts={cluster.items}
                     />
                   ) : (

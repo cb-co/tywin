@@ -1,6 +1,7 @@
 "use client";
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { useTranslations } from "next-intl";
 import { formatMoney } from "@/lib/format";
 import type { Insights } from "@/lib/insights/queries";
 
@@ -11,9 +12,10 @@ export function SpendingPace({
   data: Insights["pace"];
   currency: string;
 }) {
+  const t = useTranslations("Insights");
   const hasData = data.some((d) => (d.thisMonth ?? 0) > 0 || (d.lastMonth ?? 0) > 0);
   if (!hasData) {
-    return <p className="py-10 text-center text-sm text-muted-foreground">No spending to pace yet.</p>;
+    return <p className="py-10 text-center text-sm text-muted-foreground">{t("spendingPaceEmpty")}</p>;
   }
 
   return (
@@ -38,12 +40,12 @@ export function SpendingPace({
               fontSize: 12,
             }}
             formatter={(value) => formatMoney(Number(value), currency)}
-            labelFormatter={(label) => `Day ${label}`}
+            labelFormatter={(label) => t("dayLabel", { day: label })}
           />
           <Legend wrapperStyle={{ fontSize: 12 }} />
           <Line
             dataKey="lastMonth"
-            name="Last month"
+            name={t("lastMonth")}
             stroke="var(--muted-foreground)"
             strokeWidth={1.5}
             strokeDasharray="4 4"
@@ -52,7 +54,7 @@ export function SpendingPace({
           />
           <Line
             dataKey="thisMonth"
-            name="This month"
+            name={t("thisMonth")}
             stroke="var(--chart-1)"
             strokeWidth={2}
             dot={false}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -25,13 +26,14 @@ export function TransactionDialog({
   trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const t = useTranslations("TransactionForm");
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={trigger as React.ReactElement} />
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-xl">
-            {mode === "edit" ? "Edit transaction" : "Add transaction"}
+            {mode === "edit" ? t("dialogEditTitle") : t("dialogAddTitle")}
           </DialogTitle>
         </DialogHeader>
         {/* Mount the form only while open so its defaults reflect the latest data. */}

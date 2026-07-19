@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Archive, ArchiveRestore, Pencil, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { archiveAccount, deleteAccount } from "@/app/(app)/accounts/actions";
 import { AccountFormDialog } from "./account-form-dialog";
 import type { AccountWithStatus, CurrencyRow, CardGroupRow, BankRow } from "@/lib/accounts/queries";
@@ -31,6 +32,8 @@ export function AccountDetailActions({
   banks: BankRow[];
   baseCurrency: string;
 }) {
+  const t = useTranslations("AccountDetail");
+  const tc = useTranslations("Common");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -42,7 +45,7 @@ export function AccountDetailActions({
         toast.error(result.error);
         return;
       }
-      toast.success(account.is_archived ? "Account restored" : "Account archived");
+      toast.success(account.is_archived ? t("accountRestored") : t("accountArchived"));
       router.push("/accounts");
       router.refresh();
     });
@@ -55,7 +58,7 @@ export function AccountDetailActions({
         toast.error(result.error);
         return;
       }
-      toast.success("Account deleted");
+      toast.success(t("accountDeleted"));
       router.push("/accounts");
       router.refresh();
     });
@@ -73,7 +76,7 @@ export function AccountDetailActions({
         trigger={
           <Button variant="outline" size="sm">
             <Pencil className="size-4" />
-            Edit
+            {tc("edit")}
           </Button>
         }
       />
@@ -83,7 +86,7 @@ export function AccountDetailActions({
         ) : (
           <Archive className="size-4" />
         )}
-        {account.is_archived ? "Restore" : "Archive"}
+        {account.is_archived ? t("restore") : t("archive")}
       </Button>
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -91,23 +94,23 @@ export function AccountDetailActions({
           render={
             <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
               <Trash2 className="size-4" />
-              Delete
+              {tc("delete")}
             </Button>
           }
         />
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete this account?</DialogTitle>
+            <DialogTitle>{t("deleteConfirmTitle")}</DialogTitle>
             <DialogDescription>
-              This permanently removes the account and its transactions. This can&apos;t be undone.
+              {t("deleteConfirmDescription")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={pending}>
-              Cancel
+              {tc("cancel")}
             </Button>
             <Button variant="destructive" onClick={onDelete} disabled={pending}>
-              {pending ? "Deleting…" : "Delete"}
+              {pending ? t("deleting") : tc("delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

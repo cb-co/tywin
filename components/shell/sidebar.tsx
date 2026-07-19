@@ -1,9 +1,12 @@
+import { useTranslations } from "next-intl";
 import { NAV_ITEMS } from "@/lib/nav";
 import { NavLink } from "./nav-link";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { Logo, Wordmark } from "@/components/brand/logo";
 
 export function Sidebar({ email }: { email: string }) {
+  const t = useTranslations("Nav");
   const initial = email?.trim()?.[0]?.toUpperCase() ?? "?";
   return (
     <aside className="hidden md:flex md:w-64 md:flex-col md:border-r md:border-sidebar-border md:bg-sidebar md:text-sidebar-foreground">
@@ -13,7 +16,7 @@ export function Sidebar({ email }: { email: string }) {
       </div>
       <nav className="flex flex-1 flex-col gap-0.5 px-3 py-2">
         {NAV_ITEMS.map((item) => (
-          <NavLink key={item.href} href={item.href} label={item.label} variant="side">
+          <NavLink key={item.href} href={item.href} label={t(item.key)} variant="side">
             <item.icon className="h-[18px] w-[18px] shrink-0" />
           </NavLink>
         ))}
@@ -25,6 +28,7 @@ export function Sidebar({ email }: { email: string }) {
         <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
           {email}
         </span>
+        <LanguageSwitcher />
         <ThemeToggle />
       </div>
     </aside>

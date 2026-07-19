@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { formatMoney } from "@/lib/format";
 import type { Insights } from "@/lib/insights/queries";
 
@@ -8,8 +9,9 @@ export function BudgetBars({
   data: Insights["budgetBars"];
   currency: string;
 }) {
+  const t = useTranslations("Insights");
   if (data.length === 0) {
-    return <p className="py-8 text-center text-sm text-muted-foreground">Set some budgets to compare.</p>;
+    return <p className="py-8 text-center text-sm text-muted-foreground">{t("budgetBarsEmpty")}</p>;
   }
 
   return (

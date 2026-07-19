@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { subscriptionInput, type SubscriptionInput } from "@/lib/subscriptions/schema";
 
@@ -33,10 +34,11 @@ function toRow(v: SubscriptionInput) {
 }
 
 export async function createSubscription(input: unknown): Promise<Result> {
+  const t = await getTranslations("Common");
   const parsed = subscriptionInput.safeParse(input);
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? t("invalidInput") };
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You're not signed in." };
+  if (!user) return { error: t("notSignedIn") };
   const { data, error } = await supabase
     .from("subscriptions")
     .insert({ ...toRow(parsed.data), currency: parsed.data.currency, user_id: user.id })
@@ -48,10 +50,11 @@ export async function createSubscription(input: unknown): Promise<Result> {
 }
 
 export async function updateSubscription(id: string, input: unknown): Promise<Result> {
+  const t = await getTranslations("Common");
   const parsed = subscriptionInput.safeParse(input);
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? t("invalidInput") };
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You're not signed in." };
+  if (!user) return { error: t("notSignedIn") };
   const { error } = await supabase
     .from("subscriptions")
     .update({ ...toRow(parsed.data), currency: parsed.data.currency })
@@ -62,8 +65,9 @@ export async function updateSubscription(id: string, input: unknown): Promise<Re
 }
 
 export async function deleteSubscription(id: string): Promise<Result> {
+  const t = await getTranslations("Common");
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You're not signed in." };
+  if (!user) return { error: t("notSignedIn") };
   const { error } = await supabase.from("subscriptions").delete().eq("id", id);
   if (error) return { error: error.message };
   revalidate();
@@ -71,8 +75,9 @@ export async function deleteSubscription(id: string): Promise<Result> {
 }
 
 export async function setSubscriptionActive(id: string, active: boolean): Promise<Result> {
+  const t = await getTranslations("Common");
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You're not signed in." };
+  if (!user) return { error: t("notSignedIn") };
   const { error } = await supabase.from("subscriptions").update({ is_active: active }).eq("id", id);
   if (error) return { error: error.message };
   revalidate();
@@ -81,16 +86,18 @@ export async function setSubscriptionActive(id: string, active: boolean): Promis
 
 /** Log this subscription's charge as an expense transaction linked back to it. */
 export async function addCharge(id: string): Promise<Result> {
+  const t = await getTranslations("Common");
+  const ts = await getTranslations("Subscriptions");
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You're not signed in." };
+  if (!user) return { error: t("notSignedIn") };
 
   const { data: sub } = await supabase
     .from("subscriptions")
     .select("*")
     .eq("id", id)
     .maybeSingle();
-  if (!sub) return { error: "Subscription not found." };
-  if (!sub.account_id) return { error: "Set an account on this subscription first." };
+  if (!sub) return { error: ts("notFound") };
+  if (!sub.account_id) return { error: ts("needsAccount") };
 
   const { error } = await supabase.from("transactions").insert({
     user_id: user.id,

@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/page-header";
 import { AccountGallery } from "@/components/accounts/account-gallery";
 import {
@@ -15,6 +16,7 @@ export default async function AccountsPage() {
     getCardGroups(),
     getBanks(),
   ]);
+  const t = await getTranslations("Accounts");
 
   const supabase = await createClient();
   const { data: profile } = await supabase
@@ -26,8 +28,8 @@ export default async function AccountsPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <PageHeader
-        title="Accounts"
-        description="Bank accounts, credit cards, loans, and assets."
+        title={t("pageTitle")}
+        description={t("pageDescription")}
       />
       <AccountGallery
         accounts={accounts}

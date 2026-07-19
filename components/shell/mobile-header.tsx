@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MoreHorizontal } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { NAV_ITEMS, MOBILE_PRIMARY_HREFS } from "@/lib/nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo, Wordmark } from "@/components/brand/logo";
@@ -16,6 +17,7 @@ const OVERFLOW_ITEMS = NAV_ITEMS.filter(
 );
 
 export function MobileHeader() {
+  const t = useTranslations("Nav");
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-card/95 px-4 backdrop-blur md:hidden">
       <Link href="/" className="flex items-center gap-2">
@@ -26,7 +28,7 @@ export function MobileHeader() {
         <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger
-            render={<Button variant="ghost" size="icon" aria-label="More navigation" />}
+            render={<Button variant="ghost" size="icon" aria-label={t("more")} />}
           >
             <MoreHorizontal className="h-5 w-5" />
           </DropdownMenuTrigger>
@@ -34,7 +36,7 @@ export function MobileHeader() {
             {OVERFLOW_ITEMS.map((item) => (
               <DropdownMenuItem key={item.href} render={<Link href={item.href} />}>
                 <item.icon className="mr-2 h-4 w-4" />
-                {item.label}
+                {t(item.key)}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>

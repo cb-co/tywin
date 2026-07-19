@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { formatPercent } from "@/lib/format";
 import type { Insights } from "@/lib/insights/queries";
 
@@ -14,15 +15,16 @@ export function DebtHealth({
   utilization: Insights["utilization"];
   loans: Insights["loans"];
 }) {
+  const t = useTranslations("Insights");
   if (utilization.length === 0 && loans.length === 0) {
-    return <p className="py-8 text-center text-sm text-muted-foreground">No cards or loans yet.</p>;
+    return <p className="py-8 text-center text-sm text-muted-foreground">{t("debtHealthEmpty")}</p>;
   }
 
   return (
     <div className="space-y-5">
       {utilization.length > 0 ? (
         <div className="space-y-4">
-          <p className="text-xs font-medium text-muted-foreground">Card utilization</p>
+          <p className="text-xs font-medium text-muted-foreground">{t("cardUtilizationLabel")}</p>
           {utilization.map((c) => (
             <Bar
               key={c.id}
@@ -36,7 +38,7 @@ export function DebtHealth({
       ) : null}
       {loans.length > 0 ? (
         <div className="space-y-4">
-          <p className="text-xs font-medium text-muted-foreground">Loan payoff</p>
+          <p className="text-xs font-medium text-muted-foreground">{t("loanPayoffLabel")}</p>
           {loans.map((l) => (
             <Bar
               key={l.id}

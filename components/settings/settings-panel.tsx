@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { LogOut } from "lucide-react";
 import { updateBaseCurrency } from "@/app/(app)/settings/actions";
 import type { CurrencyRow } from "@/lib/accounts/queries";
@@ -50,6 +51,7 @@ export function SettingsPanel({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [currency, setCurrency] = useState(baseCurrency);
+  const t = useTranslations("Settings");
 
   function onCurrency(code: string) {
     setCurrency(code);
@@ -59,7 +61,7 @@ export function SettingsPanel({
         toast.error(result.error);
         setCurrency(baseCurrency);
       } else {
-        toast.success("Base currency updated");
+        toast.success(t("toastCurrencyUpdated"));
         router.refresh();
       }
     });
@@ -67,11 +69,11 @@ export function SettingsPanel({
 
   return (
     <Card className="divide-y px-6 py-0">
-      <Row title="Signed in as" description={email || "—"}>
+      <Row title={t("signedInAsTitle")} description={email || "—"}>
         <span className="text-sm text-muted-foreground">{email}</span>
       </Row>
 
-      <Row title="Base currency" description="Dashboards and net worth convert into this currency.">
+      <Row title={t("baseCurrencyTitle")} description={t("baseCurrencyDescription")}>
         <Select value={currency} onValueChange={(v) => onCurrency(v ?? baseCurrency)} disabled={pending}>
           <SelectTrigger className="w-40">
             <SelectValue />
@@ -86,21 +88,21 @@ export function SettingsPanel({
         </Select>
       </Row>
 
-      <Row title="Theme" description="System, light, or dark.">
+      <Row title={t("themeTitle")} description={t("themeDescription")}>
         <ThemeToggle />
       </Row>
 
-      <Row title="Categories" description="Add or remove categories from the Budgets screen.">
+      <Row title={t("categoriesTitle")} description={t("categoriesDescription")}>
         <Button variant="outline" size="sm" render={<a href="/budgets" />} nativeButton={false}>
-          Manage categories
+          {t("manageCategoriesButton")}
         </Button>
       </Row>
 
-      <Row title="Session" description="Sign out of Cashly on this device.">
+      <Row title={t("sessionTitle")} description={t("sessionDescription")}>
         <form action="/auth/signout" method="post">
           <Button type="submit" variant="outline" size="sm">
             <LogOut className="size-4" />
-            Sign out
+            {t("signOutButton")}
           </Button>
         </form>
       </Row>

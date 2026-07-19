@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { useTranslations } from "next-intl";
 import { formatMoney } from "@/lib/format";
 import type { TransactionWithRefs } from "@/lib/transactions/queries";
 
@@ -27,6 +28,7 @@ export function BalanceChart({
   currency: string;
   transactions: TransactionWithRefs[];
 }) {
+  const t = useTranslations("AccountDetail");
   const series = useMemo(() => {
     const asc = [...transactions].sort((a, b) => a.occurred_at.localeCompare(b.occurred_at));
     let running = startingBalance;
@@ -34,11 +36,11 @@ export function BalanceChart({
       running += delta(t, accountId);
       return { date: dateFmt.format(new Date(t.occurred_at)), balance: Math.round(running * 100) / 100 };
     });
-    return [{ date: "Start", balance: startingBalance }, ...points];
-  }, [transactions, accountId, startingBalance]);
+    return [{ date: t("chartStartLabel"), balance: startingBalance }, ...points];
+  }, [transactions, accountId, startingBalance, t]);
 
   if (series.length <= 1) {
-    return <p className="py-8 text-center text-sm text-muted-foreground">No movement to chart yet.</p>;
+    return <p className="py-8 text-center text-sm text-muted-foreground">{t("noMovementYet")}</p>;
   }
 
   return (

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { createCategory, updateCategory } from "@/app/(app)/budgets/actions";
 import type { BudgetRow } from "@/lib/budgets/queries";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,8 @@ export function CategoryDialog({
   const [pending, startTransition] = useTransition();
   const [color, setColor] = useState<string>(category?.color ?? SWATCHES[0]);
   const router = useRouter();
+  const t = useTranslations("CategoryDialog");
+  const tc = useTranslations("Common");
   const { register, handleSubmit, reset } = useForm<Values>({
     defaultValues: { name: category?.name ?? "", emoji: category?.emoji ?? "" },
   });
@@ -58,7 +61,7 @@ export function CategoryDialog({
         toast.error(result.error);
         return;
       }
-      toast.success(mode === "edit" ? "Category updated" : "Category added");
+      toast.success(mode === "edit" ? t("toastUpdated") : t("toastAdded"));
       setOpen(false);
       router.refresh();
     });
@@ -70,29 +73,29 @@ export function CategoryDialog({
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle className="text-xl">
-            {mode === "edit" ? "Edit category" : "New category"}
+            {mode === "edit" ? t("editTitle") : t("addTitle")}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="flex gap-3">
             <div className="w-16 space-y-2">
-              <Label htmlFor="emoji">Emoji</Label>
+              <Label htmlFor="emoji">{t("emojiLabel")}</Label>
               <Input id="emoji" placeholder="🍔" className="text-center" {...register("emoji")} />
             </div>
             <div className="flex-1 space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" placeholder="e.g. Dining out" {...register("name")} required />
+              <Label htmlFor="name">{t("nameLabel")}</Label>
+              <Input id="name" placeholder={t("namePlaceholder")} {...register("name")} required />
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Color</Label>
+            <Label>{t("colorLabel")}</Label>
             <div className="flex flex-wrap gap-2">
               {SWATCHES.map((c) => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => setColor(c)}
-                  aria-label={`Color ${c}`}
+                  aria-label={t("colorSwatchAria", { color: c })}
                   className="size-7 rounded-full ring-offset-2 ring-offset-background transition-all data-[active=true]:ring-2 data-[active=true]:ring-ring"
                   data-active={color === c}
                   style={{ backgroundColor: c }}
@@ -102,7 +105,7 @@ export function CategoryDialog({
           </div>
           <DialogFooter>
             <Button type="submit" disabled={pending}>
-              {pending ? "Saving…" : mode === "edit" ? "Save changes" : "Add category"}
+              {pending ? tc("saving") : mode === "edit" ? t("saveChangesButton") : t("addButton")}
             </Button>
           </DialogFooter>
         </form>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { getInsights } from "@/lib/insights/queries";
@@ -36,41 +37,39 @@ export default async function InsightsPage({
   const month = normalizeMonth(monthParam);
   const insights = await getInsights(month);
   const cur = insights.baseCurrency;
+  const t = await getTranslations("Insights");
 
   const navLink =
     "flex size-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
-      <PageHeader
-        title="Insights"
-        description="Where your money goes: distribution, budget pace, and cash flow."
-      />
+      <PageHeader title={t("pageTitle")} description={t("pageDescription")} />
 
       <div className="flex items-center gap-2">
-        <Link href={`/insights?month=${addMonths(month, -1)}`} aria-label="Previous month" className={navLink}>
+        <Link href={`/insights?month=${addMonths(month, -1)}`} aria-label={t("prevMonthAria")} className={navLink}>
           <ChevronLeft className="size-4" />
         </Link>
         <span className="min-w-40 text-center text-lg font-medium">{monthLabel(month)}</span>
-        <Link href={`/insights?month=${addMonths(month, 1)}`} aria-label="Next month" className={navLink}>
+        <Link href={`/insights?month=${addMonths(month, 1)}`} aria-label={t("nextMonthAria")} className={navLink}>
           <ChevronRight className="size-4" />
         </Link>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <ChartCard title="Spend distribution">
+        <ChartCard title={t("cardSpendDistribution")}>
           <SpendDonut data={insights.distribution} total={insights.totalSpend} currency={cur} />
         </ChartCard>
-        <ChartCard title="Credit & debt health">
+        <ChartCard title={t("cardDebtHealth")}>
           <DebtHealth utilization={insights.utilization} loans={insights.loans} />
         </ChartCard>
-        <ChartCard title="Cash flow" className="lg:col-span-2">
+        <ChartCard title={t("cardCashFlow")} className="lg:col-span-2">
           <CashflowChart data={insights.trend} currency={cur} />
         </ChartCard>
-        <ChartCard title="Spending pace" className="lg:col-span-2">
+        <ChartCard title={t("cardSpendingPace")} className="lg:col-span-2">
           <SpendingPace data={insights.pace} currency={cur} />
         </ChartCard>
-        <ChartCard title="Expenses vs budget" className="lg:col-span-2">
+        <ChartCard title={t("cardExpensesVsBudget")} className="lg:col-span-2">
           <BudgetBars data={insights.budgetBars} currency={cur} />
         </ChartCard>
       </div>

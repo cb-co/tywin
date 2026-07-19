@@ -10,6 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useTranslations } from "next-intl";
 import { formatMoney } from "@/lib/format";
 import type { Insights } from "@/lib/insights/queries";
 
@@ -20,8 +21,9 @@ export function CashflowChart({
   data: Insights["trend"];
   currency: string;
 }) {
+  const t = useTranslations("Insights");
   if (data.length === 0) {
-    return <p className="py-10 text-center text-sm text-muted-foreground">No cash flow yet.</p>;
+    return <p className="py-10 text-center text-sm text-muted-foreground">{t("cashflowEmpty")}</p>;
   }
 
   return (
@@ -47,9 +49,9 @@ export function CashflowChart({
             }}
             formatter={(value) => formatMoney(Number(value), currency)}
           />
-          <Bar dataKey="income" name="Income" fill="var(--chart-1)" radius={[4, 4, 0, 0]} maxBarSize={28} />
-          <Bar dataKey="expense" name="Expense" fill="var(--chart-4)" radius={[4, 4, 0, 0]} maxBarSize={28} />
-          <Line dataKey="net" name="Net" stroke="var(--foreground)" strokeWidth={2} dot={false} />
+          <Bar dataKey="income" name={t("seriesIncome")} fill="var(--chart-1)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+          <Bar dataKey="expense" name={t("seriesExpense")} fill="var(--chart-4)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+          <Line dataKey="net" name={t("seriesNet")} stroke="var(--foreground)" strokeWidth={2} dot={false} />
         </ComposedChart>
       </ResponsiveContainer>
     </div>

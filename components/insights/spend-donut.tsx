@@ -1,6 +1,7 @@
 "use client";
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { useTranslations } from "next-intl";
 import { formatMoney } from "@/lib/format";
 import type { Insights } from "@/lib/insights/queries";
 
@@ -13,8 +14,9 @@ export function SpendDonut({
   total: number;
   currency: string;
 }) {
+  const t = useTranslations("Insights");
   if (data.length === 0) {
-    return <p className="py-10 text-center text-sm text-muted-foreground">No spending this month yet.</p>;
+    return <p className="py-10 text-center text-sm text-muted-foreground">{t("spendDonutEmpty")}</p>;
   }
 
   return (
@@ -47,7 +49,7 @@ export function SpendDonut({
           </PieChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-xs text-muted-foreground">This month</span>
+          <span className="text-xs text-muted-foreground">{t("thisMonth")}</span>
           <span className="figure text-xl text-foreground">{formatMoney(total, currency)}</span>
         </div>
       </div>

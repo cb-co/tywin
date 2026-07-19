@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { monthStart } from "@/lib/budgets/month";
 import { nextChargeDate, monthlyEquivalent, type BillingCycle } from "@/lib/subscriptions/cycle";
@@ -60,6 +61,7 @@ export async function getOverview(): Promise<Overview> {
   const baseCurrency = profile?.base_currency ?? "USD";
   const rates = await getExchangeRates(baseCurrency);
   const toBase = (amount: number, currency: string) => convertToBase(amount, currency, baseCurrency, rates);
+  const t = await getTranslations("Overview");
 
   const acctById = new Map((accounts ?? []).map((a) => [a.id, a]));
   const usageRows = usage ?? [];
@@ -84,8 +86,8 @@ export async function getOverview(): Promise<Overview> {
       upcoming.push({
         key: `card-${c.account_id}`,
         date: d.toISOString(),
-        title: `${acct.name} payment`,
-        subtitle: `Credit card · ${c.currency ?? acct.currency}`,
+        title: t("cardPaymentTitle", { name: acct.name }),
+        subtitle: t("creditCardSubtitle", { currency: c.currency ?? acct.currency }),
         amount,
         currency: c.currency ?? acct.currency,
       });
@@ -97,8 +99,8 @@ export async function getOverview(): Promise<Overview> {
       upcoming.push({
         key: `loan-${l.account_id}`,
         date: d.toISOString(),
-        title: `${acct.name} installment`,
-        subtitle: `Loan · ${l.currency ?? acct.currency}`,
+        title: t("loanInstallmentTitle", { name: acct.name }),
+        subtitle: t("loanSubtitle", { currency: l.currency ?? acct.currency }),
         amount: Number(l.installment_amount ?? 0),
         currency: l.currency ?? acct.currency,
       });
@@ -110,7 +112,7 @@ export async function getOverview(): Promise<Overview> {
         key: `sub-${s.id}`,
         date: d.toISOString(),
         title: s.name,
-        subtitle: `Subscription · ${s.currency}`,
+        subtitle: t("subscriptionSubtitle", { currency: s.currency }),
         amount: Number(s.amount),
         currency: s.currency,
       });

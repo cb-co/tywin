@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight, Plus, Trash2, CopyPlus, Pencil } from "lucide-react";
 import { setBudget, deleteCategory, copyPreviousMonth } from "@/app/(app)/budgets/actions";
 import { addMonths, monthLabel } from "@/lib/budgets/month";
@@ -28,6 +29,7 @@ function barPct(used: number, budget: number) {
 export function BudgetGrid({ month, overview }: { month: string; overview: BudgetOverview }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("Budgets");
   const { rows, totalBudget, totalUsed, baseCurrency } = overview;
   const remaining = totalBudget - totalUsed;
 
@@ -50,7 +52,7 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
       const result = await deleteCategory(id);
       if (result.error) toast.error(result.error);
       else {
-        toast.success("Category deleted");
+        toast.success(t("categoryDeleted"));
         router.refresh();
       }
     });
@@ -61,7 +63,7 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
       const result = await copyPreviousMonth(month);
       if (result.error) toast.error(result.error);
       else {
-        toast.success("Copied last month's budgets");
+        toast.success(t("budgetsCopied"));
         router.refresh();
       }
     });
@@ -72,27 +74,27 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
       {/* Month switcher + totals */}
       <div className="flex flex-col gap-4 rounded-xl border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon-sm" aria-label="Previous month" onClick={() => go(-1)}>
+          <Button variant="ghost" size="icon-sm" aria-label={t("prevMonth")} onClick={() => go(-1)}>
             <ChevronLeft className="size-4" />
           </Button>
           <span className="min-w-40 text-center text-lg font-medium">
             {monthLabel(month)}
           </span>
-          <Button variant="ghost" size="icon-sm" aria-label="Next month" onClick={() => go(1)}>
+          <Button variant="ghost" size="icon-sm" aria-label={t("nextMonth")} onClick={() => go(1)}>
             <ChevronRight className="size-4" />
           </Button>
         </div>
         <div className="flex gap-6 text-sm">
           <div>
-            <p className="text-xs text-muted-foreground">Budget</p>
+            <p className="text-xs text-muted-foreground">{t("budgetLabel")}</p>
             <p className="figure tabular-nums">{formatMoney(totalBudget, baseCurrency)}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Used</p>
+            <p className="text-xs text-muted-foreground">{t("usedLabel")}</p>
             <p className="figure tabular-nums">{formatMoney(totalUsed, baseCurrency)}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Remaining</p>
+            <p className="text-xs text-muted-foreground">{t("remainingLabel")}</p>
             <p className={`figure tabular-nums ${remaining < 0 ? "text-destructive" : ""}`}>
               {formatMoney(remaining, baseCurrency)}
             </p>
@@ -103,13 +105,13 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
       <div className="flex items-center justify-between">
         <Button variant="outline" size="sm" onClick={onCopy} disabled={pending}>
           <CopyPlus className="size-4" />
-          Copy last month
+          {t("copyLastMonth")}
         </Button>
         <CategoryDialog
           trigger={
             <Button size="sm">
               <Plus className="size-4" />
-              Add category
+              {t("addCategory")}
             </Button>
           }
         />
@@ -118,8 +120,8 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
       {rows.length === 0 ? (
         <EmptyState
           icon={<PieChart className="size-6" />}
-          title="No categories yet"
-          description="Add a category to start budgeting your monthly spending."
+          title={t("emptyTitle")}
+          description={t("emptyDescription")}
         />
       ) : (
         <div className="divide-y">
@@ -141,7 +143,10 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
                 <div className="flex items-baseline justify-between gap-2">
                   <p className="truncate text-sm font-medium text-foreground">{row.name}</p>
                   <p className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                    {formatMoney(row.used, baseCurrency)} of {formatMoney(row.budget, baseCurrency)}
+                    {t("amountOfBudget", {
+                      used: formatMoney(row.used, baseCurrency),
+                      budget: formatMoney(row.budget, baseCurrency),
+                    })}
                   </p>
                 </div>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
@@ -161,8 +166,8 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
                   step="0.01"
                   min="0"
                   defaultValue={row.budget || ""}
-                  placeholder="0"
-                  aria-label={`Budget for ${row.name}`}
+                  placeholder={t("amountPlaceholder")}
+                  aria-label={t("budgetForAria", { name: row.name })}
                   className="h-8 w-24 text-right tabular-nums"
                   onBlur={(e) => onSaveBudget(row.category_id, e.target.value, row.budget)}
                   onKeyDown={(e) => {
@@ -174,7 +179,7 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
                     mode="edit"
                     category={row}
                     trigger={
-                      <Button variant="ghost" size="icon-sm" aria-label={`Edit ${row.name}`} className="text-muted-foreground">
+                      <Button variant="ghost" size="icon-sm" aria-label={t("editAria", { name: row.name })} className="text-muted-foreground">
                         <Pencil className="size-4" />
                       </Button>
                     }
@@ -182,7 +187,7 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    aria-label={`Delete ${row.name}`}
+                    aria-label={t("deleteAria", { name: row.name })}
                     className="text-muted-foreground hover:text-destructive"
                     onClick={() => onDelete(row.category_id)}
                     disabled={pending}
