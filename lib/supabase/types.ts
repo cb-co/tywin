@@ -41,7 +41,7 @@ export type Database = {
     Tables: {
       accounts: {
         Row: {
-          bank: string | null
+          bank_id: string | null
           card_group_id: string | null
           color: string | null
           created_at: string
@@ -70,7 +70,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          bank?: string | null
+          bank_id?: string | null
           card_group_id?: string | null
           color?: string | null
           created_at?: string
@@ -99,7 +99,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          bank?: string | null
+          bank_id?: string | null
           card_group_id?: string | null
           color?: string | null
           created_at?: string
@@ -129,6 +129,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "accounts_bank_id_fkey"
+            columns: ["bank_id"]
+            isOneToOne: false
+            referencedRelation: "banks"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "accounts_card_group_id_fkey"
             columns: ["card_group_id"]
             isOneToOne: false
@@ -136,6 +143,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      banks: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       card_groups: {
         Row: {

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { getAccountById, getCurrencies, getCardGroups } from "@/lib/accounts/queries";
+import { getAccountById, getCurrencies, getCardGroups, getBanks } from "@/lib/accounts/queries";
 import { getAccountTransactions, getQuickAddData } from "@/lib/transactions/queries";
 import { AccountActivity } from "@/components/accounts/account-activity";
 import { BalanceChart } from "@/components/accounts/balance-chart";
@@ -20,10 +20,11 @@ export default async function AccountDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [account, currencies, cardGroups, activity, quickAddData] = await Promise.all([
+  const [account, currencies, cardGroups, banks, activity, quickAddData] = await Promise.all([
     getAccountById(id),
     getCurrencies(),
     getCardGroups(),
+    getBanks(),
     getAccountTransactions(id),
     getQuickAddData(),
   ]);
@@ -85,6 +86,7 @@ export default async function AccountDetailPage({
           account={account}
           currencies={currencies}
           cardGroups={cardGroups}
+          banks={banks}
           baseCurrency={baseCurrency}
         />
       </div>

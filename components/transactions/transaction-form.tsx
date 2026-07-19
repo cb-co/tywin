@@ -121,10 +121,7 @@ export function TransactionForm({
   const dst = accounts.find((a) => a.id === toAccountId);
   const rateLocked = currency === baseCurrency;
   const sameBankPayment =
-    type === "payment" &&
-    !!src?.bank &&
-    !!dst?.bank &&
-    src.bank.trim().toLowerCase() === dst.bank.trim().toLowerCase();
+    type === "payment" && !!src?.bank_id && !!dst?.bank_id && src.bank_id === dst.bank_id;
 
   // Currency follows the source account (create only — in edit it's immutable).
   useEffect(() => {

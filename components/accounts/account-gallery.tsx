@@ -9,6 +9,7 @@ import type {
   AccountWithStatus,
   CurrencyRow,
   CardGroupRow,
+  BankRow,
 } from "@/lib/accounts/queries";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
@@ -32,11 +33,13 @@ export function AccountGallery({
   accounts,
   currencies,
   cardGroups,
+  banks,
   baseCurrency,
 }: {
   accounts: AccountWithStatus[];
   currencies: CurrencyRow[];
   cardGroups: CardGroupRow[];
+  banks: BankRow[];
   baseCurrency: string;
 }) {
   const groupName = new Map(cardGroups.map((g) => [g.id, g.name]));
@@ -52,6 +55,7 @@ export function AccountGallery({
             mode="create"
             currencies={currencies}
             cardGroups={cardGroups}
+            banks={banks}
             baseCurrency={baseCurrency}
             trigger={
               <Button>
@@ -77,6 +81,7 @@ export function AccountGallery({
           mode="create"
           currencies={currencies}
           cardGroups={cardGroups}
+          banks={banks}
           baseCurrency={baseCurrency}
           trigger={
             <Button>

@@ -49,7 +49,7 @@ export type QuickAddAccount = {
   currency: string;
   type: string;
   network_fee_optional: boolean;
-  bank: string | null;
+  bank_id: string | null;
 };
 export type QuickAddCategory = {
   id: string;
@@ -71,7 +71,7 @@ export async function getQuickAddData(): Promise<QuickAddData> {
     await Promise.all([
       supabase
         .from("accounts")
-        .select("id,name,currency,type,network_fee_optional,bank")
+        .select("id,name,currency,type,network_fee_optional,bank_id")
         .eq("is_archived", false)
         .order("sort_order"),
       supabase.from("categories").select("id,name,emoji,color").order("sort_order"),

@@ -22,7 +22,7 @@ function toColumns(v: AccountInput) {
     type: v.type,
     starting_balance: v.starting_balance,
     color: orNull(v.color),
-    bank: orNull(v.bank),
+    bank_id: orNull(v.bank_id),
     transfer_tax_rate: v.transfer_tax_rate,
     network_fee_amount: v.network_fee_amount,
     network_fee_optional: v.network_fee_optional,
@@ -107,6 +107,31 @@ export async function deleteAccount(id: string): Promise<Result> {
   revalidatePath("/accounts");
   revalidatePath("/");
   return {};
+}
+
+export async function createBank(name: string): Promise<Result> {
+  const trimmed = name.trim();
+  if (!trimmed) return { error: "Bank name is required." };
+  const { supabase, user } = await requireUser();
+  if (!user) return { error: "You're not signed in." };
+  // Reuse an existing bank with the same name (case-insensitive) if present.
+  const { data: existing } = await supabase
+    .from("banks")
+    .select("id")
+    .ilike("name", trimmed)
+    .maybeSingle();
+  if (existing) {
+    revalidatePath("/accounts");
+    return { id: existing.id };
+  }
+  const { data, error } = await supabase
+    .from("banks")
+    .insert({ name: trimmed, user_id: user.id })
+    .select("id")
+    .single();
+  if (error) return { error: error.message };
+  revalidatePath("/accounts");
+  return { id: data.id };
 }
 
 export async function createCardGroup(name: string): Promise<Result> {

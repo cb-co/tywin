@@ -11,8 +11,18 @@ import {
   isLoan,
   type AccountType,
 } from "@/lib/accounts/meta";
-import { createAccount, updateAccount, createCardGroup } from "@/app/(app)/accounts/actions";
-import type { AccountWithStatus, CurrencyRow, CardGroupRow } from "@/lib/accounts/queries";
+import {
+  createAccount,
+  updateAccount,
+  createCardGroup,
+  createBank,
+} from "@/app/(app)/accounts/actions";
+import type {
+  AccountWithStatus,
+  CurrencyRow,
+  CardGroupRow,
+  BankRow,
+} from "@/lib/accounts/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,7 +48,7 @@ type FormValues = {
   name: string;
   type: AccountType;
   currency: string;
-  bank: string;
+  bank_id: string;
   starting_balance: string;
   transfer_tax_rate: string;
   network_fee_amount: string;
@@ -62,7 +72,7 @@ function defaultsFor(account: AccountWithStatus | undefined, baseCurrency: strin
     name: account?.name ?? "",
     type: (account?.type as AccountType) ?? "checking",
     currency: account?.currency ?? baseCurrency,
-    bank: account?.bank ?? "",
+    bank_id: account?.bank_id ?? "none",
     starting_balance: str(account?.starting_balance) || "0",
     transfer_tax_rate: str(account?.transfer_tax_rate) || "0.002",
     network_fee_amount: str(account?.network_fee_amount) || "0",
@@ -85,6 +95,7 @@ export function AccountFormDialog({
   account,
   currencies,
   cardGroups,
+  banks,
   baseCurrency = "USD",
   trigger,
 }: {
@@ -92,12 +103,14 @@ export function AccountFormDialog({
   account?: AccountWithStatus;
   currencies: CurrencyRow[];
   cardGroups: CardGroupRow[];
+  banks: BankRow[];
   baseCurrency?: string;
   trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [newGroupName, setNewGroupName] = useState("");
+  const [newBankName, setNewBankName] = useState("");
   const router = useRouter();
 
   const { register, handleSubmit, control, reset } = useForm<FormValues>({
@@ -106,6 +119,7 @@ export function AccountFormDialog({
 
   const type = (useWatch({ control, name: "type" }) ?? "checking") as AccountType;
   const groupSel = useWatch({ control, name: "card_group_id" }) ?? "none";
+  const bankSel = useWatch({ control, name: "bank_id" }) ?? "none";
   const card = isCard(type);
   const loan = isLoan(type);
 
@@ -114,6 +128,7 @@ export function AccountFormDialog({
     if (next) {
       reset(defaultsFor(account, baseCurrency));
       setNewGroupName("");
+      setNewBankName("");
     }
   }
 
@@ -134,11 +149,25 @@ export function AccountFormDialog({
       }
       const normalizedGroup = cardGroupId === "none" || cardGroupId === "new" ? "" : cardGroupId;
 
+      let bankId = values.bank_id;
+      if (bankId === "new") {
+        if (!newBankName.trim()) {
+          toast.error("Name the new bank, or pick “No bank”.");
+          return;
+        }
+        const created = await createBank(newBankName.trim());
+        if (created.error) {
+          toast.error(created.error);
+          return;
+        }
+        bankId = created.id!;
+      }
+      const normalizedBank = bankId === "none" || bankId === "new" ? "" : bankId;
+
       const clean = Object.fromEntries(
-        Object.entries({ ...values, card_group_id: normalizedGroup }).map(([k, v]) => [
-          k,
-          v === "" ? undefined : v,
-        ]),
+        Object.entries({ ...values, card_group_id: normalizedGroup, bank_id: normalizedBank }).map(
+          ([k, v]) => [k, v === "" ? undefined : v],
+        ),
       ) as Record<string, unknown>;
 
       const result =
@@ -180,8 +209,34 @@ export function AccountFormDialog({
             </div>
 
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="bank">Bank / institution</Label>
-              <Input id="bank" placeholder="e.g. Banco Popular" {...register("bank")} />
+              <Label>Bank / institution</Label>
+              <Controller
+                control={control}
+                name="bank_id"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No bank</SelectItem>
+                      {banks.map((b) => (
+                        <SelectItem key={b.id} value={b.id}>
+                          {b.name}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="new">New bank…</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {bankSel === "new" ? (
+                <Input
+                  placeholder="Bank name (e.g. Banco Popular)"
+                  value={newBankName}
+                  onChange={(e) => setNewBankName(e.target.value)}
+                />
+              ) : null}
               <p className="text-xs text-muted-foreground">
                 Transfers between accounts at the same bank skip the network fee.
               </p>
