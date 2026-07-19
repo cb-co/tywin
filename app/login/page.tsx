@@ -23,8 +23,8 @@ export default async function LoginPage({
       {/* Brand panel */}
       <div className="relative hidden flex-col justify-between overflow-hidden bg-primary p-10 text-primary-foreground lg:flex">
         <div className="flex items-center gap-2.5">
-          <Logo variant="ghost" />
-          <span className="text-lg font-semibold tracking-tight">Cashly</span>
+          <Logo />
+          <Wordmark />
         </div>
         <div className="relative z-10 max-w-md space-y-4">
           <h2 className="text-4xl font-semibold leading-[1.1] tracking-tight">
