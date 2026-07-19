@@ -685,34 +685,6 @@ export type Database = {
           term_months: number | null
           user_id: string | null
         }
-        Insert: {
-          account_id?: string | null
-          currency?: string | null
-          installment_amount?: number | null
-          installments_paid?: never
-          original_term_months?: number | null
-          outstanding_balance?: never
-          payment_due_day?: number | null
-          principal?: number | null
-          progress_installments_paid?: never
-          progress_term_months?: never
-          term_months?: number | null
-          user_id?: string | null
-        }
-        Update: {
-          account_id?: string | null
-          currency?: string | null
-          installment_amount?: number | null
-          installments_paid?: never
-          original_term_months?: number | null
-          outstanding_balance?: never
-          payment_due_day?: number | null
-          principal?: number | null
-          progress_installments_paid?: never
-          progress_term_months?: never
-          term_months?: number | null
-          user_id?: string | null
-        }
         Relationships: []
       }
       monthly_cashflow: {
