@@ -75,7 +75,7 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
           <Button variant="ghost" size="icon-sm" aria-label="Previous month" onClick={() => go(-1)}>
             <ChevronLeft className="size-4" />
           </Button>
-          <span className="min-w-40 text-center font-serif text-lg font-medium">
+          <span className="min-w-40 text-center text-lg font-medium">
             {monthLabel(month)}
           </span>
           <Button variant="ghost" size="icon-sm" aria-label="Next month" onClick={() => go(1)}>

@@ -45,7 +45,9 @@ export default async function OverviewPage() {
             className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary/5"
           />
           <p className="text-sm font-medium text-muted-foreground">Net worth</p>
-          <p className="figure mt-2 text-5xl leading-none text-foreground">$0.00</p>
+          <p className="figure mt-2 text-5xl leading-none text-foreground">
+            {formatMoney(0, o.baseCurrency)}
+          </p>
           <p className="mt-3 max-w-md text-sm text-muted-foreground">
             Add your first account and every balance, in any currency, rolls up here in your base currency.
           </p>
@@ -64,7 +66,7 @@ export default async function OverviewPage() {
                 >
                   <Icon className="size-5" />
                 </span>
-                <p className="mt-4 font-serif text-lg font-medium text-foreground">{title}</p>
+                <p className="mt-4 text-lg font-medium text-foreground">{title}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{body}</p>
               </Card>
             </Link>
@@ -119,7 +121,7 @@ export default async function OverviewPage() {
 
       {/* Upcoming rail */}
       <div className="space-y-3">
-        <h2 className="font-serif text-lg font-medium text-foreground">Upcoming</h2>
+        <h2 className="text-lg font-medium text-foreground">Upcoming</h2>
         {o.upcoming.length === 0 ? (
           <Card className="p-6 text-sm text-muted-foreground">
             No card due dates, loan installments, or subscription charges scheduled.

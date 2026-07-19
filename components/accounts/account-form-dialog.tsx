@@ -61,6 +61,7 @@ type FormValues = {
   principal: string;
   interest_rate: string;
   term_months: string;
+  original_term_months: string;
   start_date: string;
   installment_amount: string;
 };
@@ -85,6 +86,7 @@ function defaultsFor(account: AccountWithStatus | undefined, baseCurrency: strin
     principal: str(account?.principal),
     interest_rate: str(account?.interest_rate),
     term_months: str(account?.term_months),
+    original_term_months: str(account?.original_term_months),
     start_date: account?.start_date ?? "",
     installment_amount: str(account?.installment_amount),
   };
@@ -122,6 +124,21 @@ export function AccountFormDialog({
   const bankSel = useWatch({ control, name: "bank_id" }) ?? "none";
   const card = isCard(type);
   const loan = isLoan(type);
+
+  // Value→label maps so the trigger shows names (not raw ids) when closed.
+  const bankItems: Record<string, string> = {
+    none: "No bank",
+    new: "New bank…",
+    ...Object.fromEntries(banks.map((b) => [b.id, b.name])),
+  };
+  const groupItems: Record<string, string> = {
+    none: "No group",
+    new: "New group…",
+    ...Object.fromEntries(cardGroups.map((g) => [g.id, g.name])),
+  };
+  const currencyItems: Record<string, string> = Object.fromEntries(
+    currencies.map((c) => [c.code, `${c.code} · ${c.name}`]),
+  );
 
   function onOpenChange(next: boolean) {
     setOpen(next);
@@ -189,7 +206,7 @@ export function AccountFormDialog({
       <DialogTrigger render={trigger as React.ReactElement} />
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="font-serif text-xl">
+          <DialogTitle className="text-xl">
             {mode === "create" ? "Add an account" : "Edit account"}
           </DialogTitle>
           <DialogDescription>
@@ -216,7 +233,7 @@ export function AccountFormDialog({
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger className="w-full">
-                      <SelectValue />
+                      <SelectValue>{(value: string) => bankItems[value] ?? value}</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">No bank</SelectItem>
@@ -250,7 +267,9 @@ export function AccountFormDialog({
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger className="w-full">
-                      <SelectValue />
+                      <SelectValue>
+                        {(value: AccountType) => ACCOUNT_TYPE_META[value]?.label ?? value}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {CREATABLE_TYPES.map((t) => (
@@ -276,7 +295,7 @@ export function AccountFormDialog({
                     disabled={mode === "edit"}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue />
+                      <SelectValue>{(value: string) => currencyItems[value] ?? value}</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {currencies.map((c) => (
@@ -293,7 +312,7 @@ export function AccountFormDialog({
               ) : null}
             </div>
 
-            {!card ? (
+            {!card && !loan ? (
               <div className="space-y-2">
                 <Label htmlFor="starting_balance">Starting balance</Label>
                 <Input id="starting_balance" type="number" step="0.01" {...register("starting_balance")} />
@@ -326,7 +345,7 @@ export function AccountFormDialog({
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={field.onChange}>
                         <SelectTrigger className="w-full">
-                          <SelectValue />
+                          <SelectValue>{(value: string) => groupItems[value] ?? value}</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">No group</SelectItem>
@@ -356,17 +375,38 @@ export function AccountFormDialog({
 
             {loan ? (
               <>
+                <div className="space-y-2 sm:col-span-2">
+                  <p className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
+                    Enter this loan as it stands today, not at origination: principal is what you
+                    currently owe, and term is how many installments are still left. Past rate
+                    changes or extra payments don&apos;t need to be re-entered — they&apos;re
+                    already reflected in today&apos;s balance. If you&apos;ve already paid some
+                    installments before adding this loan, fill in the original term below so the
+                    progress bar gives you credit for them — it&apos;s display-only and doesn&apos;t
+                    affect the balance or schedule.
+                  </p>
+                </div>
                 <div className="space-y-2">
-                  <Label htmlFor="principal">Principal</Label>
+                  <Label htmlFor="principal">Principal (current balance owed)</Label>
                   <Input id="principal" type="number" step="0.01" min="0" {...register("principal")} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="interest_rate">Annual interest rate</Label>
+                  <Label htmlFor="interest_rate">Annual interest rate (current)</Label>
                   <Input id="interest_rate" type="number" step="0.0001" min="0" placeholder="0.115 = 11.5%" {...register("interest_rate")} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="term_months">Term (months)</Label>
+                  <Label htmlFor="term_months">Term (months remaining)</Label>
                   <Input id="term_months" type="number" min="1" {...register("term_months")} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="original_term_months">Original term (months, optional)</Label>
+                  <Input
+                    id="original_term_months"
+                    type="number"
+                    min="1"
+                    placeholder="Leave blank if this is a brand-new loan"
+                    {...register("original_term_months")}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="installment_amount">Monthly installment</Label>

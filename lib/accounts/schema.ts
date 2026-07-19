@@ -26,6 +26,7 @@ export const accountInput = z
     principal: z.coerce.number().min(0).optional(),
     interest_rate: z.coerce.number().min(0).max(1).optional(),
     term_months: z.coerce.number().int().min(1).max(1200).optional(),
+    original_term_months: z.coerce.number().int().min(1).max(1200).optional(),
     start_date: z.string().optional().or(z.literal("")),
     installment_amount: z.coerce.number().min(0).optional(),
   })
@@ -41,6 +42,12 @@ export const accountInput = z
         if (v[f] === undefined)
           ctx.addIssue({ code: "custom", path: [f], message: "Required for loans" });
       }
+      if (v.original_term_months !== undefined && v.term_months !== undefined && v.original_term_months < v.term_months)
+        ctx.addIssue({
+          code: "custom",
+          path: ["original_term_months"],
+          message: "Can't be less than the remaining term",
+        });
     }
   });
 

@@ -56,8 +56,8 @@ export function AccountCard({ account }: { account: AccountWithStatus }) {
         ) : type === "loan" ? (
           <LoanBody
             outstanding={account.loanStatus?.outstanding_balance ?? account.principal ?? 0}
-            paid={account.loanStatus?.installments_paid ?? 0}
-            term={account.term_months}
+            paid={account.loanStatus?.progress_installments_paid ?? account.loanStatus?.installments_paid ?? 0}
+            term={account.loanStatus?.progress_term_months ?? account.term_months}
             installment={account.installment_amount}
             currency={currency}
           />

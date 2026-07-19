@@ -21,7 +21,7 @@ function ChartCard({
 }) {
   return (
     <Card className={`p-6 ${className ?? ""}`}>
-      <h2 className="mb-4 font-serif text-lg font-medium text-foreground">{title}</h2>
+      <h2 className="mb-4 text-lg font-medium text-foreground">{title}</h2>
       {children}
     </Card>
   );
@@ -51,7 +51,7 @@ export default async function InsightsPage({
         <Link href={`/insights?month=${addMonths(month, -1)}`} aria-label="Previous month" className={navLink}>
           <ChevronLeft className="size-4" />
         </Link>
-        <span className="min-w-40 text-center font-serif text-lg font-medium">{monthLabel(month)}</span>
+        <span className="min-w-40 text-center text-lg font-medium">{monthLabel(month)}</span>
         <Link href={`/insights?month=${addMonths(month, 1)}`} aria-label="Next month" className={navLink}>
           <ChevronRight className="size-4" />
         </Link>

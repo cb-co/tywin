@@ -57,6 +57,7 @@ export type Database = {
           name: string
           network_fee_amount: number
           network_fee_optional: boolean
+          original_term_months: number | null
           payment_due_day: number | null
           principal: number | null
           sort_order: number
@@ -86,6 +87,7 @@ export type Database = {
           name: string
           network_fee_amount?: number
           network_fee_optional?: boolean
+          original_term_months?: number | null
           payment_due_day?: number | null
           principal?: number | null
           sort_order?: number
@@ -115,6 +117,7 @@ export type Database = {
           name?: string
           network_fee_amount?: number
           network_fee_optional?: boolean
+          original_term_months?: number | null
           payment_due_day?: number | null
           principal?: number | null
           sort_order?: number
@@ -670,9 +673,12 @@ export type Database = {
           currency: string | null
           installment_amount: number | null
           installments_paid: number | null
+          original_term_months: number | null
           outstanding_balance: number | null
           payment_due_day: number | null
           principal: number | null
+          progress_installments_paid: number | null
+          progress_term_months: number | null
           term_months: number | null
           user_id: string | null
         }
@@ -681,9 +687,12 @@ export type Database = {
           currency?: string | null
           installment_amount?: number | null
           installments_paid?: never
+          original_term_months?: number | null
           outstanding_balance?: never
           payment_due_day?: number | null
           principal?: number | null
+          progress_installments_paid?: never
+          progress_term_months?: never
           term_months?: number | null
           user_id?: string | null
         }
@@ -692,9 +701,12 @@ export type Database = {
           currency?: string | null
           installment_amount?: number | null
           installments_paid?: never
+          original_term_months?: number | null
           outstanding_balance?: never
           payment_due_day?: number | null
           principal?: number | null
+          progress_installments_paid?: never
+          progress_term_months?: never
           term_months?: number | null
           user_id?: string | null
         }

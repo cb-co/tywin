@@ -37,10 +37,10 @@ export function TransactionRow({
 
   const amount =
     txn.type === "income"
-      ? { value: txn.amount, prefix: "+", tone: "text-success" }
+      ? { value: txn.amount, signed: true, tone: "text-success" }
       : txn.type === "expense"
-        ? { value: txn.total_amount, prefix: "-", tone: "text-destructive" }
-        : { value: txn.total_amount, prefix: "", tone: "text-foreground" };
+        ? { value: -txn.total_amount, signed: false, tone: "text-destructive" }
+        : { value: txn.total_amount, signed: false, tone: "text-foreground" };
 
   const hasExtras = txn.tax_amount > 0 || txn.fee_amount > 0;
 
@@ -72,8 +72,7 @@ export function TransactionRow({
 
       <div className="text-right">
         <p className={cn("figure text-sm tabular-nums", amount.tone)}>
-          {amount.prefix}
-          {formatMoney(amount.value, txn.currency)}
+          {formatMoney(amount.value, txn.currency, { signed: amount.signed })}
         </p>
         {hasExtras ? (
           <p className="text-[11px] text-muted-foreground">

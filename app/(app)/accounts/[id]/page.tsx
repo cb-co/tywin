@@ -47,7 +47,14 @@ export default async function AccountDetailPage({
   const owed = account.cardStatus?.owed ?? account.current_balance;
   const util = account.cardStatus?.utilization_pct ?? null;
   const outstanding = account.loanStatus?.outstanding_balance ?? account.principal ?? 0;
+  // Raw count of payments logged in Cashly — drives the forward-looking amortization
+  // schedule below, which always starts fresh from `term_months` (remaining) at entry.
   const paid = account.loanStatus?.installments_paid ?? 0;
+  // Display-only progress: credits installments assumed paid before tracking started
+  // (via original_term_months) plus `paid`. Falls back to `paid`/`term_months` when
+  // original_term_months isn't set.
+  const progressPaid = account.loanStatus?.progress_installments_paid ?? paid;
+  const progressTerm = account.loanStatus?.progress_term_months ?? account.term_months;
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
@@ -73,7 +80,7 @@ export default async function AccountDetailPage({
             <Icon className="size-5" />
           </span>
           <div>
-            <h1 className="font-serif text-2xl font-semibold tracking-tight text-foreground">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               {account.name}
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -120,9 +127,16 @@ export default async function AccountDetailPage({
             <p className="figure mt-2 text-4xl leading-none text-foreground">
               {formatMoney(outstanding, currency)}
             </p>
-            <p className="mt-3 text-sm text-muted-foreground">
-              {account.term_months ? `${paid} of ${account.term_months} installments paid` : `${paid} installments paid`}
-            </p>
+            {progressTerm ? (
+              <div className="mt-4 max-w-sm space-y-2">
+                <Progress value={Math.min((progressPaid / progressTerm) * 100, 100)} />
+                <p className="text-sm text-muted-foreground">
+                  {progressPaid} of {progressTerm} installments paid
+                </p>
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-muted-foreground">{progressPaid} installments paid</p>
+            )}
           </>
         ) : (
           <>
@@ -139,7 +153,7 @@ export default async function AccountDetailPage({
 
       {!isCardType && !isLoanType ? (
         <Card className="p-6">
-          <h2 className="mb-4 font-serif text-lg font-medium text-foreground">Balance over time</h2>
+          <h2 className="mb-4 text-lg font-medium text-foreground">Balance over time</h2>
           <BalanceChart
             accountId={account.id}
             startingBalance={account.starting_balance}
@@ -161,7 +175,7 @@ export default async function AccountDetailPage({
 
       {isLoanType ? (
         <Card className="p-6">
-          <h2 className="font-serif text-lg font-medium">Amortization schedule</h2>
+          <h2 className="text-lg font-medium">Amortization schedule</h2>
           <div className="mt-4">
             <AmortizationTable
               principal={account.principal ?? 0}
@@ -177,7 +191,7 @@ export default async function AccountDetailPage({
 
       {/* Fee settings summary */}
       <Card className="p-6">
-        <h2 className="font-serif text-lg font-medium">Transfer fees</h2>
+        <h2 className="text-lg font-medium">Transfer fees</h2>
         <dl className="mt-4 grid gap-4 sm:grid-cols-3 text-sm">
           <div>
             <dt className="text-muted-foreground">Tax rate</dt>

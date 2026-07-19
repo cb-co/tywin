@@ -77,7 +77,7 @@ export function ReconcilePanel({
   return (
     <Card className="p-6">
       <div className="space-y-1">
-        <h2 className="font-serif text-lg font-medium">Reconcile</h2>
+        <h2 className="text-lg font-medium">Reconcile</h2>
         <p className="text-sm text-muted-foreground">
           Card balances are maintained, not derived. Update the owed figure or record a statement.
         </p>

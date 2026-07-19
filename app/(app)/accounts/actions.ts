@@ -20,7 +20,7 @@ function toColumns(v: AccountInput) {
   return {
     name: v.name,
     type: v.type,
-    starting_balance: v.starting_balance,
+    starting_balance: loan ? 0 : v.starting_balance,
     color: orNull(v.color),
     bank_id: orNull(v.bank_id),
     transfer_tax_rate: v.transfer_tax_rate,
@@ -35,6 +35,7 @@ function toColumns(v: AccountInput) {
     principal: nullIf(!loan, v.principal ?? null),
     interest_rate: nullIf(!loan, v.interest_rate ?? null),
     term_months: nullIf(!loan, v.term_months ?? null),
+    original_term_months: nullIf(!loan, v.original_term_months ?? null),
     start_date: nullIf(!loan, orNull(v.start_date)),
     installment_amount: nullIf(!loan, v.installment_amount ?? null),
 

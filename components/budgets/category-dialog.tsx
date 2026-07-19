@@ -69,7 +69,7 @@ export function CategoryDialog({
       <DialogTrigger render={trigger as React.ReactElement} />
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle className="font-serif text-xl">
+          <DialogTitle className="text-xl">
             {mode === "edit" ? "Edit category" : "New category"}
           </DialogTitle>
         </DialogHeader>

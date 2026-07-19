@@ -27,8 +27,8 @@ export type Insights = {
   distribution: { name: string; value: number; color: string }[];
   budgetBars: { name: string; used: number; budget: number }[];
   trend: { month: string; income: number; expense: number; net: number }[];
-  utilization: { name: string; pct: number }[];
-  loans: { name: string; paidPct: number }[];
+  utilization: { id: string; name: string; pct: number; currency: string }[];
+  loans: { id: string; name: string; paidPct: number; currency: string }[];
   totalSpend: number;
   pace: { day: number; thisMonth: number | null; lastMonth: number | null }[];
 };
@@ -49,8 +49,12 @@ export async function getInsights(month: string): Promise<Insights> {
     supabase.rpc("spend_distribution", { p_month: month }),
     supabase.rpc("category_usage", { p_month: month }),
     supabase.from("monthly_cashflow").select("*").order("month"),
-    supabase.from("card_status").select("account_id,utilization_pct"),
-    supabase.from("loan_status").select("account_id,principal,outstanding_balance,installments_paid,term_months"),
+    supabase.from("card_status").select("account_id,currency,utilization_pct"),
+    supabase
+      .from("loan_status")
+      .select(
+        "account_id,currency,principal,outstanding_balance,progress_installments_paid,progress_term_months",
+      ),
     supabase.from("categories").select("id,name,color"),
     supabase.from("accounts").select("id,name"),
     supabase.from("profiles").select("base_currency").maybeSingle(),
@@ -115,24 +119,36 @@ export async function getInsights(month: string): Promise<Insights> {
     net: Number(c.net ?? 0),
   }));
 
+  const baseCurrency = profile?.base_currency ?? "USD";
+
   const utilization = (cards ?? [])
     .filter((c) => c.utilization_pct != null)
-    .map((c) => ({ name: acctById.get(c.account_id ?? "") ?? "Card", pct: Number(c.utilization_pct) }));
+    .map((c) => ({
+      id: c.account_id ?? "",
+      name: acctById.get(c.account_id ?? "") ?? "Card",
+      pct: Number(c.utilization_pct),
+      currency: c.currency ?? baseCurrency,
+    }));
 
   const loanRows = (loans ?? []).map((l) => {
     const principal = Number(l.principal ?? 0);
     const outstanding = Number(l.outstanding_balance ?? 0);
     const paidPct =
-      l.term_months && l.term_months > 0
-        ? (Number(l.installments_paid ?? 0) / l.term_months) * 100
+      l.progress_term_months && l.progress_term_months > 0
+        ? (Number(l.progress_installments_paid ?? 0) / l.progress_term_months) * 100
         : principal > 0
           ? ((principal - outstanding) / principal) * 100
           : 0;
-    return { name: acctById.get(l.account_id ?? "") ?? "Loan", paidPct: Math.max(0, Math.min(paidPct, 100)) };
+    return {
+      id: l.account_id ?? "",
+      name: acctById.get(l.account_id ?? "") ?? "Loan",
+      paidPct: Math.max(0, Math.min(paidPct, 100)),
+      currency: l.currency ?? baseCurrency,
+    };
   });
 
   return {
-    baseCurrency: profile?.base_currency ?? "USD",
+    baseCurrency,
     distribution,
     budgetBars,
     trend,

@@ -11,7 +11,7 @@ export function QuickAddDialog({ data }: { data: QuickAddData }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="font-serif text-xl">Quick add</DialogTitle>
+          <DialogTitle className="text-xl">Quick add</DialogTitle>
         </DialogHeader>
         <TransactionForm data={data} onSuccess={() => setOpen(false)} />
       </DialogContent>

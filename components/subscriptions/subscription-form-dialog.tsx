@@ -105,7 +105,7 @@ export function SubscriptionFormDialog({
       <DialogTrigger render={trigger as React.ReactElement} />
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="font-serif text-xl">
+          <DialogTitle className="text-xl">
             {mode === "create" ? "New subscription" : "Edit subscription"}
           </DialogTitle>
         </DialogHeader>

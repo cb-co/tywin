@@ -8,9 +8,10 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
-  /* Type roles — Cashly: clean sans for all UI text; the display serif (Fraunces)
-     is reserved for ledger numbers via the `.figure` class only. The `font-serif`
-     role now maps to the sans so existing headings/wordmark render in it. */
+  /* Type roles — Cashly: Plus Jakarta Sans for UI text; Inter for ledger
+     numbers via the `.figure` class (better tabular figures at small sizes).
+     The `font-serif` role maps to the sans so any lingering `font-serif`
+     class renders in it rather than a real serif. */
   --font-sans: var(--font-jakarta);
   --font-serif: var(--font-jakarta);
   --font-display: var(--font-jakarta);
@@ -183,12 +184,12 @@
 }
 
 @layer components {
-  /* The "ledger figure" — key monetary/statistic numbers set in the
-     display serif with aligned tabular figures. The app's signature. */
+  /* The "ledger figure" — key monetary/statistic numbers set in Inter with
+     aligned tabular figures for a steady, scannable look. */
   .figure {
-    font-family: var(--font-fraunces), Georgia, serif;
+    font-family: var(--font-inter), var(--font-jakarta), sans-serif;
     font-variant-numeric: tabular-nums lining-nums;
     letter-spacing: -0.01em;
-    font-weight: 560;
+    font-weight: 600;
   }
 }

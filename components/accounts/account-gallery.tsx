@@ -95,7 +95,7 @@ export function AccountGallery({
       {groups.map((group) => (
         <section key={group.key} className="space-y-4">
           <div className="flex items-baseline justify-between">
-            <h2 className="font-serif text-lg font-medium text-foreground">{group.title}</h2>
+            <h2 className="text-lg font-medium text-foreground">{group.title}</h2>
             <span className="text-xs text-muted-foreground">{group.blurb}</span>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

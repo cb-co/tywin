@@ -16,7 +16,7 @@ export default function AppError({
         <TriangleAlert className="size-6" />
       </span>
       <div>
-        <p className="font-serif text-xl font-medium text-foreground">Something went wrong</p>
+        <p className="text-xl font-medium text-foreground">Something went wrong</p>
         <p className="mt-1 text-sm text-muted-foreground">
           This screen hit an error. Try again — if it keeps happening, reload the page.
         </p>

@@ -24,7 +24,13 @@ export function DebtHealth({
         <div className="space-y-4">
           <p className="text-xs font-medium text-muted-foreground">Card utilization</p>
           {utilization.map((c) => (
-            <Bar key={c.name} label={c.name} pct={c.pct} value={formatPercent(c.pct)} color={tone(c.pct)} />
+            <Bar
+              key={c.id}
+              label={`${c.name} · ${c.currency}`}
+              pct={c.pct}
+              value={formatPercent(c.pct)}
+              color={tone(c.pct)}
+            />
           ))}
         </div>
       ) : null}
@@ -32,7 +38,13 @@ export function DebtHealth({
         <div className="space-y-4">
           <p className="text-xs font-medium text-muted-foreground">Loan payoff</p>
           {loans.map((l) => (
-            <Bar key={l.name} label={l.name} pct={l.paidPct} value={formatPercent(l.paidPct)} color="var(--chart-1)" />
+            <Bar
+              key={l.id}
+              label={`${l.name} · ${l.currency}`}
+              pct={l.paidPct}
+              value={formatPercent(l.paidPct)}
+              color="var(--chart-1)"
+            />
           ))}
         </div>
       ) : null}

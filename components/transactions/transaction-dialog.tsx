@@ -30,7 +30,7 @@ export function TransactionDialog({
       <DialogTrigger render={trigger as React.ReactElement} />
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="font-serif text-xl">
+          <DialogTitle className="text-xl">
             {mode === "edit" ? "Edit transaction" : "Add transaction"}
           </DialogTitle>
         </DialogHeader>
