@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { accountOptionLabel } from "@/lib/accounts/meta";
 
 type Values = {
   name: string;
@@ -84,7 +85,7 @@ export function SubscriptionFormDialog({
   );
   const accountItems: Record<string, string> = {
     none: tc("none"),
-    ...Object.fromEntries(accounts.map((a) => [a.id, a.name])),
+    ...Object.fromEntries(accounts.map((a) => [a.id, accountOptionLabel(a)])),
   };
   const categoryItems: Record<string, string> = {
     none: tc("none"),
@@ -205,7 +206,7 @@ export function SubscriptionFormDialog({
                       <SelectItem value="none">{tc("none")}</SelectItem>
                       {accounts.map((a) => (
                         <SelectItem key={a.id} value={a.id}>
-                          {a.name}
+                          {accountOptionLabel(a)}
                         </SelectItem>
                       ))}
                     </SelectContent>

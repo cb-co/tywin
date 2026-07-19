@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { accountOptionLabel } from "@/lib/accounts/meta";
 
 type FormValues = {
   type: TransactionType;
@@ -79,7 +80,7 @@ export function TransactionForm({
      renders the raw value unless `items` is given on the root, which showed
      bare UUIDs here. Sentinel options ("none") need an entry too. */
   const accountItems: Record<string, string> = Object.fromEntries(
-    accounts.map((a) => [a.id, `${a.name} · ${a.currency}`]),
+    accounts.map((a) => [a.id, accountOptionLabel(a)]),
   );
   // Label happens to equal the value today; declared anyway so enriching the
   // option text later cannot silently reintroduce a raw-value trigger.
@@ -274,7 +275,7 @@ export function TransactionForm({
               <SelectContent>
                 {accounts.map((a) => (
                   <SelectItem key={a.id} value={a.id}>
-                    {a.name} · {a.currency}
+                    {accountOptionLabel(a)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -300,7 +301,7 @@ export function TransactionForm({
                     .filter((a) => a.id !== accountId)
                     .map((a) => (
                       <SelectItem key={a.id} value={a.id}>
-                        {a.name} · {a.currency}
+                        {accountOptionLabel(a)}
                       </SelectItem>
                     ))}
                 </SelectContent>

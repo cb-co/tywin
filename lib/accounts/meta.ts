@@ -47,6 +47,20 @@ export const ACCOUNT_GROUPS: { key: GroupKey; title: string; blurb: string }[] =
   { key: "assets", title: "Property & assets", blurb: "Estimated values you keep up to date." },
 ];
 
+/** How an account is labelled in any picker or filter.
+ *
+ *  Always includes the currency. Names alone are not unique in practice: the
+ *  same card or account is commonly held in two currencies ("Visa Infinite"
+ *  in DOP and USD), and a list of identical names is unusable. Centralised
+ *  because it previously drifted, with the transaction form showing the
+ *  currency while the subscription form and ledger filter did not. */
+export function accountOptionLabel(account: {
+  name: string;
+  currency: string;
+}): string {
+  return `${account.name} · ${account.currency}`;
+}
+
 export const isCard = (t: AccountType) => t === "credit_card";
 export const isLoan = (t: AccountType) => t === "loan";
 export const accountTypeMeta = (t: AccountType) => ACCOUNT_TYPE_META[t];

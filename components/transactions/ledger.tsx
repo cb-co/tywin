@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { accountOptionLabel } from "@/lib/accounts/meta";
 
 const dayFormatter = new Intl.DateTimeFormat("en-US", {
   weekday: "short",
@@ -75,7 +76,7 @@ export function Ledger({
   };
   const accountItems: Record<string, string> = {
     all: t("allAccounts"),
-    ...Object.fromEntries(accounts.map((a) => [a.id, a.name])),
+    ...Object.fromEntries(accounts.map((a) => [a.id, accountOptionLabel(a)])),
   };
   const categoryItems: Record<string, string> = {
     all: t("allCategories"),
@@ -126,7 +127,7 @@ export function Ledger({
             <SelectItem value="all">{t("allAccounts")}</SelectItem>
             {accounts.map((a) => (
               <SelectItem key={a.id} value={a.id}>
-                {a.name}
+                {accountOptionLabel(a)}
               </SelectItem>
             ))}
           </SelectContent>

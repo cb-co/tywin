@@ -4,7 +4,17 @@ import {
   ACCOUNT_TYPE_VALUES,
   ACCOUNT_TYPE_META,
   accountTypeMeta,
+  accountOptionLabel,
 } from "./meta";
+
+test("account options always carry the currency", () => {
+  // Same-named accounts in two currencies are common, and the label is the
+  // only thing distinguishing them in a picker.
+  const dop = accountOptionLabel({ name: "Visa Infinite", currency: "DOP" });
+  const usd = accountOptionLabel({ name: "Visa Infinite", currency: "USD" });
+  expect(dop).toBe("Visa Infinite · DOP");
+  expect(dop).not.toBe(usd);
+});
 
 test("every account type maps to a group that actually renders", () => {
   const keys = ACCOUNT_GROUPS.map((g) => g.key);
