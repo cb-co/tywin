@@ -13,7 +13,7 @@ export default async function SettingsPage() {
   const user = userData.user;
   const { data: profile } = await supabase
     .from("profiles")
-    .select("base_currency")
+    .select("base_currency,display_name")
     .maybeSingle();
   const t = await getTranslations("Settings");
 
@@ -22,6 +22,7 @@ export default async function SettingsPage() {
       <PageHeader title={t("pageTitle")} description={t("pageDescription")} />
       <SettingsPanel
         email={user?.email ?? ""}
+        displayName={profile?.display_name ?? ""}
         baseCurrency={profile?.base_currency ?? "USD"}
         currencies={currencies}
       />

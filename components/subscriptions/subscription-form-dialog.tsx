@@ -72,6 +72,26 @@ export function SubscriptionFormDialog({
   const router = useRouter();
   const t = useTranslations("SubscriptionForm");
   const tc = useTranslations("Common");
+
+  /* Value→label maps for the closed trigger. Base UI's `<Select.Value>`
+     renders the raw value unless `items` is given on the root, which showed
+     bare UUIDs and raw cycle keys. Sentinels ("none") need an entry too. */
+  const cycleItems: Record<string, string> = CYCLE_LABEL;
+  // Label happens to equal the value today; declared anyway so enriching the
+  // option text later cannot silently reintroduce a raw-value trigger.
+  const currencyItems: Record<string, string> = Object.fromEntries(
+    currencies.map((c) => [c.code, c.code]),
+  );
+  const accountItems: Record<string, string> = {
+    none: tc("none"),
+    ...Object.fromEntries(accounts.map((a) => [a.id, a.name])),
+  };
+  const categoryItems: Record<string, string> = {
+    none: tc("none"),
+    ...Object.fromEntries(
+      categories.map((c) => [c.id, `${c.emoji ? `${c.emoji} ` : ""}${c.name}`]),
+    ),
+  };
   const { register, handleSubmit, control, reset } = useForm<Values>({
     defaultValues: defaults(subscription, baseCurrency),
   });
@@ -130,7 +150,7 @@ export function SubscriptionFormDialog({
                   control={control}
                   name="currency"
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select value={field.value} onValueChange={field.onChange} items={currencyItems}>
                       <SelectTrigger className="w-24">
                         <SelectValue />
                       </SelectTrigger>
@@ -152,7 +172,7 @@ export function SubscriptionFormDialog({
                 control={control}
                 name="billing_cycle"
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value} onValueChange={field.onChange} items={cycleItems}>
                     <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
@@ -177,7 +197,7 @@ export function SubscriptionFormDialog({
                 control={control}
                 name="account_id"
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value} onValueChange={field.onChange} items={accountItems}>
                     <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
@@ -199,7 +219,7 @@ export function SubscriptionFormDialog({
                 control={control}
                 name="category_id"
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value} onValueChange={field.onChange} items={categoryItems}>
                     <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>

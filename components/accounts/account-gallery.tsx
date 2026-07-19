@@ -47,6 +47,7 @@ export function AccountGallery({
   const groupName = new Map(cardGroups.map((g) => [g.id, g.name]));
   const groupLabels: Record<GroupKey, { title: string; blurb: string }> = {
     cash: { title: t("groupCashTitle"), blurb: t("groupCashBlurb") },
+    assets: { title: t("groupAssetsTitle"), blurb: t("groupAssetsBlurb") },
     cards: { title: t("groupCardsTitle"), blurb: t("groupCardsBlurb") },
     loans: { title: t("groupLoansTitle"), blurb: t("groupLoansBlurb") },
   };

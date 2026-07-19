@@ -22,3 +22,32 @@ export async function updateBaseCurrency(code: string): Promise<{ error?: string
   revalidatePath("/", "layout");
   return {};
 }
+
+/** Max characters for a display name. Long enough for a full name, short
+ *  enough that the sidebar row and the overview greeting never wrap. */
+const DISPLAY_NAME_MAX = 40;
+
+export async function updateDisplayName(name: string): Promise<{ error?: string }> {
+  const t = await getTranslations("Common");
+  const ts = await getTranslations("Settings");
+
+  const trimmed = name.trim().replace(/\s+/g, " ");
+  if (trimmed.length > DISPLAY_NAME_MAX) {
+    return { error: ts("displayNameTooLong", { max: DISPLAY_NAME_MAX }) };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: t("notSignedIn") };
+
+  // Clearing the field falls back to the email-derived label everywhere.
+  const { error } = await supabase
+    .from("profiles")
+    .update({ display_name: trimmed || null })
+    .eq("id", user.id);
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return {};
+}

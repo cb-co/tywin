@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getOverview } from "@/lib/overview/queries";
 import { formatMoney, formatPercent } from "@/lib/format";
+import { greetingName } from "@/lib/profile";
 
 const STARTER_CARDS = [
   { href: "/accounts", icon: Wallet, tint: "var(--chart-1)", key: "Accounts" as const },
@@ -19,11 +20,19 @@ export default async function OverviewPage() {
   const locale = await getLocale();
   const upcomingFmt = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric" });
 
+  // A name turns the page header into a greeting. Without one we keep the
+  // plain section title rather than greeting an email address.
+  const name = greetingName(o.displayName, null);
+  const heading = name ? t("welcomeNamed", { name }) : t("title");
+  const emptyHeading = name ? t("welcomeNamed", { name }) : t("greetingTitle");
+
   if (!o.hasAccounts) {
     return (
       <div className="mx-auto max-w-5xl space-y-8">
-        <PageHeader title={t("greetingTitle")} description={t("greetingDescription")} />
-        <Card className="relative overflow-hidden p-7">
+        <div className="rise">
+          <PageHeader title={emptyHeading} description={t("greetingDescription")} />
+        </div>
+        <Card className="rise relative overflow-hidden p-7" style={{ "--i": 1 } as React.CSSProperties}>
           <div
             aria-hidden
             className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary/5"
@@ -39,11 +48,16 @@ export default async function OverviewPage() {
           </Button>
         </Card>
         <div className="grid gap-4 sm:grid-cols-3">
-          {STARTER_CARDS.map(({ href, icon: Icon, tint, key }) => (
-            <Link key={href} href={href} className="group">
-              <Card className="h-full p-5 transition-colors group-hover:border-primary/40">
+          {STARTER_CARDS.map(({ href, icon: Icon, tint, key }, i) => (
+            <Link
+              key={href}
+              href={href}
+              className="group rise"
+              style={{ "--i": i + 2 } as React.CSSProperties}
+            >
+              <Card className="lift h-full p-5 group-hover:border-primary/40 group-hover:shadow-md">
                 <span
-                  className="flex size-10 items-center justify-center rounded-lg"
+                  className="flex size-10 items-center justify-center rounded-lg transition-transform duration-200 ease-out group-hover:scale-110"
                   style={{ backgroundColor: `color-mix(in oklab, ${tint} 16%, transparent)`, color: tint }}
                 >
                   <Icon className="size-5" />
@@ -62,10 +76,15 @@ export default async function OverviewPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
-      <PageHeader title={t("title")} description={t("description")} />
+      <div className="rise">
+        <PageHeader title={heading} description={t("description")} />
+      </div>
 
       {/* Net worth hero */}
-      <Card className="relative overflow-hidden p-7">
+      <Card
+        className="rise relative overflow-hidden p-7"
+        style={{ "--i": 1 } as React.CSSProperties}
+      >
         <div
           aria-hidden
           className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary/5"
@@ -81,38 +100,43 @@ export default async function OverviewPage() {
 
       {/* Stat cards */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card className="p-5">
+        <Card className="rise p-5" style={{ "--i": 2 } as React.CSSProperties}>
           <p className="text-xs text-muted-foreground">{t("incomeThisMonth")}</p>
           <p className="figure mt-1.5 text-2xl text-success">{formatMoney(o.monthIncome, o.baseCurrency)}</p>
         </Card>
-        <Card className="p-5">
+        <Card className="rise p-5" style={{ "--i": 3 } as React.CSSProperties}>
           <p className="text-xs text-muted-foreground">{t("spendingThisMonth")}</p>
           <p className="figure mt-1.5 text-2xl text-foreground">{formatMoney(o.monthExpense, o.baseCurrency)}</p>
         </Card>
-        <Card className="p-5">
+        <Card className="rise p-5" style={{ "--i": 4 } as React.CSSProperties}>
           <p className="text-xs text-muted-foreground">{t("budgetUsed")}</p>
           <p className="figure mt-1.5 text-2xl text-foreground">
             {o.totalBudget > 0 ? formatPercent(budgetPct) : "—"}
           </p>
+          {/* The bar grows to its measured share so the proportion registers
+              as a quantity arriving rather than a pre-drawn block. */}
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-primary"
-              style={{ width: `${budgetPct}%` }}
+              className="bar-fill h-full rounded-full bg-primary"
+              style={{ width: `${budgetPct}%`, "--i": 4 } as React.CSSProperties}
             />
           </div>
         </Card>
       </div>
 
       {/* Upcoming rail */}
-      <div className="space-y-3">
+      <div className="rise space-y-3" style={{ "--i": 5 } as React.CSSProperties}>
         <h2 className="text-lg font-medium text-foreground">{t("upcoming")}</h2>
         {o.upcoming.length === 0 ? (
           <Card className="p-6 text-sm text-muted-foreground">{t("upcomingEmpty")}</Card>
         ) : (
           <Card className="divide-y p-0">
             {o.upcoming.map((item) => (
-              <div key={item.key} className="flex items-center gap-3 px-5 py-3.5">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+              <div
+                key={item.key}
+                className="group flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-accent/40"
+              >
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground transition-transform duration-200 ease-out group-hover:scale-105">
                   <CalendarClock className="size-[18px]" />
                 </span>
                 <div className="min-w-0 flex-1">

@@ -5,6 +5,7 @@ import { MobileHeader } from "./mobile-header";
 import { QuickAddProvider } from "@/components/quick-add/quick-add-provider";
 import { QuickAddButton } from "@/components/quick-add/quick-add-button";
 import { QuickAddDialog } from "@/components/quick-add/quick-add-dialog";
+import { Splash } from "./splash";
 import { getQuickAddData } from "@/lib/transactions/queries";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
@@ -12,12 +13,19 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const quickAddData = await getQuickAddData();
+  const [quickAddData, { data: profile }] = await Promise.all([
+    getQuickAddData(),
+    supabase.from("profiles").select("display_name").maybeSingle(),
+  ]);
 
   return (
     <QuickAddProvider>
+      <Splash />
       <div className="flex min-h-dvh">
-        <Sidebar email={user?.email ?? ""} />
+        <Sidebar
+          email={user?.email ?? ""}
+          displayName={profile?.display_name ?? null}
+        />
         <div className="flex flex-1 flex-col">
           <MobileHeader />
           <main className="flex-1 p-4 pb-24 md:p-6 md:pb-6">{children}</main>

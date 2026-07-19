@@ -146,7 +146,9 @@ export default async function AccountDetailPage({
           </>
         ) : (
           <>
-            <p className="text-sm font-medium text-muted-foreground">{t("currentBalance")}</p>
+            <p className="text-sm font-medium text-muted-foreground">
+              {type === "asset" ? t("estimatedValue") : t("currentBalance")}
+            </p>
             <p className="figure mt-2 text-4xl leading-none text-foreground">
               {formatMoney(account.balance ?? account.starting_balance, currency)}
             </p>

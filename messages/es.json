@@ -64,7 +64,8 @@
     "starterBudgetsTitle": "Presupuestos",
     "starterBudgetsBody": "Define un presupuesto mensual por categoría y controla qué se ha usado y qué queda.",
     "starterSubscriptionsTitle": "Suscripciones",
-    "starterSubscriptionsBody": "Lleva el control de cargos recurrentes y sus próximas fechas de pago en un solo lugar."
+    "starterSubscriptionsBody": "Lleva el control de cargos recurrentes y sus próximas fechas de pago en un solo lugar.",
+    "welcomeNamed": "Hola de nuevo, {name}"
   },
   "AccountTypes": {
     "checking": "Cuenta corriente",
@@ -82,8 +83,8 @@
     "addFirstAccount": "Añade tu primera cuenta",
     "emptyTitle": "Aún no tienes cuentas",
     "emptyDescription": "Añade tu primera cuenta para empezar a controlar saldos, utilización de tarjetas de crédito y el pago de préstamos.",
-    "groupCashTitle": "Cuentas y activos",
-    "groupCashBlurb": "Bancos, efectivo, inversiones y activos.",
+    "groupCashTitle": "Cuentas",
+    "groupCashBlurb": "Bancos, efectivo e inversiones.",
     "groupCardsTitle": "Tarjetas de crédito",
     "groupCardsBlurb": "Saldos reconciliados y utilización.",
     "groupLoansTitle": "Préstamos",
@@ -99,7 +100,10 @@
     "outstanding": "Pendiente",
     "paidOfTerm": "{paid} / {term} pagadas",
     "paidOnly": "{paid} pagadas",
-    "perMonth": "{amount}/mes"
+    "perMonth": "{amount}/mes",
+    "groupAssetsTitle": "Propiedades y bienes",
+    "groupAssetsBlurb": "Valores estimados que tú mantienes al día.",
+    "estimatedValue": "Valor estimado"
   },
   "AccountDetail": {
     "backLink": "Cuentas",
@@ -376,7 +380,14 @@
     "sessionDescription": "Cierra sesión de Cashly en este dispositivo.",
     "signOutButton": "Cerrar sesión",
     "toastCurrencyUpdated": "Moneda base actualizada",
-    "invalidCurrency": "Elige una moneda válida."
+    "invalidCurrency": "Elige una moneda válida.",
+    "displayNameTitle": "Nombre para mostrar",
+    "displayNameDescription": "Cómo te saluda Cashly y cómo identifica tu cuenta.",
+    "displayNamePlaceholder": "Tu nombre",
+    "displayNameTooLong": "Usa menos de {max} caracteres.",
+    "signedInAsDescription": "El correo vinculado a esta cuenta.",
+    "saveButton": "Guardar",
+    "toastDisplayNameUpdated": "Nombre para mostrar actualizado"
   },
   "Common": {
     "save": "Guardar",

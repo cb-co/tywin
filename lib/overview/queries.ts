@@ -16,6 +16,7 @@ export type UpcomingItem = {
 export type Overview = {
   hasAccounts: boolean;
   baseCurrency: string;
+  displayName: string | null;
   netWorth: number;
   monthIncome: number;
   monthExpense: number;
@@ -43,7 +44,7 @@ export async function getOverview(): Promise<Overview> {
     { data: loans },
     { data: subs },
   ] = await Promise.all([
-    supabase.from("profiles").select("base_currency").maybeSingle(),
+    supabase.from("profiles").select("base_currency,display_name").maybeSingle(),
     supabase.from("monthly_cashflow").select("income,expense").eq("month", month).maybeSingle(),
     supabase.rpc("category_usage", { p_month: month }),
     supabase.from("accounts").select("id,name,currency").eq("is_archived", false),
@@ -122,6 +123,7 @@ export async function getOverview(): Promise<Overview> {
   return {
     hasAccounts: (accounts ?? []).length > 0,
     baseCurrency,
+    displayName: profile?.display_name ?? null,
     netWorth,
     monthIncome: Number(cashflow?.income ?? 0),
     monthExpense: Number(cashflow?.expense ?? 0),

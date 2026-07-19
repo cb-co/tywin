@@ -64,7 +64,8 @@
     "starterBudgetsTitle": "Budgets",
     "starterBudgetsBody": "Set a monthly budget per category and watch what's used and what's left.",
     "starterSubscriptionsTitle": "Subscriptions",
-    "starterSubscriptionsBody": "Track recurring charges and their next payment dates in one place."
+    "starterSubscriptionsBody": "Track recurring charges and their next payment dates in one place.",
+    "welcomeNamed": "Welcome back, {name}"
   },
   "AccountTypes": {
     "checking": "Checking",
@@ -82,8 +83,8 @@
     "addFirstAccount": "Add your first account",
     "emptyTitle": "No accounts yet",
     "emptyDescription": "Add your first account to start tracking balances, credit-card utilization, and loan payoff.",
-    "groupCashTitle": "Accounts & assets",
-    "groupCashBlurb": "Banks, cash, investments, and assets.",
+    "groupCashTitle": "Accounts",
+    "groupCashBlurb": "Banks, cash, and investments.",
     "groupCardsTitle": "Credit cards",
     "groupCardsBlurb": "Reconciled balances and utilization.",
     "groupLoansTitle": "Loans",
@@ -99,7 +100,10 @@
     "outstanding": "Outstanding",
     "paidOfTerm": "{paid} / {term} paid",
     "paidOnly": "{paid} paid",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "groupAssetsTitle": "Property & assets",
+    "groupAssetsBlurb": "Estimated values you keep up to date.",
+    "estimatedValue": "Estimated value"
   },
   "AccountDetail": {
     "backLink": "Accounts",
@@ -376,7 +380,14 @@
     "sessionDescription": "Sign out of Cashly on this device.",
     "signOutButton": "Sign out",
     "toastCurrencyUpdated": "Base currency updated",
-    "invalidCurrency": "Pick a valid currency."
+    "invalidCurrency": "Pick a valid currency.",
+    "displayNameTitle": "Display name",
+    "displayNameDescription": "How Cashly greets you and labels your account.",
+    "displayNamePlaceholder": "Your name",
+    "displayNameTooLong": "Keep it under {max} characters.",
+    "signedInAsDescription": "The email tied to this account.",
+    "saveButton": "Save",
+    "toastDisplayNameUpdated": "Display name updated"
   },
   "Common": {
     "save": "Save",

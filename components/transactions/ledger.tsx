@@ -65,6 +65,23 @@ export function Ledger({
     return [...map.entries()];
   }, [filtered]);
 
+  /* Value→label maps for the closed trigger. Base UI's `<Select.Value>`
+     renders the raw value unless `items` is given on the root, so these
+     filters showed bare UUIDs and untranslated type keys. The "all"
+     sentinel needs an entry too. */
+  const typeItems: Record<string, string> = {
+    all: t("allTypes"),
+    ...Object.fromEntries(TRANSACTION_TYPES.map((tt) => [tt, tType(tt)])),
+  };
+  const accountItems: Record<string, string> = {
+    all: t("allAccounts"),
+    ...Object.fromEntries(accounts.map((a) => [a.id, a.name])),
+  };
+  const categoryItems: Record<string, string> = {
+    all: t("allCategories"),
+    ...Object.fromEntries(categories.map((c) => [c.id, c.name])),
+  };
+
   function onDelete(id: string) {
     startTransition(async () => {
       const result = await deleteTransaction(id);
@@ -88,7 +105,7 @@ export function Ledger({
             className="pl-8"
           />
         </div>
-        <Select value={type} onValueChange={(v) => setType(v ?? "all")}>
+        <Select value={type} onValueChange={(v) => setType(v ?? "all")} items={typeItems}>
           <SelectTrigger className="w-32">
             <SelectValue />
           </SelectTrigger>
@@ -101,7 +118,7 @@ export function Ledger({
             ))}
           </SelectContent>
         </Select>
-        <Select value={accountId} onValueChange={(v) => setAccountId(v ?? "all")}>
+        <Select value={accountId} onValueChange={(v) => setAccountId(v ?? "all")} items={accountItems}>
           <SelectTrigger className="w-40">
             <SelectValue />
           </SelectTrigger>
@@ -114,7 +131,7 @@ export function Ledger({
             ))}
           </SelectContent>
         </Select>
-        <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "all")}>
+        <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "all")} items={categoryItems}>
           <SelectTrigger className="w-40">
             <SelectValue />
           </SelectTrigger>

@@ -128,7 +128,9 @@ export function AccountFormDialog({
   const card = isCard(type);
   const loan = isLoan(type);
 
-  // Value→label maps so the trigger shows names (not raw ids) when closed.
+  /* Value→label maps for the closed trigger. Base UI's `<Select.Value>`
+     renders the raw value unless `items` is given on the root. Sentinel
+     options ("none", "new") need an entry too. */
   const bankItems: Record<string, string> = {
     none: t("noBank"),
     new: t("newBank"),
@@ -141,6 +143,9 @@ export function AccountFormDialog({
   };
   const currencyItems: Record<string, string> = Object.fromEntries(
     currencies.map((c) => [c.code, `${c.code} · ${c.name}`]),
+  );
+  const typeItems: Record<string, string> = Object.fromEntries(
+    CREATABLE_TYPES.map((accType) => [accType, tType(accType)]),
   );
 
   function onOpenChange(next: boolean) {
@@ -234,9 +239,9 @@ export function AccountFormDialog({
                 control={control}
                 name="bank_id"
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value} onValueChange={field.onChange} items={bankItems}>
                     <SelectTrigger className="w-full">
-                      <SelectValue>{(value: string) => bankItems[value] ?? value}</SelectValue>
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">{t("noBank")}</SelectItem>
@@ -268,11 +273,9 @@ export function AccountFormDialog({
                 control={control}
                 name="type"
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value} onValueChange={field.onChange} items={typeItems}>
                     <SelectTrigger className="w-full">
-                      <SelectValue>
-                        {(value: AccountType) => tType(value) ?? value}
-                      </SelectValue>
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {CREATABLE_TYPES.map((accType) => (
@@ -296,9 +299,9 @@ export function AccountFormDialog({
                     value={field.value}
                     onValueChange={field.onChange}
                     disabled={mode === "edit"}
-                  >
+                   items={currencyItems}>
                     <SelectTrigger className="w-full">
-                      <SelectValue>{(value: string) => currencyItems[value] ?? value}</SelectValue>
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {currencies.map((c) => (
@@ -346,9 +349,9 @@ export function AccountFormDialog({
                     control={control}
                     name="card_group_id"
                     render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange}>
+                      <Select value={field.value} onValueChange={field.onChange} items={groupItems}>
                         <SelectTrigger className="w-full">
-                          <SelectValue>{(value: string) => groupItems[value] ?? value}</SelectValue>
+                          <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">{t("noGroup")}</SelectItem>

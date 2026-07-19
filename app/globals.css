@@ -193,3 +193,225 @@
     font-weight: 600;
   }
 }
+
+/* ============================================================
+   Motion layer
+
+   MOTION_INTENSITY 5 of 10. This is a finance app: motion exists to
+   explain hierarchy, acknowledge input, and show state changes. It
+   never decorates. Only `transform` and `opacity` are animated so
+   everything stays on the compositor.
+
+   Every animation below is gated behind `prefers-reduced-motion:
+   no-preference`. Under `reduce`, elements render in their final
+   state instantly — nothing is hidden, nothing is lost.
+   ============================================================ */
+@layer utilities {
+  /* Shared easing. A gentle overshoot-free decelerate curve. */
+  :root {
+    --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+    --dur-fast: 160ms;
+    --dur-base: 380ms;
+    --dur-slow: 620ms;
+  }
+
+  /* --- Entry reveals -------------------------------------------------
+     `.rise` lifts content into place on first paint. Stagger a group by
+     setting `--i` per child (`style={{ "--i": 2 }}`); each step adds 55ms
+     so a column of cards resolves top-down and the eye lands on the
+     heading first. Cap the index around 8 or the tail feels sluggish. */
+  .rise,
+  .fade-in,
+  .scale-in {
+    animation-duration: var(--dur-base);
+    animation-timing-function: var(--ease-out-soft);
+    animation-fill-mode: both;
+    animation-delay: calc(var(--i, 0) * 55ms);
+  }
+
+  .rise {
+    animation-name: rise;
+  }
+  .fade-in {
+    animation-name: fade-in;
+  }
+  .scale-in {
+    animation-name: scale-in;
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 10px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* --- Interactive surfaces ------------------------------------------
+     `.lift` marks a surface as clickable: it rises slightly under the
+     pointer and presses back down on click. The press is the important
+     half — it's the tactile receipt that the click registered. */
+  .lift {
+    transition:
+      transform var(--dur-fast) var(--ease-out-soft),
+      box-shadow var(--dur-fast) var(--ease-out-soft),
+      border-color var(--dur-fast) var(--ease-out-soft);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .lift:hover {
+      transform: translate3d(0, -2px, 0);
+    }
+    .lift:active {
+      transform: translate3d(0, 0, 0) scale(0.995);
+      transition-duration: 80ms;
+    }
+  }
+
+  /* --- Value bars -----------------------------------------------------
+     Bars grow from zero to their measured width so the proportion reads
+     as a quantity arriving, not a static block. Width is set inline as
+     `--fill`; we animate `transform: scaleX` rather than `width` to keep
+     it off the layout thread. */
+  .bar-fill {
+    transform-origin: left center;
+    animation: bar-fill var(--dur-slow) var(--ease-out-soft) both;
+    animation-delay: calc(120ms + var(--i, 0) * 55ms);
+  }
+
+  @keyframes bar-fill {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+
+  /* --- Skeleton sweep --------------------------------------------------
+     A light sweep across placeholders reads as "loading" more clearly than
+     an opacity pulse, and its direction matches the reading order.
+
+     Named `.skeleton`, not `.shimmer`: tw-animate-css already ships a
+     `.shimmer` utility that clips a gradient to text, and the two rule sets
+     both applied. Check the compiled CSS before adding class names here. */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--muted);
+  }
+
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklab, var(--foreground) 6%, transparent),
+      transparent
+    );
+    animation: skeleton-sweep 1.6s infinite;
+  }
+
+  @keyframes skeleton-sweep {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  /* --- Splash ----------------------------------------------------------
+     Covers the boot gap once per session. The mark settles into place
+     rather than appearing, which gives the app a moment of identity before
+     the dashboard's density arrives. `.splash-skip` is set pre-paint for
+     returning users so they never see a frame of it. */
+  /* No entry animation on the container. It previously ran `fade-in` with
+     `fill-mode: both`, and an animation's fill state outranks normal
+     declarations — which pinned opacity at 1 and made the exit below a
+     no-op, so the splash popped out instead of fading. The mark carries the
+     entry; the container only needs to handle the exit. */
+  .splash {
+    opacity: 1;
+    transition:
+      opacity var(--dur-base) var(--ease-out-soft),
+      visibility var(--dur-base);
+  }
+
+  .splash[data-leaving] {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .splash-mark {
+    animation: splash-mark 620ms var(--ease-out-soft) both;
+  }
+
+  @keyframes splash-mark {
+    from {
+      opacity: 0;
+      transform: scale(0.94) translate3d(0, 6px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .splash-skip .splash {
+    display: none;
+  }
+
+  /* --- Reduced motion --------------------------------------------------
+     Collapse every animation to its end state. `animation: none` with
+     `fill-mode: both` would strand elements at `opacity: 0`, so each
+     class is explicitly reset to visible instead. */
+  @media (prefers-reduced-motion: reduce) {
+    .rise,
+    .fade-in,
+    .scale-in {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+
+    .bar-fill {
+      animation: none;
+      transform: scaleX(1);
+    }
+
+    .skeleton::after {
+      animation: none;
+      display: none;
+    }
+
+    /* The splash is skipped entirely under `reduce` (see splash.tsx), but
+       belt and braces in case the class lands late. */
+    .splash {
+      display: none;
+    }
+  }
+}

@@ -5,6 +5,7 @@ import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { SPLASH_SKIP_SCRIPT } from "@/lib/splash";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -38,6 +39,11 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
+        {/* Decides before first paint whether the app-shell splash is shown
+            at all. Rendered here because this is a Server Component: React
+            warns about scripts rendered from Client Components, and this one
+            has to execute during parse to be worth anything. */}
+        <script dangerouslySetInnerHTML={{ __html: SPLASH_SKIP_SCRIPT }} />
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider
             attribute="class"

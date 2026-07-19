@@ -69,7 +69,12 @@ export function AccountCard({ account }: { account: AccountWithStatus }) {
             <p className="figure text-2xl leading-none text-foreground">
               {formatMoney(account.balance ?? account.starting_balance, currency)}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">{t("currentBalance")}</p>
+            {/* An asset's figure is an estimate you set by hand, not a balance
+                derived from transactions. Calling it a balance overstates how
+                much the number can be trusted. */}
+            <p className="mt-1 text-xs text-muted-foreground">
+              {type === "asset" ? t("estimatedValue") : t("currentBalance")}
+            </p>
           </div>
         )}
       </Card>

@@ -75,6 +75,24 @@ export function TransactionForm({
     payment: t("sourceLabelPayment"),
   };
 
+  /* Value→label maps for the closed trigger. Base UI's `<Select.Value>`
+     renders the raw value unless `items` is given on the root, which showed
+     bare UUIDs here. Sentinel options ("none") need an entry too. */
+  const accountItems: Record<string, string> = Object.fromEntries(
+    accounts.map((a) => [a.id, `${a.name} · ${a.currency}`]),
+  );
+  // Label happens to equal the value today; declared anyway so enriching the
+  // option text later cannot silently reintroduce a raw-value trigger.
+  const currencyItems: Record<string, string> = Object.fromEntries(
+    currencies.map((c) => [c.code, c.code]),
+  );
+  const categoryItems: Record<string, string> = {
+    none: t("noCategory"),
+    ...Object.fromEntries(
+      categories.map((c) => [c.id, `${c.emoji ? `${c.emoji} ` : ""}${c.name}`]),
+    ),
+  };
+
   const firstAccount = accounts.find((a) => a.id === defaultAccountId) ?? accounts[0];
 
   const { register, handleSubmit, control, setValue, getValues } = useForm<FormValues>({
@@ -216,7 +234,7 @@ export function TransactionForm({
             control={control}
             name="currency"
             render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange} disabled={isEdit}>
+              <Select value={field.value} onValueChange={field.onChange} disabled={isEdit} items={currencyItems}>
                 <SelectTrigger className="w-28">
                   <SelectValue />
                 </SelectTrigger>
@@ -249,7 +267,7 @@ export function TransactionForm({
           control={control}
           name="account_id"
           render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
+            <Select value={field.value} onValueChange={field.onChange} items={accountItems}>
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -273,7 +291,7 @@ export function TransactionForm({
             control={control}
             name="to_account_id"
             render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
+              <Select value={field.value} onValueChange={field.onChange} items={accountItems}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder={t("toPlaceholder")} />
                 </SelectTrigger>
@@ -303,7 +321,7 @@ export function TransactionForm({
             control={control}
             name="category_id"
             render={({ field }) => (
-              <Select value={field.value || "none"} onValueChange={field.onChange}>
+              <Select value={field.value || "none"} onValueChange={field.onChange} items={categoryItems}>
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
