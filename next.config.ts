@@ -3,8 +3,39 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
+/* Baseline security headers.
+ *
+ * Deliberately no Content-Security-Policy here. A useful CSP needs a
+ * per-request nonce for the two inline scripts this app ships (the splash
+ * skip check and next-themes' pre-paint theme script), which means generating
+ * one in the proxy and threading it through. A CSP with 'unsafe-inline'
+ * instead would pass a scanner while blocking almost nothing, so it is left
+ * out rather than faked. See the security notes for the follow-up. */
+const securityHeaders = [
+  // This app renders account balances; there is no reason to allow framing.
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  // Full URLs can carry auth codes on /auth/callback. Never leak them cross-origin.
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+  },
+  // Only meaningful over HTTPS; harmless on localhost since browsers ignore
+  // it for http origins.
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains; preload",
+  },
+];
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Drops the `X-Powered-By: Next.js` version banner.
+  poweredByHeader: false,
+
+  async headers() {
+    return [{ source: "/:path*", headers: securityHeaders }];
+  },
 };
 
 export default withNextIntl(nextConfig);
