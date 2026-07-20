@@ -31,6 +31,8 @@
     "welcomeBack": "Bienvenido de nuevo",
     "welcomeBody": "Inicia sesión para continuar donde lo dejaste.",
     "linkError": "Ese enlace de acceso no funcionó. Inténtalo de nuevo.",
+    "continueWithGoogle": "Continuar con Google",
+    "orContinueWith": "o continúa con",
     "email": "Correo electrónico",
     "password": "Contraseña",
     "pleaseWait": "Un momento…",

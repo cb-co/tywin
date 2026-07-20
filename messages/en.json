@@ -31,6 +31,8 @@
     "welcomeBack": "Welcome back",
     "welcomeBody": "Sign in to pick up where you left off.",
     "linkError": "That sign-in link didn't work. Please try again.",
+    "continueWithGoogle": "Continue with Google",
+    "orContinueWith": "or continue with",
     "email": "Email",
     "password": "Password",
     "pleaseWait": "Please wait…",
