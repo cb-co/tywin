@@ -4,8 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { Check, LogOut } from "lucide-react";
-import { updateBaseCurrency, updateDisplayName } from "@/app/(app)/settings/actions";
+import { Check, LogOut, Trash2 } from "lucide-react";
+import { deleteAccount, updateBaseCurrency, updateDisplayName } from "@/app/(app)/settings/actions";
 import type { CurrencyRow } from "@/lib/accounts/queries";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 function Row({
   title,
@@ -71,7 +80,10 @@ export function SettingsPanel({
   const [name, setName] = useState(displayName);
   const [savedName, setSavedName] = useState(displayName);
   const [namePending, startNameTransition] = useTransition();
+  const [deletePending, startDeleteTransition] = useTransition();
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const t = useTranslations("Settings");
+  const tc = useTranslations("Common");
 
   const nameDirty = name.trim() !== savedName.trim();
 
@@ -108,6 +120,20 @@ export function SettingsPanel({
         toast.success(t("toastCurrencyUpdated"));
         router.refresh();
       }
+    });
+  }
+
+  function onDeleteAccount() {
+    startDeleteTransition(async () => {
+      const result = await deleteAccount();
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      // The account and its session are gone — a hard navigation clears all
+      // client state instead of letting the router refetch data for a user
+      // that no longer exists.
+      window.location.assign("/login");
     });
   }
 
@@ -200,6 +226,41 @@ export function SettingsPanel({
             {t("signOutButton")}
           </Button>
         </form>
+      </Row>
+
+      <Row
+        index={6}
+        title={t("deleteAccountTitle")}
+        description={t("deleteAccountDescription")}
+      >
+        <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+          <DialogTrigger
+            render={
+              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                <Trash2 className="size-4" />
+                {t("deleteAccountButton")}
+              </Button>
+            }
+          />
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>{t("deleteConfirmTitle")}</DialogTitle>
+              <DialogDescription>{t("deleteConfirmDescription")}</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setDeleteConfirmOpen(false)}
+                disabled={deletePending}
+              >
+                {tc("cancel")}
+              </Button>
+              <Button variant="destructive" onClick={onDeleteAccount} disabled={deletePending}>
+                {deletePending ? t("deleting") : t("deleteAccountButton")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </Row>
     </Card>
   );

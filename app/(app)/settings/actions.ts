@@ -28,6 +28,22 @@ export async function updateBaseCurrency(code: string): Promise<{ error?: string
  *  enough that the sidebar row and the overview greeting never wrap. */
 const DISPLAY_NAME_MAX = 40;
 
+export async function deleteAccount(): Promise<{ error?: string }> {
+  const t = await getTranslations("Common");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: t("notSignedIn") };
+
+  // Cascades through every user-owned table — see the migration for detail.
+  const { error } = await supabase.rpc("delete_own_account");
+  if (error) return { error: await dbError(error, "deleteAccount") };
+
+  await supabase.auth.signOut();
+  return {};
+}
+
 export async function updateDisplayName(name: string): Promise<{ error?: string }> {
   const t = await getTranslations("Common");
   const ts = await getTranslations("Settings");

@@ -730,6 +730,7 @@ export type Database = {
           used: number
         }[]
       }
+      delete_own_account: { Args: Record<PropertyKey, never>; Returns: undefined }
       seed_default_categories: { Args: { p_user: string }; Returns: undefined }
       spend_distribution: {
         Args: { p_month: string }

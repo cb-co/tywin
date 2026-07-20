@@ -396,7 +396,13 @@
     "displayNameTooLong": "Usa menos de {max} caracteres.",
     "signedInAsDescription": "El correo vinculado a esta cuenta.",
     "saveButton": "Guardar",
-    "toastDisplayNameUpdated": "Nombre para mostrar actualizado"
+    "toastDisplayNameUpdated": "Nombre para mostrar actualizado",
+    "deleteAccountTitle": "Eliminar cuenta",
+    "deleteAccountDescription": "Borra permanentemente tu cuenta y todos sus datos: cuentas, transacciones, presupuestos, suscripciones.",
+    "deleteAccountButton": "Eliminar cuenta",
+    "deleteConfirmTitle": "¿Eliminar tu cuenta?",
+    "deleteConfirmDescription": "Esto elimina permanentemente tu cuenta y todas las cuentas, transacciones, presupuestos y suscripciones que contiene. Esta acción no se puede deshacer.",
+    "deleting": "Eliminando…"
   },
   "Common": {
     "save": "Guardar",

@@ -396,7 +396,13 @@
     "displayNameTooLong": "Keep it under {max} characters.",
     "signedInAsDescription": "The email tied to this account.",
     "saveButton": "Save",
-    "toastDisplayNameUpdated": "Display name updated"
+    "toastDisplayNameUpdated": "Display name updated",
+    "deleteAccountTitle": "Delete account",
+    "deleteAccountDescription": "Permanently erase your account and all its data — accounts, transactions, budgets, subscriptions.",
+    "deleteAccountButton": "Delete account",
+    "deleteConfirmTitle": "Delete your account?",
+    "deleteConfirmDescription": "This permanently deletes your account and every account, transaction, budget, and subscription in it. This can't be undone.",
+    "deleting": "Deleting…"
   },
   "Common": {
     "save": "Save",
