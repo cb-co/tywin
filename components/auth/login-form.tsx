@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { signIn, signUp, signInWithGoogle } from "@/app/login/actions";
@@ -93,6 +94,20 @@ export function LoginForm() {
           {signingUp ? t("haveAccount") : t("needAccount")}
         </button>
       </form>
+      <p className="text-center text-xs text-muted-foreground">
+        {t.rich("termsAgreement", {
+          terms: (chunks) => (
+            <Link href="/terms" className="underline underline-offset-2 hover:text-foreground">
+              {chunks}
+            </Link>
+          ),
+          privacy: (chunks) => (
+            <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">
+              {chunks}
+            </Link>
+          ),
+        })}
+      </p>
     </div>
   );
 }

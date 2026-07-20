@@ -41,7 +41,8 @@
     "needAccount": "¿No tienes cuenta? Regístrate",
     "haveAccount": "¿Ya tienes cuenta? Inicia sesión",
     "confirmEmail": "Revisa tu correo para confirmar tu cuenta.",
-    "passwordRules": "Mínimo {min} caracteres, con mayúsculas, minúsculas, un número y un símbolo."
+    "passwordRules": "Mínimo {min} caracteres, con mayúsculas, minúsculas, un número y un símbolo.",
+    "termsAgreement": "Al continuar, aceptas nuestros <terms>Términos de servicio</terms> y nuestra <privacy>Política de privacidad</privacy>."
   },
   "Errors": {
     "title": "Algo salió mal",

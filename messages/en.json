@@ -41,7 +41,8 @@
     "needAccount": "Need an account? Sign up",
     "haveAccount": "Have an account? Sign in",
     "confirmEmail": "Check your email to confirm your account.",
-    "passwordRules": "At least {min} characters, with upper and lower case, a number, and a symbol."
+    "passwordRules": "At least {min} characters, with upper and lower case, a number, and a symbol.",
+    "termsAgreement": "By continuing, you agree to our <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>."
   },
   "Errors": {
     "title": "Something went wrong",
