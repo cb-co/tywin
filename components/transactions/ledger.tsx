@@ -20,11 +20,15 @@ import {
 } from "@/components/ui/select";
 import { accountOptionLabel } from "@/lib/accounts/meta";
 
+/* occurred_at is a plain calendar date stored as UTC midnight (no time-of-day
+   component) — format it in UTC so the displayed day doesn't drift backward
+   for users west of UTC, who'd otherwise see local-midnight roll it back a day. */
 const dayFormatter = new Intl.DateTimeFormat("en-US", {
   weekday: "short",
   month: "short",
   day: "numeric",
   year: "numeric",
+  timeZone: "UTC",
 });
 
 export function Ledger({

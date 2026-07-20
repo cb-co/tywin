@@ -6,7 +6,9 @@ import { useTranslations } from "next-intl";
 import { formatMoney } from "@/lib/format";
 import type { TransactionWithRefs } from "@/lib/transactions/queries";
 
-const dateFmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
+/* occurred_at is UTC midnight of a plain calendar date — format in UTC so the
+   label doesn't roll back a day for users west of UTC. */
+const dateFmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
 function delta(txn: TransactionWithRefs, accountId: string): number {
   if (txn.budget_only) return 0;

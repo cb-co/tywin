@@ -44,16 +44,22 @@ type FormValues = {
   description: string;
 };
 
-function nowLocal() {
+/* occurred_at carries no meaningful time-of-day: the server stores whatever
+   calendar date the user picks as UTC midnight of that date (see actions.ts),
+   so it round-trips as the same Y-M-D no matter the viewer's timezone. Reading
+   it back must extract that date via UTC, not local time — local time would
+   read UTC midnight as "yesterday" for anyone west of UTC. */
+
+/** Default for a new transaction: today, per the browser's wall clock. */
+function todayLocal() {
   const d = new Date();
   const off = d.getTimezoneOffset();
-  return new Date(d.getTime() - off * 60000).toISOString().slice(0, 16);
+  return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
 }
 
-function toLocal(iso: string) {
-  const d = new Date(iso);
-  const off = d.getTimezoneOffset();
-  return new Date(d.getTime() - off * 60000).toISOString().slice(0, 16);
+/** Existing transaction: the date it was saved with, read back timezone-invariant. */
+function toDateOnly(iso: string) {
+  return new Date(iso).toISOString().slice(0, 10);
 }
 
 export function TransactionForm({
@@ -122,7 +128,7 @@ export function TransactionForm({
           include_tax: transaction.include_tax,
           include_commission: transaction.include_commission,
           budget_only: transaction.budget_only,
-          occurred_at: toLocal(transaction.occurred_at),
+          occurred_at: toDateOnly(transaction.occurred_at),
           description: transaction.description ?? "",
         }
       : {
@@ -137,7 +143,7 @@ export function TransactionForm({
           include_tax: false,
           include_commission: !(firstAccount?.network_fee_optional ?? true),
           budget_only: false,
-          occurred_at: nowLocal(),
+          occurred_at: todayLocal(),
           description: "",
         },
   });
@@ -465,7 +471,7 @@ export function TransactionForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="occurred_at">{t("dateLabel")}</Label>
-          <Input id="occurred_at" type="datetime-local" {...register("occurred_at")} />
+          <Input id="occurred_at" type="date" {...register("occurred_at")} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="description">{t("descriptionLabel")}</Label>
