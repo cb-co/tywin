@@ -7,6 +7,7 @@ import { QuickAddButton } from "@/components/quick-add/quick-add-button";
 import { QuickAddDialog } from "@/components/quick-add/quick-add-dialog";
 import { Splash } from "./splash";
 import { getQuickAddData } from "@/lib/transactions/queries";
+import { profileAvatarUrl } from "@/lib/profile";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -25,6 +26,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         <Sidebar
           email={user?.email ?? ""}
           displayName={profile?.display_name ?? null}
+          avatarUrl={profileAvatarUrl(user?.user_metadata)}
         />
         <div className="flex flex-1 flex-col">
           <MobileHeader />

@@ -36,3 +36,15 @@ export function greetingName(
 ): string {
   return profileLabel(displayName, email).split(" ")[0] ?? "";
 }
+
+/** Avatar image URL from OAuth identity metadata, e.g. Supabase's
+ *  `user.user_metadata` for a Google sign-in. Google's own key is
+ *  `avatar_url`; some providers only set `picture`, so both are checked.
+ *  Returns null when neither is set, so callers fall back to the
+ *  initial-letter bubble instead of a broken image. */
+export function profileAvatarUrl(
+  metadata: { avatar_url?: unknown; picture?: unknown } | null | undefined,
+): string | null {
+  const url = metadata?.avatar_url ?? metadata?.picture;
+  return typeof url === "string" && url.trim() ? url : null;
+}

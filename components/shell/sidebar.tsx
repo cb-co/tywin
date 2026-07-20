@@ -10,9 +10,11 @@ import { profileLabel, profileInitial } from "@/lib/profile";
 export function Sidebar({
   email,
   displayName,
+  avatarUrl,
 }: {
   email: string;
   displayName: string | null;
+  avatarUrl: string | null;
 }) {
   const t = useTranslations("Nav");
   const label = profileLabel(displayName, email);
@@ -47,9 +49,19 @@ export function Sidebar({
           title={email}
           className="group flex min-w-0 flex-1 items-center gap-3 rounded-md px-1.5 py-1.5 transition-colors hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-1 focus-visible:ring-offset-sidebar"
         >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary transition-transform duration-150 group-hover:scale-105 group-active:scale-95">
-            {initial}
-          </span>
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- external Google avatar host isn't registered for next/image optimization.
+            <img
+              src={avatarUrl}
+              alt={label}
+              referrerPolicy="no-referrer"
+              className="h-8 w-8 shrink-0 rounded-full object-cover transition-transform duration-150 group-hover:scale-105 group-active:scale-95"
+            />
+          ) : (
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary transition-transform duration-150 group-hover:scale-105 group-active:scale-95">
+              {initial}
+            </span>
+          )}
           <span className="min-w-0 flex-1 truncate text-xs font-medium text-muted-foreground transition-colors group-hover:text-sidebar-accent-foreground">
             {label}
           </span>
