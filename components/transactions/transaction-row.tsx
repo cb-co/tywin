@@ -12,6 +12,14 @@ const TYPE_ICON = {
   payment: ArrowLeftRight,
 } as const;
 
+/* Edit and delete are always visible, at every width. They used to be
+ * opacity-0 until row hover, which left them unreachable on touch (no hover)
+ * and invisible to keyboard focus, while still occupying layout and staying
+ * tappable — a stray tap beside the amount could land on delete. */
+
+/** 28px is fine for a mouse; a thumb wants closer to 40. */
+const TOUCH_TARGET = "[@media(hover:none)]:size-9";
+
 export function TransactionRow({
   txn,
   data,
@@ -87,13 +95,18 @@ export function TransactionRow({
         ) : null}
       </div>
 
-      <div className="flex items-center opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="flex shrink-0 items-center">
         <TransactionDialog
           mode="edit"
           transaction={txn}
           data={data}
           trigger={
-            <Button variant="ghost" size="icon-sm" aria-label={t("editAria")} className="text-muted-foreground">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={t("editAria")}
+              className={cn("text-muted-foreground", TOUCH_TARGET)}
+            >
               <Pencil className="size-4" />
             </Button>
           }
@@ -102,7 +115,7 @@ export function TransactionRow({
           variant="ghost"
           size="icon-sm"
           aria-label={t("deleteAria")}
-          className="text-muted-foreground hover:text-destructive"
+          className={cn("text-muted-foreground hover:text-destructive", TOUCH_TARGET)}
           onClick={() => onDelete(txn.id)}
           disabled={pending}
         >

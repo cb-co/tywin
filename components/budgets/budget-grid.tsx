@@ -14,12 +14,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/empty-state";
 import { PieChart } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const STATUS_COLOR: Record<BudgetRow["status"], string> = {
   within: "var(--primary)",
   approaching: "var(--warning)",
   over: "var(--destructive)",
 };
+
+/** 28px is fine for a mouse; a thumb wants closer to 40. */
+const TOUCH_TARGET = "[@media(hover:none)]:size-9";
 
 function barPct(used: number, budget: number) {
   if (budget > 0) return Math.min((used / budget) * 100, 100);
@@ -174,12 +178,17 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
                     if (e.key === "Enter") (e.target as HTMLInputElement).blur();
                   }}
                 />
-                <div className="flex items-center opacity-0 transition-opacity group-hover:opacity-100">
+                <div className="flex items-center">
                   <CategoryDialog
                     mode="edit"
                     category={row}
                     trigger={
-                      <Button variant="ghost" size="icon-sm" aria-label={t("editAria", { name: row.name })} className="text-muted-foreground">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={t("editAria", { name: row.name })}
+                        className={cn("text-muted-foreground", TOUCH_TARGET)}
+                      >
                         <Pencil className="size-4" />
                       </Button>
                     }
@@ -188,7 +197,7 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
                     variant="ghost"
                     size="icon-sm"
                     aria-label={t("deleteAria", { name: row.name })}
-                    className="text-muted-foreground hover:text-destructive"
+                    className={cn("text-muted-foreground hover:text-destructive", TOUCH_TARGET)}
                     onClick={() => onDelete(row.category_id)}
                     disabled={pending}
                   >
