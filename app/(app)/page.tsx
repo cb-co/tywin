@@ -4,6 +4,8 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { MarketingHome } from "@/components/marketing/marketing-home";
+import { createClient } from "@/lib/supabase/server";
 import { getOverview } from "@/lib/overview/queries";
 import { formatMoney, formatPercent } from "@/lib/format";
 import { greetingName } from "@/lib/profile";
@@ -15,6 +17,12 @@ const STARTER_CARDS = [
 ];
 
 export default async function OverviewPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return <MarketingHome />;
+
   const o = await getOverview();
   const t = await getTranslations("Overview");
   const locale = await getLocale();
