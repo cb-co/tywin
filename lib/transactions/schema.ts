@@ -10,6 +10,10 @@ export const transactionInput = z
     to_account_id: z.string().uuid().optional().or(z.literal("")),
     category_id: z.string().uuid().optional().or(z.literal("")),
     amount: z.coerce.number().positive("Enter an amount greater than zero"),
+    // Payment destination leg, in the destination account's currency. Optional
+    // here because only the form knows both accounts' currencies; the DB
+    // rejects a cross-currency payment that omits it.
+    to_amount: z.coerce.number().positive().optional(),
     currency: z.string().trim().length(3).toUpperCase(),
     exchange_rate: z.coerce.number().positive().default(1),
     include_tax: z.boolean().default(false),
@@ -32,6 +36,8 @@ export const transactionInput = z
     }
     if (v.type !== "payment" && v.to_account_id)
       ctx.addIssue({ code: "custom", path: ["to_account_id"], message: "Only payments have a destination" });
+    if (v.type !== "payment" && v.to_amount !== undefined)
+      ctx.addIssue({ code: "custom", path: ["to_amount"], message: "Only payments have a destination amount" });
   });
 
 export type TransactionInput = z.infer<typeof transactionInput>;

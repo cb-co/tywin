@@ -16,6 +16,8 @@ function toRow(v: TransactionInput) {
     to_account_id: payment ? v.to_account_id || null : null,
     category_id: v.type === "income" ? null : v.category_id || null,
     amount: v.amount,
+    // Destination leg. Null on a same-currency payment — the DB mirrors `amount`.
+    to_amount: payment ? v.to_amount ?? null : null,
     include_tax: v.include_tax,
     include_commission: v.include_commission,
     budget_only: v.type === "expense" ? v.budget_only : false,

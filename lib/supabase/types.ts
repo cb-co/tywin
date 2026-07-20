@@ -514,6 +514,7 @@ export type Database = {
           subscription_id: string | null
           tax_amount: number
           to_account_id: string | null
+          to_amount: number | null
           total_amount: number
           type: Database["public"]["Enums"]["transaction_type"]
           updated_at: string
@@ -539,6 +540,7 @@ export type Database = {
           subscription_id?: string | null
           tax_amount?: number
           to_account_id?: string | null
+          to_amount?: number | null
           total_amount?: number
           type: Database["public"]["Enums"]["transaction_type"]
           updated_at?: string
@@ -564,6 +566,7 @@ export type Database = {
           subscription_id?: string | null
           tax_amount?: number
           to_account_id?: string | null
+          to_amount?: number | null
           total_amount?: number
           type?: Database["public"]["Enums"]["transaction_type"]
           updated_at?: string
