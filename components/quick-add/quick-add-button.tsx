@@ -12,7 +12,7 @@ export function QuickAddButton() {
     <Button
       onClick={() => setOpen(true)}
       size="icon"
-      className="fixed bottom-20 right-4 z-50 h-14 w-14 rounded-full shadow-lg shadow-primary/30 ring-1 ring-primary/20 transition-transform hover:scale-105 md:bottom-6"
+      className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-50 h-14 w-14 rounded-full shadow-lg shadow-primary/30 ring-1 ring-primary/20 transition-transform hover:scale-105 md:bottom-6"
       aria-label={t("title")}
     >
       <Plus className="h-6 w-6" />

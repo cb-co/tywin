@@ -3,12 +3,17 @@
     "overview": "Resumen",
     "accounts": "Cuentas",
     "transactions": "Transacciones",
+    "activity": "Actividad",
     "budgets": "Presupuestos",
     "subscriptions": "Suscripciones",
     "insights": "Análisis",
     "settings": "Configuración",
-    "language": "Idioma",
-    "more": "Más navegación"
+    "language": "Idioma"
+  },
+  "Activity": {
+    "title": "Actividad",
+    "transactionsDesc": "Ingresos y gastos puntuales",
+    "subscriptionsDesc": "Facturas y pagos recurrentes"
   },
   "QuickAdd": {
     "title": "Agregar rápido"

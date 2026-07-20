@@ -3,12 +3,17 @@
     "overview": "Overview",
     "accounts": "Accounts",
     "transactions": "Transactions",
+    "activity": "Activity",
     "budgets": "Budgets",
     "subscriptions": "Subscriptions",
     "insights": "Insights",
     "settings": "Settings",
-    "language": "Language",
-    "more": "More navigation"
+    "language": "Language"
+  },
+  "Activity": {
+    "title": "Activity",
+    "transactionsDesc": "One-off income and spending",
+    "subscriptionsDesc": "Recurring bills and payments"
   },
   "QuickAdd": {
     "title": "Quick add"

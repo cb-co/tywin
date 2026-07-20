@@ -1,20 +1,10 @@
 import Link from "next/link";
-import { MoreHorizontal } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { NAV_ITEMS, MOBILE_PRIMARY_HREFS } from "@/lib/nav";
+import { SETTINGS_ITEM } from "@/lib/nav";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { Logo, Wordmark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
-const OVERFLOW_ITEMS = NAV_ITEMS.filter(
-  (i) => !MOBILE_PRIMARY_HREFS.includes(i.href),
-);
 
 export function MobileHeader() {
   const t = useTranslations("Nav");
@@ -24,23 +14,21 @@ export function MobileHeader() {
         <Logo className="h-7 w-7" />
         <Wordmark className="text-base" />
       </Link>
-      <div className="flex items-center gap-1">
+      {/* Every destination has a home: five tabs in the bottom bar (two of
+          them behind Activity) and Settings here. No overflow menu means
+          nothing can clip off the right edge. */}
+      <div className="flex items-center gap-0.5">
         <ThemeToggle />
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={<Button variant="ghost" size="icon" aria-label={t("more")} />}
-          >
-            <MoreHorizontal className="h-5 w-5" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {OVERFLOW_ITEMS.map((item) => (
-              <DropdownMenuItem key={item.href} render={<Link href={item.href} />}>
-                <item.icon className="mr-2 h-4 w-4" />
-                {t(item.key)}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <LanguageSwitcher />
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={t(SETTINGS_ITEM.key)}
+          nativeButton={false}
+          render={<Link href={SETTINGS_ITEM.href} />}
+        >
+          <SETTINGS_ITEM.icon className="h-5 w-5" />
+        </Button>
       </div>
     </header>
   );
