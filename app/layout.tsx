@@ -20,9 +20,44 @@ const inter = Inter({
   display: "swap",
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const title = "Cashly · Personal Finance";
+const description = "Track accounts, budgets, credit cards, and subscriptions.";
+
 export const metadata: Metadata = {
-  title: "Cashly · Personal Finance",
-  description: "Track accounts, budgets, credit cards, and subscriptions.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: title,
+    template: "%s · Cashly",
+  },
+  description,
+  keywords: [
+    "personal finance",
+    "budgeting app",
+    "net worth tracker",
+    "subscription tracker",
+    "credit card tracker",
+  ],
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title,
+    description,
+    siteName: "Cashly",
+    type: "website",
+    locale: "en_US",
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default async function RootLayout({
