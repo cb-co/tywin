@@ -22,13 +22,13 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <QuickAddProvider>
       <Splash />
-      <div className="flex min-h-dvh">
+      <div className="flex min-h-dvh md:h-dvh md:overflow-hidden">
         <Sidebar
           email={user?.email ?? ""}
           displayName={profile?.display_name ?? null}
           avatarUrl={profileAvatarUrl(user?.user_metadata)}
         />
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col md:h-dvh md:overflow-y-auto">
           <MobileHeader />
           {/* Bottom padding clears the bar (~56px) *and* the FAB above it,
               which tops out at 136px. pb-24 only reserved 96px, so the last

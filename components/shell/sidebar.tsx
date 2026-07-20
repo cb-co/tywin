@@ -21,7 +21,7 @@ export function Sidebar({
   const initial = profileInitial(displayName, email);
 
   return (
-    <aside className="hidden md:flex md:w-64 md:flex-col md:border-r md:border-sidebar-border md:bg-sidebar md:text-sidebar-foreground">
+    <aside className="hidden md:flex md:h-dvh md:w-64 md:shrink-0 md:flex-col md:border-r md:border-sidebar-border md:bg-sidebar md:text-sidebar-foreground">
       <div className="flex h-16 items-center gap-2.5 px-5">
         <Logo />
         <Wordmark />
