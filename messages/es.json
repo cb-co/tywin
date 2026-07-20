@@ -397,7 +397,7 @@
     "signedInAsDescription": "El correo vinculado a esta cuenta.",
     "saveButton": "Guardar",
     "toastDisplayNameUpdated": "Nombre para mostrar actualizado",
-    "deleteAccountTitle": "Eliminar cuenta",
+    "dangerZoneTitle": "Zona de peligro",
     "deleteAccountDescription": "Borra permanentemente tu cuenta y todos sus datos: cuentas, transacciones, presupuestos, suscripciones.",
     "deleteAccountButton": "Eliminar cuenta",
     "deleteConfirmTitle": "¿Eliminar tu cuenta?",

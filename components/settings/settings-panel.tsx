@@ -138,130 +138,134 @@ export function SettingsPanel({
   }
 
   return (
-    <Card className="divide-y px-6 py-0">
-      <Row
-        index={0}
-        htmlFor="display-name"
-        title={t("displayNameTitle")}
-        description={t("displayNameDescription")}
-      >
-        <form
-          className="flex items-center gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            onSaveName();
-          }}
+    <div className="space-y-6">
+      <Card className="divide-y px-6 py-0">
+        <Row
+          index={0}
+          htmlFor="display-name"
+          title={t("displayNameTitle")}
+          description={t("displayNameDescription")}
         >
-          <Input
-            id="display-name"
-            value={name}
-            maxLength={40}
-            autoComplete="name"
-            disabled={namePending}
-            placeholder={t("displayNamePlaceholder")}
-            onChange={(e) => setName(e.target.value)}
-            className="w-48"
-          />
-          {/* The save button only exists once there's something to save, so
-              the row stays quiet at rest. */}
-          <Button
-            type="submit"
-            size="sm"
-            disabled={!nameDirty || namePending}
-            className={cn(
-              "transition-all duration-200",
-              nameDirty
-                ? "scale-100 opacity-100"
-                : "pointer-events-none w-0 scale-90 overflow-hidden px-0 opacity-0",
-            )}
+          <form
+            className="flex items-center gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              onSaveName();
+            }}
           >
-            <Check className="size-4" />
-            {t("saveButton")}
-          </Button>
-        </form>
-      </Row>
+            <Input
+              id="display-name"
+              value={name}
+              maxLength={40}
+              autoComplete="name"
+              disabled={namePending}
+              placeholder={t("displayNamePlaceholder")}
+              onChange={(e) => setName(e.target.value)}
+              className="w-48"
+            />
+            {/* The save button only exists once there's something to save, so
+                the row stays quiet at rest. */}
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!nameDirty || namePending}
+              className={cn(
+                "transition-all duration-200",
+                nameDirty
+                  ? "scale-100 opacity-100"
+                  : "pointer-events-none w-0 scale-90 overflow-hidden px-0 opacity-0",
+              )}
+            >
+              <Check className="size-4" />
+              {t("saveButton")}
+            </Button>
+          </form>
+        </Row>
 
-      <Row index={1} title={t("signedInAsTitle")} description={t("signedInAsDescription")}>
-        <span className="text-sm text-muted-foreground">{email || "—"}</span>
-      </Row>
+        <Row index={1} title={t("signedInAsTitle")} description={t("signedInAsDescription")}>
+          <span className="text-sm text-muted-foreground">{email || "—"}</span>
+        </Row>
 
-      <Row
-        index={2}
-        title={t("baseCurrencyTitle")}
-        description={t("baseCurrencyDescription")}
-      >
-        <Select
-          value={currency}
-          onValueChange={(v) => onCurrency(v ?? baseCurrency)}
-          disabled={pending}
-          items={currencyItems}
+        <Row
+          index={2}
+          title={t("baseCurrencyTitle")}
+          description={t("baseCurrencyDescription")}
         >
-          <SelectTrigger className="w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {currencies.map((c) => (
-              <SelectItem key={c.code} value={c.code}>
-                {c.code} · {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </Row>
+          <Select
+            value={currency}
+            onValueChange={(v) => onCurrency(v ?? baseCurrency)}
+            disabled={pending}
+            items={currencyItems}
+          >
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {currencies.map((c) => (
+                <SelectItem key={c.code} value={c.code}>
+                  {c.code} · {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Row>
 
-      <Row index={3} title={t("themeTitle")} description={t("themeDescription")}>
-        <ThemeToggle />
-      </Row>
+        <Row index={3} title={t("themeTitle")} description={t("themeDescription")}>
+          <ThemeToggle />
+        </Row>
 
-      <Row index={4} title={t("categoriesTitle")} description={t("categoriesDescription")}>
-        <Button variant="outline" size="sm" render={<a href="/budgets" />} nativeButton={false}>
-          {t("manageCategoriesButton")}
-        </Button>
-      </Row>
-
-      <Row index={5} title={t("sessionTitle")} description={t("sessionDescription")}>
-        <form action="/auth/signout" method="post">
-          <Button type="submit" variant="outline" size="sm">
-            <LogOut className="size-4" />
-            {t("signOutButton")}
+        <Row index={4} title={t("categoriesTitle")} description={t("categoriesDescription")}>
+          <Button variant="outline" size="sm" render={<a href="/budgets" />} nativeButton={false}>
+            {t("manageCategoriesButton")}
           </Button>
-        </form>
-      </Row>
+        </Row>
 
-      <Row
-        index={6}
-        title={t("deleteAccountTitle")}
-        description={t("deleteAccountDescription")}
-      >
-        <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-          <DialogTrigger
-            render={
-              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                <Trash2 className="size-4" />
-                {t("deleteAccountButton")}
-              </Button>
-            }
-          />
-          <DialogContent className="sm:max-w-sm">
-            <DialogHeader>
-              <DialogTitle>{t("deleteConfirmTitle")}</DialogTitle>
-              <DialogDescription>{t("deleteConfirmDescription")}</DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setDeleteConfirmOpen(false)}
-                disabled={deletePending}
-              >
-                {tc("cancel")}
-              </Button>
-              <Button variant="destructive" onClick={onDeleteAccount} disabled={deletePending}>
-                {deletePending ? t("deleting") : t("deleteAccountButton")}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </Row>
-    </Card>
+        <Row index={5} title={t("sessionTitle")} description={t("sessionDescription")}>
+          <form action="/auth/signout" method="post">
+            <Button type="submit" variant="outline" size="sm">
+              <LogOut className="size-4" />
+              {t("signOutButton")}
+            </Button>
+          </form>
+        </Row>
+      </Card>
+
+      <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-6 dark:bg-destructive/10">
+        <div className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-0.5">
+            <p className="text-sm font-medium text-destructive">{t("dangerZoneTitle")}</p>
+            <p className="text-sm text-muted-foreground">{t("deleteAccountDescription")}</p>
+          </div>
+          <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+            <DialogTrigger
+              render={
+                <Button variant="destructive" size="sm" className="shrink-0">
+                  <Trash2 className="size-4" />
+                  {t("deleteAccountButton")}
+                </Button>
+              }
+            />
+            <DialogContent className="sm:max-w-sm">
+              <DialogHeader>
+                <DialogTitle>{t("deleteConfirmTitle")}</DialogTitle>
+                <DialogDescription>{t("deleteConfirmDescription")}</DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteConfirmOpen(false)}
+                  disabled={deletePending}
+                >
+                  {tc("cancel")}
+                </Button>
+                <Button variant="destructive" onClick={onDeleteAccount} disabled={deletePending}>
+                  {deletePending ? t("deleting") : t("deleteAccountButton")}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+    </div>
   );
 }

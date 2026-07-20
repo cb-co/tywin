@@ -397,7 +397,7 @@
     "signedInAsDescription": "The email tied to this account.",
     "saveButton": "Save",
     "toastDisplayNameUpdated": "Display name updated",
-    "deleteAccountTitle": "Delete account",
+    "dangerZoneTitle": "Danger zone",
     "deleteAccountDescription": "Permanently erase your account and all its data — accounts, transactions, budgets, subscriptions.",
     "deleteAccountButton": "Delete account",
     "deleteConfirmTitle": "Delete your account?",
