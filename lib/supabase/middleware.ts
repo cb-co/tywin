@@ -35,7 +35,8 @@ function buildCsp(nonce: string): string {
     `default-src 'self'`,
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ""}`,
     `style-src 'self' 'unsafe-inline'`,
-    `img-src 'self' data: blob:`,
+    // Google's own OAuth avatar CDN, for the sidebar avatar image.
+    `img-src 'self' data: blob: https://*.googleusercontent.com`,
     `font-src 'self' data:`,
     // Browser-side Supabase calls, plus its realtime websocket.
     `connect-src 'self' ${supabaseOrigin} ${supabaseOrigin.replace(/^https:/, "wss:")}${dev ? " ws: http://localhost:*" : ""}`,
