@@ -408,6 +408,8 @@
     "baseCurrencyDescription": "Los paneles y el patrimonio neto se convierten a esta moneda.",
     "themeTitle": "Tema",
     "themeDescription": "Sistema, claro u oscuro.",
+    "soundEffectsTitle": "Efectos de sonido",
+    "soundEffectsDescription": "Sonidos sutiles al guardar, eliminar o si algo falla.",
     "categoriesTitle": "Categorías",
     "categoriesDescription": "Añade o elimina categorías desde la pantalla de Presupuestos.",
     "manageCategoriesButton": "Administrar categorías",

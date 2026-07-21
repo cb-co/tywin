@@ -408,6 +408,8 @@
     "baseCurrencyDescription": "Dashboards and net worth convert into this currency.",
     "themeTitle": "Theme",
     "themeDescription": "System, light, or dark.",
+    "soundEffectsTitle": "Sound effects",
+    "soundEffectsDescription": "Light sounds for saves, deletes, and errors.",
     "categoriesTitle": "Categories",
     "categoriesDescription": "Add or remove categories from the Budgets screen.",
     "manageCategoriesButton": "Manage categories",

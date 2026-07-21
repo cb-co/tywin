@@ -13,6 +13,8 @@ import { Row } from "@/components/settings/row";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { useUiSound } from "@/components/sound/sound-provider";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -52,6 +54,7 @@ export function SettingsPanel({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const t = useTranslations("Settings");
   const tc = useTranslations("Common");
+  const { enabled, setEnabled, playSuccess, playError } = useUiSound();
 
   const nameDirty = name.trim() !== savedName.trim();
 
@@ -68,11 +71,13 @@ export function SettingsPanel({
       const result = await updateDisplayName(next);
       if (result.error) {
         toast.error(result.error);
+        playError();
         return;
       }
       setSavedName(next);
       setName(next);
       toast.success(t("toastDisplayNameUpdated"));
+      playSuccess();
       router.refresh();
     });
   }
@@ -83,9 +88,11 @@ export function SettingsPanel({
       const result = await updateBaseCurrency(code);
       if (result.error) {
         toast.error(result.error);
+        playError();
         setCurrency(baseCurrency);
       } else {
         toast.success(t("toastCurrencyUpdated"));
+        playSuccess();
         router.refresh();
       }
     });
@@ -96,6 +103,7 @@ export function SettingsPanel({
       const result = await deleteAccount();
       if (result.error) {
         toast.error(result.error);
+        playError();
         return;
       }
       // The account and its session are gone — a hard navigation clears all
@@ -182,13 +190,25 @@ export function SettingsPanel({
           <ThemeToggle />
         </Row>
 
-        <Row index={4} title={t("categoriesTitle")} description={t("categoriesDescription")}>
+        <Row
+          index={4}
+          title={t("soundEffectsTitle")}
+          description={t("soundEffectsDescription")}
+        >
+          <Switch
+            checked={enabled}
+            onCheckedChange={setEnabled}
+            aria-label={t("soundEffectsTitle")}
+          />
+        </Row>
+
+        <Row index={5} title={t("categoriesTitle")} description={t("categoriesDescription")}>
           <Button variant="outline" size="sm" render={<a href="/budgets" />} nativeButton={false}>
             {t("manageCategoriesButton")}
           </Button>
         </Row>
 
-        <Row index={5} title={t("sessionTitle")} description={t("sessionDescription")}>
+        <Row index={6} title={t("sessionTitle")} description={t("sessionDescription")}>
           <form action="/auth/signout" method="post">
             <Button type="submit" variant="outline" size="sm">
               <LogOut className="size-4" />
@@ -197,7 +217,7 @@ export function SettingsPanel({
           </form>
         </Row>
 
-        <InstallAppRow index={6} />
+        <InstallAppRow index={7} />
       </Card>
 
       <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-6 dark:bg-destructive/10">
