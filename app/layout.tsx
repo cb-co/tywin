@@ -6,6 +6,7 @@ import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { RegisterServiceWorker } from "@/components/pwa/register-service-worker";
 import { SPLASH_SKIP_SCRIPT } from "@/lib/splash";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -58,6 +59,11 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Cashly",
+  },
 };
 
 export default async function RootLayout({
@@ -100,6 +106,7 @@ export default async function RootLayout({
           >
             {children}
             <Toaster richColors />
+            <RegisterServiceWorker />
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>
