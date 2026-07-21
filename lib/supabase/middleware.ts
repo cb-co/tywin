@@ -1,7 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/", "/login", "/auth", "/terms", "/privacy"];
+const PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/auth",
+  "/terms",
+  "/privacy",
+  "/manifest.webmanifest",
+  "/apple-icon",
+  "/sw.js",
+  "/offline.html",
+];
 
 /** A path is public only when it equals a public root or sits beneath it.
  *  A bare `startsWith` would also match `/loginsomething`, treating an
