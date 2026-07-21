@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Download } from "lucide-react";
-import { Row } from "@/components/settings/settings-panel";
+import { Row } from "@/components/settings/row";
 import { Button } from "@/components/ui/button";
 import { isIosUserAgent } from "@/lib/pwa/is-ios";
 
@@ -31,7 +31,7 @@ export function InstallAppRow({ index }: { index: number }) {
       return;
     }
 
-    if (isIosUserAgent(window.navigator.userAgent)) {
+    if (isIosUserAgent(window.navigator.userAgent, window.navigator.maxTouchPoints)) {
       setState("ios");
       return;
     }

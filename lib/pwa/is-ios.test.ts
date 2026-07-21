@@ -18,3 +18,15 @@ test("does not flag Android or desktop user agents", () => {
   expect(isIosUserAgent(androidUa)).toBe(false);
   expect(isIosUserAgent(macUa)).toBe(false);
 });
+
+test("detects iPadOS 13+ reporting as a touch-capable Mac", () => {
+  const ipadOs13PlusUa =
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15";
+  expect(isIosUserAgent(ipadOs13PlusUa, 5)).toBe(true);
+});
+
+test("does not flag an actual Mac with a Mac-style user agent and no touch", () => {
+  const macUa =
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15";
+  expect(isIosUserAgent(macUa, 0)).toBe(false);
+});

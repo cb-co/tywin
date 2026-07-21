@@ -9,10 +9,10 @@ import { deleteAccount, updateBaseCurrency, updateDisplayName } from "@/app/(app
 import type { CurrencyRow } from "@/lib/accounts/queries";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { InstallAppRow } from "@/components/pwa/install-app-row";
+import { Row } from "@/components/settings/row";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -30,39 +30,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
-export function Row({
-  title,
-  description,
-  index,
-  htmlFor,
-  children,
-}: {
-  title: string;
-  description: string;
-  index: number;
-  htmlFor?: string;
-  children: React.ReactNode;
-}) {
-  const Title = htmlFor ? Label : "p";
-  return (
-    <div
-      className="rise flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between"
-      style={{ "--i": index } as React.CSSProperties}
-    >
-      <div className="space-y-0.5">
-        <Title
-          {...(htmlFor ? { htmlFor } : {})}
-          className="text-sm font-medium text-foreground"
-        >
-          {title}
-        </Title>
-        <p className="text-sm text-muted-foreground">{description}</p>
-      </div>
-      <div className="shrink-0">{children}</div>
-    </div>
-  );
-}
 
 export function SettingsPanel({
   email,
