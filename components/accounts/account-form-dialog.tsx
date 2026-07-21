@@ -5,6 +5,7 @@ import { useForm, useWatch, Controller } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { useUiSound } from "@/components/sound/sound-provider";
 import {
   CREATABLE_TYPES,
   isCard,
@@ -117,6 +118,7 @@ export function AccountFormDialog({
   const t = useTranslations("AccountForm");
   const tType = useTranslations("AccountTypes");
   const tc = useTranslations("Common");
+  const { playSuccess, playError } = useUiSound();
 
   const { register, handleSubmit, control, reset } = useForm<FormValues>({
     defaultValues: defaultsFor(account, baseCurrency),
@@ -163,11 +165,13 @@ export function AccountFormDialog({
       if (values.type === "credit_card" && cardGroupId === "new") {
         if (!newGroupName.trim()) {
           toast.error(t("toastNameGroupOrNone"));
+          playError();
           return;
         }
         const created = await createCardGroup(newGroupName.trim());
         if (created.error) {
           toast.error(created.error);
+          playError();
           return;
         }
         cardGroupId = created.id!;
@@ -178,11 +182,13 @@ export function AccountFormDialog({
       if (bankId === "new") {
         if (!newBankName.trim()) {
           toast.error(t("toastNameBankOrNone"));
+          playError();
           return;
         }
         const created = await createBank(newBankName.trim());
         if (created.error) {
           toast.error(created.error);
+          playError();
           return;
         }
         bankId = created.id!;
@@ -201,9 +207,11 @@ export function AccountFormDialog({
           : await updateAccount(account!.id, clean as never);
       if (result.error) {
         toast.error(result.error);
+        playError();
         return;
       }
       toast.success(mode === "create" ? t("toastAccountAdded") : t("toastAccountUpdated"));
+      playSuccess();
       setOpen(false);
       router.refresh();
     });

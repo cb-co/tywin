@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Archive, ArchiveRestore, Pencil, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useUiSound } from "@/components/sound/sound-provider";
 import { archiveAccount, deleteAccount } from "@/app/(app)/accounts/actions";
 import { AccountFormDialog } from "./account-form-dialog";
 import type { AccountWithStatus, CurrencyRow, CardGroupRow, BankRow } from "@/lib/accounts/queries";
@@ -37,15 +38,18 @@ export function AccountDetailActions({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const { playSuccess, playDelete, playError } = useUiSound();
 
   function onArchive() {
     startTransition(async () => {
       const result = await archiveAccount(account.id, !account.is_archived);
       if (result.error) {
         toast.error(result.error);
+        playError();
         return;
       }
       toast.success(account.is_archived ? t("accountRestored") : t("accountArchived"));
+      playSuccess();
       router.push("/accounts");
       router.refresh();
     });
@@ -56,9 +60,11 @@ export function AccountDetailActions({
       const result = await deleteAccount(account.id);
       if (result.error) {
         toast.error(result.error);
+        playError();
         return;
       }
       toast.success(t("accountDeleted"));
+      playDelete();
       router.push("/accounts");
       router.refresh();
     });

@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { useUiSound } from "@/components/sound/sound-provider";
 import { addCardStatement, setCardBalance } from "@/app/(app)/accounts/actions";
 import { formatMoney } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ export function ReconcilePanel({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [balance, setBalance] = useState(String(currentBalance));
+  const { playSuccess, playError } = useUiSound();
   const { register, handleSubmit, reset } = useForm<StatementForm>({
     defaultValues: {
       period_start: "",
@@ -57,9 +59,12 @@ export function ReconcilePanel({
     const value = Number(balance);
     startTransition(async () => {
       const result = await setCardBalance(accountId, value);
-      if (result.error) toast.error(result.error);
-      else {
+      if (result.error) {
+        toast.error(result.error);
+        playError();
+      } else {
         toast.success(t("balanceUpdated"));
+        playSuccess();
         router.refresh();
       }
     });
@@ -68,9 +73,12 @@ export function ReconcilePanel({
   function onAddStatement(values: StatementForm) {
     startTransition(async () => {
       const result = await addCardStatement({ ...values, account_id: accountId });
-      if (result.error) toast.error(result.error);
-      else {
+      if (result.error) {
+        toast.error(result.error);
+        playError();
+      } else {
         toast.success(t("statementRecorded"));
+        playSuccess();
         reset();
         router.refresh();
       }
