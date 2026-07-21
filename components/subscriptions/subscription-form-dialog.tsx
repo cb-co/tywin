@@ -9,6 +9,7 @@ import { BILLING_CYCLES, CYCLE_LABEL, type BillingCycle } from "@/lib/subscripti
 import { createSubscription, updateSubscription } from "@/app/(app)/subscriptions/actions";
 import type { QuickAddData } from "@/lib/transactions/queries";
 import type { SubscriptionWithRefs } from "@/lib/subscriptions/queries";
+import { useUiSound } from "@/components/sound/sound-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,6 +74,7 @@ export function SubscriptionFormDialog({
   const router = useRouter();
   const t = useTranslations("SubscriptionForm");
   const tc = useTranslations("Common");
+  const { playSuccess, playError } = useUiSound();
 
   /* Value→label maps for the closed trigger. Base UI's `<Select.Value>`
      renders the raw value unless `items` is given on the root, which showed
@@ -116,9 +118,11 @@ export function SubscriptionFormDialog({
           : await updateSubscription(subscription!.id, payload);
       if (result.error) {
         toast.error(result.error);
+        playError();
         return;
       }
       toast.success(mode === "create" ? t("toastAdded") : t("toastUpdated"));
+      playSuccess();
       setOpen(false);
       router.refresh();
     });

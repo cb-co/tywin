@@ -14,6 +14,7 @@ import { CYCLE_LABEL, nextChargeDate, monthlyEquivalent, type BillingCycle } fro
 import { formatMoney } from "@/lib/format";
 import type { SubscriptionWithRefs } from "@/lib/subscriptions/queries";
 import type { QuickAddData } from "@/lib/transactions/queries";
+import { useUiSound } from "@/components/sound/sound-provider";
 import { SubscriptionFormDialog } from "./subscription-form-dialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -38,6 +39,7 @@ export function SubscriptionsView({
   const [pending, startTransition] = useTransition();
   const t = useTranslations("Subscriptions");
   const [view, setView] = useState<"grid" | "table">("grid");
+  const { playSuccess, playDelete, playError } = useUiSound();
 
   const monthlyTotal = useMemo(
     () =>
@@ -50,9 +52,12 @@ export function SubscriptionsView({
   function onAddCharge(id: string) {
     startTransition(async () => {
       const result = await addCharge(id);
-      if (result.error) toast.error(result.error);
-      else {
+      if (result.error) {
+        toast.error(result.error);
+        playError();
+      } else {
         toast.success(t("toastChargeLogged"));
+        playSuccess();
         router.refresh();
       }
     });
@@ -60,9 +65,12 @@ export function SubscriptionsView({
   function onDelete(id: string) {
     startTransition(async () => {
       const result = await deleteSubscription(id);
-      if (result.error) toast.error(result.error);
-      else {
+      if (result.error) {
+        toast.error(result.error);
+        playError();
+      } else {
         toast.success(t("toastDeleted"));
+        playDelete();
         router.refresh();
       }
     });
@@ -70,8 +78,12 @@ export function SubscriptionsView({
   function onToggle(id: string, active: boolean) {
     startTransition(async () => {
       const result = await setSubscriptionActive(id, active);
-      if (result.error) toast.error(result.error);
-      else router.refresh();
+      if (result.error) {
+        toast.error(result.error);
+        playError();
+      } else {
+        router.refresh();
+      }
     });
   }
 
