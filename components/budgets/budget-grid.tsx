@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { useUiSound } from "@/components/sound/sound-provider";
 import { ChevronLeft, ChevronRight, Plus, Trash2, CopyPlus, Pencil } from "lucide-react";
 import { setBudget, deleteCategory, copyPreviousMonth } from "@/app/(app)/budgets/actions";
 import { addMonths, monthLabel } from "@/lib/budgets/month";
@@ -34,6 +35,7 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const t = useTranslations("Budgets");
+  const { playSuccess, playDelete, playError } = useUiSound();
   const { rows, totalBudget, totalUsed, baseCurrency } = overview;
   const remaining = totalBudget - totalUsed;
 
@@ -46,17 +48,24 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
     if (!Number.isFinite(amount) || amount === current) return;
     startTransition(async () => {
       const result = await setBudget({ category_id: categoryId, month, amount });
-      if (result.error) toast.error(result.error);
-      else router.refresh();
+      if (result.error) {
+        toast.error(result.error);
+        playError();
+      } else {
+        router.refresh();
+      }
     });
   }
 
   function onDelete(id: string) {
     startTransition(async () => {
       const result = await deleteCategory(id);
-      if (result.error) toast.error(result.error);
-      else {
+      if (result.error) {
+        toast.error(result.error);
+        playError();
+      } else {
         toast.success(t("categoryDeleted"));
+        playDelete();
         router.refresh();
       }
     });
@@ -65,9 +74,12 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
   function onCopy() {
     startTransition(async () => {
       const result = await copyPreviousMonth(month);
-      if (result.error) toast.error(result.error);
-      else {
+      if (result.error) {
+        toast.error(result.error);
+        playError();
+      } else {
         toast.success(t("budgetsCopied"));
+        playSuccess();
         router.refresh();
       }
     });

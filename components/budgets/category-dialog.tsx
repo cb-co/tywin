@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { useUiSound } from "@/components/sound/sound-provider";
 import { createCategory, updateCategory } from "@/app/(app)/budgets/actions";
 import type { BudgetRow } from "@/lib/budgets/queries";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ export function CategoryDialog({
   const router = useRouter();
   const t = useTranslations("CategoryDialog");
   const tc = useTranslations("Common");
+  const { playSuccess, playError } = useUiSound();
   const { register, handleSubmit, reset } = useForm<Values>({
     defaultValues: { name: category?.name ?? "", emoji: category?.emoji ?? "" },
   });
@@ -59,9 +61,11 @@ export function CategoryDialog({
           : await createCategory(payload);
       if (result.error) {
         toast.error(result.error);
+        playError();
         return;
       }
       toast.success(mode === "edit" ? t("toastUpdated") : t("toastAdded"));
+      playSuccess();
       setOpen(false);
       router.refresh();
     });
