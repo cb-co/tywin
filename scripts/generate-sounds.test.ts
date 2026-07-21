@@ -17,4 +17,23 @@ for (const file of SOUND_FILES) {
     expect(buffer.readUInt32LE(24)).toBe(44100); // sample rate
     expect(buffer.readUInt16LE(34)).toBe(16); // bits per sample
   });
+
+  /* The two audible failure modes a header check can't see: a buffer that
+     doesn't end at silence pops on playback, and a silent buffer means the
+     synthesis produced nothing at all. */
+  test(`public/sounds/${file} rings out to silence without clipping`, () => {
+    const buffer = readFileSync(join(process.cwd(), "public/sounds", file));
+    const samples: number[] = [];
+    for (let i = 44; i + 1 < buffer.length; i += 2) {
+      samples.push(buffer.readInt16LE(i) / 32767);
+    }
+
+    const peak = Math.max(...samples.map(Math.abs));
+    expect(peak).toBeGreaterThan(0.1); // not silence
+    expect(peak).toBeLessThanOrEqual(1); // not clipped
+
+    // Starts and ends at rest, so playback has no edge click either side.
+    expect(Math.abs(samples[0])).toBeLessThan(0.01);
+    expect(Math.abs(samples[samples.length - 1])).toBeLessThan(0.01);
+  });
 }

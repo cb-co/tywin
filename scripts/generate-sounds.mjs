@@ -30,50 +30,91 @@ function writeWavFile(path, samples) {
   writeFileSync(path, buffer);
 }
 
-/** Quick fade-in, hold, fade-out — avoids clicks at buffer edges. */
-function envelope(t, duration, attack = 0.01, release = 0.08) {
-  if (t < attack) return t / attack;
-  const releaseStart = duration - release;
-  if (t > releaseStart) return Math.max(0, (duration - t) / release);
-  return 1;
-}
+/* A struck-instrument voice: a few partials that each fade at their own rate,
+ * fastest at the top.
+ *
+ * This is most of the difference between "elegant" and "robotic". A bare sine
+ * held at constant amplitude and then cut off is a beep — nothing physical
+ * sounds like that. Real bells, marimbas and glass lose their upper partials
+ * within the first fraction of a second and let the fundamental ring on, which
+ * is what the ear reads as warmth.
+ *
+ * The ratios sit a hair above whole numbers on purpose: perfectly harmonic
+ * partials sound synthetic, while a few cents of stretch gives the slow beating
+ * real struck bars have. */
+const VOICE = [
+  { ratio: 1, gain: 1, decay: 1 },
+  { ratio: 2.01, gain: 0.28, decay: 1.7 },
+  { ratio: 3.01, gain: 0.12, decay: 2.6 },
+  { ratio: 4.02, gain: 0.05, decay: 3.6 },
+];
 
-function tone(freq, duration, wave = "sine") {
-  const numSamples = Math.round(SAMPLE_RATE * duration);
-  const samples = new Float32Array(numSamples);
-  for (let i = 0; i < numSamples; i++) {
-    const t = i / SAMPLE_RATE;
-    const phase = 2 * Math.PI * freq * t;
-    const raw =
-      wave === "sine" ? Math.sin(phase) : Math.asin(Math.sin(phase)) * (2 / Math.PI); // triangle
-    samples[i] = raw * envelope(t, duration) * 0.5;
-  }
-  return samples;
-}
+const VOICE_GAIN = VOICE.reduce((sum, p) => sum + p.gain, 0);
 
-function concat(...buffers) {
-  const total = buffers.reduce((sum, b) => sum + b.length, 0);
+/** Attack short enough to still read as "struck", shaped as a raised cosine
+ *  rather than a linear ramp so it starts from true silence with no click. */
+const ATTACK = 0.006;
+/** Final ramp guaranteeing the buffer ends at exact zero. */
+const TAIL = 0.03;
+
+function note(freq, { duration, decay = 5.5, amplitude = 0.5, delay = 0 }) {
+  const total = Math.round(SAMPLE_RATE * (duration + delay));
+  const start = Math.round(SAMPLE_RATE * delay);
   const out = new Float32Array(total);
-  let offset = 0;
-  for (const b of buffers) {
-    out.set(b, offset);
-    offset += b.length;
+
+  for (let i = start; i < total; i++) {
+    const t = (i - start) / SAMPLE_RATE;
+
+    let v = 0;
+    for (const p of VOICE) {
+      v +=
+        p.gain *
+        Math.sin(2 * Math.PI * freq * p.ratio * t) *
+        Math.exp(-decay * p.decay * t);
+    }
+    v /= VOICE_GAIN;
+
+    const attack = t < ATTACK ? 0.5 * (1 - Math.cos((Math.PI * t) / ATTACK)) : 1;
+    const tail = Math.max(0, Math.min(1, (duration - t) / TAIL));
+    out[i] = v * attack * tail * amplitude;
+  }
+
+  return out;
+}
+
+/** Layers notes over one shared timeline; each note carries its own `delay`. */
+function mix(...layers) {
+  const total = Math.max(...layers.map((l) => l.length));
+  const out = new Float32Array(total);
+  for (const layer of layers) {
+    for (let i = 0; i < layer.length; i++) out[i] += layer[i];
   }
   return out;
 }
 
 mkdirSync(OUT_DIR, { recursive: true });
 
-// Success: light two-note ascending chime.
-const success = concat(tone(660, 0.09, "sine"), tone(880, 0.12, "sine"));
+/* Success: E5 → B5, a rising perfect fifth. The second note lands while the
+   first is still ringing, so it reads as one gesture rather than two beeps. */
+const success = mix(
+  note(659.25, { duration: 0.75, decay: 5.5, amplitude: 0.5 }),
+  note(987.77, { duration: 0.75, decay: 5.0, amplitude: 0.42, delay: 0.085 }),
+);
 
-// Delete: a lower, distinct single tone — not the same shape as success.
-const del = tone(320, 0.16, "triangle");
+/* Delete: A4 → E4, the same interval inverted. Falling and a register lower,
+   so it's unmistakably not the success cue without being harsh about it. */
+const del = mix(
+  note(440.0, { duration: 0.7, decay: 6.0, amplitude: 0.5 }),
+  note(329.63, { duration: 0.7, decay: 5.5, amplitude: 0.45, delay: 0.075 }),
+);
 
-// Error: brief, low, calm — two short pulses, not alarming.
-const errorPulse = tone(240, 0.07, "sine");
-const gap = new Float32Array(Math.round(SAMPLE_RATE * 0.05));
-const error = concat(errorPulse, gap, errorPulse);
+/* Error: E4 → D4, a gentle step down, quieter and shorter-lived than the
+   others. A whole tone rather than a semitone — enough to register as "no"
+   without the dissonant edge that makes error sounds unpleasant to hear twice. */
+const error = mix(
+  note(329.63, { duration: 0.55, decay: 7.5, amplitude: 0.42 }),
+  note(293.66, { duration: 0.55, decay: 7.0, amplitude: 0.42, delay: 0.13 }),
+);
 
 writeWavFile(join(OUT_DIR, "success.wav"), success);
 writeWavFile(join(OUT_DIR, "delete.wav"), del);
