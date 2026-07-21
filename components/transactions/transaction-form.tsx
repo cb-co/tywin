@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { accountOptionLabel } from "@/lib/accounts/meta";
 import { destinationAmount, invertRate } from "@/lib/transactions/money";
+import { useUiSound } from "@/components/sound/sound-provider";
 
 type FormValues = {
   type: TransactionType;
@@ -82,6 +83,7 @@ export function TransactionForm({
   const tType = useTranslations("TransactionTypes");
   const tc = useTranslations("Common");
   const isEdit = mode === "edit";
+  const { playSuccess, playError } = useUiSound();
 
   const SOURCE_LABEL: Record<TransactionType, string> = {
     expense: t("sourceLabelExpense"),
@@ -221,10 +223,12 @@ export function TransactionForm({
     // unit of transaction currency, and an explicit destination-currency leg.
     if (!(baseRate > 0)) {
       toast.error(t("rateInvalid"));
+      playError();
       return;
     }
     if (isPayment && crossCurrency && !(transferRate > 0)) {
       toast.error(t("transferRateInvalid"));
+      playError();
       return;
     }
 
@@ -245,9 +249,11 @@ export function TransactionForm({
           : await createTransaction(payload);
       if (result.error) {
         toast.error(result.error);
+        playError();
         return;
       }
       toast.success(isEdit ? t("toastUpdated") : t("toastSaved"));
+      playSuccess();
       onSuccess?.();
       router.refresh();
     });

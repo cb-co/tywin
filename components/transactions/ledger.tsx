@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { accountOptionLabel } from "@/lib/accounts/meta";
+import { useUiSound } from "@/components/sound/sound-provider";
 
 /* occurred_at is a plain calendar date stored as UTC midnight (no time-of-day
    component) — format it in UTC so the displayed day doesn't drift backward
@@ -43,6 +44,7 @@ export function Ledger({
   const [pending, startTransition] = useTransition();
   const t = useTranslations("Transactions");
   const tType = useTranslations("TransactionTypes");
+  const { playDelete, playError } = useUiSound();
   const [type, setType] = useState("all");
   const [accountId, setAccountId] = useState("all");
   const [categoryId, setCategoryId] = useState("all");
@@ -90,9 +92,12 @@ export function Ledger({
   function onDelete(id: string) {
     startTransition(async () => {
       const result = await deleteTransaction(id);
-      if (result.error) toast.error(result.error);
-      else {
+      if (result.error) {
+        toast.error(result.error);
+        playError();
+      } else {
         toast.success(t("transactionDeleted"));
+        playDelete();
         router.refresh();
       }
     });

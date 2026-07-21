@@ -12,6 +12,7 @@ import type { TransactionWithRefs, QuickAddData } from "@/lib/transactions/queri
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/empty-state";
+import { useUiSound } from "@/components/sound/sound-provider";
 
 export function AccountActivity({
   accountId,
@@ -25,13 +26,17 @@ export function AccountActivity({
   const t = useTranslations("AccountDetail");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const { playDelete, playError } = useUiSound();
 
   function onDelete(id: string) {
     startTransition(async () => {
       const result = await deleteTransaction(id);
-      if (result.error) toast.error(result.error);
-      else {
+      if (result.error) {
+        toast.error(result.error);
+        playError();
+      } else {
         toast.success(t("transactionDeleted"));
+        playDelete();
         router.refresh();
       }
     });
