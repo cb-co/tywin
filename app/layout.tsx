@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import { headers } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
@@ -7,6 +7,8 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { RegisterServiceWorker } from "@/components/pwa/register-service-worker";
+import { ThemeColorSync } from "@/components/pwa/theme-color-sync";
+import { TOPBAR_DARK } from "@/lib/pwa/theme-color";
 import { SPLASH_SKIP_SCRIPT } from "@/lib/splash";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -61,9 +63,21 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    // iOS only offers three status-bar presets, no arbitrary color.
+    // "black" is the closest match to the dark topbar.
+    statusBarStyle: "black",
     title: "Cashly",
   },
+};
+
+export const viewport: Viewport = {
+  // Matches the dark topbar (components/shell/mobile-header.tsx's bg-card
+  // in dark mode). ThemeColorSync corrects this live to the light topbar
+  // color when the resolved theme is light; this is the pre-hydration
+  // default and the fallback for browsers that ignore theme-color
+  // entirely — a dark chrome reads as intentional either way, an ivory
+  // one that doesn't match the topbar reads as a bug.
+  themeColor: TOPBAR_DARK,
 };
 
 export default async function RootLayout({
@@ -107,6 +121,7 @@ export default async function RootLayout({
             {children}
             <Toaster richColors />
             <RegisterServiceWorker />
+            <ThemeColorSync />
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>
