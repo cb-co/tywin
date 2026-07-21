@@ -430,6 +430,12 @@
     "deleteConfirmDescription": "This permanently deletes your account and every account, transaction, budget, and subscription in it. This can't be undone.",
     "deleting": "Deleting…"
   },
+  "Pwa": {
+    "title": "Install app",
+    "description": "Add Cashly to your home screen for quick, full-screen access.",
+    "installButton": "Install",
+    "iosInstructions": "On iOS: tap Share, then \"Add to Home Screen\"."
+  },
   "Common": {
     "save": "Save",
     "saving": "Saving…",

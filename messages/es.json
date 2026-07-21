@@ -430,6 +430,12 @@
     "deleteConfirmDescription": "Esto elimina permanentemente tu cuenta y todas las cuentas, transacciones, presupuestos y suscripciones que contiene. Esta acción no se puede deshacer.",
     "deleting": "Eliminando…"
   },
+  "Pwa": {
+    "title": "Instalar la app",
+    "description": "Añade Cashly a tu pantalla de inicio para acceder rápido, a pantalla completa.",
+    "installButton": "Instalar",
+    "iosInstructions": "En iOS: toca Compartir y luego \"Añadir a pantalla de inicio\"."
+  },
   "Common": {
     "save": "Guardar",
     "saving": "Guardando…",

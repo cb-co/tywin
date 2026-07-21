@@ -8,6 +8,7 @@ import { Check, LogOut, Trash2 } from "lucide-react";
 import { deleteAccount, updateBaseCurrency, updateDisplayName } from "@/app/(app)/settings/actions";
 import type { CurrencyRow } from "@/lib/accounts/queries";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { InstallAppRow } from "@/components/pwa/install-app-row";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,7 +31,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-function Row({
+export function Row({
   title,
   description,
   index,
@@ -228,6 +229,8 @@ export function SettingsPanel({
             </Button>
           </form>
         </Row>
+
+        <InstallAppRow index={6} />
       </Card>
 
       <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-6 dark:bg-destructive/10">
