@@ -111,12 +111,14 @@ export default async function AccountDetailPage({
         />
       </div>
 
-      {/* Hero figure */}
+      {/* Hero figure. The clamp() font-size is text-4xl on anything ≥ ~424px
+          but scales down on narrow phones so 8-9 digit balances (large ARS
+          statements) don't get clipped by the card's overflow-hidden. */}
       <Card className="p-7">
         {isCardType ? (
           <>
             <p className="text-sm font-medium text-muted-foreground">{t("balanceOwed")}</p>
-            <p className="figure mt-2 text-4xl leading-none text-foreground">
+            <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] leading-none text-foreground">
               {formatMoney(owed, currency)}
             </p>
             {statements[0] ? (
@@ -142,7 +144,7 @@ export default async function AccountDetailPage({
         ) : isLoanType ? (
           <>
             <p className="text-sm font-medium text-muted-foreground">{t("outstandingBalance")}</p>
-            <p className="figure mt-2 text-4xl leading-none text-foreground">
+            <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] leading-none text-foreground">
               {formatMoney(outstanding, currency)}
             </p>
             {progressTerm ? (
@@ -163,7 +165,7 @@ export default async function AccountDetailPage({
             <p className="text-sm font-medium text-muted-foreground">
               {type === "asset" ? t("estimatedValue") : t("currentBalance")}
             </p>
-            <p className="figure mt-2 text-4xl leading-none text-foreground">
+            <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] leading-none text-foreground">
               {formatMoney(account.balance ?? account.starting_balance, currency)}
             </p>
             <p className="mt-3 text-sm text-muted-foreground">
