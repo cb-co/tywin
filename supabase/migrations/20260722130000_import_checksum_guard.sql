@@ -49,6 +49,14 @@ begin
       raise exception 'account % is not one of your credit cards', v_account;
     end if;
 
+    if (sec->>'previous_balance') is null
+       or (sec->>'total_balance') is null
+       or (sec->>'total_debits') is null
+       or (sec->>'total_credits') is null then
+      raise exception 'section % is missing balance fields required for checksum validation',
+        sec->>'section_key';
+    end if;
+
     -- Defense in depth: the statement's own arithmetic must tie before any
     -- write. previous + Σlines = closing when lines exist; stated totals
     -- otherwise (line-less sections like Cuotas). App-layer validation can
