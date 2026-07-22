@@ -61,4 +61,11 @@ describe("scotiaAmex.parse", () => {
   it("passes checksums on every section", () => {
     expect(validateChecksums(parsed)).toEqual([]);
   });
+
+  it("does not attribute coupon lines after the last section", () => {
+    const trailing = "\n             Desprenda esta porción para hacer su pago\n             Balance al Corte                                                 999.99\n";
+    const parsed = scotiaAmex.parse(SCOTIA_FIXTURE + trailing);
+    const usd = parsed.sections.find((s) => s.sectionKey === "USD")!;
+    expect(usd.closingBalanceCents).toBe(3498);
+  });
 });

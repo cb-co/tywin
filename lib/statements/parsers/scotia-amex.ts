@@ -46,7 +46,7 @@ export const scotiaAmex: StatementParser = {
     const resumen = new Map<string, RegExpMatchArray>();
     for (const l of lines) {
       const mm = l.match(MONEDA_ROW);
-      if (mm && !moneda.has(mm[1]) && !resumen.size) moneda.set(mm[1], mm);
+      if (mm && !moneda.has(mm[1])) moneda.set(mm[1], mm);
       const rm = l.match(RESUMEN_ROW);
       if (rm && !resumen.has(rm[1])) resumen.set(rm[1], rm);
     }
@@ -72,6 +72,10 @@ export const scotiaAmex: StatementParser = {
           open.set(key, { key, currency: key, lines: [], footer: {}, apr: aprMatch ? Number(aprMatch[1]) : null });
         }
         current = open.get(key)!;
+        continue;
+      }
+      if (/Desprenda esta porci/i.test(l) || /Cuotas Scotiabank por facturar/i.test(l) || /^\s*-{20,}\s*$/.test(l)) {
+        current = null;
         continue;
       }
       if (!current) continue;
@@ -109,6 +113,9 @@ export const scotiaAmex: StatementParser = {
       const statedDebits = parseMoneyCents(res[3]) + parseMoneyCents(res[4]);
       const statedCredits = -parseMoneyCents(res[5]);
       const sectionLines = o?.lines ?? [];
+      if (o && sectionLines.length > 0 && o.footer.closing === undefined) {
+        throw new Error(`scotia_amex: missing footer for section ${key}`);
+      }
       const totalDebitsCents = sectionLines.length
         ? sectionLines.filter((l) => l.amountCents > 0).reduce((s, l) => s + l.amountCents, 0)
         : statedDebits;
