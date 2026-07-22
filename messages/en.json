@@ -232,6 +232,7 @@
     "importButton": "Import statement",
     "passwordLabel": "PDF password",
     "passwordHint": "This statement is password-protected. The password is used once and never stored.",
+    "passwordIncorrect": "Incorrect password. Try again.",
     "retryButton": "Unlock",
     "invalidUpload": "Choose a PDF file first.",
     "unreadablePdf": "That file couldn't be read as a PDF.",
@@ -258,7 +259,12 @@
     "deleteConfirm": "Delete this statement? Its imported transactions are removed and the balance recomputed.",
     "costOfCarryStat": "Carrying this balance costs about {amount}/month at {rate}% APR.",
     "mapSectionNone": "— Not assigned yet",
-    "deleteConfirmTitle": "Delete this statement?"
+    "deleteConfirmTitle": "Delete this statement?",
+    "viewLinesAria": "Show line detail for this statement",
+    "hideLinesAria": "Hide line detail",
+    "linesLoading": "Loading lines…",
+    "linesEmpty": "No lines recorded for this statement.",
+    "linePaymentBadge": "Payment (skipped)"
   },
   "Budgets": {
     "pageTitle": "Budgets",
@@ -315,6 +321,7 @@
     "transactionDeleted": "Transaction deleted",
     "budgetOnlyBadge": "budget only",
     "statementBadge": "Statement",
+    "refundBadge": "Refund",
     "transactionFallbackTitle": "Transaction",
     "inclFees": "incl. {amount} fees",
     "editAria": "Edit transaction",

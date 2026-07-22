@@ -3,16 +3,18 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useTranslations } from "next-intl";
-import { Upload, Trash2, FileText } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
+import { Upload, Trash2, FileText, ChevronDown, ChevronRight } from "lucide-react";
 import {
   parseStatement,
   confirmStatementImport,
   deleteCardStatement,
+  getStatementLineDetail,
   type StatementPreviewResult,
+  type StatementLineDetail,
 } from "@/app/(app)/accounts/statement-actions";
 import type { CardStatementRow } from "@/lib/accounts/queries";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatDate } from "@/lib/format";
 import { useUiSound } from "@/components/sound/sound-provider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -34,6 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 type Preview = NonNullable<StatementPreviewResult["preview"]>;
 
@@ -48,6 +51,8 @@ export function StatementsPanel({
 }) {
   const t = useTranslations("Statements");
   const tc = useTranslations("Common");
+  const tTxn = useTranslations("Transactions");
+  const locale = useLocale();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const { playSuccess, playError } = useUiSound();
@@ -55,9 +60,12 @@ export function StatementsPanel({
   const [file, setFile] = useState<File | null>(null);
   const [password, setPassword] = useState("");
   const [needsPassword, setNeedsPassword] = useState(false);
+  const [passwordIncorrect, setPasswordIncorrect] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [mappings, setMappings] = useState<Record<string, string>>({});
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [lines, setLines] = useState<Record<string, StatementLineDetail[]>>({});
 
   function buildFormData(f: File) {
     const fd = new FormData();
@@ -72,6 +80,8 @@ export function StatementsPanel({
       const result = await parseStatement(buildFormData(f));
       if (result.needsPassword) {
         setNeedsPassword(true);
+        setPasswordIncorrect(!!result.passwordIncorrect);
+        if (result.passwordIncorrect) setPassword("");
         return;
       }
       if (result.error || !result.preview) {
@@ -80,6 +90,7 @@ export function StatementsPanel({
         return;
       }
       setNeedsPassword(false);
+      setPasswordIncorrect(false);
       setPreview(result.preview);
       setMappings(
         Object.fromEntries(
@@ -109,6 +120,20 @@ export function StatementsPanel({
       setPassword("");
       router.refresh();
     });
+  }
+
+  function onToggleLines(id: string) {
+    if (expanded === id) {
+      setExpanded(null);
+      return;
+    }
+    setExpanded(id);
+    if (!lines[id]) {
+      startTransition(async () => {
+        const detail = await getStatementLineDetail(id);
+        setLines((prev) => ({ ...prev, [id]: detail }));
+      });
+    }
   }
 
   function onDelete(id: string) {
@@ -152,6 +177,7 @@ export function StatementsPanel({
             setFile(f);
             setPassword("");
             setNeedsPassword(false);
+            setPasswordIncorrect(false);
             setPreview(null);
             onParse(f);
           }}
@@ -161,7 +187,9 @@ export function StatementsPanel({
       {needsPassword && file ? (
         <div className="mt-5 space-y-2">
           <Label htmlFor="stmt-password">{t("passwordLabel")}</Label>
-          <p className="text-xs text-muted-foreground">{t("passwordHint")}</p>
+          <p className={cn("text-xs", passwordIncorrect ? "text-destructive" : "text-muted-foreground")}>
+            {passwordIncorrect ? t("passwordIncorrect") : t("passwordHint")}
+          </p>
           <div className="flex gap-2">
             <Input
               id="stmt-password"
@@ -182,7 +210,8 @@ export function StatementsPanel({
             <div key={s.sectionKey} className="rounded-lg border p-3 space-y-2">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <p className="text-sm font-medium">
-                  {s.sectionKey} · {s.currency} · {s.periodStart} → {s.periodEnd}
+                  {s.sectionKey} · {s.currency} · {formatDate(s.periodStart, locale)} →{" "}
+                  {formatDate(s.periodEnd, locale)}
                 </p>
                 <p className="figure text-sm">
                   {formatMoney(Number(s.closingBalance), s.currency)}
@@ -264,38 +293,86 @@ export function StatementsPanel({
       ) : (
         <ul className="space-y-2">
           {statements.map((s) => (
-            <li
-              key={s.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"
-            >
-              <div className="flex items-center gap-2.5">
-                <FileText className="size-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">
-                    {s.period_end}
-                    <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                      {s.source === "import" ? t("sourceImport") : t("sourceManual")}
-                    </span>
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {s.due_date ? t("dueLabel", { date: s.due_date }) : null}
-                    {s.minimum_payment != null
-                      ? ` · ${t("minimumLabel", { amount: formatMoney(Number(s.minimum_payment), currency) })}`
-                      : null}
-                  </p>
+            <li key={s.id} className="rounded-lg border p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  <FileText className="size-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">
+                      {formatDate(s.period_end, locale)}
+                      <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {s.source === "import" ? t("sourceImport") : t("sourceManual")}
+                      </span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {s.due_date ? t("dueLabel", { date: formatDate(s.due_date, locale) }) : null}
+                      {s.minimum_payment != null
+                        ? ` · ${t("minimumLabel", { amount: formatMoney(Number(s.minimum_payment), currency) })}`
+                        : null}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <p className="figure text-sm">{formatMoney(Number(s.total_balance), currency)}</p>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled={pending}
+                    aria-label={expanded === s.id ? t("hideLinesAria") : t("viewLinesAria")}
+                    onClick={() => onToggleLines(s.id)}
+                  >
+                    {expanded === s.id ? (
+                      <ChevronDown className="size-4" />
+                    ) : (
+                      <ChevronRight className="size-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled={pending}
+                    onClick={() => setDeleteTarget(s.id)}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <p className="figure text-sm">{formatMoney(Number(s.total_balance), currency)}</p>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  disabled={pending}
-                  onClick={() => setDeleteTarget(s.id)}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
+
+              {expanded === s.id ? (
+                <div className="mt-3 space-y-1.5 border-t pt-3">
+                  {lines[s.id] === undefined ? (
+                    <p className="text-xs text-muted-foreground">{t("linesLoading")}</p>
+                  ) : lines[s.id].length === 0 ? (
+                    <p className="text-xs text-muted-foreground">{t("linesEmpty")}</p>
+                  ) : (
+                    lines[s.id].map((l) => (
+                      <div key={l.id} className="flex items-center justify-between gap-2 text-xs">
+                        <div className="min-w-0 flex-1 truncate">
+                          <span className="text-muted-foreground">{formatDate(l.madeOn, locale)}</span>{" "}
+                          <span className="text-foreground">{l.description}</span>
+                          {l.kind === "payment" ? (
+                            <span className="ml-1.5 rounded bg-muted px-1 py-0.5 text-[9px] uppercase text-muted-foreground">
+                              {t("linePaymentBadge")}
+                            </span>
+                          ) : l.amount < 0 ? (
+                            <span className="ml-1.5 rounded bg-success/10 px-1 py-0.5 text-[9px] uppercase text-success">
+                              {tTxn("refundBadge")}
+                            </span>
+                          ) : null}
+                        </div>
+                        <span
+                          className={cn(
+                            "figure shrink-0 tabular-nums",
+                            l.amount < 0 ? "text-success" : "text-foreground",
+                          )}
+                        >
+                          {formatMoney(l.amount, currency, { signed: true })}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              ) : null}
             </li>
           ))}
         </ul>

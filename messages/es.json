@@ -232,6 +232,7 @@
     "importButton": "Importar estado",
     "passwordLabel": "Contraseña del PDF",
     "passwordHint": "Este estado de cuenta está protegido con contraseña. La contraseña se usa una sola vez y nunca se guarda.",
+    "passwordIncorrect": "Contraseña incorrecta. Inténtalo de nuevo.",
     "retryButton": "Desbloquear",
     "invalidUpload": "Elige primero un archivo PDF.",
     "unreadablePdf": "Ese archivo no se pudo leer como PDF.",
@@ -258,7 +259,12 @@
     "deleteConfirm": "¿Eliminar este estado de cuenta? Sus transacciones importadas se eliminan y el saldo se recalcula.",
     "costOfCarryStat": "Mantener este balance cuesta aprox. {amount}/mes al {rate}% anual.",
     "mapSectionNone": "— Sin asignar",
-    "deleteConfirmTitle": "¿Eliminar este estado de cuenta?"
+    "deleteConfirmTitle": "¿Eliminar este estado de cuenta?",
+    "viewLinesAria": "Mostrar detalle de líneas de este estado de cuenta",
+    "hideLinesAria": "Ocultar detalle de líneas",
+    "linesLoading": "Cargando líneas…",
+    "linesEmpty": "No hay líneas registradas para este estado de cuenta.",
+    "linePaymentBadge": "Pago (omitido)"
   },
   "Budgets": {
     "pageTitle": "Presupuestos",
@@ -315,6 +321,7 @@
     "transactionDeleted": "Transacción eliminada",
     "budgetOnlyBadge": "solo presupuesto",
     "statementBadge": "Estado",
+    "refundBadge": "Reembolso",
     "transactionFallbackTitle": "Transacción",
     "inclFees": "incluye {amount} en comisiones",
     "editAria": "Editar transacción",
