@@ -456,6 +456,7 @@ export function TransactionForm({
                 label={t("applyTaxLabel")}
                 checked={field.value}
                 onChange={field.onChange}
+                disabled={fromStatement}
               />
             )}
           />
@@ -469,7 +470,7 @@ export function TransactionForm({
                 hint={sameBankPayment ? t("freeSameBankHint") : undefined}
                 checked={field.value && !sameBankPayment}
                 onChange={field.onChange}
-                disabled={sameBankPayment}
+                disabled={sameBankPayment || fromStatement}
               />
             )}
           />
@@ -483,6 +484,7 @@ export function TransactionForm({
                   label={t("budgetOnlyLabel")}
                   checked={field.value}
                   onChange={field.onChange}
+                  disabled={fromStatement}
                 />
               )}
             />
