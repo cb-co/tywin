@@ -169,8 +169,14 @@ statement_line_id uuid null references card_statement_lines on delete cascade
   currency, `occurred_at` = `made_on`, `description` = cleaned merchant text,
   `category_id` from categorization (§5), `exchange_rate` = FX rate to base at import
   time via `lib/fx.ts` (1 if same as base), `include_tax/commission = false`.
-- `account_balances` already excludes credit cards, so these rows cannot double-count
-  against net worth; they flow only into cashflow, budgets, and insights — intended.
+- `budget_only` is always **false** on imported rows: they must appear in monthly
+  cashflow (this is the first time card spend becomes visible there — payments are
+  transfers and correctly never counted as cashflow expense).
+- Net-worth semantics, pinned: credit cards contribute to net worth **only** as the
+  liability `−accounts.current_balance` (anchor + drift). Imported expense rows never
+  reach net worth — `account_balances` excludes credit-card accounts — because the
+  anchor already contains every purchase; counting both would double-count. This
+  existing exclusion is load-bearing and must not be relaxed.
 - UI: statement-generated transactions are read-only except `category_id` and `notes`
   (recategorizing must stay possible); amount/date/account edits are blocked because the
   statement owns them. Deleting them individually is blocked; deleting the statement
@@ -195,6 +201,19 @@ priority int, unique (user_id, rule_type, pattern)
 
 All tables: owner-only RLS (same four-policy pattern as existing tables), `set_updated_at`
 triggers where mutable.
+
+### 3.7 Changed: `category_usage` — card payments stop counting toward budgets
+
+Today `category_usage` counts categorized rows of `type in ('expense','payment')`. The
+user's pre-import workflow budgeted through categorized payments to cards ("fuel budget →
+categorized payment to the fuel card"). With imported statement lines carrying the real
+categories, a categorized card payment would deduct the same budget twice.
+
+Change: `category_usage` excludes `payment` rows whose `to_account_id` is a
+**credit-card** account. Payments to loans (and any other destination) remain budgetable —
+that use is legitimate and unaffected. Old categorized card payments become inert against
+budgets without data migration; the transaction form stops offering a category when the
+payment destination is a credit card.
 
 ## 4. Parsing pipeline
 
