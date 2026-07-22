@@ -2,8 +2,9 @@
  * PDF → layout-preserved text for the statement parsers.
  *
  * pdfjs gives positioned text runs; parsers need lines where columns are
- * separated by 2+ spaces. Runs are grouped into rows by y (2pt tolerance),
- * sorted by x, and joined with spacing proportional to the horizontal gap.
+ * separated by 2+ spaces. Runs are grouped into rows by y (0.5pt tolerance —
+ * real columns share an exact baseline y; see note below), sorted by x, and
+ * joined with spacing proportional to the horizontal gap.
  * Passwords are used in memory only — never persisted (spec §3.1).
  */
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
