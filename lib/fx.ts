@@ -14,7 +14,9 @@ const FX_ENDPOINT = "https://open.er-api.com/v6/latest";
 /** Quote currency code -> units of that currency per 1 unit of `base`. */
 export async function getExchangeRates(base: string): Promise<Record<string, number>> {
   try {
-    const res = await fetch(`${FX_ENDPOINT}/${base}`, { next: { revalidate: 3600 } });
+    // Daily is plenty for balances/imports that aren't time-sensitive to the
+    // rate; no reason to burn a network call every hour.
+    const res = await fetch(`${FX_ENDPOINT}/${base}`, { next: { revalidate: 43200 } });
     if (!res.ok) return {};
     const data = await res.json();
     if (data.result !== "success" || !data.rates) return {};
