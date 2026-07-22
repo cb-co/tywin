@@ -45,3 +45,8 @@ yarn-error.log*
 next-env.d.ts
 
 .superpowers/
+
+# installed agent-skill packages (vendored from skills-lock.json)
+.agents/skills/
+.claude/skills/
+.claude/worktrees/
