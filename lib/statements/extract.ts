@@ -16,6 +16,16 @@
 // through its own require. Kept external via serverExternalPackages — it's a
 // native addon.
 import "@napi-rs/canvas";
+// Same tracer blindness, second file: in Node pdfjs has no real Worker, so
+// getDocument() falls back to a "fake worker" it loads via
+// `await import(this.workerSrc)` — a variable specifier Vercel's tracer can't
+// follow, so pdf.worker.mjs never reached the serverless bundle and every
+// getDocument() rejected with "Setting up fake worker failed", which the
+// import flow misread as an unreadable PDF (the password prompt never got a
+// chance). Importing the worker statically ships the file AND short-circuits
+// the dynamic import entirely: the module registers itself on
+// globalThis.pdfjsWorker, which pdfjs checks first.
+import "pdfjs-dist/legacy/build/pdf.worker.mjs";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 
 export type ExtractResult =
