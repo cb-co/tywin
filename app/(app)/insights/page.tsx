@@ -3,7 +3,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
-import { getInsights } from "@/lib/insights/queries";
+import { getInsights, getCostOfCarry } from "@/lib/insights/queries";
+import { formatMoney } from "@/lib/format";
 import { normalizeMonth, addMonths, monthLabel } from "@/lib/budgets/month";
 import { SpendDonut } from "@/components/insights/spend-donut";
 import { CashflowChart } from "@/components/insights/cashflow-chart";
@@ -35,9 +36,12 @@ export default async function InsightsPage({
 }) {
   const { month: monthParam } = await searchParams;
   const month = normalizeMonth(monthParam);
-  const insights = await getInsights(month);
+  const [insights, carry] = await Promise.all([getInsights(month), getCostOfCarry()]);
   const cur = insights.baseCurrency;
   const t = await getTranslations("Insights");
+  const carryLines = carry.lines.filter(
+    (l): l is typeof l & { costOfCarry: number } => l.costOfCarry !== null,
+  );
 
   const navLink =
     "flex size-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
@@ -73,6 +77,32 @@ export default async function InsightsPage({
           <BudgetBars data={insights.budgetBars} currency={cur} />
         </ChartCard>
       </div>
+
+      <Card className="p-6">
+        <h2 className="mb-4 text-lg font-medium text-foreground">{t("costOfCarryTitle")}</h2>
+        {carryLines.length > 0 ? (
+          <div className="space-y-4">
+            {carryLines.map((l) => (
+              <div key={l.accountId} className="flex items-baseline justify-between text-sm">
+                <div>
+                  <p className="text-foreground">{l.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {l.apr !== null ? `${t("costOfCarryApr", { rate: l.apr })} · ` : ""}
+                    {t("costOfCarryAsOf", { date: l.periodEnd })}
+                  </p>
+                </div>
+                <span className="tabular-nums text-foreground">{formatMoney(l.costOfCarry, l.currency)}</span>
+              </div>
+            ))}
+            <div className="flex items-baseline justify-between border-t pt-3 text-sm font-medium">
+              <span className="text-foreground">{t("costOfCarryTotal", { currency: carry.baseCurrency })}</span>
+              <span className="tabular-nums text-foreground">{formatMoney(carry.totalBase, carry.baseCurrency)}</span>
+            </div>
+          </div>
+        ) : (
+          <p className="py-8 text-center text-sm text-muted-foreground">{t("costOfCarryEmpty")}</p>
+        )}
+      </Card>
     </div>
   );
 }

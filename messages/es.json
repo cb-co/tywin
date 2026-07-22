@@ -413,7 +413,12 @@
     "thisMonth": "Este mes",
     "lastMonth": "Mes anterior",
     "spendingPaceEmpty": "Aún no hay gastos para medir el ritmo.",
-    "dayLabel": "Día {day}"
+    "dayLabel": "Día {day}",
+    "costOfCarryTitle": "Costo de financiamiento",
+    "costOfCarryApr": "{rate}% anual",
+    "costOfCarryTotal": "Total ({currency})",
+    "costOfCarryEmpty": "Importa un estado de cuenta para ver cuánto costaría financiar tus balances.",
+    "costOfCarryAsOf": "al {date}"
   },
   "Settings": {
     "pageTitle": "Configuración",

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { addMonths, monthStart } from "@/lib/budgets/month";
+import { getExchangeRates, convertToBase } from "@/lib/fx";
 
 function daysInMonth(monthIso: string): number {
   const [y, m] = monthIso.split("-").map(Number);
@@ -156,5 +157,56 @@ export async function getInsights(month: string): Promise<Insights> {
     loans: loanRows,
     totalSpend: distribution.reduce((s, d) => s + d.value, 0),
     pace,
+  };
+}
+
+export interface CostOfCarryLine {
+  accountId: string;
+  name: string; // "Group — Line" when grouped, else account name
+  currency: string;
+  periodEnd: string;
+  apr: number | null;
+  avgDailyBalance: number | null;
+  costOfCarry: number | null; // native currency
+  costOfCarryBase: number | null; // base currency
+}
+
+export interface CostOfCarry {
+  baseCurrency: string;
+  lines: CostOfCarryLine[];
+  totalBase: number; // Σ costOfCarryBase
+}
+
+export async function getCostOfCarry(): Promise<CostOfCarry> {
+  const supabase = await createClient();
+  const [{ data: profile }, { data: rows }] = await Promise.all([
+    supabase.from("profiles").select("base_currency").maybeSingle(),
+    supabase
+      .from("card_cost_of_carry")
+      .select(
+        "account_id,name,currency,group_name,period_end,interest_rate_annual,avg_daily_balance,cost_of_carry",
+      ),
+  ]);
+  const baseCurrency = profile?.base_currency ?? "USD";
+  const rates = await getExchangeRates(baseCurrency);
+
+  const lines: CostOfCarryLine[] = (rows ?? []).map((r) => {
+    const carry = r.cost_of_carry === null ? null : Number(r.cost_of_carry);
+    const currency = r.currency ?? baseCurrency;
+    return {
+      accountId: r.account_id ?? "",
+      name: r.group_name ? `${r.group_name} — ${r.name ?? "Card"}` : (r.name ?? "Card"),
+      currency,
+      periodEnd: r.period_end ?? "",
+      apr: r.interest_rate_annual === null ? null : Number(r.interest_rate_annual),
+      avgDailyBalance: r.avg_daily_balance === null ? null : Number(r.avg_daily_balance),
+      costOfCarry: carry,
+      costOfCarryBase: carry === null ? null : convertToBase(carry, currency, baseCurrency, rates),
+    };
+  });
+  return {
+    baseCurrency,
+    lines,
+    totalBase: lines.reduce((s, l) => s + (l.costOfCarryBase ?? 0), 0),
   };
 }

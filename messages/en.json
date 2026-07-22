@@ -413,7 +413,12 @@
     "thisMonth": "This month",
     "lastMonth": "Last month",
     "spendingPaceEmpty": "No spending to pace yet.",
-    "dayLabel": "Day {day}"
+    "dayLabel": "Day {day}",
+    "costOfCarryTitle": "Cost of carry",
+    "costOfCarryApr": "{rate}% APR",
+    "costOfCarryTotal": "Total ({currency})",
+    "costOfCarryEmpty": "Import a card statement to see what carrying your balances would cost.",
+    "costOfCarryAsOf": "as of {date}"
   },
   "Settings": {
     "pageTitle": "Settings",
