@@ -52,16 +52,3 @@ export const accountInput = z
   });
 
 export type AccountInput = z.infer<typeof accountInput>;
-
-export const cardStatementInput = z.object({
-  account_id: z.string().uuid(),
-  period_start: z.string().min(1, "Required"),
-  period_end: z.string().min(1, "Required"),
-  statement_balance: z.coerce.number().default(0),
-  total_balance: z.coerce.number().default(0),
-  total_debits: z.coerce.number().min(0).default(0),
-  total_credits: z.coerce.number().min(0).default(0),
-  due_date: z.string().optional().or(z.literal("")),
-});
-
-export type CardStatementInput = z.infer<typeof cardStatementInput>;

@@ -2,7 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { getAccountById, getCurrencies, getCardGroups, getBanks } from "@/lib/accounts/queries";
+import {
+  getAccountById,
+  getCurrencies,
+  getCardGroups,
+  getBanks,
+  getCardStatements,
+} from "@/lib/accounts/queries";
 import { getAccountTransactions, getQuickAddData } from "@/lib/transactions/queries";
 import { AccountActivity } from "@/components/accounts/account-activity";
 import { BalanceChart } from "@/components/accounts/balance-chart";
@@ -10,7 +16,7 @@ import { createClient } from "@/lib/supabase/server";
 import { accountTypeMeta, type AccountType } from "@/lib/accounts/meta";
 import { formatMoney, formatPercent, formatDayOfMonth } from "@/lib/format";
 import { AccountDetailActions } from "@/components/accounts/account-detail-actions";
-import { ReconcilePanel } from "@/components/accounts/reconcile-panel";
+import { StatementsPanel } from "@/components/accounts/statements-panel";
 import { AmortizationTable } from "@/components/accounts/amortization-table";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -21,14 +27,16 @@ export default async function AccountDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [account, currencies, cardGroups, banks, activity, quickAddData] = await Promise.all([
-    getAccountById(id),
-    getCurrencies(),
-    getCardGroups(),
-    getBanks(),
-    getAccountTransactions(id),
-    getQuickAddData(),
-  ]);
+  const [account, currencies, cardGroups, banks, activity, quickAddData, statements] =
+    await Promise.all([
+      getAccountById(id),
+      getCurrencies(),
+      getCardGroups(),
+      getBanks(),
+      getAccountTransactions(id),
+      getQuickAddData(),
+      getCardStatements(id),
+    ]);
   if (!account) notFound();
 
   const t = await getTranslations("AccountDetail");
@@ -110,6 +118,11 @@ export default async function AccountDetailPage({
             <p className="figure mt-2 text-4xl leading-none text-foreground">
               {formatMoney(owed, currency)}
             </p>
+            {statements[0] ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {t("anchoredToStatement", { date: statements[0].period_end })}
+              </p>
+            ) : null}
             {util !== null ? (
               <div className="mt-4 max-w-sm space-y-2">
                 <div className="flex justify-between text-xs text-muted-foreground">
@@ -172,13 +185,7 @@ export default async function AccountDetailPage({
       ) : null}
 
       {isCardType ? (
-        <ReconcilePanel
-          accountId={account.id}
-          currency={currency}
-          currentBalance={account.current_balance}
-          latestStatementBalance={account.cardStatus?.latest_statement_balance ?? null}
-          latestDueDate={account.cardStatus?.latest_due_date ?? null}
-        />
+        <StatementsPanel accountId={account.id} currency={currency} statements={statements} />
       ) : null}
 
       {isLoanType ? (

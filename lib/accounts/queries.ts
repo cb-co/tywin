@@ -7,6 +7,7 @@ type LoanRow = Database["public"]["Views"]["loan_status"]["Row"];
 export type CurrencyRow = Database["public"]["Tables"]["currencies"]["Row"];
 export type CardGroupRow = Database["public"]["Tables"]["card_groups"]["Row"];
 export type BankRow = Database["public"]["Tables"]["banks"]["Row"];
+export type CardStatementRow = Database["public"]["Tables"]["card_statements"]["Row"];
 
 export type AccountWithStatus = AccountRow & {
   balance: number | null;
@@ -79,5 +80,15 @@ export async function getCardGroups(): Promise<CardGroupRow[]> {
 export async function getBanks(): Promise<BankRow[]> {
   const supabase = await createClient();
   const { data } = await supabase.from("banks").select("*").order("name");
+  return data ?? [];
+}
+
+export async function getCardStatements(accountId: string): Promise<CardStatementRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("card_statements")
+    .select("*")
+    .eq("account_id", accountId)
+    .order("period_end", { ascending: false });
   return data ?? [];
 }
