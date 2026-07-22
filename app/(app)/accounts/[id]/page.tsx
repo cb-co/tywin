@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 import {
   getAccountById,
   getCurrencies,
@@ -14,7 +14,7 @@ import { AccountActivity } from "@/components/accounts/account-activity";
 import { BalanceChart } from "@/components/accounts/balance-chart";
 import { createClient } from "@/lib/supabase/server";
 import { accountTypeMeta, type AccountType } from "@/lib/accounts/meta";
-import { formatMoney, formatPercent, formatDayOfMonth } from "@/lib/format";
+import { formatMoney, formatPercent, formatDayOfMonth, formatDate } from "@/lib/format";
 import { AccountDetailActions } from "@/components/accounts/account-detail-actions";
 import { StatementsPanel } from "@/components/accounts/statements-panel";
 import { AmortizationTable } from "@/components/accounts/amortization-table";
@@ -40,6 +40,7 @@ export default async function AccountDetailPage({
   if (!account) notFound();
 
   const t = await getTranslations("AccountDetail");
+  const locale = await getLocale();
   const tType = await getTranslations("AccountTypes");
 
   const supabase = await createClient();
@@ -120,7 +121,7 @@ export default async function AccountDetailPage({
             </p>
             {statements[0] ? (
               <p className="mt-1 text-xs text-muted-foreground">
-                {t("anchoredToStatement", { date: statements[0].period_end })}
+                {t("anchoredToStatement", { date: formatDate(statements[0].period_end, locale) })}
               </p>
             ) : null}
             {util !== null ? (
