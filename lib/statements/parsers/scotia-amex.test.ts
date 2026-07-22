@@ -62,10 +62,19 @@ describe("scotiaAmex.parse", () => {
     expect(validateChecksums(parsed)).toEqual([]);
   });
 
-  it("does not attribute coupon lines after the last section", () => {
-    const trailing = "\n             Desprenda esta porción para hacer su pago\n             Balance al Corte                                                 999.99\n";
-    const parsed = scotiaAmex.parse(SCOTIA_FIXTURE + trailing);
-    const usd = parsed.sections.find((s) => s.sectionKey === "USD")!;
-    expect(usd.closingBalanceCents).toBe(3498);
+  it("fails loudly instead of attributing a trailing coupon's balance to a section whose real footer was lost", () => {
+    // Strip USD's real "Balance al Corte" footer (simulating a page break that
+    // separates a section's transactions from its footer) and splice in a
+    // payment-coupon boilerplate line carrying a same-labeled but bogus value.
+    // Without the `current` reset, 999.99 would silently become USD's
+    // closingBalanceCents; with it, USD is line-bearing with no captured
+    // footer and the parser must throw rather than fall back silently.
+    const usdStart = SCOTIA_FIXTURE.indexOf("Detalle Transacciones en D");
+    const usdFooterAt = SCOTIA_FIXTURE.indexOf("Balance al Corte", usdStart);
+    const base = SCOTIA_FIXTURE.slice(0, usdFooterAt).replace(/[^\n]*$/, "");
+    const doc = base +
+      "\n             Desprenda esta porción para hacer su pago\n" +
+      "             Balance al Corte                                                 999.99\n";
+    expect(() => scotiaAmex.parse(doc)).toThrow(/missing footer for section USD/);
   });
 });
