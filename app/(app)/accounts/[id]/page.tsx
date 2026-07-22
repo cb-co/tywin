@@ -204,7 +204,9 @@ export default async function AccountDetailPage({
         </Card>
       ) : null}
 
-      {/* Fee settings summary */}
+      {/* Fee settings summary. Hidden for credit cards: card spending arrives
+          via statement import, and transfer fees never apply to it. */}
+      {!isCardType ? (
       <Card className="p-6">
         <h2 className="text-lg font-medium">{t("transferFees")}</h2>
         <dl className="mt-4 grid gap-4 sm:grid-cols-3 text-sm">
@@ -222,6 +224,7 @@ export default async function AccountDetailPage({
           </div>
         </dl>
       </Card>
+      ) : null}
 
       <AccountActivity accountId={account.id} transactions={activity} data={quickAddData} />
     </div>

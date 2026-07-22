@@ -183,14 +183,22 @@ export function StatementsPanel({
               <div className="space-y-1.5">
                 <Label className="text-xs">{t("mapSectionLabel", { section: s.sectionKey })}</Label>
                 <Select
-                  value={mappings[s.sectionKey] ?? ""}
-                  onValueChange={(v) => setMappings((m) => ({ ...m, [s.sectionKey]: v ?? "" }))}
-                  items={Object.fromEntries(preview.accountOptions.map((a) => [a.id, a.name]))}
+                  value={mappings[s.sectionKey] || "none"}
+                  onValueChange={(v) =>
+                    setMappings((m) => ({ ...m, [s.sectionKey]: v === "none" ? "" : (v ?? "") }))
+                  }
+                  items={{
+                    none: t("mapSectionNone"),
+                    ...Object.fromEntries(preview.accountOptions.map((a) => [a.id, a.name])),
+                  }}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    {/* Clearing frees this section's claim so accounts can be
+                        swapped between sections without a deadlock. */}
+                    <SelectItem value="none">{t("mapSectionNone")}</SelectItem>
                     {preview.accountOptions
                       .filter(
                         (a) =>

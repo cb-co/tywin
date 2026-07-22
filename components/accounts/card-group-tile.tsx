@@ -36,7 +36,9 @@ export function CardGroupTile({
               className="group flex items-center justify-between py-3 first:pt-2"
             >
               <div>
-                <p className="text-sm font-medium text-foreground">{a.currency}</p>
+                {/* Name, not currency: a card can carry two lines in the same
+                    currency (e.g. revolving DOP + installments DOP). */}
+                <p className="text-sm font-medium text-foreground">{a.name}</p>
                 {util !== null ? (
                   <p className="text-xs text-muted-foreground">{t("usedPercent", { pct: formatPercent(util) })}</p>
                 ) : null}
