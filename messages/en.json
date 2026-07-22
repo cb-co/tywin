@@ -257,7 +257,8 @@
     "minimumLabel": "Minimum {amount}",
     "deleteConfirm": "Delete this statement? Its imported transactions are removed and the balance recomputed.",
     "costOfCarryStat": "Carrying this balance costs about {amount}/month at {rate}% APR.",
-    "mapSectionNone": "— Not assigned yet"
+    "mapSectionNone": "— Not assigned yet",
+    "deleteConfirmTitle": "Delete this statement?"
   },
   "Budgets": {
     "pageTitle": "Budgets",

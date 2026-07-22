@@ -16,6 +16,14 @@ import { formatMoney } from "@/lib/format";
 import { useUiSound } from "@/components/sound/sound-provider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -39,6 +47,7 @@ export function StatementsPanel({
   statements: CardStatementRow[];
 }) {
   const t = useTranslations("Statements");
+  const tc = useTranslations("Common");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const { playSuccess, playError } = useUiSound();
@@ -48,6 +57,7 @@ export function StatementsPanel({
   const [needsPassword, setNeedsPassword] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [mappings, setMappings] = useState<Record<string, string>>({});
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   function buildFormData(f: File) {
     const fd = new FormData();
@@ -111,6 +121,7 @@ export function StatementsPanel({
       }
       toast.success(t("statementDeleted"));
       playSuccess();
+      setDeleteTarget(null);
       router.refresh();
     });
   }
@@ -280,9 +291,7 @@ export function StatementsPanel({
                   variant="ghost"
                   size="icon"
                   disabled={pending}
-                  onClick={() => {
-                    if (window.confirm(t("deleteConfirm"))) onDelete(s.id);
-                  }}
+                  onClick={() => setDeleteTarget(s.id)}
                 >
                   <Trash2 className="size-4" />
                 </Button>
@@ -291,6 +300,28 @@ export function StatementsPanel({
           ))}
         </ul>
       )}
+
+      {/* Same confirmation pattern as account deletion (account-detail-actions). */}
+      <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("deleteConfirmTitle")}</DialogTitle>
+            <DialogDescription>{t("deleteConfirm")}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={pending}>
+              {tc("cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteTarget && onDelete(deleteTarget)}
+              disabled={pending}
+            >
+              {tc("delete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

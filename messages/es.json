@@ -257,7 +257,8 @@
     "minimumLabel": "Mínimo {amount}",
     "deleteConfirm": "¿Eliminar este estado de cuenta? Sus transacciones importadas se eliminan y el saldo se recalcula.",
     "costOfCarryStat": "Mantener este balance cuesta aprox. {amount}/mes al {rate}% anual.",
-    "mapSectionNone": "— Sin asignar"
+    "mapSectionNone": "— Sin asignar",
+    "deleteConfirmTitle": "¿Eliminar este estado de cuenta?"
   },
   "Budgets": {
     "pageTitle": "Presupuestos",
