@@ -1,4 +1,4 @@
-import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Trash2, Pencil } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Trash2, Pencil, TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { formatMoney } from "@/lib/format";
 import type { TransactionWithRefs, QuickAddData } from "@/lib/transactions/queries";
@@ -49,8 +49,15 @@ export function TransactionRow({
       ? `${account?.name ?? "—"} → ${toAccount.name}`
       : (account?.name ?? "—");
 
-  const amount =
-    txn.type === "income"
+  // A statement-sourced expense row can carry a negative amount (refund,
+  // rebate, reversal — spec §2.3). "-total_amount" would then be positive
+  // and render as an ordinary red charge, backwards from what happened.
+  const isStatementCredit =
+    txn.type === "expense" && !!txn.statement_line_id && Number(txn.total_amount) < 0;
+
+  const amount = isStatementCredit
+    ? { value: -txn.total_amount, signed: true, tone: "text-success" }
+    : txn.type === "income"
       ? { value: txn.amount, signed: true, tone: "text-success" }
       : txn.type === "expense"
         ? { value: -txn.total_amount, signed: false, tone: "text-destructive" }
@@ -83,6 +90,20 @@ export function TransactionRow({
           {txn.statement_line_id ? (
             <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
               {t("statementBadge")}
+            </span>
+          ) : null}
+          {isStatementCredit ? (
+            <span className="ml-2 rounded bg-success/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-success">
+              {t("refundBadge")}
+            </span>
+          ) : null}
+          {txn.fx_fallback ? (
+            <span
+              className="ml-2 inline-flex items-center gap-0.5 rounded bg-warning/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-warning"
+              title={t("fxFallbackWarning")}
+            >
+              <TriangleAlert className="size-3" />
+              {t("fxFallbackBadge")}
             </span>
           ) : null}
         </p>

@@ -322,6 +322,8 @@
     "budgetOnlyBadge": "budget only",
     "statementBadge": "Statement",
     "refundBadge": "Refund",
+    "fxFallbackBadge": "FX fallback",
+    "fxFallbackWarning": "Exchange rate was unavailable at import time; this transaction uses a 1:1 fallback rate instead of the real rate.",
     "transactionFallbackTitle": "Transaction",
     "inclFees": "incl. {amount} fees",
     "editAria": "Edit transaction",
