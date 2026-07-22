@@ -33,6 +33,12 @@ const nextConfig: NextConfig = {
   // Drops the `X-Powered-By: Next.js` version banner.
   poweredByHeader: false,
 
+  // pdfjs-dist must run as a real Node package, not be bundled into server
+  // actions: the bundled copy throws non-PasswordException errors on
+  // encrypted statements, which statement import misreads as "unreadable"
+  // instead of prompting for the PDF password.
+  serverExternalPackages: ["pdfjs-dist"],
+
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
