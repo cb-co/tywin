@@ -19,9 +19,17 @@ export async function extractStatementText(
   data: Uint8Array,
   password?: string,
 ): Promise<ExtractResult> {
+  // pdfjs transfers (detaches) the input buffer to its worker via a
+  // structuredClone transfer list — the caller's `data` would be unusable
+  // after a single call, and a second extractStatementText() call reusing
+  // the same buffer (wrong-password retry, or a caller that re-parses the
+  // same in-memory bytes) throws DataCloneError: "Cannot transfer object of
+  // unsupported type." Pass pdfjs a private copy so the caller's buffer is
+  // never consumed and repeated calls on the same input keep working.
+  //
   // isEvalSupported was dropped from DocumentInitParameters in pdfjs-dist 6.x
   // (eval-based code paths were removed); no CSP-relevant flag is needed here.
-  const loadingTask = getDocument({ data, password });
+  const loadingTask = getDocument({ data: data.slice(), password });
   let doc;
   try {
     doc = await loadingTask.promise;
