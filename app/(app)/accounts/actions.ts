@@ -2,11 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import {
-  accountInput,
-  cardStatementInput,
-  type AccountInput,
-} from "@/lib/accounts/schema";
+import { accountInput, type AccountInput } from "@/lib/accounts/schema";
 import { dbError } from "@/lib/errors";
 
 type Result = { error?: string; id?: string };
@@ -151,35 +147,3 @@ export async function createCardGroup(name: string): Promise<Result> {
   return { id: data.id };
 }
 
-export async function addCardStatement(input: unknown): Promise<Result> {
-  const parsed = cardStatementInput.safeParse(input);
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
-  const { supabase, user } = await requireUser();
-  if (!user) return { error: "You're not signed in." };
-  const { account_id, due_date, ...rest } = parsed.data;
-  const { error } = await supabase.from("card_statements").insert({
-    ...rest,
-    account_id,
-    due_date: orNull(due_date),
-    user_id: user.id,
-  });
-  if (error) return { error: await dbError(error, "addCardStatement") };
-  revalidatePath(`/accounts/${account_id}`);
-  revalidatePath("/accounts");
-  return { id: account_id };
-}
-
-export async function setCardBalance(id: string, balance: number): Promise<Result> {
-  if (!Number.isFinite(balance) || balance < 0) return { error: "Enter a valid balance." };
-  const { supabase, user } = await requireUser();
-  if (!user) return { error: "You're not signed in." };
-  const { error } = await supabase
-    .from("accounts")
-    .update({ current_balance: balance })
-    .eq("id", id);
-  if (error) return { error: await dbError(error, "setCardBalance") };
-  revalidatePath(`/accounts/${id}`);
-  revalidatePath("/accounts");
-  revalidatePath("/");
-  return { id };
-}

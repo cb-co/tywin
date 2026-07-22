@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useForm, useWatch, Controller } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { TRANSACTION_TYPES, type TransactionType } from "@/lib/transactions/schema";
 import { createTransaction, updateTransaction } from "@/app/(app)/transactions/actions";
+import { saveMerchantRule } from "@/app/(app)/accounts/statement-actions";
 import type { QuickAddData, TransactionWithRefs } from "@/lib/transactions/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,6 +85,8 @@ export function TransactionForm({
   const tc = useTranslations("Common");
   const isEdit = mode === "edit";
   const { playSuccess, playError } = useUiSound();
+  const fromStatement = isEdit && !!transaction?.statement_line_id;
+  const [alwaysRule, setAlwaysRule] = useState(false);
 
   const SOURCE_LABEL: Record<TransactionType, string> = {
     expense: t("sourceLabelExpense"),
@@ -169,6 +172,15 @@ export function TransactionForm({
     type === "payment" && !!src && !!dst && src.currency !== dst.currency;
   const sameBankPayment =
     type === "payment" && !!src?.bank_id && !!dst?.bank_id && src.bank_id === dst.bank_id;
+  const cardPayment = type === "payment" && dst?.type === "credit_card";
+
+  // Payments into credit cards carry no category — the imported statement
+  // lines hold the real spending categories; a categorized payment would
+  // double-deduct the budget (spec §3.7).
+  useEffect(() => {
+    if (cardPayment) setValue("category_id", "none");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cardPayment]);
 
   /* What each side actually moves, shown under the rate. The old form gave no
      hint that the two legs were the same number in different currencies. */
@@ -252,6 +264,9 @@ export function TransactionForm({
         playError();
         return;
       }
+      if (fromStatement && alwaysRule && values.category_id && values.category_id !== "none") {
+        await saveMerchantRule(transaction!.description ?? "", values.category_id);
+      }
       toast.success(isEdit ? t("toastUpdated") : t("toastSaved"));
       playSuccess();
       onSuccess?.();
@@ -279,12 +294,14 @@ export function TransactionForm({
               <button
                 key={t}
                 type="button"
+                disabled={fromStatement}
                 onClick={() => field.onChange(t)}
                 className={cn(
                   "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
                   field.value === t
                     ? "bg-card text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground",
+                  fromStatement && "cursor-not-allowed opacity-60",
                 )}
               >
                 {tType(t)}
@@ -298,7 +315,7 @@ export function TransactionForm({
       <div className="space-y-2">
         <Label htmlFor="amount">{t("amountLabel")}</Label>
         <div className="flex gap-2">
-          <Input id="amount" type="number" step="0.01" min="0" placeholder={t("amountPlaceholder")} className="flex-1" {...register("amount")} required />
+          <Input id="amount" type="number" step="0.01" min="0" placeholder={t("amountPlaceholder")} className="flex-1" {...register("amount")} required disabled={fromStatement} />
           <Controller
             control={control}
             name="currency"
@@ -354,7 +371,7 @@ export function TransactionForm({
           control={control}
           name="account_id"
           render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange} items={accountItems}>
+            <Select value={field.value} onValueChange={field.onChange} disabled={fromStatement} items={accountItems}>
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -397,8 +414,8 @@ export function TransactionForm({
         </div>
       ) : null}
 
-      {/* Category (expense + payment) */}
-      {type !== "income" ? (
+      {/* Category (expense + payment, minus card payments — those carry no category) */}
+      {type !== "income" && !cardPayment ? (
         <div className="space-y-2">
           <Label>
             {t("categoryLabel")}
@@ -439,6 +456,7 @@ export function TransactionForm({
                 label={t("applyTaxLabel")}
                 checked={field.value}
                 onChange={field.onChange}
+                disabled={fromStatement}
               />
             )}
           />
@@ -452,7 +470,7 @@ export function TransactionForm({
                 hint={sameBankPayment ? t("freeSameBankHint") : undefined}
                 checked={field.value && !sameBankPayment}
                 onChange={field.onChange}
-                disabled={sameBankPayment}
+                disabled={sameBankPayment || fromStatement}
               />
             )}
           />
@@ -466,6 +484,7 @@ export function TransactionForm({
                   label={t("budgetOnlyLabel")}
                   checked={field.value}
                   onChange={field.onChange}
+                  disabled={fromStatement}
                 />
               )}
             />
@@ -477,13 +496,30 @@ export function TransactionForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="occurred_at">{t("dateLabel")}</Label>
-          <Input id="occurred_at" type="date" {...register("occurred_at")} />
+          <Input id="occurred_at" type="date" {...register("occurred_at")} disabled={fromStatement} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="description">{t("descriptionLabel")}</Label>
-          <Input id="description" placeholder={t("descriptionPlaceholder")} {...register("description")} />
+          <Input
+            id="description"
+            placeholder={t("descriptionPlaceholder")}
+            {...register("description")}
+            disabled={fromStatement}
+          />
         </div>
       </div>
+
+      {fromStatement ? (
+        <>
+          <p className="text-xs text-muted-foreground">{t("fromStatementHint")}</p>
+          <ToggleRow
+            id="always_rule"
+            label={t("alwaysCategorizeMerchant", { merchant: transaction!.description ?? "" })}
+            checked={alwaysRule}
+            onChange={setAlwaysRule}
+          />
+        </>
+      ) : null}
 
       <Button type="submit" className="w-full" disabled={pending}>
         {pending ? tc("saving") : isEdit ? t("saveChangesButton") : t("saveButton")}

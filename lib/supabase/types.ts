@@ -207,15 +207,132 @@ export type Database = {
         }
         Relationships: []
       }
+      card_statement_lines: {
+        Row: {
+          account_id: string
+          amount: number
+          auth_code: string | null
+          created_at: string
+          description: string
+          id: string
+          kind: Database["public"]["Enums"]["statement_line_kind"]
+          line_no: number
+          made_on: string
+          mcc: string | null
+          posted_on: string
+          reference: string | null
+          statement_id: string
+          transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          auth_code?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          kind: Database["public"]["Enums"]["statement_line_kind"]
+          line_no: number
+          made_on: string
+          mcc?: string | null
+          posted_on: string
+          reference?: string | null
+          statement_id: string
+          transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          auth_code?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["statement_line_kind"]
+          line_no?: number
+          made_on?: string
+          mcc?: string | null
+          posted_on?: string
+          reference?: string | null
+          statement_id?: string
+          transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "card_statement_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "card_statement_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "card_statement_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "card_cost_of_carry"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "card_statement_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "card_status"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "card_statement_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "loan_status"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "card_statement_lines_statement_id_fkey"
+            columns: ["statement_id"]
+            isOneToOne: false
+            referencedRelation: "card_statements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "card_statement_lines_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       card_statements: {
         Row: {
           account_id: string
+          available_credit: number | null
+          avg_daily_balance: number | null
+          avg_daily_balance_prior: number | null
+          cost_of_carry: number | null
+          cost_of_carry_prior: number | null
           created_at: string
+          credit_limit: number | null
           due_date: string | null
           file_url: string | null
           id: string
+          import_id: string | null
+          interest_rate_annual: number | null
+          minimum_payment: number | null
+          overdue_amount: number | null
+          overdue_installments: number | null
           period_end: string
           period_start: string
+          previous_balance: number | null
+          section_key: string | null
           source: Database["public"]["Enums"]["statement_source"]
           statement_balance: number
           total_balance: number
@@ -226,12 +343,25 @@ export type Database = {
         }
         Insert: {
           account_id: string
+          available_credit?: number | null
+          avg_daily_balance?: number | null
+          avg_daily_balance_prior?: number | null
+          cost_of_carry?: number | null
+          cost_of_carry_prior?: number | null
           created_at?: string
+          credit_limit?: number | null
           due_date?: string | null
           file_url?: string | null
           id?: string
+          import_id?: string | null
+          interest_rate_annual?: number | null
+          minimum_payment?: number | null
+          overdue_amount?: number | null
+          overdue_installments?: number | null
           period_end: string
           period_start: string
+          previous_balance?: number | null
+          section_key?: string | null
           source?: Database["public"]["Enums"]["statement_source"]
           statement_balance?: number
           total_balance?: number
@@ -242,12 +372,25 @@ export type Database = {
         }
         Update: {
           account_id?: string
+          available_credit?: number | null
+          avg_daily_balance?: number | null
+          avg_daily_balance_prior?: number | null
+          cost_of_carry?: number | null
+          cost_of_carry_prior?: number | null
           created_at?: string
+          credit_limit?: number | null
           due_date?: string | null
           file_url?: string | null
           id?: string
+          import_id?: string | null
+          interest_rate_annual?: number | null
+          minimum_payment?: number | null
+          overdue_amount?: number | null
+          overdue_installments?: number | null
           period_end?: string
           period_start?: string
+          previous_balance?: number | null
+          section_key?: string | null
           source?: Database["public"]["Enums"]["statement_source"]
           statement_balance?: number
           total_balance?: number
@@ -275,6 +418,13 @@ export type Database = {
             foreignKeyName: "card_statements_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
+            referencedRelation: "card_cost_of_carry"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "card_statements_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
             referencedRelation: "card_status"
             referencedColumns: ["account_id"]
           },
@@ -284,6 +434,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "loan_status"
             referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "card_statements_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "statement_imports"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -361,6 +518,47 @@ export type Database = {
           },
         ]
       }
+      category_rules: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          pattern: string
+          priority: number
+          rule_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          pattern: string
+          priority?: number
+          rule_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          pattern?: string
+          priority?: number
+          rule_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_rules_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       currencies: {
         Row: {
           code: string
@@ -405,6 +603,126 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      statement_imports: {
+        Row: {
+          card_group_id: string | null
+          created_at: string
+          error: string | null
+          file_name: string
+          file_path: string | null
+          id: string
+          parser_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          card_group_id?: string | null
+          created_at?: string
+          error?: string | null
+          file_name: string
+          file_path?: string | null
+          id?: string
+          parser_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          card_group_id?: string | null
+          created_at?: string
+          error?: string | null
+          file_name?: string
+          file_path?: string | null
+          id?: string
+          parser_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "statement_imports_card_group_id_fkey"
+            columns: ["card_group_id"]
+            isOneToOne: false
+            referencedRelation: "card_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      statement_section_mappings: {
+        Row: {
+          account_id: string
+          card_group_id: string
+          created_at: string
+          id: string
+          parser_id: string
+          section_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          card_group_id: string
+          created_at?: string
+          id?: string
+          parser_id: string
+          section_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          card_group_id?: string
+          created_at?: string
+          id?: string
+          parser_id?: string
+          section_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "statement_section_mappings_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "statement_section_mappings_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "statement_section_mappings_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "card_cost_of_carry"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "statement_section_mappings_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "card_status"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "statement_section_mappings_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "loan_status"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "statement_section_mappings_card_group_id_fkey"
+            columns: ["card_group_id"]
+            isOneToOne: false
+            referencedRelation: "card_groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscriptions: {
         Row: {
@@ -474,6 +792,13 @@ export type Database = {
             foreignKeyName: "subscriptions_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
+            referencedRelation: "card_cost_of_carry"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "subscriptions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
             referencedRelation: "card_status"
             referencedColumns: ["account_id"]
           },
@@ -511,6 +836,7 @@ export type Database = {
           include_tax: boolean
           notes: string | null
           occurred_at: string
+          statement_line_id: string | null
           subscription_id: string | null
           tax_amount: number
           to_account_id: string | null
@@ -537,6 +863,7 @@ export type Database = {
           include_tax?: boolean
           notes?: string | null
           occurred_at?: string
+          statement_line_id?: string | null
           subscription_id?: string | null
           tax_amount?: number
           to_account_id?: string | null
@@ -563,6 +890,7 @@ export type Database = {
           include_tax?: boolean
           notes?: string | null
           occurred_at?: string
+          statement_line_id?: string | null
           subscription_id?: string | null
           tax_amount?: number
           to_account_id?: string | null
@@ -591,6 +919,13 @@ export type Database = {
             foreignKeyName: "transactions_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
+            referencedRelation: "card_cost_of_carry"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
             referencedRelation: "card_status"
             referencedColumns: ["account_id"]
           },
@@ -606,6 +941,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_statement_line_id_fkey"
+            columns: ["statement_line_id"]
+            isOneToOne: false
+            referencedRelation: "card_statement_lines"
             referencedColumns: ["id"]
           },
           {
@@ -633,6 +975,13 @@ export type Database = {
             foreignKeyName: "transactions_to_account_id_fkey"
             columns: ["to_account_id"]
             isOneToOne: false
+            referencedRelation: "card_cost_of_carry"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "transactions_to_account_id_fkey"
+            columns: ["to_account_id"]
+            isOneToOne: false
             referencedRelation: "card_status"
             referencedColumns: ["account_id"]
           },
@@ -654,6 +1003,21 @@ export type Database = {
           base_movement: number | null
           currency: string | null
           starting_balance: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      card_cost_of_carry: {
+        Row: {
+          account_id: string | null
+          avg_daily_balance: number | null
+          cost_of_carry: number | null
+          cost_of_carry_prior: number | null
+          currency: string | null
+          group_name: string | null
+          interest_rate_annual: number | null
+          name: string | null
+          period_end: string | null
           user_id: string | null
         }
         Relationships: []
@@ -730,7 +1094,12 @@ export type Database = {
           used: number
         }[]
       }
-      delete_own_account: { Args: Record<PropertyKey, never>; Returns: undefined }
+      delete_own_account: { Args: never; Returns: undefined }
+      import_card_statement: { Args: { p: Json }; Returns: string }
+      recompute_card_balance: {
+        Args: { p_account: string }
+        Returns: undefined
+      }
       seed_default_categories: { Args: { p_user: string }; Returns: undefined }
       spend_distribution: {
         Args: { p_month: string }
@@ -751,6 +1120,7 @@ export type Database = {
         | "loan"
       billing_cycle: "weekly" | "monthly" | "yearly" | "custom"
       budget_status: "within" | "approaching" | "over"
+      statement_line_kind: "purchase" | "fee" | "credit" | "payment"
       statement_source: "manual" | "import"
       transaction_type: "expense" | "income" | "payment"
     }
@@ -894,6 +1264,7 @@ export const Constants = {
       ],
       billing_cycle: ["weekly", "monthly", "yearly", "custom"],
       budget_status: ["within", "approaching", "over"],
+      statement_line_kind: ["purchase", "fee", "credit", "payment"],
       statement_source: ["manual", "import"],
       transaction_type: ["expense", "income", "payment"],
     },

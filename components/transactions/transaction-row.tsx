@@ -80,6 +80,11 @@ export function TransactionRow({
               {t("budgetOnlyBadge")}
             </span>
           ) : null}
+          {txn.statement_line_id ? (
+            <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+              {t("statementBadge")}
+            </span>
+          ) : null}
         </p>
         <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
       </div>
