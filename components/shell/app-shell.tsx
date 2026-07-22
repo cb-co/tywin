@@ -30,7 +30,12 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
             displayName={profile?.display_name ?? null}
             avatarUrl={profileAvatarUrl(user?.user_metadata)}
           />
-          <div className="flex flex-1 flex-col md:h-dvh md:overflow-y-auto">
+          {/* min-w-0: without it this flex item refuses to shrink below its
+              content's intrinsic width — a single nowrap line (e.g. a long
+              imported statement merchant name under `truncate`) propagates
+              its full min-content width up here and the whole page scrolls
+              horizontally on mobile. */}
+          <div className="flex min-w-0 flex-1 flex-col md:h-dvh md:overflow-y-auto">
             <MobileHeader />
             {/* Bottom padding clears the bar (~56px) *and* the FAB above it,
                 which tops out at 136px. pb-24 only reserved 96px, so the last
