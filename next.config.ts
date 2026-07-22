@@ -37,7 +37,14 @@ const nextConfig: NextConfig = {
   // actions: the bundled copy throws non-PasswordException errors on
   // encrypted statements, which statement import misreads as "unreadable"
   // instead of prompting for the PDF password.
-  serverExternalPackages: ["pdfjs-dist"],
+  //
+  // @napi-rs/canvas is pdfjs's DOMMatrix/Path2D polyfill source and a native
+  // addon — it can't be bundled either. pdfjs loads it through
+  // process.getBuiltinModule("module").createRequire(), which Vercel's file
+  // tracer can't see, so extract.ts imports it directly to get it (and its
+  // platform binary) into the serverless bundle. Without it, pdf.mjs throws
+  // `DOMMatrix is not defined` at module load in production.
+  serverExternalPackages: ["pdfjs-dist", "@napi-rs/canvas"],
 
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

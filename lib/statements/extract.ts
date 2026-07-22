@@ -7,6 +7,15 @@
  * joined with spacing proportional to the horizontal gap.
  * Passwords are used in memory only — never persisted (spec §3.1).
  */
+// pdfjs polyfills DOMMatrix/Path2D from @napi-rs/canvas, but loads it via
+// process.getBuiltinModule("module").createRequire() — invisible to Vercel's
+// file tracer, so the package never reached the serverless bundle and pdf.mjs
+// died at module load with `ReferenceError: DOMMatrix is not defined` (it
+// builds a DOMMatrix at top level). This side-effect import exists purely so
+// the tracer ships the package + its platform binary; pdfjs still resolves it
+// through its own require. Kept external via serverExternalPackages — it's a
+// native addon.
+import "@napi-rs/canvas";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 
 export type ExtractResult =
