@@ -831,6 +831,7 @@ export type Database = {
           description: string | null
           exchange_rate: number
           fee_amount: number
+          fx_fallback: boolean
           id: string
           include_commission: boolean
           include_tax: boolean
@@ -858,6 +859,7 @@ export type Database = {
           description?: string | null
           exchange_rate?: number
           fee_amount?: number
+          fx_fallback?: boolean
           id?: string
           include_commission?: boolean
           include_tax?: boolean
@@ -885,6 +887,7 @@ export type Database = {
           description?: string | null
           exchange_rate?: number
           fee_amount?: number
+          fx_fallback?: boolean
           id?: string
           include_commission?: boolean
           include_tax?: boolean
