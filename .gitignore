@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# real bank statements must never be committed
+*.pdf
+
 # debug
 npm-debug.log*
 yarn-debug.log*
