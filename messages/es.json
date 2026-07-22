@@ -311,6 +311,7 @@
     "emptyDescriptionFiltered": "Intenta quitar un filtro o el término de búsqueda.",
     "transactionDeleted": "Transacción eliminada",
     "budgetOnlyBadge": "solo presupuesto",
+    "statementBadge": "Estado",
     "transactionFallbackTitle": "Transacción",
     "inclFees": "incluye {amount} en comisiones",
     "editAria": "Editar transacción",
@@ -344,7 +345,9 @@
     "saveChangesButton": "Guardar cambios",
     "noAccountsHint": "Añade una cuenta primero: las transacciones necesitan un lugar a donde ir.",
     "toastSaved": "Transacción guardada",
-    "toastUpdated": "Transacción actualizada"
+    "toastUpdated": "Transacción actualizada",
+    "fromStatementHint": "Importado de un estado de cuenta — solo la categoría y las notas pueden cambiar.",
+    "alwaysCategorizeMerchant": "Usar siempre esta categoría para \"{merchant}\""
   },
   "Subscriptions": {
     "pageTitle": "Suscripciones",
@@ -474,7 +477,8 @@
     "errorDuplicate": "Eso ya existe.",
     "errorReference": "Eso hace referencia a algo que ya no existe.",
     "errorRequired": "Falta un campo obligatorio.",
-    "errorInvalidValue": "Ese valor no es válido."
+    "errorInvalidValue": "Ese valor no es válido.",
+    "statementRowLocked": "Esta transacción proviene de un estado de cuenta importado. Elimina el estado de cuenta para quitarla."
   },
   "Welcome": {
     "stepName": "Tu nombre",

@@ -311,6 +311,7 @@
     "emptyDescriptionFiltered": "Try clearing a filter or search term.",
     "transactionDeleted": "Transaction deleted",
     "budgetOnlyBadge": "budget only",
+    "statementBadge": "Statement",
     "transactionFallbackTitle": "Transaction",
     "inclFees": "incl. {amount} fees",
     "editAria": "Edit transaction",
@@ -344,7 +345,9 @@
     "saveChangesButton": "Save changes",
     "noAccountsHint": "Add an account first — transactions need somewhere to land.",
     "toastSaved": "Transaction saved",
-    "toastUpdated": "Transaction updated"
+    "toastUpdated": "Transaction updated",
+    "fromStatementHint": "Imported from a statement — only the category and notes can change.",
+    "alwaysCategorizeMerchant": "Always use this category for \"{merchant}\""
   },
   "Subscriptions": {
     "pageTitle": "Subscriptions",
@@ -474,7 +477,8 @@
     "errorDuplicate": "That already exists.",
     "errorReference": "That refers to something that no longer exists.",
     "errorRequired": "A required field is missing.",
-    "errorInvalidValue": "That value isn't valid."
+    "errorInvalidValue": "That value isn't valid.",
+    "statementRowLocked": "This transaction comes from an imported statement. Delete the statement to remove it."
   },
   "Welcome": {
     "stepName": "Your name",

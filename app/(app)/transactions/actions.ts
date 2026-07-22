@@ -35,6 +35,20 @@ async function requireUser() {
   return { supabase, user };
 }
 
+/** Statement-sourced rows die only with their statement; edits may touch only
+ *  category and notes — the imported line is the source of truth for the rest. */
+async function statementGuard(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  id: string,
+): Promise<{ row: { statement_line_id: string | null; category_id: string | null; notes: string | null } | null }> {
+  const { data } = await supabase
+    .from("transactions")
+    .select("statement_line_id,category_id,notes")
+    .eq("id", id)
+    .maybeSingle();
+  return { row: data };
+}
+
 function revalidate() {
   revalidatePath("/transactions");
   revalidatePath("/accounts");
@@ -74,6 +88,22 @@ export async function updateTransaction(id: string, input: unknown): Promise<Res
   const { supabase, user } = await requireUser();
   if (!user) return { error: t("notSignedIn") };
 
+  // Statement-sourced rows: the imported line owns type/amount/account/date/
+  // description; only the category and notes may change here.
+  const { row } = await statementGuard(supabase, id);
+  if (row?.statement_line_id) {
+    const { error } = await supabase
+      .from("transactions")
+      .update({
+        category_id: parsed.data.category_id || null,
+        notes: parsed.data.notes || null,
+      })
+      .eq("id", id);
+    if (error) return { error: await dbError(error, "updateTransaction") };
+    revalidate();
+    return { id };
+  }
+
   // Never send currency/exchange_rate — the DB forbids changing them.
   const { error } = await supabase.from("transactions").update(toRow(parsed.data)).eq("id", id);
   if (error) return { error: await dbError(error, "updateTransaction") };
@@ -85,6 +115,10 @@ export async function deleteTransaction(id: string): Promise<Result> {
   const t = await getTranslations("Common");
   const { supabase, user } = await requireUser();
   if (!user) return { error: t("notSignedIn") };
+
+  const { row } = await statementGuard(supabase, id);
+  if (row?.statement_line_id) return { error: t("statementRowLocked") };
+
   const { error } = await supabase.from("transactions").delete().eq("id", id);
   if (error) return { error: await dbError(error, "deleteTransaction") };
   revalidate();
