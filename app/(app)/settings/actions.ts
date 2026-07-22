@@ -36,17 +36,6 @@ export async function deleteAccount(): Promise<{ error?: string }> {
   } = await supabase.auth.getUser();
   if (!user) return { error: t("notSignedIn") };
 
-  // Storage isn't part of the auth.users cascade, and once the row is gone
-  // (or the session invalidated) RLS can no longer prove ownership of these
-  // objects — a CLI/admin cleanup afterwards silently no-ops on them. Purge
-  // while the session still resolves auth.uid() to this user. Files here are
-  // leftovers from imports made before the app stopped storing statement
-  // PDFs entirely; non-fatal, the account deletion is what matters.
-  const { data: files } = await supabase.storage.from("statements").list(user.id);
-  if (files?.length) {
-    await supabase.storage.from("statements").remove(files.map((f) => `${user.id}/${f.name}`));
-  }
-
   // Cascades through every user-owned table — see the migration for detail.
   const { error } = await supabase.rpc("delete_own_account");
   if (error) return { error: await dbError(error, "deleteAccount") };

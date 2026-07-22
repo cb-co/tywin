@@ -115,9 +115,9 @@ used in memory for text extraction and **never persisted**; re-parsing requires 
 > **Amended 2026-07-22 (post-merge):** the app no longer stores the original
 > PDF at all — it's read once for text extraction and discarded. Statement
 > history offers expandable line detail (§6.1) instead of a stored-PDF link.
-> The `statements` Storage bucket and its RLS policies remain, unused by new
-> imports, solely so `deleteAccount` can purge any files left over from
-> imports made before this change.
+> The `statements` Storage bucket, its RLS policies, and any files in it were
+> dropped entirely (manually, then via migration) since nothing writes to it
+> anymore.
 
 ### 3.2 Extended: `card_statements`
 
