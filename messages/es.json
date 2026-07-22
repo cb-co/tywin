@@ -242,6 +242,7 @@
     "notACard": "Los estados de cuenta solo se pueden importar en tarjetas de crédito.",
     "unmappedSection": "La sección {section} no tiene una cuenta de destino.",
     "currencyMismatch": "La sección {section} está en {currency}; elige una cuenta en esa moneda.",
+    "duplicateMapping": "Cada sección debe importarse a una cuenta diferente.",
     "noCategories": "Necesitas al menos una categoría antes de importar.",
     "sectionSummary": "{lines} compras · {payments} pagos (omitidos)",
     "mapSectionLabel": "Importar {section} en",

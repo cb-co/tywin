@@ -242,6 +242,7 @@
     "notACard": "Statements can only be imported on credit cards.",
     "unmappedSection": "Section {section} has no destination account.",
     "currencyMismatch": "Section {section} is in {currency}; pick an account in that currency.",
+    "duplicateMapping": "Each section must be imported into a different account.",
     "noCategories": "You need at least one category before importing.",
     "sectionSummary": "{lines} purchases · {payments} payments (skipped)",
     "mapSectionLabel": "Import {section} into",

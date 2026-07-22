@@ -204,6 +204,12 @@ export async function confirmStatementImport(formData: FormData): Promise<{ erro
       return { error: t("currencyMismatch", { section: s.sectionKey, currency: s.currency }) };
   }
 
+  // Two sections mapped to the same account would each delete-by-(account,
+  // period_end) in the RPC, so the second section's import silently destroys
+  // the first's — reject the duplicate before it ever reaches the database.
+  const mappedIds = parsed.sections.map((s) => mappings[s.sectionKey]);
+  if (new Set(mappedIds).size !== mappedIds.length) return { error: t("duplicateMapping") };
+
   // Category resolution inputs.
   const [{ data: cats }, { data: ruleRows }, { data: profile }] = await Promise.all([
     supabase.from("categories").select("id,name"),

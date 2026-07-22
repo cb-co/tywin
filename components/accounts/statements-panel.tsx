@@ -192,7 +192,14 @@ export function StatementsPanel({
                   </SelectTrigger>
                   <SelectContent>
                     {preview.accountOptions
-                      .filter((a) => a.currency === s.currency)
+                      .filter(
+                        (a) =>
+                          a.currency === s.currency &&
+                          (mappings[s.sectionKey] === a.id ||
+                            !Object.entries(mappings).some(
+                              ([key, v]) => key !== s.sectionKey && v === a.id,
+                            )),
+                      )
                       .map((a) => (
                         <SelectItem key={a.id} value={a.id}>
                           {a.name}
