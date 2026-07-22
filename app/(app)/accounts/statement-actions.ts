@@ -30,6 +30,7 @@ export interface SectionPreview {
 export interface StatementPreviewResult {
   error?: string;
   needsPassword?: boolean;
+  passwordIncorrect?: boolean;
   preview?: {
     parserId: string;
     cardLast4: string | null;
@@ -64,6 +65,7 @@ async function runPipeline(formData: FormData) {
   const extracted = await extractStatementText(bytes, password);
   if (!extracted.ok) {
     if (extracted.reason === "unreadable") return { error: t("unreadablePdf") } as const;
+    if (extracted.reason === "bad_password") return { needsPassword: true, passwordIncorrect: true } as const;
     return { needsPassword: true } as const;
   }
 
@@ -181,7 +183,7 @@ export async function confirmStatementImport(formData: FormData): Promise<{ erro
   const ctx = await runPipeline(formData);
   if ("error" in ctx) return { error: ctx.error };
   if ("needsPassword" in ctx) return { error: (await getTranslations("Statements"))("passwordRequired") };
-  const { supabase, user, parsed, parser, account, options, bytes, file, t } = ctx;
+  const { supabase, user, parsed, parser, account, options, file, t } = ctx;
 
   let mappings: Record<string, string>;
   try {
@@ -223,21 +225,14 @@ export async function confirmStatementImport(formData: FormData): Promise<{ erro
   const baseCurrency = profile?.base_currency ?? "USD";
   const rates = await getExchangeRates(baseCurrency);
 
-  // Store the original file (still encrypted if it was) in the private bucket.
-  const filePath = `${user.id}/${parsed.sections[0].periodEnd}-${parser.id}-${parsed.cardLast4 ?? "xxxx"}.pdf`;
-  const { error: uploadError } = await supabase.storage
-    .from("statements")
-    .upload(filePath, bytes, { contentType: "application/pdf", upsert: true });
-  // Upload failure is non-fatal: the import is the point; the file is a nicety.
-  const storedPath = uploadError ? "" : filePath;
-
   const payload = {
     parser_id: parser.id,
     card_group_id: account.card_group_id ?? "",
     file_name: file.name,
-    file_path: storedPath,
+    file_path: "",
     sections: parsed.sections.map((s) => {
       const rate = s.currency === baseCurrency ? 1 : rates[s.currency] ? 1 / rates[s.currency] : 1;
+      const fxFallback = s.currency !== baseCurrency && !rates[s.currency];
       return {
         account_id: mappings[s.sectionKey],
         section_key: s.sectionKey,
@@ -262,6 +257,7 @@ export async function confirmStatementImport(formData: FormData): Promise<{ erro
         cost_of_carry_prior:
           s.costOfCarryPriorCents === null ? "" : centsToDecimal(s.costOfCarryPriorCents),
         exchange_rate: String(rate),
+        fx_fallback: fxFallback,
         lines: s.lines.map((l) => ({
           line_no: String(l.lineNo),
           made_on: l.madeOn,
@@ -332,4 +328,33 @@ export async function saveMerchantRule(pattern: string, categoryId: string): Pro
   );
   if (error) return { error: await dbError(error, "saveMerchantRule") };
   return {};
+}
+
+export interface StatementLineDetail {
+  id: string;
+  lineNo: number;
+  madeOn: string;
+  description: string;
+  mcc: string | null;
+  amount: number;
+  kind: "purchase" | "fee" | "credit" | "payment";
+}
+
+export async function getStatementLineDetail(statementId: string): Promise<StatementLineDetail[]> {
+  const { supabase, user } = await requireUser();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("card_statement_lines")
+    .select("id,line_no,made_on,description,mcc,amount,kind")
+    .eq("statement_id", statementId)
+    .order("line_no");
+  return (data ?? []).map((l) => ({
+    id: l.id,
+    lineNo: l.line_no,
+    madeOn: l.made_on,
+    description: l.description,
+    mcc: l.mcc,
+    amount: l.amount,
+    kind: l.kind,
+  }));
 }

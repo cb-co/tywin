@@ -112,6 +112,13 @@ The original PDF is stored as uploaded (still encrypted if it was) in a private,
 RLS-scoped Supabase Storage bucket `statements/` under `user_id/…`. PDF passwords are
 used in memory for text extraction and **never persisted**; re-parsing requires re-entry.
 
+> **Amended 2026-07-22 (post-merge):** the app no longer stores the original
+> PDF at all — it's read once for text extraction and discarded. Statement
+> history offers expandable line detail (§6.1) instead of a stored-PDF link.
+> The `statements` Storage bucket and its RLS policies remain, unused by new
+> imports, solely so `deleteAccount` can purge any files left over from
+> imports made before this change.
+
 ### 3.2 Extended: `card_statements`
 
 Add columns:
