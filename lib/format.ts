@@ -27,3 +27,19 @@ export function formatDayOfMonth(day: number): string {
   const v = day % 100;
   return day + (s[(v - 20) % 10] ?? s[v] ?? s[0]);
 }
+
+/**
+ * Formats a `yyyy-mm-dd` date string in the given locale. Always resolves in
+ * UTC so a date-only value renders the same calendar day no matter the
+ * viewer's local timezone (see components/accounts/balance-chart.tsx for the
+ * same pattern applied ad hoc before this helper existed).
+ */
+export function formatDate(
+  iso: string,
+  locale: string,
+  opts: Intl.DateTimeFormatOptions = { dateStyle: "medium" },
+): string {
+  return new Intl.DateTimeFormat(locale, { ...opts, timeZone: "UTC" }).format(
+    new Date(`${iso}T00:00:00Z`),
+  );
+}
