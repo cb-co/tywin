@@ -183,7 +183,16 @@ export async function confirmStatementImport(formData: FormData): Promise<{ erro
   if ("needsPassword" in ctx) return { error: (await getTranslations("Statements"))("passwordRequired") };
   const { supabase, user, parsed, parser, account, options, bytes, file, t } = ctx;
 
-  const mappings: Record<string, string> = JSON.parse(String(formData.get("mappings") ?? "{}"));
+  let mappings: Record<string, string>;
+  try {
+    const raw: unknown = JSON.parse(String(formData.get("mappings") ?? "{}"));
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("not an object");
+    mappings = Object.fromEntries(
+      Object.entries(raw as Record<string, unknown>).filter(([, v]) => typeof v === "string"),
+    ) as Record<string, string>;
+  } catch {
+    return { error: t("invalidUpload") };
+  }
   const optionById = new Map(options.map((o) => [o.id, o]));
 
   // Every section must land on a currency-matching card the user owns.
@@ -285,7 +294,8 @@ export async function confirmStatementImport(formData: FormData): Promise<{ erro
   }
 
   revalidatePath("/accounts");
-  for (const id of new Set(Object.values(mappings))) revalidatePath(`/accounts/${id}`);
+  for (const id of new Set(parsed.sections.map((s) => mappings[s.sectionKey])))
+    revalidatePath(`/accounts/${id}`);
   revalidatePath("/");
   revalidatePath("/transactions");
   revalidatePath("/budgets");
