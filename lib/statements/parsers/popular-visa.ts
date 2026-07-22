@@ -18,7 +18,7 @@ export const popularVisa: StatementParser = {
   id: "popular_visa",
 
   detect(text) {
-    return /RNC\s*101010632/.test(text) || /Banco Popular Dominicano/i.test(text);
+    return /RNC\s*101010632/.test(text);
   },
 
   parse(text) {
@@ -49,6 +49,9 @@ export const popularVisa: StatementParser = {
       const m = lines[i].match(TXN);
       if (!m) continue;
       const [, posted, made, reference, rawDesc, rawAmount] = m;
+      // Popular acquirer references are unique per transaction; the key only
+      // collides on page-repeat, so this dedupes reprinted header/footer pages
+      // without ever conflating two distinct transactions.
       const key = `${reference}|${rawAmount}|${posted}|${made}`;
       if (seen.has(key)) continue; // page overlap safety
       seen.add(key);
@@ -100,7 +103,7 @@ export const popularVisa: StatementParser = {
           creditLimitCents: parseMoneyCents(limit),
           availableCreditCents: parseMoneyCents(available),
           interestRateAnnual: (() => {
-            const m = text.match(/Tasa de Inter[eé]s Anual\.*:?\s*([\d.]+)\s*%/);
+            const m = text.match(/Tasa de Inter[eé]s Anual[\s.]*:?\s*([\d.]+)\s*%/);
             return m ? Number(m[1]) : null;
           })(),
           avgDailyBalanceCents: money(

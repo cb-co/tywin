@@ -28,9 +28,9 @@ describe("popularVisa.parse", () => {
     expect(s.availableCreditCents).toBe(857450);
   });
 
-  it("parses all five lines with kinds, MCC, and inferred years", () => {
-    expect(s.lines).toHaveLength(5);
-    const [mercado, gas, pago, resto, rebate] = s.lines;
+  it("parses all six lines with kinds, MCC, and inferred years", () => {
+    expect(s.lines).toHaveLength(6);
+    const [mercado, gas, pago, resto, rebate, cargo] = s.lines;
     expect(mercado).toMatchObject({
       madeOn: "2026-05-26", postedOn: "2026-05-28",
       reference: "74763946147620851045422",
@@ -42,12 +42,13 @@ describe("popularVisa.parse", () => {
     expect(pago).toMatchObject({ amountCents: -20000, kind: "payment", mcc: null });
     expect(resto.amountCents).toBe(7550);
     expect(rebate).toMatchObject({ amountCents: -5000, kind: "credit" });
+    expect(cargo).toMatchObject({ kind: "fee", amountCents: 2500, mcc: null });
   });
 
   it("reads footer totals and cost of carry", () => {
-    expect(s.closingBalanceCents).toBe(142550);
-    expect(s.balanceToPayCents).toBe(142550);
-    expect(s.minimumPaymentCents).toBe(14255);
+    expect(s.closingBalanceCents).toBe(145050);
+    expect(s.balanceToPayCents).toBe(145050);
+    expect(s.minimumPaymentCents).toBe(14505);
     expect(s.overdueAmountCents).toBe(0);
     expect(s.overdueInstallments).toBe(0);
     expect(s.interestRateAnnual).toBe(40);
@@ -58,7 +59,7 @@ describe("popularVisa.parse", () => {
   });
 
   it("computes totals from lines and passes the checksum", () => {
-    expect(s.totalDebitsCents).toBe(67550);
+    expect(s.totalDebitsCents).toBe(70050);
     expect(s.totalCreditsCents).toBe(25000);
     expect(validateChecksums(parsed)).toEqual([]);
   });
@@ -74,6 +75,6 @@ describe("popularVisa.parse", () => {
   it("does not duplicate lines when pages repeat headers/footers", () => {
     const doubled = popularVisa.parse(POPULAR_FIXTURE + POPULAR_FIXTURE);
     // header/footer parse first-occurrence; lines dedupe by reference+amount+dates
-    expect(doubled.sections[0].lines).toHaveLength(5);
+    expect(doubled.sections[0].lines).toHaveLength(6);
   });
 });

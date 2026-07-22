@@ -19,13 +19,14 @@ export const POPULAR_FIXTURE = `
   10/06         09/06   74763946155622940137862            RESTAURANTE TRES               CIUDAD FALSA            75.50
                                                            5812   013148
   25/06         25/06   0622199159                         Rebate VISA TEST                                      -50.00
+  25/06         25/06   0622199163                         CARGO SOBREGIRO                                          25.00
 
                               UNA CANTIDAD CON EL SIGNO (-) DE MENOS ES UN CRÉDITO.
 
      CUOTAS
                          MONTO VENCIDO       PAGO MÍNIMO        BALANCE A PAGAR       BALANCE TOTAL
      VENCIDAS
-      0                       0.00              142.55              1,425.50             1,425.50
+      0                       0.00              145.05            1,450.50             1,450.50
 
                              Tasa de Interés Anual....: 40.00 %
 
