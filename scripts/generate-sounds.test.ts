@@ -37,3 +37,14 @@ for (const file of SOUND_FILES) {
     expect(Math.abs(samples[samples.length - 1])).toBeLessThan(0.01);
   });
 }
+
+test("public/sounds/success.wav rings long enough to resolve, not chop", () => {
+  // The success cue is a two-note rising gesture (E5 → B5); the second note
+  // needs real time to ring out or the whole thing reads as cut off rather
+  // than finished. 1s is comfortably past the ~0.83s the too-fast version
+  // used to run for.
+  const buffer = readFileSync(join(process.cwd(), "public/sounds", "success.wav"));
+  const numSamples = (buffer.length - 44) / 2;
+  const durationMs = (numSamples / 44100) * 1000;
+  expect(durationMs).toBeGreaterThan(1000);
+});

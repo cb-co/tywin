@@ -95,10 +95,14 @@ function mix(...layers) {
 mkdirSync(OUT_DIR, { recursive: true });
 
 /* Success: E5 → B5, a rising perfect fifth. The second note lands while the
-   first is still ringing, so it reads as one gesture rather than two beeps. */
+   first is still ringing, so it reads as one gesture rather than two beeps.
+   Decay is intentionally slower than the other two cues (and duration
+   longer) so the resolving second note actually gets time to ring out —
+   at the original 5.0-5.5/s decay the whole gesture was inaudible well
+   before its buffer ended, which read as chopped rather than finished. */
 const success = mix(
-  note(659.25, { duration: 0.75, decay: 5.5, amplitude: 0.5 }),
-  note(987.77, { duration: 0.75, decay: 5.0, amplitude: 0.42, delay: 0.085 }),
+  note(659.25, { duration: 1.1, decay: 3.2, amplitude: 0.5 }),
+  note(987.77, { duration: 1.1, decay: 2.8, amplitude: 0.42, delay: 0.085 }),
 );
 
 /* Delete: A4 → E4, the same interval inverted. Falling and a register lower,
