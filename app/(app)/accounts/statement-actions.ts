@@ -1,5 +1,7 @@
 "use server";
 
+import { writeFile } from "node:fs/promises";
+import path from "node:path";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
@@ -69,6 +71,8 @@ async function runPipeline(formData: FormData) {
     if (extracted.reason === "bad_password") return { needsPassword: true, passwordIncorrect: true } as const;
     return { needsPassword: true } as const;
   }
+
+  await writeFile(path.join(process.cwd(), "extracted-statement.txt"), extracted.text, { mode: 0o600 });
 
   const llmResult = await extractWithLLM(scrubPii(extracted.text));
   if (!llmResult.ok) {
