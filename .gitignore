@@ -26,6 +26,7 @@
 
 # real bank statements must never be committed
 *.pdf
+extracted-statement.txt
 
 # debug
 npm-debug.log*
