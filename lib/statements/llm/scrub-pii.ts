@@ -57,6 +57,10 @@ export function scrubPii(text: string): string {
   for (const idx of emailLineIdx) {
     for (let d = 1; d <= WINDOW_BEFORE; d++) {
       const i = idx - d;
+      // Guard `out[i] === lines[i]` ensures we don't overwrite a line already redacted as
+      // [EMAIL] — when two emails land within the window distance, the second email's backward
+      // scan would otherwise re-classify the first email's line as a name candidate and clobber
+      // the [EMAIL] marker.
       if (i >= 0 && out[i] === lines[i] && isShortNoDigitLine(lines[i])) out[i] = "[NAME]";
     }
     for (let d = 1; d <= WINDOW_AFTER; d++) {
@@ -93,7 +97,7 @@ export function scrubPii(text: string): string {
   const recurring = [...freq.entries()].filter(([, n]) => n >= 3).map(([t]) => t);
   for (let i = 0; i < lines.length; i++) {
     const t = lines[i].trim();
-    if ((freq.get(t) ?? 0) >= 3) out[i] = "[NAME]";
+    if (out[i] === lines[i] && (freq.get(t) ?? 0) >= 3) out[i] = "[NAME]";
   }
 
   // Fuzzy net: a line that merely starts with one of the recurring strings above is
