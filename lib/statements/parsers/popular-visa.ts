@@ -72,6 +72,7 @@ export const popularVisa: StatementParser = {
           amountCents < 0
             ? /^pago/i.test(description) ? "payment" : "credit"
             : /^CARGO/.test(description) ? "fee" : "purchase",
+        suggestedCategory: null,
       });
     }
 

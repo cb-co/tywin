@@ -10,6 +10,7 @@ export interface ParsedLine {
   authCode: string | null;
   amountCents: number; // negative = credit
   kind: LineKind;
+  suggestedCategory: string | null; // LLM's best-guess category name, non-authoritative
 }
 
 export interface ParsedSection {

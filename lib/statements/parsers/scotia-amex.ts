@@ -94,6 +94,7 @@ export const scotiaAmex: StatementParser = {
           authCode: null,
           amountCents,
           kind: lineKind(description, amountCents),
+          suggestedCategory: null,
         });
         continue;
       }

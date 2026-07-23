@@ -43,6 +43,7 @@ const line = (amountCents: number, lineNo: number) => ({
   authCode: null,
   amountCents,
   kind: amountCents < 0 ? ("payment" as const) : ("purchase" as const),
+  suggestedCategory: null,
 });
 
 describe("validateChecksums", () => {
