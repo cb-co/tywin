@@ -72,7 +72,15 @@ async function runPipeline(formData: FormData) {
     return { needsPassword: true } as const;
   }
 
-  await writeFile(path.join(process.cwd(), "extracted-statement.txt"), extracted.text, { mode: 0o600 });
+  // Local dev debugging aid only (see design spec §9): dumps the raw, pre-scrub
+  // extraction so a developer can inspect what pdfjs pulled from a real statement.
+  // Vercel's filesystem is read-only outside /tmp, so this throws there — caught
+  // and ignored rather than failing the import over a debug convenience.
+  try {
+    await writeFile(path.join(process.cwd(), "extracted-statement.txt"), extracted.text, { mode: 0o600 });
+  } catch {
+    // best-effort local debug aid; ignore in read-only environments (e.g. Vercel)
+  }
 
   const llmResult = await extractWithLLM(scrubPii(extracted.text));
   if (!llmResult.ok) {

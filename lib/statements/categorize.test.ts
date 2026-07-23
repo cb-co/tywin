@@ -65,6 +65,17 @@ describe("resolveCategoryId", () => {
     ).toBe("cat-entertainment");
   });
 
+  it("LLM suggestion matches case-insensitively", () => {
+    expect(
+      resolveCategoryId(
+        { mcc: null, description: "SOME NEW MERCHANT", suggestedCategory: "groceries" },
+        [],
+        names,
+        "cat-other",
+      ),
+    ).toBe("cat-groceries");
+  });
+
   it("a merchant or MCC rule still beats the LLM suggestion", () => {
     const rules = [
       { rule_type: "mcc" as const, pattern: "5812", category_id: "cat-transport", priority: 0 },

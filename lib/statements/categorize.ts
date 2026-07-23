@@ -43,7 +43,10 @@ export function resolveCategoryId(
   }
 
   if (line.suggestedCategory) {
-    const byLlm = categoryIdByName.get(line.suggestedCategory);
+    // Case-insensitive: the LLM is told the exact category list but isn't
+    // guaranteed to reproduce casing verbatim.
+    const wanted = line.suggestedCategory.toLowerCase();
+    const byLlm = [...categoryIdByName].find(([name]) => name.toLowerCase() === wanted)?.[1];
     if (byLlm) return byLlm;
   }
 
