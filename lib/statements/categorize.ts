@@ -24,7 +24,7 @@ export const MCC_DEFAULT_CATEGORY: Record<string, string> = {
 };
 
 export function resolveCategoryId(
-  line: { mcc: string | null; description: string },
+  line: { mcc: string | null; description: string; suggestedCategory?: string | null },
   rules: CategoryRuleRow[],
   categoryIdByName: Map<string, string>,
   otherId: string,
@@ -40,7 +40,14 @@ export function resolveCategoryId(
       .filter((r) => r.rule_type === "mcc" && r.pattern === line.mcc)
       .sort((a, b) => b.priority - a.priority)[0];
     if (mccRule) return mccRule.category_id;
+  }
 
+  if (line.suggestedCategory) {
+    const byLlm = categoryIdByName.get(line.suggestedCategory);
+    if (byLlm) return byLlm;
+  }
+
+  if (line.mcc) {
     const name = MCC_DEFAULT_CATEGORY[line.mcc];
     const byDefault = name ? categoryIdByName.get(name) : undefined;
     if (byDefault) return byDefault;

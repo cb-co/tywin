@@ -53,4 +53,40 @@ describe("resolveCategoryId", () => {
       expect(MCC_DEFAULT_CATEGORY[mcc]).toBeTruthy();
     }
   });
+
+  it("LLM suggestion beats the MCC default table when no rule matches", () => {
+    expect(
+      resolveCategoryId(
+        { mcc: null, description: "SOME NEW MERCHANT", suggestedCategory: "Entertainment" },
+        [],
+        names,
+        "cat-other",
+      ),
+    ).toBe("cat-entertainment");
+  });
+
+  it("a merchant or MCC rule still beats the LLM suggestion", () => {
+    const rules = [
+      { rule_type: "mcc" as const, pattern: "5812", category_id: "cat-transport", priority: 0 },
+    ];
+    expect(
+      resolveCategoryId(
+        { mcc: "5812", description: "X", suggestedCategory: "Dining" },
+        rules,
+        names,
+        "cat-other",
+      ),
+    ).toBe("cat-transport");
+  });
+
+  it("falls through to the MCC default table when the LLM suggestion isn't a real category", () => {
+    expect(
+      resolveCategoryId(
+        { mcc: "5411", description: "X", suggestedCategory: "NotARealCategory" },
+        [],
+        names,
+        "cat-other",
+      ),
+    ).toBe("cat-groceries");
+  });
 });
