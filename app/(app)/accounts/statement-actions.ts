@@ -5,7 +5,8 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { dbError } from "@/lib/errors";
 import { extractStatementText } from "@/lib/statements/extract";
-import { detectParser } from "@/lib/statements/registry";
+import { scrubPii } from "@/lib/statements/llm/scrub-pii";
+import { extractWithLLM, toParsedStatement } from "@/lib/statements/llm/extract";
 import { validateChecksums } from "@/lib/statements/validate";
 import { centsToDecimal } from "@/lib/statements/money";
 import { suggestAccountId, type CardAccountOption } from "@/lib/statements/mapping";
@@ -69,25 +70,27 @@ async function runPipeline(formData: FormData) {
     return { needsPassword: true } as const;
   }
 
-  const parser = detectParser(extracted.text);
-  if (!parser) {
+  const llmResult = await extractWithLLM(scrubPii(extracted.text));
+  if (!llmResult.ok) {
     await supabase.from("statement_imports").insert({
       user_id: user.id,
       parser_id: "unknown",
       file_name: file.name,
       status: "failed_detection",
-      error: "no parser matched",
+      error: "llm extraction failed",
     });
     return { error: t("unsupportedBank") } as const;
   }
 
   let parsed: ParsedStatement;
+  let parserId: string;
   try {
-    parsed = parser.parse(extracted.text);
+    parsed = toParsedStatement(llmResult.statement);
+    parserId = parsed.parserId;
   } catch (e) {
     await supabase.from("statement_imports").insert({
       user_id: user.id,
-      parser_id: parser.id,
+      parser_id: "unknown",
       file_name: file.name,
       status: "failed_detection",
       error: String(e),
@@ -102,7 +105,7 @@ async function runPipeline(formData: FormData) {
       .join("; ");
     await supabase.from("statement_imports").insert({
       user_id: user.id,
-      parser_id: parser.id,
+      parser_id: parserId,
       file_name: file.name,
       status: "failed_validation",
       error: detail,
@@ -134,17 +137,17 @@ async function runPipeline(formData: FormData) {
   const { data: savedRows } = await supabase
     .from("statement_section_mappings")
     .select("section_key,account_id")
-    .eq("parser_id", parser.id)
+    .eq("parser_id", parserId)
     .eq("card_group_id", account.card_group_id ?? "00000000-0000-0000-0000-000000000000");
   const saved = new Map((savedRows ?? []).map((m) => [m.section_key, m.account_id]));
 
-  return { supabase, user, file, bytes, parser, parsed, account, options, saved, t } as const;
+  return { supabase, user, file, bytes, parserId, parsed, account, options, saved, t } as const;
 }
 
 export async function parseStatement(formData: FormData): Promise<StatementPreviewResult> {
   const ctx = await runPipeline(formData);
   if ("error" in ctx || "needsPassword" in ctx) return ctx as StatementPreviewResult;
-  const { parsed, parser, account, options, saved, file } = ctx;
+  const { parsed, parserId, account, options, saved, file } = ctx;
 
   const sections: SectionPreview[] = parsed.sections.map((s) => {
     const mapped =
@@ -168,7 +171,7 @@ export async function parseStatement(formData: FormData): Promise<StatementPrevi
 
   return {
     preview: {
-      parserId: parser.id,
+      parserId,
       cardLast4: parsed.cardLast4,
       fileName: file.name,
       cardGroupId: account.card_group_id,
@@ -183,7 +186,7 @@ export async function confirmStatementImport(formData: FormData): Promise<{ erro
   const ctx = await runPipeline(formData);
   if ("error" in ctx) return { error: ctx.error };
   if ("needsPassword" in ctx) return { error: (await getTranslations("Statements"))("passwordRequired") };
-  const { supabase, user, parsed, parser, account, options, file, t } = ctx;
+  const { supabase, user, parsed, parserId, account, options, file, t } = ctx;
 
   let mappings: Record<string, string>;
   try {
@@ -226,7 +229,7 @@ export async function confirmStatementImport(formData: FormData): Promise<{ erro
   const rates = await getExchangeRates(baseCurrency);
 
   const payload = {
-    parser_id: parser.id,
+    parser_id: parserId,
     card_group_id: account.card_group_id ?? "",
     file_name: file.name,
     file_path: "",
@@ -285,7 +288,7 @@ export async function confirmStatementImport(formData: FormData): Promise<{ erro
       await supabase.from("statement_section_mappings").upsert(
         {
           user_id: user.id,
-          parser_id: parser.id,
+          parser_id: parserId,
           card_group_id: cardGroupId,
           section_key: s.sectionKey,
           account_id: mappings[s.sectionKey],
