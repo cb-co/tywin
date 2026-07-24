@@ -6,13 +6,7 @@ vi.mock("@/lib/statements/llm/extract", () => ({
   extractWithLLM: vi.fn(),
   toParsedStatement: vi.fn(),
 }));
-vi.mock("@/lib/statements/llm/scrub-pii", () => ({ scrubPii: vi.fn((x) => x) }));
-vi.mock("@/lib/statements/validate", () => ({ validateChecksums: vi.fn(() => []) }));
-vi.mock("@/lib/statements/money", () => ({ centsToDecimal: vi.fn((c) => String(c / 100)) }));
-vi.mock("@/lib/statements/mapping", () => ({ suggestAccountId: vi.fn(() => null) }));
-vi.mock("@/lib/statements/categorize", () => ({ resolveCategoryId: vi.fn(() => "cat-other") }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
-vi.mock("@/lib/errors", () => ({ dbError: vi.fn(async (e) => String(e)) }));
 vi.mock("@/lib/fx", () => ({ getExchangeRates: vi.fn(async () => ({})) }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next-intl/server", () => ({
