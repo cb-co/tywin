@@ -6,6 +6,7 @@ import {
   Repeat,
   LineChart,
   Settings,
+  CircleHelp,
   type LucideIcon,
 } from "lucide-react";
 
@@ -20,6 +21,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/subscriptions", key: "subscriptions", icon: Repeat },
   { href: "/insights", key: "insights", icon: LineChart },
   { href: "/settings", key: "settings", icon: Settings },
+  { href: "/help", key: "help", icon: CircleHelp },
 ];
 
 export type MobileNavItem = NavItem & {
