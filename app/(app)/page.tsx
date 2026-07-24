@@ -80,7 +80,7 @@ export default async function OverviewPage() {
     );
   }
 
-  const budgetPct = o.totalBudget > 0 ? Math.min((o.totalUsed / o.totalBudget) * 100, 100) : 0;
+  const budgetPct = o.totalBudget > 0 ? Math.min(Math.max((o.totalUsed / o.totalBudget) * 100, 0), 100) : 0;
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">

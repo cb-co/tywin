@@ -109,7 +109,7 @@ function CardBody({
           </span>
         ) : null}
       </div>
-      {util !== null ? <Progress value={Math.min(util, 100)} /> : null}
+      {util !== null ? <Progress value={Math.min(Math.max(util, 0), 100)} /> : null}
       <div className="flex justify-between text-xs text-muted-foreground">
         <span>{limit ? t("limitAmount", { amount: formatMoney(limit, currency) }) : t("noLimitSet")}</span>
         {dueDay ? <span>{t("dueThe", { day: formatDayOfMonth(dueDay) })}</span> : null}
@@ -132,7 +132,7 @@ function LoanBody({
   currency: string;
 }) {
   const t = useTranslations("Accounts");
-  const pct = term && term > 0 ? Math.min((paid / term) * 100, 100) : 0;
+  const pct = term && term > 0 ? Math.min(Math.max((paid / term) * 100, 0), 100) : 0;
   return (
     <div className="mt-5 space-y-3">
       <div>

@@ -18,7 +18,7 @@ export function BudgetBars({
     <div className="space-y-4">
       {data.map((row) => {
         const over = row.budget > 0 && row.used > row.budget;
-        const pct = row.budget > 0 ? Math.min((row.used / row.budget) * 100, 100) : row.used > 0 ? 100 : 0;
+        const pct = row.budget > 0 ? Math.min(Math.max((row.used / row.budget) * 100, 0), 100) : row.used > 0 ? 100 : 0;
         return (
           <div key={row.name}>
             <div className="flex items-baseline justify-between text-sm">

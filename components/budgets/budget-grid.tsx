@@ -27,7 +27,7 @@ const STATUS_COLOR: Record<BudgetRow["status"], string> = {
 const TOUCH_TARGET = "[@media(hover:none)]:size-9";
 
 function barPct(used: number, budget: number) {
-  if (budget > 0) return Math.min((used / budget) * 100, 100);
+  if (budget > 0) return Math.min(Math.max((used / budget) * 100, 0), 100);
   return used > 0 ? 100 : 0;
 }
 

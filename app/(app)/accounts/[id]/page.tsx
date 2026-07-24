@@ -132,7 +132,7 @@ export default async function AccountDetailPage({
                   <span>{t("utilization")}</span>
                   <span>{formatPercent(util)}</span>
                 </div>
-                <Progress value={Math.min(util, 100)} />
+                <Progress value={Math.min(Math.max(util, 0), 100)} />
               </div>
             ) : null}
             {account.payment_due_day ? (
@@ -149,7 +149,7 @@ export default async function AccountDetailPage({
             </p>
             {progressTerm ? (
               <div className="mt-4 max-w-sm space-y-2">
-                <Progress value={Math.min((progressPaid / progressTerm) * 100, 100)} />
+                <Progress value={Math.min(Math.max((progressPaid / progressTerm) * 100, 0), 100)} />
                 <p className="text-sm text-muted-foreground">
                   {t("installmentsPaidOfTerm", { paid: progressPaid, term: progressTerm })}
                 </p>

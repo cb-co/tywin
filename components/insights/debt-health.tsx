@@ -62,7 +62,7 @@ function Bar({ label, pct, value, color }: { label: string; pct: number; value: 
         <span className="text-xs tabular-nums text-muted-foreground">{value}</span>
       </div>
       <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
-        <div className="h-full rounded-full" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: color }} />
+        <div className="h-full rounded-full" style={{ width: `${Math.min(Math.max(pct, 0), 100)}%`, backgroundColor: color }} />
       </div>
     </div>
   );
