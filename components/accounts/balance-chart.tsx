@@ -15,7 +15,7 @@ function delta(txn: TransactionWithRefs, accountId: string): number {
   if (txn.account_id === accountId) {
     return txn.type === "income" ? txn.amount : -txn.total_amount;
   }
-  if (txn.to_account_id === accountId && txn.type === "payment") return txn.amount;
+  if (txn.to_account_id === accountId && txn.type === "payment") return txn.to_amount ?? txn.amount;
   return 0;
 }
 

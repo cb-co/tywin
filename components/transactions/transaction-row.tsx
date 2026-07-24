@@ -25,11 +25,17 @@ export function TransactionRow({
   data,
   onDelete,
   pending,
+  viewAccountId,
 }: {
   txn: TransactionWithRefs;
   data: QuickAddData;
   onDelete: (id: string) => void;
   pending: boolean;
+  /** Account whose page this row renders on. A payment lands here as its
+   *  destination leg, so the figure switches to to_amount/to_account.currency
+   *  instead of the source leg — otherwise a cross-currency payment shows the
+   *  wrong currency's number on the receiving account's page. */
+  viewAccountId?: string;
 }) {
   const t = useTranslations("Transactions");
   const tType = useTranslations("TransactionTypes");
@@ -55,13 +61,22 @@ export function TransactionRow({
   const isStatementCredit =
     txn.type === "expense" && !!txn.statement_line_id && Number(txn.total_amount) < 0;
 
+  const isDestinationLeg =
+    txn.type === "payment" && viewAccountId != null && txn.to_account_id === viewAccountId;
+
   const amount = isStatementCredit
     ? { value: -txn.total_amount, signed: true, tone: "text-success" }
     : txn.type === "income"
       ? { value: txn.amount, signed: true, tone: "text-success" }
       : txn.type === "expense"
         ? { value: -txn.total_amount, signed: false, tone: "text-destructive" }
-        : { value: txn.total_amount, signed: false, tone: "text-foreground" };
+        : {
+            value: isDestinationLeg ? (txn.to_amount ?? txn.amount) : txn.total_amount,
+            signed: false,
+            tone: "text-foreground",
+          };
+
+  const currency = isDestinationLeg ? (toAccount?.currency ?? txn.currency) : txn.currency;
 
   const hasExtras = txn.tax_amount > 0 || txn.fee_amount > 0;
 
@@ -112,7 +127,7 @@ export function TransactionRow({
 
       <div className="text-right">
         <p className={cn("figure text-sm tabular-nums", amount.tone)}>
-          {formatMoney(amount.value, txn.currency, { signed: amount.signed })}
+          {formatMoney(amount.value, currency, { signed: amount.signed })}
         </p>
         {hasExtras ? (
           <p className="text-[11px] text-muted-foreground">

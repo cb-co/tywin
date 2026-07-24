@@ -13,7 +13,7 @@ export async function getTransactions(filters: TxnFilters = {}) {
   let q = supabase
     .from("transactions")
     .select(
-      "*, account:accounts!transactions_account_id_fkey(id,name,currency,type), to_account:accounts!transactions_to_account_id_fkey(id,name), category:categories!transactions_category_id_fkey(id,name,emoji,color)",
+      "*, account:accounts!transactions_account_id_fkey(id,name,currency,type), to_account:accounts!transactions_to_account_id_fkey(id,name,currency), category:categories!transactions_category_id_fkey(id,name,emoji,color)",
     )
     .order("occurred_at", { ascending: false })
     .limit(200);
@@ -35,7 +35,7 @@ export async function getAccountTransactions(accountId: string) {
   const { data } = await supabase
     .from("transactions")
     .select(
-      "*, account:accounts!transactions_account_id_fkey(id,name,currency,type), to_account:accounts!transactions_to_account_id_fkey(id,name), category:categories!transactions_category_id_fkey(id,name,emoji,color)",
+      "*, account:accounts!transactions_account_id_fkey(id,name,currency,type), to_account:accounts!transactions_to_account_id_fkey(id,name,currency), category:categories!transactions_category_id_fkey(id,name,emoji,color)",
     )
     .or(`account_id.eq.${accountId},to_account_id.eq.${accountId}`)
     .order("occurred_at", { ascending: false })

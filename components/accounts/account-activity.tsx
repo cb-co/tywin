@@ -67,7 +67,14 @@ export function AccountActivity({
       ) : (
         <Card className="divide-y px-5 py-0">
           {transactions.map((txn) => (
-            <TransactionRow key={txn.id} txn={txn} data={data} onDelete={onDelete} pending={pending} />
+            <TransactionRow
+              key={txn.id}
+              txn={txn}
+              data={data}
+              onDelete={onDelete}
+              pending={pending}
+              viewAccountId={accountId}
+            />
           ))}
         </Card>
       )}

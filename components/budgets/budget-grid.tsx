@@ -34,13 +34,16 @@ function barPct(used: number, budget: number) {
 export function BudgetGrid({ month, overview }: { month: string; overview: BudgetOverview }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [navPending, startNavTransition] = useTransition();
   const t = useTranslations("Budgets");
   const { playSuccess, playDelete, playError } = useUiSound();
   const { rows, totalBudget, totalUsed, baseCurrency } = overview;
   const remaining = totalBudget - totalUsed;
 
   function go(delta: number) {
-    router.push(`/budgets?month=${addMonths(month, delta)}`);
+    startNavTransition(() => {
+      router.push(`/budgets?month=${addMonths(month, delta)}`);
+    });
   }
 
   function onSaveBudget(categoryId: string, raw: string, current: number) {
@@ -90,36 +93,65 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
       {/* Month switcher + totals */}
       <div className="flex flex-col gap-4 rounded-xl border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon-sm" aria-label={t("prevMonth")} onClick={() => go(-1)}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t("prevMonth")}
+            onClick={() => go(-1)}
+            disabled={navPending}
+          >
             <ChevronLeft className="size-4" />
           </Button>
           <span className="min-w-40 text-center text-lg font-medium">
             {monthLabel(month)}
           </span>
-          <Button variant="ghost" size="icon-sm" aria-label={t("nextMonth")} onClick={() => go(1)}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t("nextMonth")}
+            onClick={() => go(1)}
+            disabled={navPending}
+          >
             <ChevronRight className="size-4" />
           </Button>
         </div>
-        <div className="flex gap-6 text-sm">
-          <div>
-            <p className="text-xs text-muted-foreground">{t("budgetLabel")}</p>
-            <p className="figure tabular-nums">{formatMoney(totalBudget, baseCurrency)}</p>
+        {navPending ? (
+          <div className="flex gap-6">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="space-y-1.5">
+                <div className="skeleton h-3 w-14 rounded" />
+                <div className="skeleton h-4 w-20 rounded" />
+              </div>
+            ))}
           </div>
-          <div>
-            <p className="text-xs text-muted-foreground">{t("usedLabel")}</p>
-            <p className="figure tabular-nums">{formatMoney(totalUsed, baseCurrency)}</p>
+        ) : (
+          <div className="flex gap-6 text-sm">
+            <div>
+              <p className="text-xs text-muted-foreground">{t("budgetLabel")}</p>
+              <p className="figure tabular-nums">{formatMoney(totalBudget, baseCurrency)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">{t("usedLabel")}</p>
+              <p className="figure tabular-nums">{formatMoney(totalUsed, baseCurrency)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">{t("remainingLabel")}</p>
+              <p className={`figure tabular-nums ${remaining < 0 ? "text-destructive" : ""}`}>
+                {formatMoney(remaining, baseCurrency)}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-muted-foreground">{t("remainingLabel")}</p>
-            <p className={`figure tabular-nums ${remaining < 0 ? "text-destructive" : ""}`}>
-              {formatMoney(remaining, baseCurrency)}
-            </p>
-          </div>
-        </div>
+        )}
       </div>
 
       <div className="flex items-center justify-between">
-        <Button variant="outline" size="sm" onClick={onCopy} disabled={pending} isLoading={pending}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onCopy}
+          disabled={pending || navPending}
+          isLoading={pending}
+        >
           <CopyPlus className="size-4" />
           {t("copyLastMonth")}
         </Button>
@@ -133,7 +165,13 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
         />
       </div>
 
-      {rows.length === 0 ? (
+      {navPending ? (
+        <div className="space-y-4">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="skeleton h-14 rounded-lg" />
+          ))}
+        </div>
+      ) : rows.length === 0 ? (
         <EmptyState
           icon={<PieChart className="size-6" />}
           title={t("emptyTitle")}
