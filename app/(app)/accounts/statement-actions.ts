@@ -89,9 +89,9 @@ async function runPipeline(formData: FormData) {
       parser_id: "unknown",
       file_name: file.name,
       status: "failed_detection",
-      error: "llm extraction failed",
+      error: llmResult.reason === "rate_limited" ? "llm rate limited" : "llm extraction failed",
     });
-    return { error: t("unsupportedBank") } as const;
+    return { error: llmResult.reason === "rate_limited" ? t("llmRateLimited") : t("unsupportedBank") } as const;
   }
 
   let parsed: ParsedStatement;

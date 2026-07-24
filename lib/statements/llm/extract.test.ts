@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { toParsedStatement } from "./extract";
+import { APICallError, RetryError } from "ai";
+import { isRateLimitError, toParsedStatement } from "./extract";
 import { validateChecksums } from "../validate";
 import type { LlmStatement } from "./schema";
 
@@ -113,5 +114,27 @@ describe("toParsedStatement", () => {
 
   it("passes checksums for a line-less section", () => {
     expect(validateChecksums(toParsedStatement(LINE_LESS))).toEqual([]);
+  });
+});
+
+describe("isRateLimitError", () => {
+  const apiError = (statusCode: number) =>
+    new APICallError({ message: "failed", url: "https://example.com", requestBodyValues: {}, statusCode });
+
+  it("recognizes a 429 APICallError", () => {
+    expect(isRateLimitError(apiError(429))).toBe(true);
+  });
+
+  it("recognizes a 429 buried in a RetryError once the SDK's own retries are exhausted", () => {
+    const retry = new RetryError({ message: "max retries exceeded", reason: "maxRetriesExceeded", errors: [apiError(429)] });
+    expect(isRateLimitError(retry)).toBe(true);
+  });
+
+  it("rejects a non-429 APICallError", () => {
+    expect(isRateLimitError(apiError(500))).toBe(false);
+  });
+
+  it("rejects a plain, non-AI-SDK error", () => {
+    expect(isRateLimitError(new Error("boom"))).toBe(false);
   });
 });

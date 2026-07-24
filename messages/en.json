@@ -237,6 +237,7 @@
     "invalidUpload": "Choose a PDF file first.",
     "unreadablePdf": "That file couldn't be read as a PDF.",
     "unsupportedBank": "This bank's statement layout isn't supported yet.",
+    "llmRateLimited": "Too many statements are being processed right now. Please try again in a minute.",
     "parseFailed": "The statement couldn't be parsed.",
     "passwordRequired": "The PDF password is required.",
     "checksumFailed": "The statement's own totals don't add up ({detail}). Nothing was imported.",

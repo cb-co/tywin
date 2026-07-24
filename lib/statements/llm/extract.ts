@@ -1,5 +1,5 @@
-import { generateObject } from "ai";
-import { groq } from "@ai-sdk/groq";
+import { generateObject, APICallError, RetryError } from "ai";
+import { google } from "@ai-sdk/google";
 import { StatementSchema, type LlmLine, type LlmSection, type LlmStatement } from "./schema";
 import { SYSTEM_PROMPT } from "./system-prompt";
 import { parseMoneyCents } from "../money";
@@ -8,19 +8,35 @@ import type { ParsedLine, ParsedSection, ParsedStatement } from "../types";
 
 export type LlmExtractResult =
   | { ok: true; statement: LlmStatement }
-  | { ok: false; reason: "llm_error" };
+  | { ok: false; reason: "rate_limited" | "llm_error" };
+
+// generateObject retries a retryable failure itself before giving up, then throws
+// RetryError wrapping the last underlying error — unwrap it so a rate limit is still
+// recognized as one even after the SDK's own retries are exhausted.
+export function isRateLimitError(error: unknown): boolean {
+  const cause = RetryError.isInstance(error) ? error.lastError : error;
+  return APICallError.isInstance(cause) && cause.statusCode === 429;
+}
 
 export async function extractWithLLM(text: string): Promise<LlmExtractResult> {
   try {
     const { object } = await generateObject({
-      model: groq(process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile"),
+      // Moved off Groq: gpt-oss-120b/20b are the only Groq models with native
+      // structured-output support, and their free-tier TPM (8k) can't fit a real
+      // multi-transaction statement's genuine token needs (~11k+, confirmed against
+      // real statements). llama-3.3-70b-versatile has more free-tier headroom (12k TPM)
+      // but doesn't support Groq's json_schema response format at all — tried it with
+      // structured outputs disabled and it hallucinated duplicate transaction blocks,
+      // unsafe for financial data. Gemini supports real schema-constrained output with
+      // a free tier that needs no billing account.
+      model: google(process.env.GOOGLE_MODEL ?? "gemini-3.5-flash-lite"),
       schema: StatementSchema,
       system: SYSTEM_PROMPT,
       prompt: text,
     });
     return { ok: true, statement: object };
-  } catch {
-    return { ok: false, reason: "llm_error" };
+  } catch (e) {
+    return { ok: false, reason: isRateLimitError(e) ? "rate_limited" : "llm_error" };
   }
 }
 
