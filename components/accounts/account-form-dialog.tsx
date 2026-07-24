@@ -464,7 +464,7 @@ export function AccountFormDialog({
           </div>
 
           <DialogFooter>
-            <Button type="submit" disabled={pending}>
+            <Button type="submit" disabled={pending} isLoading={pending}>
               {pending ? tc("saving") : mode === "create" ? t("addAccountButton") : t("saveChangesButton")}
             </Button>
           </DialogFooter>

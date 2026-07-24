@@ -86,7 +86,7 @@ export function AccountDetailActions({
           </Button>
         }
       />
-      <Button variant="ghost" size="sm" onClick={onArchive} disabled={pending}>
+      <Button variant="ghost" size="sm" onClick={onArchive} disabled={pending} isLoading={pending}>
         {account.is_archived ? (
           <ArchiveRestore className="size-4" />
         ) : (
@@ -115,7 +115,7 @@ export function AccountDetailActions({
             <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={pending}>
               {tc("cancel")}
             </Button>
-            <Button variant="destructive" onClick={onDelete} disabled={pending}>
+            <Button variant="destructive" onClick={onDelete} disabled={pending} isLoading={pending}>
               {pending ? t("deleting") : tc("delete")}
             </Button>
           </DialogFooter>

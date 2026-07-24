@@ -144,8 +144,9 @@ export function TransactionRow({
           className={cn("text-muted-foreground hover:text-destructive", TOUCH_TARGET)}
           onClick={() => onDelete(txn.id)}
           disabled={pending}
+          isLoading={pending}
         >
-          <Trash2 className="size-4" />
+          {pending ? null : <Trash2 className="size-4" />}
         </Button>
       </div>
     </div>

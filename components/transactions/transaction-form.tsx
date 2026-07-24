@@ -530,7 +530,7 @@ export function TransactionForm({
         </>
       ) : null}
 
-      <Button type="submit" className="w-full" disabled={pending}>
+      <Button type="submit" className="w-full" disabled={pending} isLoading={pending}>
         {pending ? tc("saving") : isEdit ? t("saveChangesButton") : t("saveButton")}
       </Button>
     </form>
