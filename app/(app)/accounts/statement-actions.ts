@@ -43,6 +43,10 @@ export interface StatementPreviewResult {
     sections: SectionPreview[];
     accountOptions: { id: string; name: string; currency: string }[];
   };
+  /** JSON-serialized ParsedStatement. The client echoes this back on Import
+   *  (confirmStatementImport) so confirm never re-extracts the PDF or re-calls
+   *  the LLM — see design spec §1. */
+  parsedStatement?: string;
 }
 
 async function requireUser() {
@@ -53,79 +57,13 @@ async function requireUser() {
   return { supabase, user };
 }
 
-/** Shared by parse and confirm: extract → detect → parse → checksum. */
-async function runPipeline(formData: FormData) {
+type Supabase = Awaited<ReturnType<typeof createClient>>;
+
+/** Cheap half of the old runPipeline: account, card-group siblings, and saved
+ *  section mappings for one card account + parser. No PDF/LLM work — safe to
+ *  call on every parse AND every confirm. */
+async function loadAccountContext(supabase: Supabase, accountId: string, parserId: string) {
   const t = await getTranslations("Statements");
-  const { supabase, user } = await requireUser();
-  if (!user) return { error: (await getTranslations("Common"))("notSignedIn") } as const;
-
-  const file = formData.get("file");
-  const accountId = String(formData.get("account_id") ?? "");
-  const password = String(formData.get("password") ?? "") || undefined;
-  if (!(file instanceof File) || !accountId) return { error: t("invalidUpload") } as const;
-
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const extracted = await extractStatementText(bytes, password);
-  if (!extracted.ok) {
-    if (extracted.reason === "unreadable") return { error: t("unreadablePdf") } as const;
-    if (extracted.reason === "bad_password") return { needsPassword: true, passwordIncorrect: true } as const;
-    return { needsPassword: true } as const;
-  }
-
-  // Local dev debugging aid only (see design spec §9): dumps the raw, pre-scrub
-  // extraction so a developer can inspect what pdfjs pulled from a real statement.
-  // Vercel's filesystem is read-only outside /tmp, so this throws there — caught
-  // and ignored rather than failing the import over a debug convenience.
-  try {
-    await writeFile(path.join(process.cwd(), "extracted-statement.txt"), extracted.text, { mode: 0o600 });
-  } catch {
-    // best-effort local debug aid; ignore in read-only environments (e.g. Vercel)
-  }
-
-  const llmResult = await extractWithLLM(scrubPii(extracted.text));
-  if (!llmResult.ok) {
-    await supabase.from("statement_imports").insert({
-      user_id: user.id,
-      parser_id: "unknown",
-      file_name: file.name,
-      status: "failed_detection",
-      error: llmResult.reason === "rate_limited" ? "llm rate limited" : "llm extraction failed",
-    });
-    return { error: llmResult.reason === "rate_limited" ? t("llmRateLimited") : t("unsupportedBank") } as const;
-  }
-
-  let parsed: ParsedStatement;
-  let parserId: string;
-  try {
-    parsed = toParsedStatement(llmResult.statement);
-    parserId = parsed.parserId;
-  } catch (e) {
-    await supabase.from("statement_imports").insert({
-      user_id: user.id,
-      parser_id: "unknown",
-      file_name: file.name,
-      status: "failed_detection",
-      error: String(e),
-    });
-    return { error: t("parseFailed") } as const;
-  }
-
-  const failures = validateChecksums(parsed);
-  if (failures.length) {
-    const detail = failures
-      .map((f) => `${f.sectionKey}: ${centsToDecimal(f.computedCents)} ≠ ${centsToDecimal(f.statedCents)}`)
-      .join("; ");
-    await supabase.from("statement_imports").insert({
-      user_id: user.id,
-      parser_id: parserId,
-      file_name: file.name,
-      status: "failed_validation",
-      error: detail,
-    });
-    return { error: t("checksumFailed", { detail }) } as const;
-  }
-
-  // Resolve the card group + account options from the account the user is on.
   const { data: account } = await supabase
     .from("accounts")
     .select("id,name,currency,credit_limit,card_group_id,type")
@@ -153,13 +91,96 @@ async function runPipeline(formData: FormData) {
     .eq("card_group_id", account.card_group_id ?? "00000000-0000-0000-0000-000000000000");
   const saved = new Map((savedRows ?? []).map((m) => [m.section_key, m.account_id]));
 
-  return { supabase, user, file, bytes, parserId, parsed, account, options, saved, t } as const;
+  return { account, options, saved } as const;
+}
+
+/** Expensive half of the old runPipeline: PDF extraction, PII scrub, and the
+ *  Gemini call. Only ever run on parse — see design spec §1: this step used
+ *  to be a cheap local regex (detectParser) and confirm re-ran it for free;
+ *  it's an LLM network call now, so confirm must not repeat it. */
+async function extractAndParse(formData: FormData) {
+  const t = await getTranslations("Statements");
+  const { supabase, user } = await requireUser();
+  if (!user) return { error: (await getTranslations("Common"))("notSignedIn") } as const;
+
+  const file = formData.get("file");
+  const password = String(formData.get("password") ?? "") || undefined;
+  if (!(file instanceof File)) return { error: t("invalidUpload") } as const;
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const extracted = await extractStatementText(bytes, password);
+  if (!extracted.ok) {
+    if (extracted.reason === "unreadable") return { error: t("unreadablePdf") } as const;
+    if (extracted.reason === "bad_password") return { needsPassword: true, passwordIncorrect: true } as const;
+    return { needsPassword: true } as const;
+  }
+
+  // Local dev debugging aid only (see design spec §9 of the LLM extraction
+  // spec): dumps the raw, pre-scrub extraction so a developer can inspect what
+  // pdfjs pulled from a real statement. Vercel's filesystem is read-only
+  // outside /tmp, so this throws there — caught and ignored.
+  try {
+    await writeFile(path.join(process.cwd(), "extracted-statement.txt"), extracted.text, { mode: 0o600 });
+  } catch {
+    // best-effort local debug aid; ignore in read-only environments (e.g. Vercel)
+  }
+
+  const llmResult = await extractWithLLM(scrubPii(extracted.text));
+  if (!llmResult.ok) {
+    await supabase.from("statement_imports").insert({
+      user_id: user.id,
+      parser_id: "unknown",
+      file_name: file.name,
+      status: "failed_detection",
+      error: llmResult.reason === "rate_limited" ? "llm rate limited" : "llm extraction failed",
+    });
+    return { error: llmResult.reason === "rate_limited" ? t("llmRateLimited") : t("unsupportedBank") } as const;
+  }
+
+  let parsed: ParsedStatement;
+  try {
+    parsed = toParsedStatement(llmResult.statement);
+  } catch (e) {
+    await supabase.from("statement_imports").insert({
+      user_id: user.id,
+      parser_id: "unknown",
+      file_name: file.name,
+      status: "failed_detection",
+      error: String(e),
+    });
+    return { error: t("parseFailed") } as const;
+  }
+
+  const failures = validateChecksums(parsed);
+  if (failures.length) {
+    const detail = failures
+      .map((f) => `${f.sectionKey}: ${centsToDecimal(f.computedCents)} ≠ ${centsToDecimal(f.statedCents)}`)
+      .join("; ");
+    await supabase.from("statement_imports").insert({
+      user_id: user.id,
+      parser_id: parsed.parserId,
+      file_name: file.name,
+      status: "failed_validation",
+      error: detail,
+    });
+    return { error: t("checksumFailed", { detail }) } as const;
+  }
+
+  return { supabase, fileName: file.name, parsed } as const;
 }
 
 export async function parseStatement(formData: FormData): Promise<StatementPreviewResult> {
-  const ctx = await runPipeline(formData);
+  const t = await getTranslations("Statements");
+  const accountId = String(formData.get("account_id") ?? "");
+  if (!accountId) return { error: t("invalidUpload") };
+
+  const ctx = await extractAndParse(formData);
   if ("error" in ctx || "needsPassword" in ctx) return ctx as StatementPreviewResult;
-  const { parsed, parserId, account, options, saved, file } = ctx;
+  const { supabase, parsed, fileName } = ctx;
+
+  const accountCtx = await loadAccountContext(supabase, accountId, parsed.parserId);
+  if ("error" in accountCtx) return { error: accountCtx.error };
+  const { account, options, saved } = accountCtx;
 
   const sections: SectionPreview[] = parsed.sections.map((s) => {
     const mapped =
@@ -183,22 +204,60 @@ export async function parseStatement(formData: FormData): Promise<StatementPrevi
 
   return {
     preview: {
-      parserId,
+      parserId: parsed.parserId,
       cardLast4: parsed.cardLast4,
-      fileName: file.name,
+      fileName,
       cardGroupId: account.card_group_id,
       needsMapping: sections.some((s) => !s.mappedAccountId),
       sections,
       accountOptions: options.map(({ id, name, currency }) => ({ id, name, currency })),
     },
+    parsedStatement: JSON.stringify(parsed),
   };
 }
 
+/** Lightweight shape guard for the client-echoed parsed statement — same
+ *  spirit as the `mappings` JSON guard below: not a new trust boundary (a
+ *  caller could already forge arbitrary FormData today), just protects
+ *  against a corrupted/stale payload crashing the RPC downstream. */
+function parseIncomingStatement(raw: string): ParsedStatement | null {
+  let value: unknown;
+  try {
+    value = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (
+    !value ||
+    typeof value !== "object" ||
+    typeof (value as ParsedStatement).parserId !== "string" ||
+    !Array.isArray((value as ParsedStatement).sections)
+  ) {
+    return null;
+  }
+  return value as ParsedStatement;
+}
+
 export async function confirmStatementImport(formData: FormData): Promise<{ error?: string }> {
-  const ctx = await runPipeline(formData);
-  if ("error" in ctx) return { error: ctx.error };
-  if ("needsPassword" in ctx) return { error: (await getTranslations("Statements"))("passwordRequired") };
-  const { supabase, user, parsed, parserId, account, options, file, t } = ctx;
+  const t = await getTranslations("Statements");
+  const { supabase, user } = await requireUser();
+  if (!user) return { error: (await getTranslations("Common"))("notSignedIn") };
+
+  const accountId = String(formData.get("account_id") ?? "");
+  const fileName = String(formData.get("file_name") ?? "");
+  const parsed = parseIncomingStatement(String(formData.get("parsed_statement") ?? ""));
+  if (!accountId || !fileName || !parsed) return { error: t("invalidUpload") };
+
+  // Defense-in-depth against a corrupted/stale client payload — cheap, pure,
+  // no re-extraction. See design spec §1.
+  const failures = validateChecksums(parsed);
+  if (failures.length) {
+    return { error: t("checksumFailed", { detail: failures.map((f) => f.sectionKey).join(", ") }) };
+  }
+
+  const accountCtx = await loadAccountContext(supabase, accountId, parsed.parserId);
+  if ("error" in accountCtx) return { error: accountCtx.error };
+  const { account, options } = accountCtx;
 
   let mappings: Record<string, string>;
   try {
@@ -241,9 +300,9 @@ export async function confirmStatementImport(formData: FormData): Promise<{ erro
   const rates = await getExchangeRates(baseCurrency);
 
   const payload = {
-    parser_id: parserId,
+    parser_id: parsed.parserId,
     card_group_id: account.card_group_id ?? "",
-    file_name: file.name,
+    file_name: fileName,
     file_path: "",
     sections: parsed.sections.map((s) => {
       const rate = s.currency === baseCurrency ? 1 : rates[s.currency] ? 1 / rates[s.currency] : 1;
@@ -300,7 +359,7 @@ export async function confirmStatementImport(formData: FormData): Promise<{ erro
       await supabase.from("statement_section_mappings").upsert(
         {
           user_id: user.id,
-          parser_id: parserId,
+          parser_id: parsed.parserId,
           card_group_id: cardGroupId,
           section_key: s.sectionKey,
           account_id: mappings[s.sectionKey],
