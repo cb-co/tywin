@@ -178,6 +178,7 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
 
               <div className="flex items-center gap-1">
                 <Input
+                  key={`${row.category_id}-${row.budget}`}
                   type="number"
                   step="0.01"
                   min="0"
