@@ -5,7 +5,7 @@ import { MobileHeader } from "./mobile-header";
 import { QuickAddProvider } from "@/components/quick-add/quick-add-provider";
 import { SoundProvider } from "@/components/sound/sound-provider";
 import { QuickAddButton } from "@/components/quick-add/quick-add-button";
-import { QuickAddDialog } from "@/components/quick-add/quick-add-dialog";
+import { QuickAddDialogLazy } from "@/components/quick-add/quick-add-dialog-lazy";
 import { Splash } from "./splash";
 import { getQuickAddData } from "@/lib/transactions/queries";
 import { profileAvatarUrl } from "@/lib/profile";
@@ -46,7 +46,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <BottomNav />
           <QuickAddButton />
-          <QuickAddDialog data={quickAddData} />
+          <QuickAddDialogLazy data={quickAddData} />
         </div>
       </QuickAddProvider>
     </SoundProvider>

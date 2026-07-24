@@ -12,10 +12,11 @@ export default async function AppGroupLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  /* "/" is the only public path inside this group (it's the marketing home
-     page for signed-out visitors). Every other route here is gated by the
-     proxy, so reaching this layout without a user only happens on "/" —
-     render it standalone, without the authenticated app chrome. */
+  /* "/" and "/help" are the only public paths inside this group ("/" is the
+     marketing home page, "/help" is public documentation). Every other route
+     here is gated by the proxy, so reaching this layout without a user only
+     happens on those two — render standalone, without the authenticated app
+     chrome. */
   if (!user) return <>{children}</>;
 
   /* Onboarding gate. It lives here rather than in the proxy so it costs one
