@@ -322,6 +322,7 @@
     "emptyDescriptionFiltered": "Intenta quitar un filtro o el término de búsqueda.",
     "transactionDeleted": "Transacción eliminada",
     "budgetOnlyBadge": "solo presupuesto",
+    "excludeFromBudgetBadge": "excluido",
     "statementBadge": "Estado",
     "refundBadge": "Reembolso",
     "fxFallbackBadge": "TC alterno",
@@ -352,6 +353,8 @@
     "applyFeeLabel": "Aplicar comisión de red",
     "freeSameBankHint": "Gratis dentro del mismo banco",
     "budgetOnlyLabel": "Solo presupuesto (no afecta el saldo)",
+    "excludeFromBudgetLabel": "Excluir del presupuesto",
+    "excludeFromBudgetHint": "Sigue contando para el saldo y el patrimonio neto",
     "dateLabel": "Fecha",
     "descriptionLabel": "Descripción",
     "descriptionPlaceholder": "Nota opcional",
@@ -360,7 +363,7 @@
     "noAccountsHint": "Añade una cuenta primero: las transacciones necesitan un lugar a donde ir.",
     "toastSaved": "Transacción guardada",
     "toastUpdated": "Transacción actualizada",
-    "fromStatementHint": "Importado de un estado de cuenta — solo la categoría y las notas pueden cambiar.",
+    "fromStatementHint": "Importado de un estado de cuenta — solo la categoría, las notas y la exclusión del presupuesto pueden cambiar.",
     "alwaysCategorizeMerchant": "Usar siempre esta categoría para \"{merchant}\""
   },
   "Subscriptions": {

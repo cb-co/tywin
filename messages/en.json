@@ -322,6 +322,7 @@
     "emptyDescriptionFiltered": "Try clearing a filter or search term.",
     "transactionDeleted": "Transaction deleted",
     "budgetOnlyBadge": "budget only",
+    "excludeFromBudgetBadge": "excluded",
     "statementBadge": "Statement",
     "refundBadge": "Refund",
     "fxFallbackBadge": "FX fallback",
@@ -352,6 +353,8 @@
     "applyFeeLabel": "Apply network fee",
     "freeSameBankHint": "Free within the same bank",
     "budgetOnlyLabel": "Budget only (don't affect balance)",
+    "excludeFromBudgetLabel": "Exclude from budget",
+    "excludeFromBudgetHint": "Still counts toward balance and net worth",
     "dateLabel": "Date",
     "descriptionLabel": "Description",
     "descriptionPlaceholder": "Optional note",
@@ -360,7 +363,7 @@
     "noAccountsHint": "Add an account first — transactions need somewhere to land.",
     "toastSaved": "Transaction saved",
     "toastUpdated": "Transaction updated",
-    "fromStatementHint": "Imported from a statement — only the category and notes can change.",
+    "fromStatementHint": "Imported from a statement — only the category, notes, and budget exclusion can change.",
     "alwaysCategorizeMerchant": "Always use this category for \"{merchant}\""
   },
   "Subscriptions": {

@@ -19,6 +19,7 @@ export const transactionInput = z
     include_tax: z.boolean().default(false),
     include_commission: z.boolean().default(false),
     budget_only: z.boolean().default(false),
+    exclude_from_budget: z.boolean().default(false),
     occurred_at: z.string().min(1, "Pick a date"),
     description: z.string().trim().max(200).optional().or(z.literal("")),
     notes: z.string().trim().max(1000).optional().or(z.literal("")),

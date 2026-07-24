@@ -102,6 +102,11 @@ export function TransactionRow({
               {t("budgetOnlyBadge")}
             </span>
           ) : null}
+          {txn.exclude_from_budget ? (
+            <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+              {t("excludeFromBudgetBadge")}
+            </span>
+          ) : null}
           {txn.statement_line_id ? (
             <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
               {t("statementBadge")}

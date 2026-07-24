@@ -17,6 +17,7 @@ import { dbError } from "@/lib/errors";
 const statementEdit = z.object({
   category_id: z.string().uuid().or(z.literal("")).or(z.literal("none")).optional(),
   notes: z.string().optional(),
+  exclude_from_budget: z.boolean().default(false),
 });
 
 type Result = { error?: string; id?: string };
@@ -34,6 +35,7 @@ function toRow(v: TransactionInput) {
     include_tax: v.include_tax,
     include_commission: v.include_commission,
     budget_only: v.type === "expense" ? v.budget_only : false,
+    exclude_from_budget: v.type === "expense" ? v.exclude_from_budget : false,
     occurred_at: new Date(v.occurred_at).toISOString(),
     description: v.description || null,
     notes: v.notes || null,
@@ -110,6 +112,7 @@ export async function updateTransaction(id: string, input: unknown): Promise<Res
     const parsedEdit = statementEdit.safeParse({
       category_id: raw.category_id,
       notes: raw.notes,
+      exclude_from_budget: raw.exclude_from_budget,
     });
     if (!parsedEdit.success) return { error: parsedEdit.error.issues[0]?.message ?? t("invalidInput") };
 
@@ -119,6 +122,7 @@ export async function updateTransaction(id: string, input: unknown): Promise<Res
       .update({
         category_id: !categoryId || categoryId === "none" ? null : categoryId,
         notes: parsedEdit.data.notes || null,
+        exclude_from_budget: parsedEdit.data.exclude_from_budget,
       })
       .eq("id", id);
     if (error) return { error: await dbError(error, "updateTransaction") };

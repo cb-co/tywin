@@ -44,6 +44,7 @@ type FormValues = {
   include_tax: boolean;
   include_commission: boolean;
   budget_only: boolean;
+  exclude_from_budget: boolean;
   occurred_at: string;
   description: string;
 };
@@ -154,6 +155,7 @@ export function TransactionForm({
           include_tax: transaction.include_tax,
           include_commission: transaction.include_commission,
           budget_only: transaction.budget_only,
+          exclude_from_budget: transaction.exclude_from_budget,
           occurred_at: toDateOnly(transaction.occurred_at),
           description: transaction.description ?? "",
         }
@@ -169,6 +171,7 @@ export function TransactionForm({
           include_tax: false,
           include_commission: !(firstAccount?.network_fee_optional ?? true),
           budget_only: false,
+          exclude_from_budget: false,
           occurred_at: todayLocal(),
           description: "",
         },
@@ -494,6 +497,21 @@ export function TransactionForm({
                   checked={field.value}
                   onChange={field.onChange}
                   disabled={fromStatement}
+                />
+              )}
+            />
+          ) : null}
+          {type === "expense" ? (
+            <Controller
+              control={control}
+              name="exclude_from_budget"
+              render={({ field }) => (
+                <ToggleRow
+                  id="exclude_from_budget"
+                  label={t("excludeFromBudgetLabel")}
+                  hint={t("excludeFromBudgetHint")}
+                  checked={field.value}
+                  onChange={field.onChange}
                 />
               )}
             />
