@@ -26,12 +26,19 @@ const ID_LINE_RE = /^\s*-\s*\S{1,8}\s*-\s*\d{8,}\s*-\s*\d{2}[-/]\d{2}[-/]\d{4}\s
 
 const NAME_LABEL_RE = /estado de cuenta de\s*:|titular\s*:|nombre del cliente|a nombre de\s*:|cliente\s*:/i;
 
+// Card-network brand names recur on every page just like a cardholder's name would (a
+// running header/footer), but they're not PII — the LLM needs cardNetwork to classify
+// the statement correctly. Excluded from every name-candidate check below, not just the
+// repetition net, since any of the three heuristics could otherwise catch one.
+const BRAND_RE = /\b(visa|mastercard|american express|amex|discover)\b/i;
+
 function isShortNoDigitLine(s: string): boolean {
   const t = s.trim();
   if (!t) return false;
   if (t.length > 60) return false;
   if (/\d/.test(t)) return false;
   if (/https?:|www\./i.test(t)) return false;
+  if (BRAND_RE.test(t)) return false;
   return true;
 }
 

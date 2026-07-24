@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { scrubPii } from "./scrub-pii";
 
 const FIXTURE = `
+American Express
 Estado de cuenta de:
 Fecha de Corte: 15-07-2026
 JANE JANE SAMPLE DOE
@@ -10,6 +11,7 @@ Fecha límite de pago: 10-08-2026
   25/06      25/06   74763946147620851045422       MERCADO UNO  CIUDAD FALSA                  500.00
                                                                5411   045602
 - 1234 - 000000012473453 - 15-07-2026
+American Express
 JANE JANE SAMPLE DOE
 jane.sample@example.com
 Tel: 8091234567
@@ -17,6 +19,7 @@ Estamos a tu servicio en la Línea Platinum 809-227-3182 y 1-809-200-3182
 JANE JANE SAMPLE DOE OBTENIDOS ACUMULADOS
 No. de Tarjeta: ****1234
 JANE JANE SAMPLE DOE
+American Express
 jane.sample@example.com
 `;
 
@@ -42,6 +45,10 @@ describe("scrubPii", () => {
 
   it("redacts the hidden doc-id artifact line", () => {
     expect(out).not.toContain("000000012473453");
+  });
+
+  it("never redacts a recurring card-network brand name", () => {
+    expect(out.match(/American Express/g)?.length).toBe(3);
   });
 
   it("leaves transaction data, references, MCCs, and balance figures untouched", () => {
