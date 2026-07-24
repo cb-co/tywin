@@ -119,7 +119,7 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
       </div>
 
       <div className="flex items-center justify-between">
-        <Button variant="outline" size="sm" onClick={onCopy} disabled={pending}>
+        <Button variant="outline" size="sm" onClick={onCopy} disabled={pending} isLoading={pending}>
           <CopyPlus className="size-4" />
           {t("copyLastMonth")}
         </Button>
@@ -212,8 +212,9 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
                     className={cn("text-muted-foreground hover:text-destructive", TOUCH_TARGET)}
                     onClick={() => onDelete(row.category_id)}
                     disabled={pending}
+                    isLoading={pending}
                   >
-                    <Trash2 className="size-4" />
+                    {pending ? null : <Trash2 className="size-4" />}
                   </Button>
                 </div>
               </div>

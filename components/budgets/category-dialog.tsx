@@ -108,7 +108,7 @@ export function CategoryDialog({
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={pending}>
+            <Button type="submit" disabled={pending} isLoading={pending}>
               {pending ? tc("saving") : mode === "edit" ? t("saveChangesButton") : t("addButton")}
             </Button>
           </DialogFooter>
