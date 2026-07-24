@@ -11,7 +11,7 @@ import {
 } from "@/lib/accounts/queries";
 import { getAccountTransactions, getQuickAddData } from "@/lib/transactions/queries";
 import { AccountActivity } from "@/components/accounts/account-activity";
-import { BalanceChart } from "@/components/accounts/balance-chart";
+import { BalanceChart } from "@/components/accounts/balance-chart-lazy";
 import { createClient } from "@/lib/supabase/server";
 import { accountTypeMeta, type AccountType } from "@/lib/accounts/meta";
 import { formatMoney, formatPercent, formatDayOfMonth, formatDate } from "@/lib/format";

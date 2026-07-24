@@ -6,11 +6,9 @@ import { Card } from "@/components/ui/card";
 import { getInsights, getCostOfCarry } from "@/lib/insights/queries";
 import { formatMoney, formatDate } from "@/lib/format";
 import { normalizeMonth, addMonths, monthLabel } from "@/lib/budgets/month";
-import { SpendDonut } from "@/components/insights/spend-donut";
-import { CashflowChart } from "@/components/insights/cashflow-chart";
+import { SpendDonut, CashflowChart, SpendingPace } from "@/components/insights/lazy-charts";
 import { BudgetBars } from "@/components/insights/budget-bars";
 import { DebtHealth } from "@/components/insights/debt-health";
-import { SpendingPace } from "@/components/insights/spending-pace";
 
 function ChartCard({
   title,
