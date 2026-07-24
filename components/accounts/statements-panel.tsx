@@ -67,6 +67,7 @@ export function StatementsPanel({
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [lines, setLines] = useState<Record<string, StatementLineDetail[]>>({});
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   function buildFormData(f: File) {
     const fd = new FormData();
@@ -136,24 +137,29 @@ export function StatementsPanel({
     }
     setExpanded(id);
     if (!lines[id]) {
+      setBusyId(id);
       startTransition(async () => {
         const detail = await getStatementLineDetail(id);
         setLines((prev) => ({ ...prev, [id]: detail }));
+        setBusyId(null);
       });
     }
   }
 
   function onDelete(id: string) {
+    setBusyId(id);
     startTransition(async () => {
       const result = await deleteCardStatement(id, accountId);
       if (result.error) {
         toast.error(result.error);
         playError();
+        setBusyId(null);
         return;
       }
       toast.success(t("statementDeleted"));
       playSuccess();
       setDeleteTarget(null);
+      setBusyId(null);
       router.refresh();
     });
   }
@@ -327,11 +333,11 @@ export function StatementsPanel({
                     variant="ghost"
                     size="icon"
                     disabled={pending}
-                    isLoading={pending}
+                    isLoading={busyId === s.id}
                     aria-label={expanded === s.id ? t("hideLinesAria") : t("viewLinesAria")}
                     onClick={() => onToggleLines(s.id)}
                   >
-                    {pending ? null : expanded === s.id ? (
+                    {busyId === s.id ? null : expanded === s.id ? (
                       <ChevronDown className="size-4" />
                     ) : (
                       <ChevronRight className="size-4" />
@@ -341,10 +347,10 @@ export function StatementsPanel({
                     variant="ghost"
                     size="icon"
                     disabled={pending}
-                    isLoading={pending}
+                    isLoading={busyId === s.id}
                     onClick={() => setDeleteTarget(s.id)}
                   >
-                    {pending ? null : <Trash2 className="size-4" />}
+                    {busyId === s.id ? null : <Trash2 className="size-4" />}
                   </Button>
                 </div>
               </div>
