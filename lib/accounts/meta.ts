@@ -64,3 +64,8 @@ export function accountOptionLabel(account: {
 export const isCard = (t: AccountType) => t === "credit_card";
 export const isLoan = (t: AccountType) => t === "loan";
 export const accountTypeMeta = (t: AccountType) => ACCOUNT_TYPE_META[t];
+
+/** Transfer tax and network fee model money leaving a bank account via wire/ACH. */
+export const isBankAccount = (t: AccountType) => t === "checking" || t === "savings";
+/** Where transfer-fee settings are configurable: bank accounts plus investment accounts. */
+export const hasTransferFees = (t: AccountType) => isBankAccount(t) || t === "investment";

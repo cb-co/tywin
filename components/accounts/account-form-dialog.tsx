@@ -10,6 +10,7 @@ import {
   CREATABLE_TYPES,
   isCard,
   isLoan,
+  hasTransferFees,
   type AccountType,
 } from "@/lib/accounts/meta";
 import {
@@ -432,36 +433,39 @@ export function AccountFormDialog({
             ) : null}
           </div>
 
-          {/* Fee settings */}
-          <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
-            <p className="text-sm font-medium">{t("transferFeesHeading")}</p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="transfer_tax_rate">{t("taxRateLabel")}</Label>
-                <Input id="transfer_tax_rate" type="number" step="0.0001" min="0" placeholder={t("taxRatePlaceholder")} {...register("transfer_tax_rate")} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="network_fee_amount">{t("networkFeeLabel")}</Label>
-                <Input id="network_fee_amount" type="number" step="0.01" min="0" {...register("network_fee_amount")} />
-              </div>
-            </div>
-            <Controller
-              control={control}
-              name="network_fee_optional"
-              render={({ field }) => (
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="network_fee_optional" className="font-normal text-muted-foreground">
-                    {t("networkFeeOptionalLabel")}
-                  </Label>
-                  <Switch
-                    id="network_fee_optional"
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
+          {/* Fee settings. Only bank and investment accounts move money via
+              wire/ACH transfers that can carry a tax or network fee. */}
+          {hasTransferFees(type) ? (
+            <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
+              <p className="text-sm font-medium">{t("transferFeesHeading")}</p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="transfer_tax_rate">{t("taxRateLabel")}</Label>
+                  <Input id="transfer_tax_rate" type="number" step="0.0001" min="0" placeholder={t("taxRatePlaceholder")} {...register("transfer_tax_rate")} />
                 </div>
-              )}
-            />
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="network_fee_amount">{t("networkFeeLabel")}</Label>
+                  <Input id="network_fee_amount" type="number" step="0.01" min="0" {...register("network_fee_amount")} />
+                </div>
+              </div>
+              <Controller
+                control={control}
+                name="network_fee_optional"
+                render={({ field }) => (
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="network_fee_optional" className="font-normal text-muted-foreground">
+                      {t("networkFeeOptionalLabel")}
+                    </Label>
+                    <Switch
+                      id="network_fee_optional"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </div>
+                )}
+              />
+            </div>
+          ) : null}
 
           <DialogFooter>
             <Button type="submit" disabled={pending} isLoading={pending}>

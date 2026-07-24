@@ -13,7 +13,7 @@ import { getAccountTransactions, getQuickAddData } from "@/lib/transactions/quer
 import { AccountActivity } from "@/components/accounts/account-activity";
 import { BalanceChart } from "@/components/accounts/balance-chart-lazy";
 import { createClient } from "@/lib/supabase/server";
-import { accountTypeMeta, type AccountType } from "@/lib/accounts/meta";
+import { accountTypeMeta, hasTransferFees, type AccountType } from "@/lib/accounts/meta";
 import { formatMoney, formatPercent, formatDayOfMonth, formatDate } from "@/lib/format";
 import { AccountDetailActions } from "@/components/accounts/account-detail-actions";
 import { StatementsPanel } from "@/components/accounts/statements-panel";
@@ -207,9 +207,10 @@ export default async function AccountDetailPage({
         </Card>
       ) : null}
 
-      {/* Fee settings summary. Hidden for credit cards: card spending arrives
-          via statement import, and transfer fees never apply to it. */}
-      {!isCardType ? (
+      {/* Fee settings summary. Only bank and investment accounts can carry a
+          transfer tax or network fee — hidden everywhere else (cards, loans,
+          cash, assets). */}
+      {hasTransferFees(type) ? (
       <Card className="p-6">
         <h2 className="text-lg font-medium">{t("transferFees")}</h2>
         <dl className="mt-4 grid gap-4 sm:grid-cols-3 text-sm">

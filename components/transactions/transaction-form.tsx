@@ -197,6 +197,9 @@ export function TransactionForm({
   const sameBankPayment =
     type === "payment" && !!src?.bank_id && !!dst?.bank_id && src.bank_id === dst.bank_id;
   const cardPayment = type === "payment" && dst?.type === "credit_card";
+  // Transfer tax and network fee model money leaving a bank account via
+  // wire/ACH — meaningless from a card, cash, loan, or investment origin.
+  const srcIsBankAccount = src?.type === "checking" || src?.type === "savings";
 
   // Payments into credit cards carry no category — the imported statement
   // lines hold the real spending categories; a categorized payment would
@@ -457,35 +460,39 @@ export function TransactionForm({
       ) : null}
 
       {/* Fee toggles */}
-      {type !== "income" ? (
+      {type !== "income" && (srcIsBankAccount || type === "expense") ? (
         <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
-          <Controller
-            control={control}
-            name="include_tax"
-            render={({ field }) => (
-              <ToggleRow
-                id="include_tax"
-                label={t("applyTaxLabel")}
-                checked={field.value}
-                onChange={field.onChange}
-                disabled={fromStatement}
+          {srcIsBankAccount ? (
+            <>
+              <Controller
+                control={control}
+                name="include_tax"
+                render={({ field }) => (
+                  <ToggleRow
+                    id="include_tax"
+                    label={t("applyTaxLabel")}
+                    checked={field.value}
+                    onChange={field.onChange}
+                    disabled={fromStatement}
+                  />
+                )}
               />
-            )}
-          />
-          <Controller
-            control={control}
-            name="include_commission"
-            render={({ field }) => (
-              <ToggleRow
-                id="include_commission"
-                label={t("applyFeeLabel")}
-                hint={sameBankPayment ? t("freeSameBankHint") : undefined}
-                checked={field.value && !sameBankPayment}
-                onChange={field.onChange}
-                disabled={sameBankPayment || fromStatement}
+              <Controller
+                control={control}
+                name="include_commission"
+                render={({ field }) => (
+                  <ToggleRow
+                    id="include_commission"
+                    label={t("applyFeeLabel")}
+                    hint={sameBankPayment ? t("freeSameBankHint") : undefined}
+                    checked={field.value && !sameBankPayment}
+                    onChange={field.onChange}
+                    disabled={sameBankPayment || fromStatement}
+                  />
+                )}
               />
-            )}
-          />
+            </>
+          ) : null}
           {type === "expense" ? (
             <Controller
               control={control}
