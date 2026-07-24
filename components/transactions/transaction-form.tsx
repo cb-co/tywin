@@ -17,11 +17,13 @@ import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { accountOptionLabel } from "@/lib/accounts/meta";
+import { ACCOUNT_GROUPS, accountOptionLabel, accountTypeMeta, type AccountType } from "@/lib/accounts/meta";
 import { destinationAmount, invertRate } from "@/lib/transactions/money";
 import { useUiSound } from "@/components/sound/sound-provider";
 
@@ -62,6 +64,25 @@ function todayLocal() {
 /** Existing transaction: the date it was saved with, read back timezone-invariant. */
 function toDateOnly(iso: string) {
   return new Date(iso).toISOString().slice(0, 10);
+}
+
+/** Groups accounts into the same 4 sections (cash/cards/loans/assets) as the
+ *  Accounts page, so a long account list isn't one undifferentiated block. */
+function groupedAccountOptions(list: QuickAddData["accounts"]) {
+  return ACCOUNT_GROUPS.map((g) => {
+    const items = list.filter((a) => accountTypeMeta(a.type as AccountType).group === g.key);
+    if (items.length === 0) return null;
+    return (
+      <SelectGroup key={g.key}>
+        <SelectLabel>{g.title}</SelectLabel>
+        {items.map((a) => (
+          <SelectItem key={a.id} value={a.id}>
+            {accountOptionLabel(a)}
+          </SelectItem>
+        ))}
+      </SelectGroup>
+    );
+  });
 }
 
 export function TransactionForm({
@@ -375,13 +396,7 @@ export function TransactionForm({
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                {accounts.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {accountOptionLabel(a)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
+              <SelectContent>{groupedAccountOptions(accounts)}</SelectContent>
             </Select>
           )}
         />
@@ -400,13 +415,7 @@ export function TransactionForm({
                   <SelectValue placeholder={t("toPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {accounts
-                    .filter((a) => a.id !== accountId)
-                    .map((a) => (
-                      <SelectItem key={a.id} value={a.id}>
-                        {accountOptionLabel(a)}
-                      </SelectItem>
-                    ))}
+                  {groupedAccountOptions(accounts.filter((a) => a.id !== accountId))}
                 </SelectContent>
               </Select>
             )}

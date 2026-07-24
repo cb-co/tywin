@@ -25,11 +25,13 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { accountOptionLabel } from "@/lib/accounts/meta";
+import { ACCOUNT_GROUPS, accountOptionLabel, accountTypeMeta, type AccountType } from "@/lib/accounts/meta";
 
 type Values = {
   name: string;
@@ -208,11 +210,22 @@ export function SubscriptionFormDialog({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">{tc("none")}</SelectItem>
-                      {accounts.map((a) => (
-                        <SelectItem key={a.id} value={a.id}>
-                          {accountOptionLabel(a)}
-                        </SelectItem>
-                      ))}
+                      {ACCOUNT_GROUPS.map((g) => {
+                        const items = accounts.filter(
+                          (a) => accountTypeMeta(a.type as AccountType).group === g.key,
+                        );
+                        if (items.length === 0) return null;
+                        return (
+                          <SelectGroup key={g.key}>
+                            <SelectLabel>{g.title}</SelectLabel>
+                            {items.map((a) => (
+                              <SelectItem key={a.id} value={a.id}>
+                                {accountOptionLabel(a)}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 )}

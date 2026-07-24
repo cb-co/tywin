@@ -14,11 +14,13 @@ import { EmptyState } from "@/components/empty-state";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { accountOptionLabel } from "@/lib/accounts/meta";
+import { ACCOUNT_GROUPS, accountOptionLabel, accountTypeMeta, type AccountType } from "@/lib/accounts/meta";
 import { useUiSound } from "@/components/sound/sound-provider";
 
 /* occurred_at is a plain calendar date stored as UTC midnight (no time-of-day
@@ -134,11 +136,22 @@ export function Ledger({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t("allAccounts")}</SelectItem>
-            {accounts.map((a) => (
-              <SelectItem key={a.id} value={a.id}>
-                {accountOptionLabel(a)}
-              </SelectItem>
-            ))}
+            {ACCOUNT_GROUPS.map((g) => {
+              const items = accounts.filter(
+                (a) => accountTypeMeta(a.type as AccountType).group === g.key,
+              );
+              if (items.length === 0) return null;
+              return (
+                <SelectGroup key={g.key}>
+                  <SelectLabel>{g.title}</SelectLabel>
+                  {items.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {accountOptionLabel(a)}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              );
+            })}
           </SelectContent>
         </Select>
         <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "all")} items={categoryItems}>
