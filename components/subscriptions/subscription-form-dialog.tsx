@@ -270,7 +270,7 @@ export function SubscriptionFormDialog({
           />
 
           <DialogFooter>
-            <Button type="submit" disabled={pending}>
+            <Button type="submit" disabled={pending} isLoading={pending}>
               {pending ? tc("saving") : mode === "create" ? t("addButton") : t("saveChangesButton")}
             </Button>
           </DialogFooter>

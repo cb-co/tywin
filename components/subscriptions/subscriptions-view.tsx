@@ -168,7 +168,7 @@ export function SubscriptionsView({
                 {sub.account ? ` · ${sub.account.name}` : ""}
               </p>
               <div className="mt-4 flex items-center gap-1">
-                <Button size="sm" onClick={() => onAddCharge(sub.id)} disabled={pending}>
+                <Button size="sm" onClick={() => onAddCharge(sub.id)} disabled={pending} isLoading={pending}>
                   <Receipt className="size-4" />
                   {t("addCharge")}
                 </Button>
@@ -189,8 +189,9 @@ export function SubscriptionsView({
                   className="text-muted-foreground hover:text-destructive"
                   onClick={() => onDelete(sub.id)}
                   disabled={pending}
+                  isLoading={pending}
                 >
-                  <Trash2 className="size-4" />
+                  {pending ? null : <Trash2 className="size-4" />}
                 </Button>
               </div>
             </Card>
@@ -219,7 +220,7 @@ export function SubscriptionsView({
                   <td className="px-4 py-2 text-muted-foreground">{sub.account?.name ?? "—"}</td>
                   <td className="px-4 py-2">
                     <div className="flex items-center justify-end gap-1">
-                      <Button size="sm" variant="outline" onClick={() => onAddCharge(sub.id)} disabled={pending}>
+                      <Button size="sm" variant="outline" onClick={() => onAddCharge(sub.id)} disabled={pending} isLoading={pending}>
                         {t("chargeShort")}
                       </Button>
                       <SubscriptionFormDialog
@@ -239,8 +240,9 @@ export function SubscriptionsView({
                         className="text-muted-foreground hover:text-destructive"
                         onClick={() => onDelete(sub.id)}
                         disabled={pending}
+                        isLoading={pending}
                       >
-                        <Trash2 className="size-4" />
+                        {pending ? null : <Trash2 className="size-4" />}
                       </Button>
                     </div>
                   </td>
