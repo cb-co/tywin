@@ -4,6 +4,7 @@ import { NAV_ITEMS } from "@/lib/nav";
 import { NavLink } from "./nav-link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { FigureMaskToggle } from "@/components/figure-mask/figure-mask-toggle";
 import { Logo, Wordmark } from "@/components/brand/logo";
 import { profileLabel, profileInitial } from "@/lib/profile";
 
@@ -66,6 +67,7 @@ export function Sidebar({
             {label}
           </span>
         </Link>
+        <FigureMaskToggle />
         <LanguageSwitcher />
         <ThemeToggle />
       </div>

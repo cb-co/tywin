@@ -9,7 +9,9 @@
     "insights": "Análisis",
     "settings": "Configuración",
     "help": "Ayuda",
-    "language": "Idioma"
+    "language": "Idioma",
+    "hideFigures": "Ocultar saldos",
+    "showFigures": "Mostrar saldos"
   },
   "Marketing": {
     "logIn": "Iniciar sesión",
@@ -148,7 +150,7 @@
     "installmentsPaidOfTerm": "{paid} de {term} cuotas pagadas",
     "installmentsPaidOnly": "{paid} cuotas pagadas",
     "currentBalance": "Saldo actual",
-    "derivedFromStarting": "Derivado de un saldo inicial de {amount}.",
+    "derivedFromStarting": "Derivado de un saldo inicial de <amount></amount>.",
     "balanceOverTime": "Saldo a lo largo del tiempo",
     "amortizationSchedule": "Tabla de amortización",
     "transferFees": "Comisiones de transferencia",

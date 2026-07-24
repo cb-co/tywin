@@ -4,6 +4,7 @@ import { BottomNav } from "./bottom-nav";
 import { MobileHeader } from "./mobile-header";
 import { QuickAddProvider } from "@/components/quick-add/quick-add-provider";
 import { SoundProvider } from "@/components/sound/sound-provider";
+import { FigureMaskProvider } from "@/components/figure-mask/figure-mask-provider";
 import { QuickAddButton } from "@/components/quick-add/quick-add-button";
 import { QuickAddDialogLazy } from "@/components/quick-add/quick-add-dialog-lazy";
 import { Splash } from "./splash";
@@ -21,34 +22,36 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
   ]);
 
   return (
-    <SoundProvider>
-      <QuickAddProvider>
-        <Splash />
-        <div className="flex min-h-dvh md:h-dvh md:overflow-hidden">
-          <Sidebar
-            email={user?.email ?? ""}
-            displayName={profile?.display_name ?? null}
-            avatarUrl={profileAvatarUrl(user?.user_metadata)}
-          />
-          {/* min-w-0: without it this flex item refuses to shrink below its
-              content's intrinsic width — a single nowrap line (e.g. a long
-              imported statement merchant name under `truncate`) propagates
-              its full min-content width up here and the whole page scrolls
-              horizontally on mobile. */}
-          <div className="flex min-w-0 flex-1 flex-col md:h-dvh md:overflow-y-auto">
-            <MobileHeader />
-            {/* Bottom padding clears the bar (~56px) *and* the FAB above it,
-                which tops out at 136px. pb-24 only reserved 96px, so the last
-                rows of a list scrolled under the button. */}
-            <main className="flex-1 p-4 pb-[calc(9rem+env(safe-area-inset-bottom))] md:p-6 md:pb-6">
-              {children}
-            </main>
+    <FigureMaskProvider>
+      <SoundProvider>
+        <QuickAddProvider>
+          <Splash />
+          <div className="flex min-h-dvh md:h-dvh md:overflow-hidden">
+            <Sidebar
+              email={user?.email ?? ""}
+              displayName={profile?.display_name ?? null}
+              avatarUrl={profileAvatarUrl(user?.user_metadata)}
+            />
+            {/* min-w-0: without it this flex item refuses to shrink below its
+                content's intrinsic width — a single nowrap line (e.g. a long
+                imported statement merchant name under `truncate`) propagates
+                its full min-content width up here and the whole page scrolls
+                horizontally on mobile. */}
+            <div className="flex min-w-0 flex-1 flex-col md:h-dvh md:overflow-y-auto">
+              <MobileHeader />
+              {/* Bottom padding clears the bar (~56px) *and* the FAB above it,
+                  which tops out at 136px. pb-24 only reserved 96px, so the last
+                  rows of a list scrolled under the button. */}
+              <main className="flex-1 p-4 pb-[calc(9rem+env(safe-area-inset-bottom))] md:p-6 md:pb-6">
+                {children}
+              </main>
+            </div>
+            <BottomNav />
+            <QuickAddButton />
+            <QuickAddDialogLazy data={quickAddData} />
           </div>
-          <BottomNav />
-          <QuickAddButton />
-          <QuickAddDialogLazy data={quickAddData} />
-        </div>
-      </QuickAddProvider>
-    </SoundProvider>
+        </QuickAddProvider>
+      </SoundProvider>
+    </FigureMaskProvider>
   );
 }

@@ -3,6 +3,7 @@ import { useTranslations } from "next-intl";
 import { SETTINGS_ITEM } from "@/lib/nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { FigureMaskToggle } from "@/components/figure-mask/figure-mask-toggle";
 import { Logo, Wordmark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 
@@ -18,6 +19,7 @@ export function MobileHeader() {
           them behind Activity) and Settings here. No overflow menu means
           nothing can clip off the right edge. */}
       <div className="flex items-center gap-0.5">
+        <FigureMaskToggle />
         <ThemeToggle />
         <LanguageSwitcher />
         <Button

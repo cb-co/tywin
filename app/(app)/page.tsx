@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOverview } from "@/lib/overview/queries";
 import { formatMoney, formatPercent } from "@/lib/format";
 import { greetingName } from "@/lib/profile";
+import { MaskedMoney } from "@/components/figure-mask/masked-money";
 
 const STARTER_CARDS = [
   { href: "/accounts", icon: Wallet, tint: "var(--chart-1)", key: "Accounts" as const },
@@ -47,7 +48,7 @@ export default async function OverviewPage() {
           />
           <p className="text-sm font-medium text-muted-foreground">{t("netWorth")}</p>
           <p className="figure mt-2 text-5xl leading-none text-foreground">
-            {formatMoney(0, o.baseCurrency)}
+            <MaskedMoney amount={0} currency={o.baseCurrency} />
           </p>
           <p className="mt-3 max-w-md text-sm text-muted-foreground">{t("netWorthEmptyBody")}</p>
           <Button className="mt-5" nativeButton={false} render={<Link href="/accounts" />}>
@@ -99,7 +100,7 @@ export default async function OverviewPage() {
         />
         <p className="text-sm font-medium text-muted-foreground">{t("netWorth")}</p>
         <p className="figure mt-2 text-5xl leading-none text-foreground">
-          {formatMoney(o.netWorth, o.baseCurrency)}
+          <MaskedMoney amount={o.netWorth} currency={o.baseCurrency} />
         </p>
         <p className="mt-3 text-sm text-muted-foreground">
           {t("netWorthBody", { currency: o.baseCurrency })}

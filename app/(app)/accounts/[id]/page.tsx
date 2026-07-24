@@ -20,6 +20,7 @@ import { StatementsPanel } from "@/components/accounts/statements-panel";
 import { AmortizationTable } from "@/components/accounts/amortization-table";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { MaskedMoney } from "@/components/figure-mask/masked-money";
 
 export default async function AccountDetailPage({
   params,
@@ -166,10 +167,12 @@ export default async function AccountDetailPage({
               {type === "asset" ? t("estimatedValue") : t("currentBalance")}
             </p>
             <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] leading-none text-foreground">
-              {formatMoney(account.balance ?? account.starting_balance, currency)}
+              <MaskedMoney amount={account.balance ?? account.starting_balance} currency={currency} />
             </p>
             <p className="mt-3 text-sm text-muted-foreground">
-              {t("derivedFromStarting", { amount: formatMoney(account.starting_balance, currency) })}
+              {t.rich("derivedFromStarting", {
+                amount: () => <MaskedMoney amount={account.starting_balance} currency={currency} />,
+              })}
             </p>
           </>
         )}

@@ -9,7 +9,9 @@
     "insights": "Insights",
     "settings": "Settings",
     "help": "Help",
-    "language": "Language"
+    "language": "Language",
+    "hideFigures": "Hide balances",
+    "showFigures": "Show balances"
   },
   "Marketing": {
     "logIn": "Log in",
@@ -148,7 +150,7 @@
     "installmentsPaidOfTerm": "{paid} of {term} installments paid",
     "installmentsPaidOnly": "{paid} installments paid",
     "currentBalance": "Current balance",
-    "derivedFromStarting": "Derived from a starting balance of {amount}.",
+    "derivedFromStarting": "Derived from a starting balance of <amount></amount>.",
     "balanceOverTime": "Balance over time",
     "amortizationSchedule": "Amortization schedule",
     "transferFees": "Transfer fees",

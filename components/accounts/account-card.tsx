@@ -7,6 +7,7 @@ import { formatMoney, formatPercent, formatDayOfMonth } from "@/lib/format";
 import { accountTypeMeta, type AccountType } from "@/lib/accounts/meta";
 import type { AccountWithStatus } from "@/lib/accounts/queries";
 import { cn } from "@/lib/utils";
+import { MaskedMoney } from "@/components/figure-mask/masked-money";
 
 function utilizationTone(pct: number) {
   if (pct >= 80) return "text-destructive";
@@ -67,7 +68,7 @@ export function AccountCard({ account }: { account: AccountWithStatus }) {
         ) : (
           <div className="mt-5">
             <p className="figure text-2xl leading-none text-foreground">
-              {formatMoney(account.balance ?? account.starting_balance, currency)}
+              <MaskedMoney amount={account.balance ?? account.starting_balance} currency={currency} />
             </p>
             {/* An asset's figure is an estimate you set by hand, not a balance
                 derived from transactions. Calling it a balance overstates how
