@@ -63,6 +63,7 @@ export function StatementsPanel({
   const [passwordIncorrect, setPasswordIncorrect] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [mappings, setMappings] = useState<Record<string, string>>({});
+  const [parsedStatement, setParsedStatement] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [lines, setLines] = useState<Record<string, StatementLineDetail[]>>({});
@@ -76,6 +77,7 @@ export function StatementsPanel({
   }
 
   function onParse(f: File) {
+    setParsedStatement(null);
     startTransition(async () => {
       const result = await parseStatement(buildFormData(f));
       if (result.needsPassword) {
@@ -92,6 +94,7 @@ export function StatementsPanel({
       setNeedsPassword(false);
       setPasswordIncorrect(false);
       setPreview(result.preview);
+      setParsedStatement(result.parsedStatement ?? null);
       setMappings(
         Object.fromEntries(
           result.preview.sections
@@ -103,8 +106,11 @@ export function StatementsPanel({
   }
 
   function onConfirm() {
-    if (!file || !preview) return;
-    const fd = buildFormData(file);
+    if (!preview || !parsedStatement) return;
+    const fd = new FormData();
+    fd.set("account_id", accountId);
+    fd.set("file_name", preview.fileName);
+    fd.set("parsed_statement", parsedStatement);
     fd.set("mappings", JSON.stringify(mappings));
     startTransition(async () => {
       const result = await confirmStatementImport(fd);
@@ -118,6 +124,7 @@ export function StatementsPanel({
       setPreview(null);
       setFile(null);
       setPassword("");
+      setParsedStatement(null);
       router.refresh();
     });
   }
@@ -179,6 +186,7 @@ export function StatementsPanel({
             setNeedsPassword(false);
             setPasswordIncorrect(false);
             setPreview(null);
+            setParsedStatement(null);
             onParse(f);
           }}
         />
@@ -269,6 +277,7 @@ export function StatementsPanel({
                 setPreview(null);
                 setFile(null);
                 setPassword("");
+                setParsedStatement(null);
               }}
             >
               {t("cancelButton")}
