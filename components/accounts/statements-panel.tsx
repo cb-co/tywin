@@ -168,7 +168,7 @@ export function StatementsPanel({
           <h2 className="text-lg font-medium">{t("title")}</h2>
           <p className="text-sm text-muted-foreground">{t("description")}</p>
         </div>
-        <Button variant="outline" disabled={pending} onClick={() => fileRef.current?.click()}>
+        <Button variant="outline" disabled={pending} isLoading={pending} onClick={() => fileRef.current?.click()}>
           <Upload className="mr-1.5 size-4" />
           {t("importButton")}
         </Button>
@@ -205,7 +205,7 @@ export function StatementsPanel({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <Button variant="outline" disabled={pending || !password} onClick={() => onParse(file)}>
+            <Button variant="outline" disabled={pending || !password} isLoading={pending} onClick={() => onParse(file)}>
               {t("retryButton")}
             </Button>
           </div>
@@ -267,7 +267,7 @@ export function StatementsPanel({
             </div>
           ))}
           <div className="flex gap-2">
-            <Button disabled={pending || !allMapped} onClick={onConfirm}>
+            <Button disabled={pending || !allMapped} isLoading={pending} onClick={onConfirm}>
               {t("confirmButton")}
             </Button>
             <Button
@@ -327,10 +327,11 @@ export function StatementsPanel({
                     variant="ghost"
                     size="icon"
                     disabled={pending}
+                    isLoading={pending}
                     aria-label={expanded === s.id ? t("hideLinesAria") : t("viewLinesAria")}
                     onClick={() => onToggleLines(s.id)}
                   >
-                    {expanded === s.id ? (
+                    {pending ? null : expanded === s.id ? (
                       <ChevronDown className="size-4" />
                     ) : (
                       <ChevronRight className="size-4" />
@@ -340,9 +341,10 @@ export function StatementsPanel({
                     variant="ghost"
                     size="icon"
                     disabled={pending}
+                    isLoading={pending}
                     onClick={() => setDeleteTarget(s.id)}
                   >
-                    <Trash2 className="size-4" />
+                    {pending ? null : <Trash2 className="size-4" />}
                   </Button>
                 </div>
               </div>
@@ -402,6 +404,7 @@ export function StatementsPanel({
               variant="destructive"
               onClick={() => deleteTarget && onDelete(deleteTarget)}
               disabled={pending}
+              isLoading={pending}
             >
               {tc("delete")}
             </Button>
