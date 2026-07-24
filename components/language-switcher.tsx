@@ -36,11 +36,11 @@ export function LanguageSwitcher() {
             variant="ghost"
             size="icon"
             aria-label={t("language")}
-            disabled={pending}
+            isLoading={pending}
           />
         }
       >
-        <Languages className="h-5 w-5" />
+        {pending ? null : <Languages className="h-5 w-5" />}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {LOCALES.map((code) => (

@@ -44,6 +44,7 @@ export function LoginForm() {
         variant="outline"
         className="w-full"
         disabled={pending}
+        isLoading={pending}
         onClick={onGoogleClick}
       >
         <GoogleIcon />
@@ -83,7 +84,7 @@ export function LoginForm() {
             </p>
           ) : null}
         </div>
-        <Button type="submit" className="w-full" disabled={pending}>
+        <Button type="submit" className="w-full" disabled={pending} isLoading={pending}>
           {pending ? t("pleaseWait") : signingUp ? t("createAccount") : t("signIn")}
         </Button>
         <button

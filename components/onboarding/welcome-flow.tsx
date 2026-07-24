@@ -288,7 +288,7 @@ export function WelcomeFlow({
           <ArrowLeft className="size-4" />
           {t("backButton")}
         </Button>
-        <Button onClick={next} disabled={!canAdvance || pending}>
+        <Button onClick={next} disabled={!canAdvance || pending} isLoading={pending}>
           {step === STEP_COUNT - 1 ? (
             <>
               <Check className="size-4" />

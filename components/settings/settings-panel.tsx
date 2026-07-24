@@ -145,6 +145,7 @@ export function SettingsPanel({
               type="submit"
               size="sm"
               disabled={!nameDirty || namePending}
+              isLoading={namePending}
               className={cn(
                 "transition-all duration-200",
                 nameDirty
@@ -248,7 +249,7 @@ export function SettingsPanel({
                 >
                   {tc("cancel")}
                 </Button>
-                <Button variant="destructive" onClick={onDeleteAccount} disabled={deletePending}>
+                <Button variant="destructive" onClick={onDeleteAccount} disabled={deletePending} isLoading={deletePending}>
                   {deletePending ? t("deleting") : t("deleteAccountButton")}
                 </Button>
               </DialogFooter>
