@@ -123,7 +123,7 @@
     "groupLoansBlurb": "Saldo pendiente y progreso de pago.",
     "cardGroupFallbackName": "Grupo de tarjeta",
     "currencyLines": "{count} líneas de moneda",
-    "usedPercent": "{pct} usado",
+    "usedPercent": "{pct} usado · {currency}",
     "currentBalance": "Saldo actual",
     "owed": "Adeudado",
     "limitAmount": "Límite {amount}",

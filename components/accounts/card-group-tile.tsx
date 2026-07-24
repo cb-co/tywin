@@ -36,12 +36,14 @@ export function CardGroupTile({
               className="group flex items-center justify-between py-3 first:pt-2"
             >
               <div>
-                {/* Name, not currency: a card can carry two lines in the same
-                    currency (e.g. revolving DOP + installments DOP). */}
+                {/* Name, not currency, is the headline: a card can carry two lines in
+                    the same currency (e.g. revolving DOP + installments DOP). The
+                    currency still needs to be visible, so it rides along in the
+                    muted line below. */}
                 <p className="text-sm font-medium text-foreground">{a.name}</p>
-                {util !== null ? (
-                  <p className="text-xs text-muted-foreground">{t("usedPercent", { pct: formatPercent(util) })}</p>
-                ) : null}
+                <p className="text-xs text-muted-foreground">
+                  {util !== null ? t("usedPercent", { pct: formatPercent(util), currency: a.currency }) : a.currency}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="figure text-base text-foreground">{formatMoney(owed, a.currency)}</span>

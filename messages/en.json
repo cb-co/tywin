@@ -123,7 +123,7 @@
     "groupLoansBlurb": "Outstanding balance and payoff progress.",
     "cardGroupFallbackName": "Card group",
     "currencyLines": "{count} currency lines",
-    "usedPercent": "{pct} used",
+    "usedPercent": "{pct} used · {currency}",
     "currentBalance": "Current balance",
     "owed": "Owed",
     "limitAmount": "Limit {amount}",
