@@ -139,9 +139,12 @@ export function StatementsPanel({
     if (!lines[id]) {
       setBusyId(id);
       startTransition(async () => {
-        const detail = await getStatementLineDetail(id);
-        setLines((prev) => ({ ...prev, [id]: detail }));
-        setBusyId(null);
+        try {
+          const detail = await getStatementLineDetail(id);
+          setLines((prev) => ({ ...prev, [id]: detail }));
+        } finally {
+          setBusyId(null);
+        }
       });
     }
   }
