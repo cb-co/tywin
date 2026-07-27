@@ -161,6 +161,75 @@ export async function getInsights(month: string): Promise<Insights> {
   };
 }
 
+export type CardPaymentLine = {
+  accountId: string;
+  name: string;
+  currency: string;
+  amount: number; // native (card currency)
+  baseAmount: number;
+};
+
+export type CardPayments = {
+  baseCurrency: string;
+  lines: CardPaymentLine[];
+  totalBase: number;
+};
+
+/** Sum of payments made *to* credit cards this month — what actually left your
+ *  accounts to settle card balances, regardless of how the underlying charges
+ *  were categorized (they're excluded from category budgets to avoid double
+ *  counting; see 20260724100000_exclude_from_budget.sql). */
+export async function getCardPayments(month: string): Promise<CardPayments> {
+  const supabase = await createClient();
+  const [{ data: profile }, { data: cards }] = await Promise.all([
+    supabase.from("profiles").select("base_currency").maybeSingle(),
+    supabase.from("accounts").select("id,name,currency").eq("type", "credit_card"),
+  ]);
+
+  const baseCurrency = profile?.base_currency ?? "USD";
+  const cardIds = (cards ?? []).map((c) => c.id);
+
+  const { data: rows } = cardIds.length
+    ? await supabase
+        .from("transactions")
+        .select("to_account_id,amount,to_amount,base_amount")
+        .eq("type", "payment")
+        .in("to_account_id", cardIds)
+        .gte("occurred_at", month)
+        .lt("occurred_at", addMonths(month, 1))
+    : { data: [] };
+
+  const cardById = new Map((cards ?? []).map((c) => [c.id, c]));
+  const totals = new Map<string, { amount: number; baseAmount: number }>();
+  for (const r of rows ?? []) {
+    const id = r.to_account_id;
+    if (!id) continue;
+    const prev = totals.get(id) ?? { amount: 0, baseAmount: 0 };
+    prev.amount += Number(r.to_amount ?? r.amount ?? 0);
+    prev.baseAmount += Number(r.base_amount ?? 0);
+    totals.set(id, prev);
+  }
+
+  const lines: CardPaymentLine[] = Array.from(totals.entries())
+    .map(([accountId, t]) => {
+      const card = cardById.get(accountId);
+      return {
+        accountId,
+        name: card?.name ?? "Card",
+        currency: card?.currency ?? baseCurrency,
+        amount: t.amount,
+        baseAmount: t.baseAmount,
+      };
+    })
+    .sort((a, b) => b.baseAmount - a.baseAmount);
+
+  return {
+    baseCurrency,
+    lines,
+    totalBase: lines.reduce((s, l) => s + l.baseAmount, 0),
+  };
+}
+
 export interface CostOfCarryLine {
   accountId: string;
   name: string; // "Group — Line" when grouped, else account name

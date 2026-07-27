@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getTranslations, getLocale } from "next-intl/server";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
-import { getInsights, getCostOfCarry } from "@/lib/insights/queries";
+import { getInsights, getCostOfCarry, getCardPayments } from "@/lib/insights/queries";
 import { formatMoney, formatDate } from "@/lib/format";
 import { normalizeMonth, addMonths, monthLabel } from "@/lib/budgets/month";
 import { SpendDonut, CashflowChart, SpendingPace } from "@/components/insights/lazy-charts";
@@ -34,7 +34,11 @@ export default async function InsightsPage({
 }) {
   const { month: monthParam } = await searchParams;
   const month = normalizeMonth(monthParam);
-  const [insights, carry] = await Promise.all([getInsights(month), getCostOfCarry()]);
+  const [insights, carry, cardPayments] = await Promise.all([
+    getInsights(month),
+    getCostOfCarry(),
+    getCardPayments(month),
+  ]);
   const cur = insights.baseCurrency;
   const t = await getTranslations("Insights");
   const locale = await getLocale();
@@ -77,6 +81,30 @@ export default async function InsightsPage({
         </ChartCard>
       </div>
 
+      <ChartCard title={t("cardCardPayments")} className="lg:col-span-2">
+        {cardPayments.lines.length > 0 ? (
+          <div className="space-y-3">
+            {cardPayments.lines.map((l) => (
+              <div key={l.accountId} className="flex items-baseline justify-between text-sm">
+                <div>
+                  <p className="text-foreground">{l.name}</p>
+                  <p className="text-xs text-muted-foreground">{l.currency}</p>
+                </div>
+                <span className="tabular-nums text-foreground">{formatMoney(l.amount, l.currency)}</span>
+              </div>
+            ))}
+            <div className="flex items-baseline justify-between border-t pt-3 text-sm font-medium">
+              <span className="text-foreground">{t("cardPaymentsTotal", { currency: cardPayments.baseCurrency })}</span>
+              <span className="tabular-nums text-foreground">
+                {formatMoney(cardPayments.totalBase, cardPayments.baseCurrency)}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <p className="py-8 text-center text-sm text-muted-foreground">{t("cardPaymentsEmpty")}</p>
+        )}
+      </ChartCard>
+
       <Card className="p-6">
         <h2 className="mb-4 text-lg font-medium text-foreground">{t("costOfCarryTitle")}</h2>
         {carryLines.length > 0 ? (
@@ -86,6 +114,7 @@ export default async function InsightsPage({
                 <div>
                   <p className="text-foreground">{l.name}</p>
                   <p className="text-xs text-muted-foreground">
+                    {l.currency} ·{" "}
                     {l.apr !== null ? `${t("costOfCarryApr", { rate: l.apr })} · ` : ""}
                     {t("costOfCarryAsOf", { date: formatDate(l.periodEnd, locale) })}
                   </p>

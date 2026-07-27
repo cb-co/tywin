@@ -246,7 +246,9 @@ export function StatementsPanel({
                   }
                   items={{
                     none: t("mapSectionNone"),
-                    ...Object.fromEntries(preview.accountOptions.map((a) => [a.id, a.name])),
+                    ...Object.fromEntries(
+                      preview.accountOptions.map((a) => [a.id, `${a.name} · ${a.currency}`]),
+                    ),
                   }}
                 >
                   <SelectTrigger className="w-full">
@@ -267,7 +269,10 @@ export function StatementsPanel({
                       )
                       .map((a) => (
                         <SelectItem key={a.id} value={a.id}>
-                          {a.name}
+                          <span className="flex flex-col">
+                            <span>{a.name}</span>
+                            <span className="text-xs text-muted-foreground">{a.currency}</span>
+                          </span>
                         </SelectItem>
                       ))}
                   </SelectContent>

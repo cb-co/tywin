@@ -1034,6 +1034,7 @@ export type Database = {
           credit_limit: number | null
           currency: string | null
           latest_due_date: string | null
+          latest_period_end: string | null
           latest_statement_balance: number | null
           owed: number | null
           payment_due_day: number | null
