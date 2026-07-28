@@ -12,6 +12,9 @@ const PUBLIC_PATHS = [
   "/apple-icon",
   "/sw.js",
   "/offline.html",
+  // The proxy matcher already skips this; kept here so a matcher edit cannot
+  // silently start redirecting the TWA's Digital Asset Links lookup.
+  "/.well-known",
 ];
 
 /** A path is public only when it equals a public root or sits beneath it.
