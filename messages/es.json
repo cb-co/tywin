@@ -393,7 +393,16 @@
     "toastChargeLogged": "Cargo registrado",
     "toastDeleted": "Suscripción eliminada",
     "notFound": "Suscripción no encontrada.",
-    "needsAccount": "Primero define una cuenta para esta suscripción."
+    "needsAccount": "Primero define una cuenta para esta suscripción.",
+    "needsSettledAmount": "Indica cuánto costó este cargo en {currency}."
+  },
+  "RecordCharge": {
+    "title": "Registrar cargo de {name}",
+    "billedLine": "Facturado {amount}, cargado a {account} en {currency}.",
+    "chargedLabel": "Monto cargado a la cuenta",
+    "estimateHint": "Estimado a partir de la tasa del mercado más un {percent}% aproximado, más o menos lo que agrega tu banco. El monto publicado aparece unos días después de la autorización — reemplázalo cuando veas la cifra real.",
+    "noEstimateHint": "Indica cuánto costó este cargo en {currency}. No hay una tasa disponible para este par ahora mismo, así que no hay de dónde estimar.",
+    "submitButton": "Registrar cargo"
   },
   "SubscriptionForm": {
     "addTitle": "Nueva suscripción",

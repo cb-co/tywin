@@ -393,7 +393,16 @@
     "toastChargeLogged": "Charge logged",
     "toastDeleted": "Subscription deleted",
     "notFound": "Subscription not found.",
-    "needsAccount": "Set an account on this subscription first."
+    "needsAccount": "Set an account on this subscription first.",
+    "needsSettledAmount": "Enter what this charge cost in {currency}."
+  },
+  "RecordCharge": {
+    "title": "Record {name} charge",
+    "billedLine": "Billed {amount}, charged to {account} in {currency}.",
+    "chargedLabel": "Amount charged to the account",
+    "estimateHint": "Estimated from the market rate plus about {percent}%, roughly what your bank adds. The posted amount only appears a few days after the authorisation — replace this once you see the real figure.",
+    "noEstimateHint": "Enter what this charge cost in {currency}. No rate is available for this pair right now, so there is nothing to estimate from.",
+    "submitButton": "Record charge"
   },
   "SubscriptionForm": {
     "addTitle": "New subscription",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { cloneElement, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -11,11 +11,14 @@ import {
   setSubscriptionActive,
 } from "@/app/(app)/subscriptions/actions";
 import { CYCLE_LABEL, nextChargeDate, monthlyEquivalent, type BillingCycle } from "@/lib/subscriptions/cycle";
+import { chargeCrossesCurrency } from "@/lib/subscriptions/charge";
+import { convertToBase } from "@/lib/fx";
 import { formatMoney } from "@/lib/format";
 import type { SubscriptionWithRefs } from "@/lib/subscriptions/queries";
 import type { QuickAddData } from "@/lib/transactions/queries";
 import { useUiSound } from "@/components/sound/sound-provider";
 import { SubscriptionFormDialog } from "./subscription-form-dialog";
+import { RecordChargeDialog } from "./record-charge-dialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
@@ -41,25 +44,46 @@ export function SubscriptionsView({
   const [view, setView] = useState<"grid" | "table">("grid");
   const { playSuccess, playDelete, playError } = useUiSound();
 
+  /* Converted before summing, since this renders as a single base-currency
+     figure. It used to add the raw amounts across currencies, so a DOP 1,500 gym
+     membership and a USD 15.99 sub totalled "US$1,515.99 a month". */
   const monthlyTotal = useMemo(
     () =>
       subscriptions
         .filter((s) => s.is_active)
-        .reduce((sum, s) => sum + monthlyEquivalent(s.amount, s.billing_cycle as BillingCycle), 0),
-    [subscriptions],
+        .reduce(
+          (sum, s) =>
+            sum +
+            convertToBase(
+              monthlyEquivalent(s.amount, s.billing_cycle as BillingCycle),
+              s.currency,
+              data.baseCurrency,
+              data.rates,
+            ),
+          0,
+        ),
+    [subscriptions, data.baseCurrency, data.rates],
   );
 
-  function onAddCharge(id: string) {
-    startTransition(async () => {
-      const result = await addCharge(id);
-      if (result.error) {
-        toast.error(result.error);
-        playError();
-      } else {
+  /* Resolves to whether the charge saved, so RecordChargeDialog can stay open on
+     failure rather than closing optimistically and taking the amount the person
+     typed with it. Wrapped in a promise instead of dropping startTransition,
+     which is what drives every button's pending state. */
+  function onAddCharge(id: string, settledAmount?: number): Promise<boolean> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const result = await addCharge(id, settledAmount);
+        if (result.error) {
+          toast.error(result.error);
+          playError();
+          resolve(false);
+          return;
+        }
         toast.success(t("toastChargeLogged"));
         playSuccess();
         router.refresh();
-      }
+        resolve(true);
+      });
     });
   }
   function onDelete(id: string) {
@@ -168,10 +192,18 @@ export function SubscriptionsView({
                 {sub.account ? ` · ${sub.account.name}` : ""}
               </p>
               <div className="mt-4 flex items-center gap-1">
-                <Button size="sm" onClick={() => onAddCharge(sub.id)} disabled={pending} isLoading={pending}>
-                  <Receipt className="size-4" />
-                  {t("addCharge")}
-                </Button>
+                <ChargeButton
+                  sub={sub}
+                  rates={data.rates}
+                  pending={pending}
+                  onCharge={onAddCharge}
+                  trigger={
+                    <Button size="sm" disabled={pending} isLoading={pending}>
+                      <Receipt className="size-4" />
+                      {t("addCharge")}
+                    </Button>
+                  }
+                />
                 <SubscriptionFormDialog
                   mode="edit"
                   subscription={sub}
@@ -220,9 +252,17 @@ export function SubscriptionsView({
                   <td className="px-4 py-2 text-muted-foreground">{sub.account?.name ?? "—"}</td>
                   <td className="px-4 py-2">
                     <div className="flex items-center justify-end gap-1">
-                      <Button size="sm" variant="outline" onClick={() => onAddCharge(sub.id)} disabled={pending} isLoading={pending}>
-                        {t("chargeShort")}
-                      </Button>
+                      <ChargeButton
+                        sub={sub}
+                        rates={data.rates}
+                        pending={pending}
+                        onCharge={onAddCharge}
+                        trigger={
+                          <Button size="sm" variant="outline" disabled={pending} isLoading={pending}>
+                            {t("chargeShort")}
+                          </Button>
+                        }
+                      />
                       <SubscriptionFormDialog
                         mode="edit"
                         subscription={sub}
@@ -253,5 +293,47 @@ export function SubscriptionsView({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Add charge, in both the grid and the table.
+ *
+ * A charge only needs asking about when the merchant's billing currency differs
+ * from the currency its account settles in. Everything else — the gym billed in
+ * pesos on a peso card, a dollar sub on a dollar account — records straight
+ * through on one tap, exactly as before, because there is nothing to convert and
+ * so nothing to ask.
+ */
+function ChargeButton({
+  sub,
+  rates,
+  pending,
+  onCharge,
+  trigger,
+}: {
+  sub: SubscriptionWithRefs;
+  rates: Record<string, number>;
+  pending: boolean;
+  onCharge: (id: string, settledAmount?: number) => Promise<boolean>;
+  trigger: React.ReactElement;
+}) {
+  const accountCurrency = sub.account?.currency;
+  // Cloned rather than wrapped in a clickable span, so the button stays the only
+  // interactive element and keeps its own keyboard behaviour.
+  if (!chargeCrossesCurrency(sub.currency, accountCurrency))
+    return cloneElement(trigger as React.ReactElement<{ onClick?: () => void }>, {
+      onClick: () => onCharge(sub.id),
+    });
+
+  return (
+    <RecordChargeDialog
+      subscription={sub}
+      accountCurrency={accountCurrency!}
+      rates={rates}
+      pending={pending}
+      onConfirm={(settledAmount) => onCharge(sub.id, settledAmount)}
+      trigger={trigger}
+    />
   );
 }
