@@ -1071,24 +1071,6 @@ export type Database = {
         }
         Relationships: []
       }
-      net_worth: {
-        Row: {
-          base_currency: string | null
-          net_worth: number | null
-          user_id: string | null
-        }
-        Insert: {
-          base_currency?: string | null
-          net_worth?: never
-          user_id?: string | null
-        }
-        Update: {
-          base_currency?: string | null
-          net_worth?: never
-          user_id?: string | null
-        }
-        Relationships: []
-      }
     }
     Functions: {
       category_usage: {
