@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.tywin.twa",
+      "sha256_cert_fingerprints": [
+        "2C:F0:CC:94:6D:3D:33:BC:BC:09:3E:95:95:31:32:65:9D:68:EF:59:F3:12:CC:B9:2D:2B:D0:F9:10:B9:9C:C2"
+      ]
+    }
+  }
+]
