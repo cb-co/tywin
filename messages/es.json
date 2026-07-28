@@ -273,6 +273,8 @@
   "Budgets": {
     "pageTitle": "Presupuestos",
     "pageDescription": "Un presupuesto mensual por categoría, con lo usado y lo que queda.",
+    "gridViewAria": "Vista de cuadrícula",
+    "tableViewAria": "Vista de tabla",
     "prevMonth": "Mes anterior",
     "nextMonth": "Mes siguiente",
     "budgetLabel": "Presupuesto",

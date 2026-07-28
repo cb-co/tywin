@@ -273,6 +273,8 @@
   "Budgets": {
     "pageTitle": "Budgets",
     "pageDescription": "A monthly budget per category, with what's used and what's left.",
+    "gridViewAria": "Grid view",
+    "tableViewAria": "Table view",
     "prevMonth": "Previous month",
     "nextMonth": "Next month",
     "budgetLabel": "Budget",

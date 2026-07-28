@@ -1,11 +1,20 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useUiSound } from "@/components/sound/sound-provider";
-import { ChevronLeft, ChevronRight, Plus, Trash2, CopyPlus, Pencil } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Trash2,
+  CopyPlus,
+  Pencil,
+  LayoutGrid,
+  Table as TableIcon,
+} from "lucide-react";
 import { setBudget, deleteCategory, copyPreviousMonth } from "@/app/(app)/budgets/actions";
 import { addMonths, monthLabel } from "@/lib/budgets/month";
 import { formatMoney } from "@/lib/format";
@@ -13,6 +22,7 @@ import type { BudgetOverview, BudgetRow } from "@/lib/budgets/queries";
 import { CategoryDialog } from "./category-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/empty-state";
 import { PieChart } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -39,6 +49,7 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [navPending, startNavTransition] = useTransition();
+  const [view, setView] = useState<"grid" | "table">("grid");
   const t = useTranslations("Budgets");
   const { playSuccess, playDelete, playError } = useUiSound();
   const { rows, totalBudget, totalUsed, baseCurrency } = overview;
@@ -159,28 +170,141 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
           <CopyPlus className="size-4" />
           {t("copyLastMonth")}
         </Button>
-        <CategoryDialog
-          trigger={
-            <Button size="sm">
-              <Plus className="size-4" />
-              {t("addCategory")}
-            </Button>
-          }
-        />
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-lg bg-muted p-1">
+            <button
+              type="button"
+              onClick={() => setView("grid")}
+              aria-label={t("gridViewAria")}
+              className={cn(
+                "rounded-md p-1.5 transition-colors",
+                view === "grid" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground",
+              )}
+            >
+              <LayoutGrid className="size-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("table")}
+              aria-label={t("tableViewAria")}
+              className={cn(
+                "rounded-md p-1.5 transition-colors",
+                view === "table" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground",
+              )}
+            >
+              <TableIcon className="size-4" />
+            </button>
+          </div>
+          <CategoryDialog
+            trigger={
+              <Button size="sm">
+                <Plus className="size-4" />
+                {t("addCategory")}
+              </Button>
+            }
+          />
+        </div>
       </div>
 
       {navPending ? (
-        <div className="space-y-4">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <div key={i} className="skeleton h-14 rounded-lg" />
-          ))}
-        </div>
+        view === "grid" ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="skeleton h-36 rounded-xl" />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div key={i} className="skeleton h-14 rounded-lg" />
+            ))}
+          </div>
+        )
       ) : rows.length === 0 ? (
         <EmptyState
           icon={<PieChart className="size-6" />}
           title={t("emptyTitle")}
           description={t("emptyDescription")}
         />
+      ) : view === "grid" ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {rows.map((row) => (
+            <Card key={row.category_id} className="gap-0 p-5">
+              <div className="flex items-center gap-3">
+                <span
+                  className="flex size-9 shrink-0 items-center justify-center rounded-lg"
+                  style={{
+                    backgroundColor: row.color
+                      ? `color-mix(in oklab, ${row.color} 16%, transparent)`
+                      : "var(--accent)",
+                    color: row.color ?? "var(--accent-foreground)",
+                  }}
+                >
+                  {row.emoji ? <span className="text-sm">{row.emoji}</span> : row.name[0]}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">{row.name}</p>
+                  <p className="text-xs text-muted-foreground tabular-nums">
+                    {t("amountOfBudget", {
+                      used: formatMoney(row.used, baseCurrency),
+                      budget: formatMoney(row.budget, baseCurrency),
+                    })}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    width: `${barPct(row.used, row.budget)}%`,
+                    backgroundColor: STATUS_COLOR[row.status],
+                  }}
+                />
+              </div>
+              <div className="mt-4 flex items-center gap-1">
+                <Input
+                  key={`${row.category_id}-${row.budget}`}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  defaultValue={row.budget || ""}
+                  placeholder={t("amountPlaceholder")}
+                  aria-label={t("budgetForAria", { name: row.name })}
+                  className="h-8 flex-1 tabular-nums"
+                  onBlur={(e) => onSaveBudget(row.category_id, e.target.value, row.budget)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                  }}
+                />
+                <CategoryDialog
+                  mode="edit"
+                  category={row}
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={t("editAria", { name: row.name })}
+                      className={cn("text-muted-foreground", TOUCH_TARGET)}
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                  }
+                />
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={t("deleteAria", { name: row.name })}
+                  className={cn("text-muted-foreground hover:text-destructive", TOUCH_TARGET)}
+                  onClick={() => onDelete(row.category_id)}
+                  disabled={pending}
+                  isLoading={pending}
+                >
+                  {pending ? null : <Trash2 className="size-4" />}
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
       ) : (
         <div className="divide-y">
           {rows.map((row) => (
