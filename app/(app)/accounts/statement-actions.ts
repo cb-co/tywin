@@ -13,7 +13,7 @@ import { validateChecksums } from "@/lib/statements/validate";
 import { centsToDecimal } from "@/lib/statements/money";
 import { suggestAccountId, type CardAccountOption } from "@/lib/statements/mapping";
 import { resolveCategoryId, type CategoryRuleRow } from "@/lib/statements/categorize";
-import { getExchangeRates } from "@/lib/fx";
+import { baseRate, getExchangeRates } from "@/lib/fx";
 import type { ParsedStatement } from "@/lib/statements/types";
 
 export interface SectionPreview {
@@ -305,7 +305,7 @@ export async function confirmStatementImport(formData: FormData): Promise<{ erro
     file_name: fileName,
     file_path: "",
     sections: parsed.sections.map((s) => {
-      const rate = s.currency === baseCurrency ? 1 : rates[s.currency] ? 1 / rates[s.currency] : 1;
+      const rate = baseRate(s.currency, baseCurrency, rates);
       const fxFallback = s.currency !== baseCurrency && !rates[s.currency];
       return {
         account_id: mappings[s.sectionKey],

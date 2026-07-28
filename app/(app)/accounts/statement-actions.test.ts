@@ -7,7 +7,11 @@ vi.mock("@/lib/statements/llm/extract", () => ({
   toParsedStatement: vi.fn(),
 }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
-vi.mock("@/lib/fx", () => ({ getExchangeRates: vi.fn(async () => ({})) }));
+// Only the network call is stubbed; baseRate and friends are pure and stay real.
+vi.mock("@/lib/fx", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/fx")>()),
+  getExchangeRates: vi.fn(async () => ({})),
+}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next-intl/server", () => ({
   getTranslations: vi.fn(async () => (key: string) => key),

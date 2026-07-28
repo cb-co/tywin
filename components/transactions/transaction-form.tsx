@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useForm, useWatch, Controller } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -24,7 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ACCOUNT_GROUPS, accountOptionLabel, accountTypeMeta, type AccountType } from "@/lib/accounts/meta";
-import { destinationAmount, invertRate } from "@/lib/transactions/money";
+import { destinationAmount } from "@/lib/transactions/money";
+import { crossRate } from "@/lib/fx";
 import { useUiSound } from "@/components/sound/sound-provider";
 
 type FormValues = {
@@ -33,13 +34,15 @@ type FormValues = {
   to_account_id: string;
   category_id: string;
   amount: string;
-  currency: string;
-  /* Both rates are held the way they are DISPLAYED — units of the weaker
-     currency per 1 unit of the stronger — and converted on submit. The base
-     currency (usually USD) reads first so the number stays whole-ish. */
-  /** Transaction-currency units per 1 base-currency unit. Stored inverted. */
-  base_rate: string;
-  /** Destination-currency units per 1 source-currency unit. Becomes to_amount. */
+  /* No currency field. A transaction is denominated in its account's currency —
+     the bank settles in what the account holds, whatever the merchant billed —
+     so the server reads it off the account and the form only displays it. */
+  /* The only rate a person is ever asked for, and only when a payment actually
+     crosses currencies. The rate that converts this row into the base currency
+     for budgets and net worth is derived server-side from the FX service — no
+     money changed hands at that rate, so it is not the user's to supply.
+
+     Destination-currency units per 1 source-currency unit. Becomes to_amount. */
   transfer_rate: string;
   include_tax: boolean;
   include_commission: boolean;
@@ -99,7 +102,7 @@ export function TransactionForm({
   defaultAccountId?: string;
   onSuccess?: () => void;
 }) {
-  const { accounts, categories, currencies, baseCurrency } = data;
+  const { accounts, categories, baseCurrency, rates } = data;
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const t = useTranslations("TransactionForm");
@@ -122,11 +125,6 @@ export function TransactionForm({
   const accountItems: Record<string, string> = Object.fromEntries(
     accounts.map((a) => [a.id, accountOptionLabel(a)]),
   );
-  // Label happens to equal the value today; declared anyway so enriching the
-  // option text later cannot silently reintroduce a raw-value trigger.
-  const currencyItems: Record<string, string> = Object.fromEntries(
-    currencies.map((c) => [c.code, c.code]),
-  );
   const categoryItems: Record<string, string> = {
     none: t("noCategory"),
     ...Object.fromEntries(
@@ -145,13 +143,10 @@ export function TransactionForm({
           category_id:
             transaction.category_id ?? (transaction.type === "payment" ? "none" : ""),
           amount: String(transaction.amount),
-          currency: transaction.currency,
-          base_rate: String(invertRate(transaction.exchange_rate)),
-          transfer_rate: String(
+          transfer_rate:
             transaction.to_amount && transaction.amount
-              ? transaction.to_amount / transaction.amount
-              : 1,
-          ),
+              ? String(transaction.to_amount / transaction.amount)
+              : "",
           include_tax: transaction.include_tax,
           include_commission: transaction.include_commission,
           budget_only: transaction.budget_only,
@@ -165,9 +160,7 @@ export function TransactionForm({
           to_account_id: "",
           category_id: categories[0]?.id ?? "",
           amount: "",
-          currency: firstAccount?.currency ?? baseCurrency,
-          base_rate: "1",
-          transfer_rate: "1",
+          transfer_rate: "",
           include_tax: false,
           include_commission: !(firstAccount?.network_fee_optional ?? true),
           budget_only: false,
@@ -180,18 +173,31 @@ export function TransactionForm({
   const type = (useWatch({ control, name: "type" }) ?? "expense") as TransactionType;
   const accountId = useWatch({ control, name: "account_id" }) ?? "";
   const toAccountId = useWatch({ control, name: "to_account_id" }) ?? "";
-  const currency = useWatch({ control, name: "currency" }) ?? baseCurrency;
   const amountRaw = useWatch({ control, name: "amount" }) ?? "";
   const transferRateRaw = useWatch({ control, name: "transfer_rate" }) ?? "";
 
   const src = accounts.find((a) => a.id === accountId);
   const dst = accounts.find((a) => a.id === toAccountId);
-  const rateLocked = currency === baseCurrency;
-  /* A payment is denominated in the source account's currency and carries a
-     second leg in the destination's. The currency picker is therefore locked
-     for payments — letting it drift from the source account is what made a
-     10,000 DOP transfer take 10,000 USD out of a USD account. */
-  const currencyLocked = isEdit || type === "payment";
+  /* The currency the amount is typed in: the source account's, for every type.
+     Shown, never chosen. The bank settles in what the account holds, and
+     `account_balances` applies `amount` to that account raw — so a row
+     denominated in anything else silently corrupts the balance (a 10,000 DOP
+     transfer taking 10,000 USD out of a USD account was this bug).
+
+     On edit the stored currency wins: it is immutable in the DB, and a row
+     written before this rule may not match its account. */
+  const displayCurrency = (isEdit ? transaction?.currency : src?.currency) ?? baseCurrency;
+
+  /* Which accounts an edit may move the row to. Currency is immutable, so only
+     same-currency accounts are reachable — offering the rest would just earn a
+     server rejection. The account currently on the row is always included, or a
+     legacy row whose currency never matched its account would find its own
+     account missing from the list. Create mode is unrestricted: the currency
+     follows whatever is picked. */
+  const selectableAccounts = isEdit
+    ? accounts.filter((a) => a.currency === displayCurrency || a.id === accountId)
+    : accounts;
+
   const crossCurrency =
     type === "payment" && !!src && !!dst && src.currency !== dst.currency;
   const sameBankPayment =
@@ -209,20 +215,18 @@ export function TransactionForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cardPayment]);
 
+  /* A starting point for the required rate, one tap away. Offered rather than
+     prefilled: the market rate is a good guess, but the user's actual rate is
+     the fact we want, and a filled field stops people from checking it. */
+  const marketRate =
+    crossCurrency && src && dst ? crossRate(src.currency, dst.currency, rates) : null;
+
   /* What each side actually moves, shown under the rate. The old form gave no
      hint that the two legs were the same number in different currencies. */
   const landing =
     crossCurrency && Number(amountRaw) > 0 && Number(transferRateRaw) > 0
       ? destinationAmount(Number(amountRaw), Number(transferRateRaw))
       : null;
-
-  // Currency follows the source account (create only — in edit it's immutable).
-  // Switching type to payment re-asserts it, in case an expense left it elsewhere.
-  useEffect(() => {
-    if (isEdit || !src) return;
-    setValue("currency", src.currency);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountId, type]);
 
   // Smart defaults: tax on for a payment into a loan; network fee on only for a
   // cross-bank obligatory transfer (same-bank transfers are free).
@@ -241,30 +245,25 @@ export function TransactionForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type]);
 
-  // A base-currency transaction always has rate 1.
+  /* Clear the rate whenever the currency PAIR changes, not merely when it
+     stops crossing currencies — swapping the destination from a USD account to
+     a EUR one otherwise silently reuses the rate typed for dollars. The ref
+     seed means mount is not a change, so an edit's saved rate survives. */
+  const pairKey = crossCurrency && src && dst ? `${src.currency}>${dst.currency}` : "";
+  const prevPairKey = useRef(pairKey);
   useEffect(() => {
-    if (rateLocked) setValue("base_rate", "1");
+    if (prevPairKey.current === pairKey) return;
+    prevPairKey.current = pairKey;
+    setValue("transfer_rate", "");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currency]);
-
-  // A same-currency payment moves the same number across, so its rate is 1.
-  useEffect(() => {
-    if (!crossCurrency) setValue("transfer_rate", "1");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [crossCurrency]);
+  }, [pairKey]);
 
   function onSubmit(values: FormValues) {
     const isPayment = values.type === "payment";
-    const baseRate = Number(values.base_rate);
     const transferRate = Number(values.transfer_rate);
 
-    // Both rates are displayed strong-currency-first; the DB wants base per
-    // unit of transaction currency, and an explicit destination-currency leg.
-    if (!(baseRate > 0)) {
-      toast.error(t("rateInvalid"));
-      playError();
-      return;
-    }
+    /* Required, with no default. The old default of 1 was the dangerous case:
+       a 100 USD transfer into a DOP account silently landed 100 DOP. */
     if (isPayment && crossCurrency && !(transferRate > 0)) {
       toast.error(t("transferRateInvalid"));
       playError();
@@ -274,7 +273,6 @@ export function TransactionForm({
     startTransition(async () => {
       const payload = {
         ...values,
-        exchange_rate: invertRate(baseRate),
         to_amount:
           isPayment && crossCurrency
             ? destinationAmount(Number(values.amount), transferRate)
@@ -338,46 +336,67 @@ export function TransactionForm({
         )}
       />
 
-      {/* Amount + currency */}
+      {/* Amount, in the account's currency — displayed, not selectable */}
       <div className="space-y-2">
         <Label htmlFor="amount">{t("amountLabel")}</Label>
-        <div className="flex gap-2">
-          <Input id="amount" type="number" step="0.01" min="0" placeholder={t("amountPlaceholder")} className="flex-1" {...register("amount")} required disabled={fromStatement} />
-          <Controller
-            control={control}
-            name="currency"
-            render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange} disabled={currencyLocked} items={currencyItems}>
-                <SelectTrigger className="w-28">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {currencies.map((c) => (
-                    <SelectItem key={c.code} value={c.code}>
-                      {c.code}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+        <div className="relative">
+          <Input
+            id="amount"
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder={t("amountPlaceholder")}
+            className="pr-16"
+            aria-describedby="amount_currency"
+            {...register("amount")}
+            required
+            disabled={fromStatement}
           />
+          {/* Not aria-hidden: which currency the figure is in is the one thing a
+              screen-reader user most needs here, now that nothing announces it. */}
+          <span
+            id="amount_currency"
+            className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground"
+          >
+            {displayCurrency}
+          </span>
         </div>
-        {!rateLocked ? (
-          <div className="flex items-center gap-2 pt-1">
-            <Label htmlFor="base_rate" className="text-xs font-normal text-muted-foreground">
-              {t("ratePrefix", { currency: baseCurrency })}
-            </Label>
-            <Input id="base_rate" type="number" step="0.00000001" min="0" className="h-8 w-32" disabled={isEdit} {...register("base_rate")} />
-            <span className="text-xs text-muted-foreground">{currency}</span>
-          </div>
-        ) : null}
+        {/* The one rate a person is asked for: a payment that genuinely crosses
+            currencies, where only they know what the money actually became. */}
         {crossCurrency && src && dst ? (
-          <div className="flex items-center gap-2 pt-1">
-            <Label htmlFor="transfer_rate" className="text-xs font-normal text-muted-foreground">
-              {t("ratePrefix", { currency: src.currency })}
-            </Label>
-            <Input id="transfer_rate" type="number" step="0.00000001" min="0" className="h-8 w-32" {...register("transfer_rate")} />
-            <span className="text-xs text-muted-foreground">{dst.currency}</span>
+          <div className="space-y-1 pt-1">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="transfer_rate" className="text-xs font-normal text-muted-foreground">
+                {t("ratePrefix", { currency: src.currency })}
+              </Label>
+              <Input
+                id="transfer_rate"
+                type="number"
+                step="0.00000001"
+                min="0"
+                className="h-8 w-32"
+                placeholder={t("ratePlaceholder")}
+                required
+                {...register("transfer_rate")}
+              />
+              <span className="text-xs text-muted-foreground">{dst.currency}</span>
+            </div>
+            {marketRate ? (
+              <button
+                type="button"
+                /* 8dp is what numeric(18,8) keeps; rounding a DOP-per-USD rate
+                   to 4dp instead would move real money on a large transfer.
+                   Number() then drops the trailing zeros on a whole rate. */
+                onClick={() => setValue("transfer_rate", String(Number(marketRate.toFixed(8))))}
+                className="text-xs text-primary underline-offset-2 hover:underline"
+              >
+                {t("useMarketRate", {
+                  /* Significant digits, not decimals: 60.0002 and 0.0166667 are
+                     both readable, where 4dp would show the latter as 0.0167. */
+                  rate: marketRate.toLocaleString(undefined, { maximumSignificantDigits: 6 }),
+                })}
+              </button>
+            ) : null}
           </div>
         ) : null}
         {landing !== null && dst ? (
@@ -402,7 +421,7 @@ export function TransactionForm({
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>{groupedAccountOptions(accounts)}</SelectContent>
+              <SelectContent>{groupedAccountOptions(selectableAccounts)}</SelectContent>
             </Select>
           )}
         />

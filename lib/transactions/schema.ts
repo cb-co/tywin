@@ -14,8 +14,21 @@ export const transactionInput = z
     // here because only the form knows both accounts' currencies; the DB
     // rejects a cross-currency payment that omits it.
     to_amount: z.coerce.number().positive().optional(),
-    currency: z.string().trim().length(3).toUpperCase(),
-    exchange_rate: z.coerce.number().positive().default(1),
+    // No currency and no exchange_rate here on purpose — the client sends
+    // neither.
+    //
+    // A transaction is always denominated in its own account's currency: the
+    // bank settles in what the account holds, whatever the merchant billed. So
+    // the currency is a fact about the account, not an input, and the server
+    // reads it from `accounts` (see currencyContext). Accepting it from the
+    // client only created the chance for the two to disagree — and
+    // `account_balances` applies `amount` to the account raw, so a row saying
+    // "50 EUR" on a USD card takes 50 USD out of it.
+    //
+    // exchange_rate converts this row into the base currency for budgets and
+    // net worth only. Nothing the user experienced was converted at that rate,
+    // so the server derives it from the FX service rather than asking. See
+    // resolveBaseRate in ./money.
     include_tax: z.boolean().default(false),
     include_commission: z.boolean().default(false),
     budget_only: z.boolean().default(false),

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { subscriptionInput, type SubscriptionInput } from "@/lib/subscriptions/schema";
+import { baseRate, getExchangeRates } from "@/lib/fx";
 import { dbError } from "@/lib/errors";
 
 type Result = { error?: string; id?: string };
@@ -100,6 +101,16 @@ export async function addCharge(id: string): Promise<Result> {
   if (!sub) return { error: ts("notFound") };
   if (!sub.account_id) return { error: ts("needsAccount") };
 
+  // Was hardcoded to 1, which counted a 1,500 DOP subscription as 1,500 USD in
+  // every base-currency total. Same rule as a hand-entered expense: nothing was
+  // converted for the user, so the market rate is the honest one.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("base_currency")
+    .maybeSingle();
+  const baseCurrency = profile?.base_currency ?? "USD";
+  const rates = sub.currency === baseCurrency ? {} : await getExchangeRates(baseCurrency);
+
   const { error } = await supabase.from("transactions").insert({
     user_id: user.id,
     type: "expense",
@@ -107,7 +118,7 @@ export async function addCharge(id: string): Promise<Result> {
     category_id: sub.category_id,
     amount: sub.amount,
     currency: sub.currency,
-    exchange_rate: 1,
+    exchange_rate: baseRate(sub.currency, baseCurrency, rates),
     include_tax: false,
     include_commission: false,
     budget_only: false,

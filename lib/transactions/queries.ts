@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { CurrencyRow } from "@/lib/accounts/queries";
+import { getExchangeRates } from "@/lib/fx";
 
 export type TxnFilters = {
   type?: string;
@@ -63,6 +64,12 @@ export type QuickAddData = {
   categories: QuickAddCategory[];
   currencies: CurrencyRow[];
   baseCurrency: string;
+  /**
+   * Market rates as units-per-1-base. Used only to offer a suggested rate on a
+   * cross-currency payment — the rate a transaction is stored with is derived
+   * server-side at insert, not from this.
+   */
+  rates: Record<string, number>;
 };
 
 export async function getQuickAddData(): Promise<QuickAddData> {
@@ -79,10 +86,15 @@ export async function getQuickAddData(): Promise<QuickAddData> {
       supabase.from("profiles").select("base_currency").maybeSingle(),
     ]);
 
+  const baseCurrency = profile?.base_currency ?? "USD";
+
   return {
     accounts: accounts ?? [],
     categories: categories ?? [],
     currencies: currencies ?? [],
-    baseCurrency: profile?.base_currency ?? "USD",
+    baseCurrency,
+    // Sequential on purpose — the base currency is the request. Cached for 12h
+    // by lib/fx, so this is a network hop once a day, not once a modal.
+    rates: await getExchangeRates(baseCurrency),
   };
 }

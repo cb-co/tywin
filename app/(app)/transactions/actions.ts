@@ -5,6 +5,8 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { transactionInput, type TransactionInput } from "@/lib/transactions/schema";
+import { resolveBaseRate } from "@/lib/transactions/money";
+import { getExchangeRates } from "@/lib/fx";
 import { dbError } from "@/lib/errors";
 
 // Statement-sourced rows are editable only in category and notes — the
@@ -50,15 +52,27 @@ async function requireUser() {
   return { supabase, user };
 }
 
-/** Statement-sourced rows die only with their statement; edits may touch only
- *  category and notes — the imported line is the source of truth for the rest. */
+/** The stored row an edit is about to overwrite, loaded once.
+ *
+ *  Carries two things an edit is checked against: whether it came from a
+ *  statement (those die only with their statement, and edits may touch only
+ *  category and notes — the imported line owns the rest), and the account and
+ *  currency it was written with, which together are immutable. */
 async function statementGuard(
   supabase: Awaited<ReturnType<typeof createClient>>,
   id: string,
-): Promise<{ row: { statement_line_id: string | null; category_id: string | null; notes: string | null } | null }> {
+): Promise<{
+  row: {
+    statement_line_id: string | null;
+    category_id: string | null;
+    notes: string | null;
+    currency: string;
+    account_id: string;
+  } | null;
+}> {
   const { data } = await supabase
     .from("transactions")
-    .select("statement_line_id,category_id,notes")
+    .select("statement_line_id,category_id,notes,currency,account_id")
     .eq("id", id)
     .maybeSingle();
   return { row: data };
@@ -70,6 +84,51 @@ function revalidate() {
   revalidatePath("/");
 }
 
+/**
+ * The currencies a transaction straddles, read from the accounts themselves.
+ *
+ * `srcCurrency` is the transaction's currency — not a check on one the client
+ * sent, but the only source of it. Every type settles in its account's
+ * currency, so there is nothing for the user to pick and nothing that can
+ * disagree. The base rate derived below is only as right as these are.
+ */
+async function currencyContext(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  v: TransactionInput,
+): Promise<{ baseCurrency: string; srcCurrency: string | null; dstCurrency: string | null }> {
+  const ids = [v.account_id, v.type === "payment" ? v.to_account_id : ""].filter(Boolean) as string[];
+  const [{ data: profile }, { data: rows }] = await Promise.all([
+    supabase.from("profiles").select("base_currency").maybeSingle(),
+    supabase.from("accounts").select("id,currency").in("id", ids),
+  ]);
+  const byId = new Map((rows ?? []).map((r) => [r.id, r.currency]));
+  return {
+    baseCurrency: profile?.base_currency ?? "USD",
+    srcCurrency: byId.get(v.account_id) ?? null,
+    dstCurrency: v.type === "payment" && v.to_account_id ? byId.get(v.to_account_id) ?? null : null,
+  };
+}
+
+/**
+ * A payment between two currencies has no defensible default destination leg —
+ * assuming 1:1 turns "send 100 USD to a DOP account" into 100 DOP received.
+ * The DB trigger rejects it too, but with a Postgres exception; this returns
+ * something a person can act on.
+ */
+function crossCurrencyLegMissing(
+  v: TransactionInput,
+  srcCurrency: string | null,
+  dstCurrency: string | null,
+): boolean {
+  return (
+    v.type === "payment" &&
+    !!srcCurrency &&
+    !!dstCurrency &&
+    srcCurrency !== dstCurrency &&
+    !(v.to_amount && v.to_amount > 0)
+  );
+}
+
 export async function createTransaction(input: unknown): Promise<Result> {
   const t = await getTranslations("Common");
   const parsed = transactionInput.safeParse(input);
@@ -78,13 +137,32 @@ export async function createTransaction(input: unknown): Promise<Result> {
   const { supabase, user } = await requireUser();
   if (!user) return { error: t("notSignedIn") };
 
+  const { baseCurrency, srcCurrency, dstCurrency } = await currencyContext(supabase, parsed.data);
+  // The account is where the currency comes from, so a missing one is fatal
+  // now rather than a row denominated in a guess.
+  if (!srcCurrency) return { error: t("accountNotFound") };
+  if (crossCurrencyLegMissing(parsed.data, srcCurrency, dstCurrency))
+    return { error: t("crossCurrencyRateRequired") };
+
+  // Derived, never taken from the client: this only feeds base-currency
+  // aggregates, so the market rate is the honest answer (see resolveBaseRate).
+  const rates = srcCurrency === baseCurrency ? {} : await getExchangeRates(baseCurrency);
+  const exchangeRate = resolveBaseRate({
+    currency: srcCurrency,
+    baseCurrency,
+    amount: parsed.data.amount,
+    toCurrency: dstCurrency,
+    toAmount: parsed.data.to_amount,
+    rates,
+  });
+
   // currency + exchange_rate are set only on insert (immutable thereafter).
   const { data, error } = await supabase
     .from("transactions")
     .insert({
       ...toRow(parsed.data),
-      currency: parsed.data.currency,
-      exchange_rate: parsed.data.exchange_rate,
+      currency: srcCurrency,
+      exchange_rate: exchangeRate,
       user_id: user.id,
     })
     .select("id")
@@ -133,7 +211,28 @@ export async function updateTransaction(id: string, input: unknown): Promise<Res
   const parsed = transactionInput.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? t("invalidInput") };
 
-  // Never send currency/exchange_rate — the DB forbids changing them.
+  const { srcCurrency, dstCurrency } = await currencyContext(supabase, parsed.data);
+  if (!srcCurrency) return { error: t("accountNotFound") };
+  if (crossCurrencyLegMissing(parsed.data, srcCurrency, dstCurrency))
+    return { error: t("crossCurrencyRateRequired") };
+
+  /* An edit may move the transaction to another account, but `currency` is
+     immutable in the DB — so moving a USD row onto a DOP card would leave the
+     row denominated in USD while `account_balances` takes `amount` out of the
+     DOP card raw. That is precisely the mismatch the derived currency removes
+     on insert, reachable through the back door. Reject it; re-entering the
+     transaction is the honest fix, since the amount itself is wrong in the new
+     currency anyway.
+
+     Only when the account actually changes. A row written before the currency
+     was derived may already disagree with its own account, and such a row must
+     stay editable — otherwise its description and category are frozen forever
+     by a mismatch the user never chose. */
+  if (row && parsed.data.account_id !== row.account_id && row.currency !== srcCurrency)
+    return { error: t("accountCurrencyImmutable", { currency: row.currency }) };
+
+  // Never send currency/exchange_rate — the DB forbids changing them. The rate
+  // an edit would imply is therefore moot; it stays whatever the insert derived.
   const { error } = await supabase.from("transactions").update(toRow(parsed.data)).eq("id", id);
   if (error) return { error: await dbError(error, "updateTransaction") };
   revalidate();

@@ -344,7 +344,8 @@
     "amountPlaceholder": "0.00",
     "ratePrefix": "1 {currency} =",
     "destinationLands": "{account} recibe {amount} {currency}",
-    "rateInvalid": "Introduce un tipo de cambio mayor que cero",
+    "ratePlaceholder": "Tasa",
+    "useMarketRate": "Usar tasa del mercado ({rate})",
     "transferRateInvalid": "Introduce una tasa de conversión para esta transferencia",
     "toLabel": "Hacia",
     "toPlaceholder": "Elige el destino",
@@ -503,6 +504,9 @@
     "errorReference": "Eso hace referencia a algo que ya no existe.",
     "errorRequired": "Falta un campo obligatorio.",
     "errorInvalidValue": "Ese valor no es válido.",
+    "crossCurrencyRateRequired": "Un pago entre dos monedas necesita una tasa de conversión.",
+    "accountNotFound": "Esa cuenta ya no existe.",
+    "accountCurrencyImmutable": "Esta transacción está registrada en {currency} y solo puede moverse a una cuenta en {currency}. Elimínala y vuelve a crearla para cambiar de moneda.",
     "statementRowLocked": "Esta transacción proviene de un estado de cuenta importado. Elimina el estado de cuenta para quitarla."
   },
   "Welcome": {
