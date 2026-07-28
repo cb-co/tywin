@@ -25,7 +25,9 @@ export function AccountCard({ account }: { account: AccountWithStatus }) {
 
   return (
     <Link href={`/accounts/${account.id}`} className="group block">
-      <Card className="h-full gap-0 p-5 transition-colors group-hover:border-primary/40">
+      {/* Cards are ringed, not bordered, so the hover has to move the ring —
+          `group-hover:border-*` was styling an edge that isn't drawn. */}
+      <Card className="lift h-full gap-0 p-5 group-hover:ring-foreground/20">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <span

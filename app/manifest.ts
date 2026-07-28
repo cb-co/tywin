@@ -11,7 +11,7 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     // Matches the custom in-app splash's background (components/shell/splash.tsx,
     // bg-background) so the native OS launch splash blends into it.
-    background_color: "#faf7f0",
+    background_color: "#ffffff",
     // Matches the dark topbar — see the themeColor comment in app/layout.tsx.
     theme_color: TOPBAR_DARK,
     icons: [

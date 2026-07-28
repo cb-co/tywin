@@ -44,7 +44,7 @@ export default async function OverviewPage() {
         <Card className="rise relative overflow-hidden p-7" style={{ "--i": 1 } as React.CSSProperties}>
           <div
             aria-hidden
-            className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary/5"
+            className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[radial-gradient(circle,var(--brand)_0%,transparent_70%)] opacity-[0.18] dark:opacity-[0.15]"
           />
           <p className="text-sm font-medium text-muted-foreground">{t("netWorth")}</p>
           <p className="figure mt-2 text-5xl leading-none text-foreground">
@@ -64,7 +64,7 @@ export default async function OverviewPage() {
               className="group rise"
               style={{ "--i": i + 2 } as React.CSSProperties}
             >
-              <Card className="lift h-full p-5 group-hover:border-primary/40 group-hover:shadow-md">
+              <Card className="lift h-full p-5 group-hover:ring-foreground/20">
                 <span
                   className="flex size-10 items-center justify-center rounded-lg transition-transform duration-200 ease-out group-hover:scale-110"
                   style={{ backgroundColor: `color-mix(in oklab, ${tint} 16%, transparent)`, color: tint }}
@@ -94,9 +94,13 @@ export default async function OverviewPage() {
         className="rise relative overflow-hidden p-7"
         style={{ "--i": 1 } as React.CSSProperties}
       >
+        {/* A wash off the top-right corner, tinted with the accent. The old
+            treatment was a hard-edged circle at 5% ink, which at that opacity
+            read as a smudge on the card rather than as anything intentional —
+            a gradient has no edge to look wrong. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary/5"
+          className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[radial-gradient(circle,var(--brand)_0%,transparent_70%)] opacity-[0.18] dark:opacity-[0.15]"
         />
         <p className="text-sm font-medium text-muted-foreground">{t("netWorth")}</p>
         <p className="figure mt-2 text-5xl leading-none text-foreground">
@@ -126,7 +130,7 @@ export default async function OverviewPage() {
               as a quantity arriving rather than a pre-drawn block. */}
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
             <div
-              className="bar-fill h-full rounded-full bg-primary"
+              className="bar-fill h-full rounded-full bg-brand"
               style={{ width: `${budgetPct}%`, "--i": 4 } as React.CSSProperties}
             />
           </div>
@@ -139,7 +143,11 @@ export default async function OverviewPage() {
         {o.upcoming.length === 0 ? (
           <Card className="p-6 text-sm text-muted-foreground">{t("upcomingEmpty")}</Card>
         ) : (
-          <Card className="divide-y p-0">
+          // `gap-0` because Card is a flex column with a default gap. Left on,
+          // that gap sits between each row and the divider line above it, so
+          // the rules float in the middle of empty bands instead of dividing
+          // anything.
+          <Card className="divide-y gap-0 p-0">
             {o.upcoming.map((item) => (
               <div
                 key={item.key}

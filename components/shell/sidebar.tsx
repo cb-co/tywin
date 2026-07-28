@@ -59,7 +59,7 @@ export function Sidebar({
               className="h-8 w-8 shrink-0 rounded-full object-cover transition-transform duration-150 group-hover:scale-105 group-active:scale-95"
             />
           ) : (
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary transition-transform duration-150 group-hover:scale-105 group-active:scale-95">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand/15 text-xs font-semibold text-brand transition-transform duration-150 group-hover:scale-105 group-active:scale-95">
               {initial}
             </span>
           )}

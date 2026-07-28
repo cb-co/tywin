@@ -49,6 +49,19 @@
   --color-gold: var(--gold);
   --color-gold-foreground: var(--gold-foreground);
 
+  /* The signed-out brand slab (login hero). It is deliberately NOT `primary`:
+     primary inverts between themes (ink on paper, paper on ink), and a
+     full-height ivory panel in dark mode would blow out the page. This stays
+     ink in both themes so the brand moment reads the same either way. */
+  --color-brand-panel: var(--brand-panel);
+  --color-brand-panel-foreground: var(--brand-panel-foreground);
+
+  /* The one chromatic accent. See the palette note below for where it may and
+     may not go. */
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-muted: var(--brand-muted);
+
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -72,103 +85,219 @@
 }
 
 /* ============================================================
-   Vault — light: warm ivory surfaces, deep emerald, gold accent
-   ============================================================ */
-:root {
-  --background: #faf7f0;
-  --foreground: #17211c;
-  --card: #ffffff;
-  --card-foreground: #17211c;
-  --popover: #ffffff;
-  --popover-foreground: #17211c;
-  --primary: #0f7a54;
-  --primary-foreground: #f6fbf8;
-  --secondary: #efe9dc;
-  --secondary-foreground: #3a423a;
-  --muted: #f1ece1;
-  --muted-foreground: #6a7168;
-  --accent: #e6f1eb;
-  --accent-foreground: #0e5b41;
-  --destructive: #c0453c;
-  --destructive-foreground: #ffffff;
-  --success: #1f9d63;
-  --success-foreground: #ffffff;
-  --warning: #c98a22;
-  --warning-foreground: #2a1e04;
-  --gold: #b7841f;
-  --gold-foreground: #231803;
-  --border: #e7dfd1;
-  --input: #e7dfd1;
-  --ring: #0f7a54;
+   Ink & paper
+   ============================================================
+   One idea, inverted between the two themes: the app is a ledger, so it is
+   only ever ink on paper or paper on ink. There is no third brand hue.
 
-  --chart-1: #0f7a54;
-  --chart-2: #d8a13a;
-  --chart-3: #2a9d8f;
-  --chart-4: #c86b4a;
-  --chart-5: #7b5ea7;
-  --chart-6: #3e7cb1;
-  --chart-7: #c25c7a;
-  --chart-8: #8a8b3c;
+   Light — white paper, graphite ink, ivory used sparingly. Both the canvas
+   (cards, tables, sheets) and the frame (sidebar, topbar) are white; the page
+   tint behind them is the only surface that isn't. Ivory is no longer a
+   structural fill, only a marker: hovers, chips, selected rows, hairlines.
+   Interactive weight is carried by the ink, because ivory-on-white cannot
+   carry contrast and a button you cannot read is not an accent, it is a bug.
+
+   Dark — the same relationship flipped: near-black paper, ivory ink. Here
+   ivory IS the accent, because on black it finally has the contrast to be one.
+
+   Every neutral sits on one warm hue (OKLCH h 70-85) so the greys never drift
+   cool against the ivory. Chroma stays under 0.022 on surfaces: enough for the
+   warmth to register next to white, not enough to read as a colour.
+
+   Colour is spent only where it means something: red for money out of place,
+   green for money in, brass for attention, and one blue for "you can act on
+   this". Nothing decorative is coloured.
+
+   About that blue. Ink and ivory alone left the app with no focal colour at
+   all, which read as unfinished rather than restrained — the only hues on a
+   dashboard were the income green and the over-budget red, and with nothing
+   else around them they looked like accidents. `--brand` is the single accent,
+   deliberately cool against the warm neutrals: that tension is what stops the
+   ivory reading as generic beige.
+
+   Where the blue goes: interactive and navigational state. Focus rings, the
+   active nav rail, links, selected states, and progress that is running
+   normally. Where it must not go: anything decorative, and anything already
+   owned by a status colour. One accent, whole app.
+   ============================================================ */
+
+/* --- Light -------------------------------------------------------------- */
+:root {
+  --background: #ffffff;
+  --foreground: #211d1a;
+  --card: #ffffff;
+  --card-foreground: #211d1a;
+  --popover: #ffffff;
+  --popover-foreground: #211d1a;
+  --primary: #26221e;
+  --primary-foreground: #faf6ee;
+  --secondary: #f2ece0;
+  --secondary-foreground: #36322e;
+  --muted: #f6f1e7;
+  --muted-foreground: #6d6862;
+  --accent: #efe8d8;
+  --accent-foreground: #312d28;
+
+  --brand: #2f55ab;
+  --brand-foreground: #fdfaf3;
+  --brand-muted: #dce8ff;
+  --destructive: #ba362e;
+  --destructive-foreground: #fffdfa;
+  --success: #317e42;
+  --success-foreground: #fffdfa;
+  --warning: #966c1e;
+  --warning-foreground: #1d1406;
+  --gold: #966c1e;
+  --gold-foreground: #1d1406;
+  --border: #e4dfd5;
+  --input: #e4dfd5;
+  /* Focus is the accent's job, not the ink's. A blue ring is unmistakably a
+     focus ring; a near-black one just looks like a thicker border. */
+  --ring: #2f55ab;
+
+  --brand-panel: #211d19;
+  --brand-panel-foreground: #f6f1e7;
+
+  /* Categorical series. Fixed order, never cycled. Validated for the light
+     surface: lightness band, chroma floor, adjacent-pair separation under
+     deutan/protan/tritan simulation, and >= 3:1 against the surface. Slot 1 is
+     the lead data hue — it used to be the brand green, and with the brand now
+     neutral the charts finally own their own colour instead of borrowing it. */
+  --chart-1: #3e5fad;
+  --chart-2: #b6770b;
+  --chart-3: #008f7d;
+  --chart-4: #be563d;
+  --chart-5: #8949a3;
+  --chart-6: #7e903e;
+  --chart-7: #1b8abd;
+  --chart-8: #c4486d;
 
   --radius: 0.8rem;
 
-  --sidebar: #f4eee2;
-  --sidebar-foreground: #17211c;
-  --sidebar-primary: #0f7a54;
-  --sidebar-primary-foreground: #f6fbf8;
-  --sidebar-accent: #e6f1eb;
-  --sidebar-accent-foreground: #0e5b41;
-  --sidebar-border: #e3dacb;
-  --sidebar-ring: #0f7a54;
+  /* Elevation. On a white-on-white page a hairline alone leaves cards flat, so
+     surfaces get a warm-tinted shadow instead of a grey one — a grey shadow on
+     ivory reads as dirt. Two layers: a tight contact edge and a wide ambient
+     pool. Dark mode zeroes the ambient layer and leans on the hairline, because
+     a shadow on near-black is invisible work. */
+  /* With the page white, a white card has no tonal difference left to separate
+     it — the shadow is the entire separation, so it is stronger here than it
+     would be over a tinted page. Dark mode achieves the same lift by raising
+     the surface and lighting its top edge; a white-on-white card cannot go
+     lighter, so the depth has to come from underneath instead. Three layers: a
+     contact line, a short shadow, and a wide ambient pool. */
+  --shadow-card:
+    0 0 0 0.5px rgb(38 34 30 / 0.04), 0 1px 2px rgb(38 34 30 / 0.05),
+    0 4px 12px -6px rgb(38 34 30 / 0.10), 0 12px 32px -18px rgb(38 34 30 / 0.16);
+  --shadow-card-hover:
+    0 0 0 0.5px rgb(38 34 30 / 0.05), 0 2px 4px rgb(38 34 30 / 0.06),
+    0 8px 20px -8px rgb(38 34 30 / 0.14), 0 20px 44px -22px rgb(38 34 30 / 0.22);
+  /* Floating controls (the quick-add button) get a tighter, downward shadow
+     rather than the cards' wide ambient pool. A 32px blur around a 56px circle
+     lays a grey wash right up against the fill and the ink stops reading as
+     ink; keeping the spread under the element leaves the edge clean. */
+  --shadow-float: 0 4px 10px -4px rgb(38 34 30 / 0.38);
+
+  /* White, like the cards — so the whole frame is paper and the page tint is
+     the only thing that isn't. The rail no longer has a fill to separate it
+     from the canvas, so its right border carries that job alone and is set a
+     step darker than the usual hairline. Ivory stays as the accent inside it:
+     nav hover and the active item are still tinted. */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #211d1a;
+  --sidebar-primary: #26221e;
+  --sidebar-primary-foreground: #faf6ee;
+  --sidebar-accent: #efe7d8;
+  --sidebar-accent-foreground: #312d28;
+  --sidebar-border: #e7e1d6;
+  --sidebar-ring: #2f55ab;
 }
 
-/* ============================================================
-   Vault — dark: deep charcoal-green, luminous emerald, warm gold
-   ============================================================ */
+/* --- Dark --------------------------------------------------------------- */
+/* Surfaces climb in one unbroken ladder, and no two rungs may share a value:
+   background < card < muted < popover < accent < secondary < border < input.
+   `muted` is the recessed fill (tab tracks, chips, wells) and `popover` is the
+   raised one (dialogs, menus). They were briefly set to the same hex, which
+   made a tab track inside a dialog disappear completely — if you change one of
+   these, check it against its neighbours, not against the background.
+
+   The ivory is deliberately held below full brightness. At L 0.90+ a large
+   fill like the quick-add button glares against near-black; the ink is set at
+   L 0.89 and the primary fill at L 0.855, which still clears 12:1. */
 .dark {
-  --background: #0e1411;
-  --foreground: #ece9e1;
-  --card: #161d19;
-  --card-foreground: #ece9e1;
-  --popover: #1a211d;
-  --popover-foreground: #ece9e1;
-  --primary: #34c48a;
-  --primary-foreground: #04160f;
-  --secondary: #232b26;
-  --secondary-foreground: #d7d3ca;
-  --muted: #1e2621;
-  --muted-foreground: #9aa39b;
-  --accent: #1e2c26;
-  --accent-foreground: #7fe3bb;
-  --destructive: #e06a5e;
-  --destructive-foreground: #260c09;
-  --success: #3bbe7c;
-  --success-foreground: #04160f;
-  --warning: #e4b65a;
-  --warning-foreground: #241a05;
-  --gold: #e4b65a;
-  --gold-foreground: #241a05;
-  --border: #2a332d;
-  --input: #2e382f;
-  --ring: #34c48a;
+  /* The canvas drops to near-black and every surface above it moves up, which
+     is the opposite of the instinct to darken the cards. Cards previously sat
+     1.07 off the page: technically a step, visually a single flat wash with
+     text floating on it. The page now goes down and the card comes up, so a
+     card looks like an object resting on the page rather than a slightly
+     different shade of it. */
+  --background: #090807;
+  --foreground: #dfdad1;
+  --card: #191714;
+  --card-foreground: #dfdad1;
+  --muted: #1f1d1a;
+  --muted-foreground: #96928b;
+  --popover: #272521;
+  --popover-foreground: #dfdad1;
+  --primary: #d4cfc4;
+  --primary-foreground: #13100d;
+  /* `accent` is the hover/highlight fill, and it has to clear `popover` — it
+     is what marks the focused row in a select or dropdown, and those render on
+     a popover. It previously sat 1.04 off it, which is not a highlight. */
+  --accent: #34312d;
+  --accent-foreground: #d5d0c6;
+  --secondary: #393632;
+  --secondary-foreground: #c9c5bd;
 
-  --chart-1: #2fb483;
-  --chart-2: #e4b65a;
-  --chart-3: #3bb3a3;
-  --chart-4: #db7e5c;
-  --chart-5: #9c82c9;
-  --chart-6: #5a97ce;
-  --chart-7: #d97a96;
-  --chart-8: #adb04e;
+  --brand: #7ca3f3;
+  --brand-foreground: #0a0e17;
+  --brand-muted: #222d45;
+  --destructive: #e66f62;
+  --destructive-foreground: #1b0a08;
+  --success: #67bb75;
+  --success-foreground: #061308;
+  --warning: #dab060;
+  --warning-foreground: #1a1204;
+  --gold: #dab060;
+  --gold-foreground: #1a1204;
+  --border: #3d3a36;
+  --input: #46433d;
+  --ring: #7ca3f3;
 
-  --sidebar: #0b1210;
-  --sidebar-foreground: #ece9e1;
-  --sidebar-primary: #34c48a;
-  --sidebar-primary-foreground: #04160f;
-  --sidebar-accent: #17211c;
-  --sidebar-accent-foreground: #7fe3bb;
-  --sidebar-border: #212a24;
-  --sidebar-ring: #34c48a;
+  --brand-panel: #141210;
+  --brand-panel-foreground: #dfdad1;
+
+  /* Same eight entities, re-stepped for the dark surface rather than flipped:
+     each hue is lifted into the dark lightness band and re-validated there. */
+  --chart-1: #6286d8;
+  --chart-2: #bf8532;
+  --chart-3: #24a592;
+  --chart-4: #ce6c54;
+  --chart-5: #a867c3;
+  --chart-6: #8a9c4a;
+  --chart-7: #329acd;
+  --chart-8: #d5587c;
+
+  /* Dark mode gets the same lit top edge, in white at low alpha. A cast shadow
+     is nearly invisible against near-black, so on this theme the edge is doing
+     almost all of the work of making a card look like an object. */
+  --shadow-card:
+    inset 0 1px 0 rgb(255 255 255 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.6);
+  --shadow-card-hover:
+    inset 0 1px 0 rgb(255 255 255 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.7),
+    0 10px 28px -18px rgb(0 0 0 / 0.9);
+  --shadow-float: 0 4px 10px -4px rgb(0 0 0 / 0.7);
+
+  /* A hair above the canvas, so the rail is the frame and the content area is
+     the deepest point. Light mode does the same thing with ivory chrome around
+     a white page — same role, opposite direction. */
+  --sidebar: #100e0c;
+  --sidebar-foreground: #dfdad1;
+  --sidebar-primary: #d4cfc4;
+  --sidebar-primary-foreground: #13100d;
+  --sidebar-accent: #23211d;
+  --sidebar-accent-foreground: #d5d0c6;
+  --sidebar-border: #22201d;
+  --sidebar-ring: #7ca3f3;
 }
 
 @layer base {
@@ -279,6 +408,18 @@
       transform var(--dur-fast) var(--ease-out-soft),
       box-shadow var(--dur-fast) var(--ease-out-soft),
       border-color var(--dur-fast) var(--ease-out-soft);
+  }
+
+  /* The lift also deepens the elevation, so the surface reads as coming
+     toward you rather than just sliding up two pixels. This runs outside the
+     `no-preference` block on purpose: it costs no motion, and it is the only
+     hover feedback left once the translate is gone.
+
+     It sets `--tw-shadow` rather than `box-shadow` because Tailwind composes
+     the ring and the shadow into one `box-shadow` declaration — writing the
+     property directly here would drop the card's hairline ring on hover. */
+  .lift:hover {
+    --tw-shadow: var(--shadow-card-hover);
   }
 
   @media (prefers-reduced-motion: no-preference) {

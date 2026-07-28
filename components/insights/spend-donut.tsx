@@ -20,18 +20,28 @@ export function SpendDonut({
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-[1fr_1fr] sm:items-center">
-      <div className="relative h-56">
+    // Ring and legend side by side at every width above mobile. This card is
+    // laid out full-bleed on the insights page precisely so this split always
+    // has room; stacking is only for phones.
+    <div className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:items-center">
+      <div className="relative mx-auto h-64 w-full max-w-[17rem]">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={data}
               dataKey="value"
               nameKey="name"
-              innerRadius="62%"
-              outerRadius="90%"
+              innerRadius="64%"
+              outerRadius="98%"
+              // A 2px gap in the surface colour between segments, plus rounded
+              // ends. The previous flat ring was one continuous band of colour
+              // with hairline wedges cut out of it; separating the arcs is what
+              // makes them read as distinct quantities rather than a pie chart
+              // texture.
+              cornerRadius={5}
               paddingAngle={2}
-              strokeWidth={0}
+              stroke="var(--card)"
+              strokeWidth={2}
             >
               {data.map((d, i) => (
                 <Cell key={i} fill={d.color} />
@@ -48,21 +58,41 @@ export function SpendDonut({
             />
           </PieChart>
         </ResponsiveContainer>
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-xs text-muted-foreground">{t("thisMonth")}</span>
-          <span className="figure text-xl text-foreground">{formatMoney(total, currency)}</span>
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+          <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            {t("thisMonth")}
+          </span>
+          <span className="figure text-2xl leading-none text-foreground">
+            {formatMoney(total, currency)}
+          </span>
         </div>
       </div>
-      <ul className="space-y-1.5">
-        {data.slice(0, 7).map((d) => (
-          <li key={d.name} className="flex items-center justify-between gap-2 text-sm">
-            <span className="flex min-w-0 items-center gap-2">
-              <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: d.color }} />
-              <span className="truncate text-muted-foreground">{d.name}</span>
-            </span>
-            <span className="tabular-nums">{formatMoney(d.value, currency)}</span>
-          </li>
-        ))}
+      {/* Each row carries its share as well as its amount. The ring shows
+          proportion but cannot be measured by eye past the largest two or
+          three slices, so the number does that job instead. */}
+      <ul className="divide-y divide-border/70">
+        {data.slice(0, 7).map((d) => {
+          const share = total > 0 ? (d.value / total) * 100 : 0;
+          return (
+            <li key={d.name} className="flex items-center justify-between gap-3 py-1.5 text-sm">
+              <span className="flex min-w-0 items-center gap-2.5">
+                <span
+                  className="size-2.5 shrink-0 rounded-[3px]"
+                  style={{ backgroundColor: d.color }}
+                />
+                <span className="truncate text-foreground">{d.name}</span>
+              </span>
+              <span className="flex shrink-0 items-baseline gap-2.5">
+                <span className="figure text-xs text-muted-foreground">
+                  {share.toFixed(share < 10 ? 1 : 0)}%
+                </span>
+                <span className="figure tabular-nums text-foreground">
+                  {formatMoney(d.value, currency)}
+                </span>
+              </span>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

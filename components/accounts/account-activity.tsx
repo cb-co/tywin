@@ -65,7 +65,7 @@ export function AccountActivity({
           description={t("noActivityDescription")}
         />
       ) : (
-        <Card className="divide-y px-5 py-0">
+        <Card className="divide-y gap-0 px-5 py-0">
           {transactions.map((txn) => (
             <TransactionRow
               key={txn.id}

@@ -73,7 +73,7 @@ export function ActivitySheet() {
                   className={cn(
                     "flex items-center gap-3 rounded-xl border p-3 transition-colors",
                     current
-                      ? "border-primary/40 bg-primary/10"
+                      ? "border-brand/40 bg-brand/10"
                       : "border-transparent bg-muted/40 hover:bg-muted",
                   )}
                 >
@@ -81,7 +81,7 @@ export function ActivitySheet() {
                     className={cn(
                       "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
                       current
-                        ? "bg-primary/15 text-primary"
+                        ? "bg-brand/15 text-brand"
                         : "bg-background text-muted-foreground",
                     )}
                   >

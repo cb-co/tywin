@@ -2,16 +2,17 @@ import { Coins } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Cashly brand mark — the Lucide "Coins" glyph in ivory on a neutral graphite
- * tile. Deliberately color-neutral: the emerald UI carries the brand while the
- * mark stays calm and reads on any surface.
+ * Cashly brand mark — the Lucide "Coins" glyph on a tile that inverts with the
+ * theme: graphite-on-ivory in light, ivory-on-graphite in dark. It is the
+ * whole palette in one 32px square, which is why the tile is hardcoded rather
+ * than tokenised — the mark should look the same wherever it is dropped.
  */
 export function Logo({ className }: { className?: string }) {
   return (
     <span
       className={cn(
         "relative inline-flex h-8 w-8 shrink-0 select-none items-center justify-center overflow-hidden rounded-[0.6rem]",
-        "bg-[#e7e1d3] text-[#2b2f2c] shadow-sm ring-1 ring-black/[0.07] dark:bg-gradient-to-br dark:from-[#262a28] dark:to-[#141614] dark:text-[#f1efe8] dark:ring-white/10",
+        "bg-[#ece5d6] text-[#26221e] shadow-sm ring-1 ring-black/[0.07] dark:bg-gradient-to-br dark:from-[#2a2723] dark:to-[#141210] dark:text-[#ece7de] dark:ring-white/10",
         className,
       )}
       aria-hidden

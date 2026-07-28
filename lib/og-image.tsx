@@ -17,7 +17,7 @@ export function renderBrandOgImage() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#faf7f0",
+          backgroundColor: "#ffffff",
         }}
       >
         <div
@@ -28,7 +28,7 @@ export function renderBrandOgImage() {
             borderRadius: 44,
             alignItems: "center",
             justifyContent: "center",
-            backgroundColor: "#e7e1d3",
+            backgroundColor: "#ece5d6",
             boxShadow: "0 1px 0 rgba(255,255,255,0.55) inset",
             marginBottom: 44,
           }}
@@ -38,7 +38,7 @@ export function renderBrandOgImage() {
             height="112"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#2b2f2c"
+            stroke="#26221e"
             strokeWidth={2}
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -55,7 +55,7 @@ export function renderBrandOgImage() {
             fontSize: 88,
             fontWeight: 700,
             letterSpacing: -2,
-            color: "#17211c",
+            color: "#211d1a",
           }}
         >
           Cashly
@@ -65,7 +65,7 @@ export function renderBrandOgImage() {
             display: "flex",
             marginTop: 16,
             fontSize: 32,
-            color: "#6a7168",
+            color: "#6d6862",
           }}
         >
           Track accounts, budgets, and subscriptions.

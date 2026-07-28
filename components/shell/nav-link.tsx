@@ -23,9 +23,9 @@ export function navItemClass(variant: "side" | "bottom", active: boolean) {
     variant === "bottom" && "min-w-0 flex-col gap-1 px-0.5 pb-1.5 pt-1 text-xs",
     active ? "text-foreground" : "text-muted-foreground",
     variant === "side" && active && "bg-accent text-accent-foreground",
-    // The bottom bar has no persistent rail, so the active tab takes the
-    // brand green outright.
-    variant === "bottom" && active && "text-primary",
+    // The bottom bar has no persistent rail, so the active tab carries the
+    // accent outright — the same colour the sidebar rail uses one breakpoint up.
+    variant === "bottom" && active && "text-brand",
   );
 }
 
@@ -53,7 +53,7 @@ export function NavItemBody({
         <span
           aria-hidden
           className={cn(
-            "absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary transition-transform duration-200 ease-out",
+            "absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-brand transition-transform duration-200 ease-out",
             active ? "scale-y-100" : "scale-y-0",
           )}
         />
@@ -61,9 +61,9 @@ export function NavItemBody({
 
       {/* The icon carries the hover feedback: nudging the whole row would
           fight the sidebar's alignment. In the bottom bar it also sits in a
-          pill that fills with primary when active — colour alone is too weak
-          a signal at 20px, and it must not be the only signal for anyone who
-          can't separate green from grey. */}
+          pill that fills with primary when active. Ink-on-ivory is a weak
+          signal at 20px, and with the palette now near-neutral it must not be
+          the only signal at all — the pill and the label weight carry it. */}
       <span
         className={cn(
           "relative flex shrink-0 items-center justify-center transition-transform duration-150 ease-out group-hover:scale-110 group-active:scale-95",
@@ -74,7 +74,7 @@ export function NavItemBody({
           <span
             aria-hidden
             className={cn(
-              "absolute inset-0 rounded-full bg-primary/15 transition-all duration-200 ease-out",
+              "absolute inset-0 rounded-full bg-brand/15 transition-all duration-200 ease-out",
               active ? "scale-100 opacity-100" : "scale-75 opacity-0",
             )}
           />

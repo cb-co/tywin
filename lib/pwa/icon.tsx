@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
-const TILE_LIGHT = "#e7e1d3";
-const GLYPH = "#2b2f2c";
+const TILE_LIGHT = "#ece5d6";
+const GLYPH = "#26221e";
 
 /**
  * Same mark as components/brand/logo.tsx / lib/og-image.tsx: the Lucide

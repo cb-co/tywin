@@ -115,7 +115,7 @@ export function SettingsPanel({
 
   return (
     <div className="space-y-6">
-      <Card className="divide-y px-6 py-0">
+      <Card className="divide-y gap-0 px-6 py-0">
         <Row
           index={0}
           htmlFor="display-name"

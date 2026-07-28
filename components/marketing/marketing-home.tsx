@@ -56,7 +56,7 @@ export async function MarketingHome() {
           <Card className="relative overflow-hidden p-7">
             <div
               aria-hidden
-              className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary/5"
+              className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[radial-gradient(circle,var(--brand)_0%,transparent_70%)] opacity-[0.18] dark:opacity-[0.15]"
             />
             <p className="text-sm font-medium text-muted-foreground">{t("netWorth")}</p>
             <p className="figure mt-2 text-5xl leading-none text-foreground">

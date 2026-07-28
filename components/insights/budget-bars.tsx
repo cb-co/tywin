@@ -33,7 +33,7 @@ export function BudgetBars({
                 className="h-full rounded-full"
                 style={{
                   width: `${pct}%`,
-                  backgroundColor: over ? "var(--destructive)" : "var(--chart-1)",
+                  backgroundColor: over ? "var(--destructive)" : "var(--brand)",
                 }}
               />
             </div>

@@ -17,8 +17,12 @@ import { EmptyState } from "@/components/empty-state";
 import { PieChart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Three states, escalating in loudness. `within` used to be `--primary`, which
+// drew a comfortable budget as the heaviest black bar on the screen and made
+// every row look urgent; the calm state should be the quietest mark here, and
+// only `over` should shout.
 const STATUS_COLOR: Record<BudgetRow["status"], string> = {
-  within: "var(--primary)",
+  within: "var(--brand)",
   approaching: "var(--warning)",
   over: "var(--destructive)",
 };

@@ -12,6 +12,6 @@ test("exposes 192, 512, and a maskable 512 icon", () => {
 test("launches standalone with the splash background and dark topbar chrome", () => {
   const result = manifest();
   expect(result.display).toBe("standalone");
-  expect(result.background_color).toBe("#faf7f0");
+  expect(result.background_color).toBe("#ffffff");
   expect(result.theme_color).toBe(TOPBAR_DARK);
 });

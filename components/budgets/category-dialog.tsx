@@ -22,7 +22,10 @@ import {
 
 type Values = { name: string; emoji: string };
 
-const SWATCHES = ["#0f7a54", "#d8a13a", "#2a9d8f", "#c86b4a", "#7b5ea7", "#3e7cb1", "#c25c7a"];
+// The first seven categorical series, literal rather than `var(--chart-n)`
+// because a category colour is stored on the row and has to survive a theme
+// switch. Keep in step with the light-mode `--chart-*` values in globals.css.
+const SWATCHES = ["#3e5fad", "#b6770b", "#008f7d", "#be563d", "#8949a3", "#7e903e", "#1b8abd"];
 
 export function CategoryDialog({
   mode = "create",
