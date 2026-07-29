@@ -31,9 +31,45 @@ function ChartCard({
     // already carries its own `mb-4`; with Card's default gap on top of it the
     // titles floated a full 2rem clear of their content.
     <Card className={`h-full gap-0 p-6 ${className ?? ""}`}>
-      <h2 className="mb-4 text-lg font-medium text-foreground">{title}</h2>
+      {/* h3, not h2: the section headings are this page's h2s. */}
+      <h3 className="mb-4 text-lg font-medium text-foreground">{title}</h3>
       <div className="flex flex-1 flex-col">{children}</div>
     </Card>
+  );
+}
+
+/**
+ * A band of cards under a quiet label. The cards carry the page's weight, so
+ * the heading is deliberately the smallest type here — a word marking where one
+ * question ends and the next begins, rather than a title competing with the
+ * eight it sits above.
+ *
+ * No rule under the label: the first band opens directly beneath PageHeader's
+ * own `border-b`, and the two hairlines a few pixels apart read as a mistake.
+ * The 2.5rem between bands separates them on its own.
+ *
+ * `actions` is how the month picker ends up scoped: it belongs to one band, not
+ * to the page, and putting it in that band's heading is what says so.
+ */
+function Section({
+  title,
+  actions,
+  children,
+}: {
+  title: string;
+  actions?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-4">
+      <div className="flex min-h-8 items-center justify-between gap-4">
+        <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          {title}
+        </h2>
+        {actions}
+      </div>
+      <div className="grid gap-6 @[34rem]:grid-cols-2">{children}</div>
+    </section>
   );
 }
 
@@ -80,22 +116,42 @@ export default async function InsightsPage({
   const navLink =
     "flex size-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
 
+  // `scroll={false}` because the picker sits mid-page: the default jump to the
+  // top would throw the reader away from the very cards they just re-scoped.
+  const monthNav = (
+    <div className="flex shrink-0 items-center gap-2">
+      <Link
+        href={`/insights?month=${addMonths(month, -1)}`}
+        aria-label={t("prevMonthAria")}
+        className={navLink}
+        scroll={false}
+      >
+        <ChevronLeft className="size-4" />
+      </Link>
+      <span className="min-w-36 text-center text-sm font-medium text-foreground">{monthLabel(month)}</span>
+      <Link
+        href={`/insights?month=${addMonths(month, 1)}`}
+        aria-label={t("nextMonthAria")}
+        className={navLink}
+        scroll={false}
+      >
+        <ChevronRight className="size-4" />
+      </Link>
+    </div>
+  );
+
   return (
     <div className="mx-auto max-w-5xl space-y-8">
       <PageHeader title={t("pageTitle")} description={t("pageDescription")} />
 
-      <div className="flex items-center gap-2">
-        <Link href={`/insights?month=${addMonths(month, -1)}`} aria-label={t("prevMonthAria")} className={navLink}>
-          <ChevronLeft className="size-4" />
-        </Link>
-        <span className="min-w-40 text-center text-lg font-medium">{monthLabel(month)}</span>
-        <Link href={`/insights?month=${addMonths(month, 1)}`} aria-label={t("nextMonthAria")} className={navLink}>
-          <ChevronRight className="size-4" />
-        </Link>
-      </div>
+      {/* Ordered widest question to narrowest: what you're worth, then what
+          moved this month, then what the debt behind it costs. The bands also
+          sort the cards by what they answer to — only the middle one is driven
+          by a month, which is why the picker lives in its heading rather than
+          at the top of the page promising to move charts it can't.
 
-      {/* Container query, not a viewport one, because the shell around this
-          grid changes width: the sidebar takes 256px from `md` up and `main`
+          Container query, not a viewport one, because the shell around these
+          grids changes width: the sidebar takes 256px from `md` up and `main`
           adds 48px of padding, so a viewport number means two different card
           widths depending on whether the rail is showing.
 
@@ -111,98 +167,100 @@ export default async function InsightsPage({
           Pairings are by subject, not by leftover space: budget against the
           card payments it has to cover, and debt health against what that debt
           costs to carry. */}
-      <div className="@container">
-        <div className="grid gap-6 @[34rem]:grid-cols-2">
-        <ChartCard title={t("cardSpendDistribution")} className="@[34rem]:col-span-2">
-          <SpendDonut data={insights.distribution} total={insights.totalSpend} currency={cur} />
-        </ChartCard>
+      <div className="@container space-y-10">
+        <Section title={t("sectionPosition")}>
+          <ChartCard title={t("cardNetWorth")} className="@[34rem]:col-span-2">
+            <NetWorthChart data={netWorth.points} currency={netWorth.baseCurrency} />
+          </ChartCard>
 
-        <ChartCard title={t("cardCashFlow")} className="@[34rem]:col-span-2">
-          <CashflowChart data={insights.trend} currency={cur} />
-        </ChartCard>
+          <ChartCard title={t("cardCashFlow")} className="@[34rem]:col-span-2">
+            <CashflowChart data={insights.trend} currency={cur} />
+          </ChartCard>
+        </Section>
 
-        {/* Not month-scoped, like cash flow above it — its own six-month window
-            is stated in the title so the month picker isn't read as driving it. */}
-        <ChartCard title={t("cardNetWorth")} className="@[34rem]:col-span-2">
-          <NetWorthChart data={netWorth.points} currency={netWorth.baseCurrency} />
-        </ChartCard>
+        <Section title={t("sectionThisMonth")} actions={monthNav}>
+          <ChartCard title={t("cardSpendingPace")} className="@[34rem]:col-span-2">
+            <SpendingPace data={insights.pace} currency={cur} />
+          </ChartCard>
 
-        <ChartCard title={t("cardSpendingPace")} className="@[34rem]:col-span-2">
-          <SpendingPace data={insights.pace} currency={cur} />
-        </ChartCard>
+          <ChartCard title={t("cardSpendDistribution")} className="@[34rem]:col-span-2">
+            <SpendDonut data={insights.distribution} total={insights.totalSpend} currency={cur} />
+          </ChartCard>
 
-        <ChartCard title={t("cardExpensesVsBudget")}>
-          <BudgetBars data={insights.budgetBars} currency={cur} />
-        </ChartCard>
+          <ChartCard title={t("cardExpensesVsBudget")}>
+            <BudgetBars data={insights.budgetBars} currency={cur} />
+          </ChartCard>
 
-        <ChartCard title={t("cardCardPayments")}>
-          {cardPayments.lines.length > 0 ? (
-            <Tally
-              rows={cardPayments.lines.map((l) => (
-                <div key={l.accountId} className="flex items-baseline justify-between gap-3 text-sm">
-                  <div className="min-w-0">
-                    <p className="truncate text-foreground">{l.name}</p>
-                    <p className="text-xs text-muted-foreground">{l.currency}</p>
+          <ChartCard title={t("cardCardPayments")}>
+            {cardPayments.lines.length > 0 ? (
+              <Tally
+                rows={cardPayments.lines.map((l) => (
+                  <div key={l.accountId} className="flex items-baseline justify-between gap-3 text-sm">
+                    <div className="min-w-0">
+                      <p className="truncate text-foreground">{l.name}</p>
+                      <p className="text-xs text-muted-foreground">{l.currency}</p>
+                    </div>
+                    <span className="shrink-0 tabular-nums text-foreground">
+                      {formatMoney(l.amount, l.currency)}
+                    </span>
                   </div>
-                  <span className="shrink-0 tabular-nums text-foreground">
-                    {formatMoney(l.amount, l.currency)}
-                  </span>
-                </div>
-              ))}
-              total={
-                <>
-                  <span className="text-foreground">
-                    {t("cardPaymentsTotal", { currency: cardPayments.baseCurrency })}
-                  </span>
-                  <span className="tabular-nums text-foreground">
-                    {formatMoney(cardPayments.totalBase, cardPayments.baseCurrency)}
-                  </span>
-                </>
-              }
-            />
-          ) : (
-            <p className="py-8 text-center text-sm text-muted-foreground">{t("cardPaymentsEmpty")}</p>
-          )}
-        </ChartCard>
+                ))}
+                total={
+                  <>
+                    <span className="text-foreground">
+                      {t("cardPaymentsTotal", { currency: cardPayments.baseCurrency })}
+                    </span>
+                    <span className="tabular-nums text-foreground">
+                      {formatMoney(cardPayments.totalBase, cardPayments.baseCurrency)}
+                    </span>
+                  </>
+                }
+              />
+            ) : (
+              <p className="py-8 text-center text-sm text-muted-foreground">{t("cardPaymentsEmpty")}</p>
+            )}
+          </ChartCard>
+        </Section>
 
-        <ChartCard title={t("cardDebtHealth")}>
-          <DebtHealth utilization={insights.utilization} loans={insights.loans} />
-        </ChartCard>
+        <Section title={t("sectionDebt")}>
+          <ChartCard title={t("cardDebtHealth")}>
+            <DebtHealth utilization={insights.utilization} loans={insights.loans} />
+          </ChartCard>
 
-        <ChartCard title={t("costOfCarryTitle")}>
-          {carryLines.length > 0 ? (
-            <Tally
-              rows={carryLines.map((l) => (
-                <div key={l.accountId} className="flex items-baseline justify-between gap-3 text-sm">
-                  <div className="min-w-0">
-                    <p className="truncate text-foreground">{l.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {l.currency} ·{" "}
-                      {l.apr !== null ? `${t("costOfCarryApr", { rate: l.apr })} · ` : ""}
-                      {t("costOfCarryAsOf", { date: formatDate(l.periodEnd, locale) })}
-                    </p>
+          <ChartCard title={t("costOfCarryTitle")}>
+            {carryLines.length > 0 ? (
+              <Tally
+                rows={carryLines.map((l) => (
+                  <div key={l.accountId} className="flex items-baseline justify-between gap-3 text-sm">
+                    <div className="min-w-0">
+                      <p className="truncate text-foreground">{l.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {l.currency} ·{" "}
+                        {l.apr !== null ? `${t("costOfCarryApr", { rate: l.apr })} · ` : ""}
+                        {t("costOfCarryAsOf", { date: formatDate(l.periodEnd, locale) })}
+                      </p>
+                    </div>
+                    <span className="shrink-0 tabular-nums text-foreground">
+                      {formatMoney(l.costOfCarry, l.currency)}
+                    </span>
                   </div>
-                  <span className="shrink-0 tabular-nums text-foreground">
-                    {formatMoney(l.costOfCarry, l.currency)}
-                  </span>
-                </div>
-              ))}
-              total={
-                <>
-                  <span className="text-foreground">
-                    {t("costOfCarryTotal", { currency: carry.baseCurrency })}
-                  </span>
-                  <span className="tabular-nums text-foreground">
-                    {formatMoney(carry.totalBase, carry.baseCurrency)}
-                  </span>
-                </>
-              }
-            />
-          ) : (
-            <p className="py-8 text-center text-sm text-muted-foreground">{t("costOfCarryEmpty")}</p>
-          )}
-        </ChartCard>
-        </div>
+                ))}
+                total={
+                  <>
+                    <span className="text-foreground">
+                      {t("costOfCarryTotal", { currency: carry.baseCurrency })}
+                    </span>
+                    <span className="tabular-nums text-foreground">
+                      {formatMoney(carry.totalBase, carry.baseCurrency)}
+                    </span>
+                  </>
+                }
+              />
+            ) : (
+              <p className="py-8 text-center text-sm text-muted-foreground">{t("costOfCarryEmpty")}</p>
+            )}
+          </ChartCard>
+        </Section>
       </div>
     </div>
   );

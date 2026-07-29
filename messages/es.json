@@ -427,7 +427,10 @@
   },
   "Insights": {
     "pageTitle": "Análisis",
-    "pageDescription": "A dónde va tu dinero: distribución, ritmo del presupuesto y flujo de caja.",
+    "pageDescription": "Dónde estás, a dónde fue el dinero este mes y cuánto te cuesta tu deuda.",
+    "sectionPosition": "Posición",
+    "sectionThisMonth": "Este mes",
+    "sectionDebt": "Deuda",
     "prevMonthAria": "Mes anterior",
     "nextMonthAria": "Mes siguiente",
     "cardSpendDistribution": "Distribución del gasto",

@@ -57,7 +57,9 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
 
   function go(delta: number) {
     startNavTransition(() => {
-      router.push(`/budgets?month=${addMonths(month, delta)}`);
+      // Same reason as the Insights picker: changing month is a re-scope, not a
+      // new page, and jumping to the top loses the row being looked at.
+      router.push(`/budgets?month=${addMonths(month, delta)}`, { scroll: false });
     });
   }
 

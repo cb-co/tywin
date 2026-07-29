@@ -427,7 +427,10 @@
   },
   "Insights": {
     "pageTitle": "Insights",
-    "pageDescription": "Where your money goes: distribution, budget pace, and cash flow.",
+    "pageDescription": "Where you stand, where this month's money went, and what your debt costs.",
+    "sectionPosition": "Position",
+    "sectionThisMonth": "This month",
+    "sectionDebt": "Debt",
     "prevMonthAria": "Previous month",
     "nextMonthAria": "Next month",
     "cardSpendDistribution": "Spend distribution",
