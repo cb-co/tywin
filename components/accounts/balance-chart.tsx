@@ -46,43 +46,44 @@ export function BalanceChart({
   }
 
   return (
-    <div className="h-56">
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={series} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-          <defs>
-            <linearGradient id="balanceFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.28} />
-              <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-          <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} minTickGap={24} />
-          <YAxis
-            stroke="var(--muted-foreground)"
-            fontSize={12}
-            tickLine={false}
-            axisLine={false}
-            width={48}
-            tickFormatter={(v: number) => formatMoney(v, currency, { compact: true })}
-          />
-          <Tooltip
-            contentStyle={{
-              background: "var(--popover)",
-              border: "1px solid var(--border)",
-              borderRadius: 8,
-              fontSize: 12,
-            }}
-            formatter={(value) => formatMoney(Number(value), currency)}
-          />
-          <Area
-            dataKey="balance"
-            stroke="var(--chart-1)"
-            strokeWidth={2}
-            fill="url(#balanceFill)"
-            dot={false}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
+    // A number, not "100%": with both dimensions in percent, ResponsiveContainer
+    // logs a width(-1)/height(-1) warning on the render before its
+    // ResizeObserver measures. One fixed dimension satisfies the check.
+    <ResponsiveContainer width="100%" height={224}>
+      <AreaChart data={series} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+        <defs>
+          <linearGradient id="balanceFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.28} />
+            <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+        <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} minTickGap={24} />
+        <YAxis
+          stroke="var(--muted-foreground)"
+          fontSize={12}
+          tickLine={false}
+          axisLine={false}
+          width={48}
+          tickFormatter={(v: number) => formatMoney(v, currency, { compact: true })}
+        />
+        <Tooltip
+          contentStyle={{
+            background: "var(--popover)",
+            border: "1px solid var(--border)",
+            borderRadius: 8,
+            fontSize: 12,
+          }}
+          formatter={(value) => formatMoney(Number(value), currency)}
+        />
+        <Area
+          dataKey="balance"
+          stroke="var(--chart-1)"
+          strokeWidth={2}
+          fill="url(#balanceFill)"
+          dot={false}
+        />
+      </AreaChart>
+    </ResponsiveContainer>
   );
 }

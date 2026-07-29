@@ -24,8 +24,12 @@ export function SpendDonut({
     // laid out full-bleed on the insights page precisely so this split always
     // has room; stacking is only for phones.
     <div className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:items-center">
-      <div className="relative mx-auto h-64 w-full max-w-[17rem]">
-        <ResponsiveContainer width="100%" height="100%">
+      {/* No height class: the ring's 256px sets it, and the centred total below
+          overlays this box. A number rather than "100%" on the container because
+          with both dimensions in percent it logs a width(-1)/height(-1) warning
+          on the render before its ResizeObserver measures. */}
+      <div className="relative mx-auto w-full max-w-[17rem]">
+        <ResponsiveContainer width="100%" height={256}>
           <PieChart>
             <Pie
               data={data}

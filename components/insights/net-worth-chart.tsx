@@ -16,53 +16,54 @@ export function NetWorthChart({ data, currency }: { data: NetWorthPoint[]; curre
   const crossesZero = data.some((d) => d.netWorth < 0) && data.some((d) => d.netWorth > 0);
 
   return (
-    <div className="h-64">
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-          <defs>
-            <linearGradient id="netWorthFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.35} />
-              <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0.02} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-          <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
-          <YAxis
-            stroke="var(--muted-foreground)"
-            fontSize={12}
-            tickLine={false}
-            axisLine={false}
-            width={48}
-            // Not the default [0, auto]: net worth can be negative, and a run
-            // of large positive months reads as a flat line when the axis is
-            // pinned to zero. The area still fills from zero, so on an
-            // all-positive window it runs to the bottom edge of the plot.
-            domain={["auto", "auto"]}
-            tickFormatter={(v: number) => formatMoney(v, currency, { compact: true })}
-          />
-          <Tooltip
-            contentStyle={{
-              background: "var(--popover)",
-              border: "1px solid var(--border)",
-              borderRadius: 8,
-              fontSize: 12,
-            }}
-            formatter={(value) => formatMoney(Number(value), currency)}
-          />
-          {crossesZero && <ReferenceLine y={0} stroke="var(--border)" />}
-          <Area
-            dataKey="netWorth"
-            name={t("seriesNetWorth")}
-            stroke="var(--chart-1)"
-            strokeWidth={2}
-            fill="url(#netWorthFill)"
-            // Six points is few enough that each one is worth marking — the
-            // reader is comparing months, not following a curve.
-            dot={{ r: 3, fill: "var(--chart-1)", strokeWidth: 0 }}
-            activeDot={{ r: 4 }}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
+    // A number, not "100%": with both dimensions in percent, ResponsiveContainer
+    // logs a width(-1)/height(-1) warning on the render before its
+    // ResizeObserver measures. One fixed dimension satisfies the check.
+    <ResponsiveContainer width="100%" height={256}>
+      <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+        <defs>
+          <linearGradient id="netWorthFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.35} />
+            <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0.02} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+        <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
+        <YAxis
+          stroke="var(--muted-foreground)"
+          fontSize={12}
+          tickLine={false}
+          axisLine={false}
+          width={48}
+          // Not the default [0, auto]: net worth can be negative, and a run
+          // of large positive months reads as a flat line when the axis is
+          // pinned to zero. The area still fills from zero, so on an
+          // all-positive window it runs to the bottom edge of the plot.
+          domain={["auto", "auto"]}
+          tickFormatter={(v: number) => formatMoney(v, currency, { compact: true })}
+        />
+        <Tooltip
+          contentStyle={{
+            background: "var(--popover)",
+            border: "1px solid var(--border)",
+            borderRadius: 8,
+            fontSize: 12,
+          }}
+          formatter={(value) => formatMoney(Number(value), currency)}
+        />
+        {crossesZero && <ReferenceLine y={0} stroke="var(--border)" />}
+        <Area
+          dataKey="netWorth"
+          name={t("seriesNetWorth")}
+          stroke="var(--chart-1)"
+          strokeWidth={2}
+          fill="url(#netWorthFill)"
+          // Six points is few enough that each one is worth marking — the
+          // reader is comparing months, not following a curve.
+          dot={{ r: 3, fill: "var(--chart-1)", strokeWidth: 0 }}
+          activeDot={{ r: 4 }}
+        />
+      </AreaChart>
+    </ResponsiveContainer>
   );
 }
