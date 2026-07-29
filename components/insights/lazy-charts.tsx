@@ -24,6 +24,11 @@ export const CashflowChart = dynamic(
   { ssr: false, loading: () => <div className="skeleton h-64 rounded-xl" /> },
 );
 
+export const NetWorthChart = dynamic(
+  () => import("./net-worth-chart").then((m) => m.NetWorthChart),
+  { ssr: false, loading: () => <div className="skeleton h-64 rounded-xl" /> },
+);
+
 export const SpendingPace = dynamic(
   () => import("./spending-pace").then((m) => m.SpendingPace),
   { ssr: false, loading: () => <div className="skeleton h-64 rounded-xl" /> },

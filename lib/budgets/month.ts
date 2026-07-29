@@ -18,6 +18,19 @@ export function monthLabel(month: string): string {
   });
 }
 
+/** "Jul" — axis-sized label for a month. */
+export function shortMonth(month: string): string {
+  const [y, m] = month.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "short" });
+}
+
+/** Last calendar day of `month`, as "YYYY-MM-DD". */
+export function monthEnd(month: string): string {
+  const [y, m] = month.split("-").map(Number);
+  const last = new Date(y, m, 0).getDate();
+  return `${y}-${String(m).padStart(2, "0")}-${String(last).padStart(2, "0")}`;
+}
+
 export function normalizeMonth(input?: string): string {
   if (input && /^\d{4}-\d{2}/.test(input)) {
     const [y, m] = input.split("-").map(Number);

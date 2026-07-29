@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { addMonths, monthStart } from "@/lib/budgets/month";
+import { addMonths, monthStart, shortMonth } from "@/lib/budgets/month";
 import { getExchangeRates, convertToBase } from "@/lib/fx";
 
 function daysInMonth(monthIso: string): number {
@@ -17,11 +17,6 @@ const CHART_FALLBACK = [
   "var(--chart-7)",
   "var(--chart-8)",
 ];
-
-function shortMonth(monthIso: string): string {
-  const [y, m] = monthIso.split("-").map(Number);
-  return new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "short" });
-}
 
 export type Insights = {
   baseCurrency: string;

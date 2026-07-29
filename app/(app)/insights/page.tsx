@@ -4,9 +4,15 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { getInsights, getCostOfCarry, getCardPayments } from "@/lib/insights/queries";
+import { getNetWorthHistory } from "@/lib/insights/net-worth-history";
 import { formatMoney, formatDate } from "@/lib/format";
 import { normalizeMonth, addMonths, monthLabel } from "@/lib/budgets/month";
-import { SpendDonut, CashflowChart, SpendingPace } from "@/components/insights/lazy-charts";
+import {
+  SpendDonut,
+  CashflowChart,
+  SpendingPace,
+  NetWorthChart,
+} from "@/components/insights/lazy-charts";
 import { BudgetBars } from "@/components/insights/budget-bars";
 import { DebtHealth } from "@/components/insights/debt-health";
 
@@ -58,10 +64,11 @@ export default async function InsightsPage({
 }) {
   const { month: monthParam } = await searchParams;
   const month = normalizeMonth(monthParam);
-  const [insights, carry, cardPayments] = await Promise.all([
+  const [insights, carry, cardPayments, netWorth] = await Promise.all([
     getInsights(month),
     getCostOfCarry(),
     getCardPayments(month),
+    getNetWorthHistory(),
   ]);
   const cur = insights.baseCurrency;
   const t = await getTranslations("Insights");
@@ -97,7 +104,7 @@ export default async function InsightsPage({
           when the rail is not there — on a tablet with no sidebar the columns
           come in earlier in viewport terms, at the same actual width.
 
-          The three plotted charts run full bleed because they are read along
+          The four plotted charts run full bleed because they are read along
           the x-axis and lose their shape when halved; everything else is a list
           of rows and pairs up fine at half width.
 
@@ -112,6 +119,12 @@ export default async function InsightsPage({
 
         <ChartCard title={t("cardCashFlow")} className="@[34rem]:col-span-2">
           <CashflowChart data={insights.trend} currency={cur} />
+        </ChartCard>
+
+        {/* Not month-scoped, like cash flow above it — its own six-month window
+            is stated in the title so the month picker isn't read as driving it. */}
+        <ChartCard title={t("cardNetWorth")} className="@[34rem]:col-span-2">
+          <NetWorthChart data={netWorth.points} currency={netWorth.baseCurrency} />
         </ChartCard>
 
         <ChartCard title={t("cardSpendingPace")} className="@[34rem]:col-span-2">
