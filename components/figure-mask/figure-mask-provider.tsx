@@ -1,6 +1,8 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { formatMoney } from "@/lib/format";
+import { maskFigure } from "./mask-figure";
 
 const STORAGE_KEY = "cashly:figures-masked";
 
@@ -15,6 +17,19 @@ export function useFigureMask() {
   const ctx = useContext(Ctx);
   if (!ctx) throw new Error("useFigureMask must be used within FigureMaskProvider");
   return ctx;
+}
+
+/**
+ * Same masking as `MaskedMoney`, as a plain string-returning function
+ * instead of a component — for contexts that need a string, like a Recharts
+ * axis or tooltip formatter.
+ */
+export function useMaskedFormatMoney() {
+  const { masked } = useFigureMask();
+  return (amount: number, currency: string, opts?: { compact?: boolean; signed?: boolean }) => {
+    const formatted = formatMoney(amount, currency, opts);
+    return masked ? maskFigure(formatted) : formatted;
+  };
 }
 
 function readStoredPreference(): boolean {

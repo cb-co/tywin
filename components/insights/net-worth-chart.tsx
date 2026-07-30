@@ -2,11 +2,12 @@
 
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer } from "recharts";
 import { useTranslations } from "next-intl";
-import { formatMoney } from "@/lib/format";
+import { useMaskedFormatMoney } from "@/components/figure-mask/figure-mask-provider";
 import type { NetWorthPoint } from "@/lib/insights/net-worth-history";
 
 export function NetWorthChart({ data, currency }: { data: NetWorthPoint[]; currency: string }) {
   const t = useTranslations("Insights");
+  const maskedFormat = useMaskedFormatMoney();
   if (data.length === 0 || data.every((d) => d.netWorth === 0)) {
     return <p className="py-10 text-center text-sm text-muted-foreground">{t("netWorthEmpty")}</p>;
   }
@@ -40,7 +41,7 @@ export function NetWorthChart({ data, currency }: { data: NetWorthPoint[]; curre
           // pinned to zero. The area still fills from zero, so on an
           // all-positive window it runs to the bottom edge of the plot.
           domain={["auto", "auto"]}
-          tickFormatter={(v: number) => formatMoney(v, currency, { compact: true })}
+          tickFormatter={(v: number) => maskedFormat(v, currency, { compact: true })}
         />
         <Tooltip
           contentStyle={{
@@ -49,7 +50,7 @@ export function NetWorthChart({ data, currency }: { data: NetWorthPoint[]; curre
             borderRadius: 8,
             fontSize: 12,
           }}
-          formatter={(value) => formatMoney(Number(value), currency)}
+          formatter={(value) => maskedFormat(Number(value), currency)}
         />
         {crossesZero && <ReferenceLine y={0} stroke="var(--border)" />}
         <Area

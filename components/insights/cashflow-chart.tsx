@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { useTranslations } from "next-intl";
 import { formatMoney } from "@/lib/format";
+import { useMaskedFormatMoney } from "@/components/figure-mask/figure-mask-provider";
 import type { Insights } from "@/lib/insights/queries";
 
 export function CashflowChart({
@@ -22,6 +23,7 @@ export function CashflowChart({
   currency: string;
 }) {
   const t = useTranslations("Insights");
+  const maskedFormat = useMaskedFormatMoney();
   if (data.length === 0) {
     return <p className="py-10 text-center text-sm text-muted-foreground">{t("cashflowEmpty")}</p>;
   }
@@ -49,7 +51,13 @@ export function CashflowChart({
             borderRadius: 8,
             fontSize: 12,
           }}
-          formatter={(value) => formatMoney(Number(value), currency)}
+          // Expense stays legible even when figures are masked; income and
+          // the net line derive from it and mask along with the rest.
+          formatter={(value, _name, item) =>
+            item?.dataKey === "expense"
+              ? formatMoney(Number(value), currency)
+              : maskedFormat(Number(value), currency)
+          }
         />
         <Bar dataKey="income" name={t("seriesIncome")} fill="var(--chart-1)" radius={[4, 4, 0, 0]} maxBarSize={28} />
         <Bar dataKey="expense" name={t("seriesExpense")} fill="var(--chart-4)" radius={[4, 4, 0, 0]} maxBarSize={28} />

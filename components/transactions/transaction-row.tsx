@@ -4,6 +4,7 @@ import { formatMoney } from "@/lib/format";
 import type { TransactionWithRefs, QuickAddData } from "@/lib/transactions/queries";
 import { TransactionDialog } from "./transaction-dialog";
 import { Button } from "@/components/ui/button";
+import { MaskedMoney } from "@/components/figure-mask/masked-money";
 import { cn } from "@/lib/utils";
 
 const TYPE_ICON = {
@@ -132,7 +133,11 @@ export function TransactionRow({
 
       <div className="text-right">
         <p className={cn("figure text-sm tabular-nums", amount.tone)}>
-          {formatMoney(amount.value, currency, { signed: amount.signed })}
+          {txn.type === "income" ? (
+            <MaskedMoney amount={amount.value} currency={currency} opts={{ signed: amount.signed }} />
+          ) : (
+            formatMoney(amount.value, currency, { signed: amount.signed })
+          )}
         </p>
         {hasExtras ? (
           <p className="text-[11px] text-muted-foreground">

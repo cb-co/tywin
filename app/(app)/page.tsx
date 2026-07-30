@@ -115,7 +115,9 @@ export default async function OverviewPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Card className="rise p-5" style={{ "--i": 2 } as React.CSSProperties}>
           <p className="text-xs text-muted-foreground">{t("incomeThisMonth")}</p>
-          <p className="figure mt-1.5 text-2xl text-success">{formatMoney(o.monthIncome, o.baseCurrency)}</p>
+          <p className="figure mt-1.5 text-2xl text-success">
+            <MaskedMoney amount={o.monthIncome} currency={o.baseCurrency} />
+          </p>
         </Card>
         <Card className="rise p-5" style={{ "--i": 3 } as React.CSSProperties}>
           <p className="text-xs text-muted-foreground">{t("spendingThisMonth")}</p>
