@@ -51,6 +51,8 @@ export function Ledger({
   const [accountId, setAccountId] = useState("all");
   const [categoryId, setCategoryId] = useState("all");
   const [search, setSearch] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -60,9 +62,16 @@ export function Ledger({
         return false;
       if (categoryId !== "all" && t.category_id !== categoryId) return false;
       if (q && !(t.description ?? "").toLowerCase().includes(q)) return false;
+      // occurred_at is a calendar date at UTC midnight (see dayFormatter
+      // comment above); slicing to its date part lets us compare it
+      // lexicographically against the "YYYY-MM-DD" values native date
+      // inputs produce, with no timezone conversion to drift a day off.
+      const day = t.occurred_at.slice(0, 10);
+      if (fromDate && day < fromDate) return false;
+      if (toDate && day > toDate) return false;
       return true;
     });
-  }, [transactions, type, accountId, categoryId, search]);
+  }, [transactions, type, accountId, categoryId, search, fromDate, toDate]);
 
   const byDay = useMemo(() => {
     const map = new Map<string, TransactionWithRefs[]>();
@@ -167,6 +176,23 @@ export function Ledger({
             ))}
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-1.5">
+          <Input
+            type="date"
+            aria-label={t("dateFromAria")}
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+            className="w-[8.5rem]"
+          />
+          <span className="text-sm text-muted-foreground">–</span>
+          <Input
+            type="date"
+            aria-label={t("dateToAria")}
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+            className="w-[8.5rem]"
+          />
+        </div>
       </div>
 
       {filtered.length === 0 ? (

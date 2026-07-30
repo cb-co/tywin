@@ -320,6 +320,8 @@
     "allTypes": "Todos los tipos",
     "allAccounts": "Todas las cuentas",
     "allCategories": "Todas las categorías",
+    "dateFromAria": "Fecha desde",
+    "dateToAria": "Fecha hasta",
     "emptyTitleNone": "Aún no hay transacciones",
     "emptyTitleFiltered": "Nada coincide con esos filtros",
     "emptyDescriptionNone": "Usa Agregar rápido (el botón + o ⌘K) para registrar tu primer gasto, ingreso o pago.",

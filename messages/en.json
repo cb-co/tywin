@@ -320,6 +320,8 @@
     "allTypes": "All types",
     "allAccounts": "All accounts",
     "allCategories": "All categories",
+    "dateFromAria": "From date",
+    "dateToAria": "To date",
     "emptyTitleNone": "No transactions yet",
     "emptyTitleFiltered": "Nothing matches those filters",
     "emptyDescriptionNone": "Use Quick-Add (the + button or ⌘K) to log your first expense, income, or payment.",
