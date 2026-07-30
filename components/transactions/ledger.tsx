@@ -116,73 +116,77 @@ export function Ledger({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-40 flex-1">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder={t("searchPlaceholder")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-8"
-          />
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="flex gap-2 sm:contents">
+          <div className="relative flex-[2]">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={t("searchPlaceholder")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+          <Select value={type} onValueChange={(v) => setType(v ?? "all")} items={typeItems}>
+            <SelectTrigger className="flex-1 w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("allTypes")}</SelectItem>
+              {TRANSACTION_TYPES.map((tt) => (
+                <SelectItem key={tt} value={tt}>
+                  {tType(tt)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={type} onValueChange={(v) => setType(v ?? "all")} items={typeItems}>
-          <SelectTrigger className="w-32">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("allTypes")}</SelectItem>
-            {TRANSACTION_TYPES.map((tt) => (
-              <SelectItem key={tt} value={tt}>
-                {tType(tt)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={accountId} onValueChange={(v) => setAccountId(v ?? "all")} items={accountItems}>
-          <SelectTrigger className="w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("allAccounts")}</SelectItem>
-            {ACCOUNT_GROUPS.map((g) => {
-              const items = accounts.filter(
-                (a) => accountTypeMeta(a.type as AccountType).group === g.key,
-              );
-              if (items.length === 0) return null;
-              return (
-                <SelectGroup key={g.key}>
-                  <SelectLabel>{g.title}</SelectLabel>
-                  {items.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {accountOptionLabel(a)}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              );
-            })}
-          </SelectContent>
-        </Select>
-        <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "all")} items={categoryItems}>
-          <SelectTrigger className="w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("allCategories")}</SelectItem>
-            {categories.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <div className="flex items-center gap-1.5">
+        <div className="flex gap-2 sm:contents">
+          <Select value={accountId} onValueChange={(v) => setAccountId(v ?? "all")} items={accountItems}>
+            <SelectTrigger className="flex-1 w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("allAccounts")}</SelectItem>
+              {ACCOUNT_GROUPS.map((g) => {
+                const items = accounts.filter(
+                  (a) => accountTypeMeta(a.type as AccountType).group === g.key,
+                );
+                if (items.length === 0) return null;
+                return (
+                  <SelectGroup key={g.key}>
+                    <SelectLabel>{g.title}</SelectLabel>
+                    {items.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {accountOptionLabel(a)}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                );
+              })}
+            </SelectContent>
+          </Select>
+          <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "all")} items={categoryItems}>
+            <SelectTrigger className="flex-1 w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("allCategories")}</SelectItem>
+              {categories.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-1.5 sm:col-span-2">
           <Input
             type="date"
             aria-label={t("dateFromAria")}
             value={fromDate}
             onChange={(e) => setFromDate(e.target.value)}
-            className="w-[8.5rem]"
+            className="w-full"
           />
           <span className="text-sm text-muted-foreground">–</span>
           <Input
@@ -190,7 +194,7 @@ export function Ledger({
             aria-label={t("dateToAria")}
             value={toDate}
             onChange={(e) => setToDate(e.target.value)}
-            className="w-[8.5rem]"
+            className="w-full"
           />
         </div>
       </div>
