@@ -155,19 +155,36 @@ while the bar itself clamps), capped only for the bar's `value`.
 
 ## 5. Form UI (`components/accounts/account-form-dialog.tsx`)
 
-Three new fields in the existing `card` block, after `card_group_id`:
+The three fields stay tucked away behind a single checkbox so the common case (no bonus to
+track) doesn't add visible clutter to the credit-card fields grid — same idea as the
+`network_fee_optional` `Switch`, but gating visibility of a whole sub-block rather than
+toggling one boolean column.
 
-- **Welcome bonus goal amount** — `Input type="number" step="0.01" min="0"`, optional.
+New local (non-submitted) form state, `has_welcome_bonus_goal: boolean`, defaulting to
+`true` when the effective resolved value (§2) has a goal set, `false` otherwise — not part
+of `AccountInput`/`accountInput`, exactly like `newGroupName`/`newBankName` are local
+`useState` rather than registered fields. Rendered as a `Switch` + label, e.g. "Track a
+welcome bonus goal", directly under `card_group_id`'s block. Only when checked does the
+sub-block render:
+
+- **Welcome bonus goal amount** — `Input type="number" step="0.01" min="0"`, required
+  while the switch is on.
 - **Welcome bonus goal currency** — `Select`, same `currencyItems`/pattern as the existing
   currency selector, defaulting to `baseCurrency` on create.
-- **Welcome bonus due date** — `Input type="date"`, optional.
+- **Welcome bonus due date** — `Input type="date"`, required while the switch is on.
 
-`defaultsFor` prefills all three from the **effective resolved value** (§2), not the raw
-account row — so opening the edit form on any sibling line shows the goal that's already
-configured for the card, letting the user confirm or change it. `AccountFormDialog` gains
-a new optional prop, `effectiveBonus: BonusFields | null`, used only by `defaultsFor` as
-the prefill source (falling back to the raw `account` fields when absent — the create-mode
-case below).
+`onSubmit` sends all three fields as `undefined` when `has_welcome_bonus_goal` is false —
+same normalization already applied to empty strings (`v === "" ? undefined : v"`, line
+~200) — so unchecking and saving clears a previously-set goal (all three go to `null` via
+`toColumns`'s existing `nullIf` handling, §6), and the `superRefine` all-or-none rule (§1)
+only ever needs to fire while the switch is on.
+
+`defaultsFor` prefills the three fields (and the switch) from the **effective resolved
+value** (§2), not the raw account row — so opening the edit form on any sibling line shows
+the goal that's already configured for the card, switch on, letting the user confirm,
+change, or clear it. `AccountFormDialog` gains a new optional prop, `effectiveBonus:
+BonusFields | null`, used only by `defaultsFor` as the prefill source (falling back to the
+raw `account` fields when absent — the create-mode case below).
 
 The only place `AccountFormDialog` is rendered in **edit** mode is `AccountDetailActions`
 (`components/accounts/account-detail-actions.tsx`), used solely by the account detail page
