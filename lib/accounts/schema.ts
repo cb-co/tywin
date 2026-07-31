@@ -21,8 +21,11 @@ export const accountInput = z
     payment_due_day: z.coerce.number().int().min(1).max(31).optional(),
     current_balance: z.coerce.number().min(0).default(0),
     card_group_id: z.string().uuid().optional().or(z.literal("")),
-    welcome_bonus_goal_amount: z.coerce.number().min(0).optional(),
-    welcome_bonus_goal_currency: z.string().trim().length(3, "Use a 3-letter code").toUpperCase().optional(),
+    welcome_bonus_goal_amount: z.preprocess(
+      (v) => (v === "" ? undefined : v),
+      z.coerce.number().min(0).optional(),
+    ),
+    welcome_bonus_goal_currency: z.string().trim().length(3, "Use a 3-letter code").toUpperCase().optional().or(z.literal("")),
     welcome_bonus_due_date: z.string().optional().or(z.literal("")),
 
     // Loan fields
