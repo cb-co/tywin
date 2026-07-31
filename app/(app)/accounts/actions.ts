@@ -28,6 +28,9 @@ function toColumns(v: AccountInput) {
     statement_closing_day: nullIf(!card, v.statement_closing_day ?? null),
     current_balance: card ? v.current_balance : 0,
     card_group_id: nullIf(!card, orNull(v.card_group_id)),
+    welcome_bonus_goal_amount: nullIf(!card, v.welcome_bonus_goal_amount ?? null),
+    welcome_bonus_goal_currency: nullIf(!card, orNull(v.welcome_bonus_goal_currency)),
+    welcome_bonus_due_date: nullIf(!card, orNull(v.welcome_bonus_due_date)),
 
     principal: nullIf(!loan, v.principal ?? null),
     interest_rate: nullIf(!loan, v.interest_rate ?? null),
