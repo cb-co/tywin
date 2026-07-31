@@ -92,3 +92,37 @@ export async function getCardStatements(accountId: string): Promise<CardStatemen
     .order("period_end", { ascending: false });
   return data ?? [];
 }
+
+export type CardGroupSibling = {
+  id: string;
+  currency: string;
+  welcome_bonus_goal_amount: number | null;
+  welcome_bonus_goal_currency: string | null;
+  welcome_bonus_due_date: string | null;
+  updated_at: string;
+};
+
+const SIBLING_COLUMNS =
+  "id, currency, welcome_bonus_goal_amount, welcome_bonus_goal_currency, welcome_bonus_due_date, updated_at";
+
+/** `accountId` plus every other account sharing its card_group_id (or just
+ *  itself, if it isn't in a group). Used to resolve the "effective" welcome
+ *  bonus goal across a card's currency lines and to sum spend across all of
+ *  them. */
+export async function getCardGroupSiblings(accountId: string): Promise<CardGroupSibling[]> {
+  const supabase = await createClient();
+  const { data: account } = await supabase
+    .from("accounts")
+    .select(`${SIBLING_COLUMNS}, card_group_id`)
+    .eq("id", accountId)
+    .maybeSingle();
+  if (!account) return [];
+  if (!account.card_group_id) return [account];
+
+  const { data: siblings } = await supabase
+    .from("accounts")
+    .select(SIBLING_COLUMNS)
+    .eq("card_group_id", account.card_group_id)
+    .eq("type", "credit_card");
+  return siblings ?? [account];
+}

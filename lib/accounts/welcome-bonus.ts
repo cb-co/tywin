@@ -1,14 +1,8 @@
 import { crossRate, getExchangeRates } from "@/lib/fx";
 import type { createClient } from "@/lib/supabase/server";
+import type { CardGroupSibling } from "./queries";
 
-export type CardGroupSibling = {
-  id: string;
-  currency: string;
-  welcome_bonus_goal_amount: number | null;
-  welcome_bonus_goal_currency: string | null;
-  welcome_bonus_due_date: string | null;
-  updated_at: string;
-};
+export type { CardGroupSibling } from "./queries";
 
 /** The goal to show for `accountId`: its own value if fully set, otherwise the
  *  most-recently-updated fully-set value among its card_group siblings. */
