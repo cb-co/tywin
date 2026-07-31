@@ -69,6 +69,9 @@ export type Database = {
           type: Database["public"]["Enums"]["account_type"]
           updated_at: string
           user_id: string
+          welcome_bonus_due_date: string | null
+          welcome_bonus_goal_amount: number | null
+          welcome_bonus_goal_currency: string | null
         }
         Insert: {
           bank_id?: string | null
@@ -99,6 +102,9 @@ export type Database = {
           type: Database["public"]["Enums"]["account_type"]
           updated_at?: string
           user_id: string
+          welcome_bonus_due_date?: string | null
+          welcome_bonus_goal_amount?: number | null
+          welcome_bonus_goal_currency?: string | null
         }
         Update: {
           bank_id?: string | null
@@ -129,6 +135,9 @@ export type Database = {
           type?: Database["public"]["Enums"]["account_type"]
           updated_at?: string
           user_id?: string
+          welcome_bonus_due_date?: string | null
+          welcome_bonus_goal_amount?: number | null
+          welcome_bonus_goal_currency?: string | null
         }
         Relationships: [
           {
