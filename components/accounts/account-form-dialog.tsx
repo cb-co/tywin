@@ -24,6 +24,7 @@ import type {
   CurrencyRow,
   CardGroupRow,
   BankRow,
+  CardGroupSibling,
 } from "@/lib/accounts/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,6 +61,10 @@ type FormValues = {
   payment_due_day: string;
   current_balance: string;
   card_group_id: string;
+  welcome_bonus_goal_amount: string;
+  welcome_bonus_goal_currency: string;
+  welcome_bonus_due_date: string;
+  has_welcome_bonus_goal: boolean;
   principal: string;
   interest_rate: string;
   term_months: string;
@@ -70,7 +75,20 @@ type FormValues = {
 
 const str = (v: number | null | undefined) => (v === null || v === undefined ? "" : String(v));
 
-function defaultsFor(account: AccountWithStatus | undefined, baseCurrency: string): FormValues {
+function defaultsFor(
+  account: AccountWithStatus | undefined,
+  baseCurrency: string,
+  effectiveBonus: CardGroupSibling | null | undefined,
+): FormValues {
+  const bonus =
+    effectiveBonus ??
+    (account
+      ? {
+          welcome_bonus_goal_amount: account.welcome_bonus_goal_amount,
+          welcome_bonus_goal_currency: account.welcome_bonus_goal_currency,
+          welcome_bonus_due_date: account.welcome_bonus_due_date,
+        }
+      : null);
   return {
     name: account?.name ?? "",
     type: (account?.type as AccountType) ?? "checking",
@@ -85,6 +103,10 @@ function defaultsFor(account: AccountWithStatus | undefined, baseCurrency: strin
     payment_due_day: str(account?.payment_due_day),
     current_balance: str(account?.current_balance) || "0",
     card_group_id: account?.card_group_id ?? "none",
+    welcome_bonus_goal_amount: str(bonus?.welcome_bonus_goal_amount),
+    welcome_bonus_goal_currency: bonus?.welcome_bonus_goal_currency ?? baseCurrency,
+    welcome_bonus_due_date: bonus?.welcome_bonus_due_date ?? "",
+    has_welcome_bonus_goal: bonus?.welcome_bonus_goal_amount != null,
     principal: str(account?.principal),
     interest_rate: str(account?.interest_rate),
     term_months: str(account?.term_months),
@@ -101,6 +123,7 @@ export function AccountFormDialog({
   cardGroups,
   banks,
   baseCurrency = "USD",
+  effectiveBonus,
   trigger,
 }: {
   mode: "create" | "edit";
@@ -109,6 +132,7 @@ export function AccountFormDialog({
   cardGroups: CardGroupRow[];
   banks: BankRow[];
   baseCurrency?: string;
+  effectiveBonus?: CardGroupSibling | null;
   trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -122,12 +146,13 @@ export function AccountFormDialog({
   const { playSuccess, playError } = useUiSound();
 
   const { register, handleSubmit, control, reset } = useForm<FormValues>({
-    defaultValues: defaultsFor(account, baseCurrency),
+    defaultValues: defaultsFor(account, baseCurrency, effectiveBonus),
   });
 
   const type = (useWatch({ control, name: "type" }) ?? "checking") as AccountType;
   const groupSel = useWatch({ control, name: "card_group_id" }) ?? "none";
   const bankSel = useWatch({ control, name: "bank_id" }) ?? "none";
+  const hasBonusGoal = useWatch({ control, name: "has_welcome_bonus_goal" }) ?? false;
   const card = isCard(type);
   const loan = isLoan(type);
 
@@ -154,7 +179,7 @@ export function AccountFormDialog({
   function onOpenChange(next: boolean) {
     setOpen(next);
     if (next) {
-      reset(defaultsFor(account, baseCurrency));
+      reset(defaultsFor(account, baseCurrency, effectiveBonus));
       setNewGroupName("");
       setNewBankName("");
     }
@@ -196,8 +221,12 @@ export function AccountFormDialog({
       }
       const normalizedBank = bankId === "none" || bankId === "new" ? "" : bankId;
 
+      const bonusValues = values.has_welcome_bonus_goal
+        ? values
+        : { ...values, welcome_bonus_goal_amount: "", welcome_bonus_goal_currency: "", welcome_bonus_due_date: "" };
+
       const clean = Object.fromEntries(
-        Object.entries({ ...values, card_group_id: normalizedGroup, bank_id: normalizedBank }).map(
+        Object.entries({ ...bonusValues, card_group_id: normalizedGroup, bank_id: normalizedBank }).map(
           ([k, v]) => [k, v === "" ? undefined : v],
         ),
       ) as Record<string, unknown>;
@@ -384,6 +413,64 @@ export function AccountFormDialog({
                   <p className="text-xs text-muted-foreground">
                     {t("groupHint")}
                   </p>
+                </div>
+                <div className="space-y-2 sm:col-span-2 rounded-lg border bg-muted/30 p-4">
+                  <Controller
+                    control={control}
+                    name="has_welcome_bonus_goal"
+                    render={({ field }) => (
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="has_welcome_bonus_goal" className="font-normal">
+                          {t("welcomeBonusToggleLabel")}
+                        </Label>
+                        <Switch
+                          id="has_welcome_bonus_goal"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </div>
+                    )}
+                  />
+                  {hasBonusGoal ? (
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="welcome_bonus_goal_amount">{t("welcomeBonusGoalAmountLabel")}</Label>
+                        <Input
+                          id="welcome_bonus_goal_amount"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...register("welcome_bonus_goal_amount")}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>{t("welcomeBonusGoalCurrencyLabel")}</Label>
+                        <Controller
+                          control={control}
+                          name="welcome_bonus_goal_currency"
+                          render={({ field }) => (
+                            <Select value={field.value} onValueChange={field.onChange} items={currencyItems}>
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {currencies.map((c) => (
+                                  <SelectItem key={c.code} value={c.code}>
+                                    {c.code} · {c.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                      </div>
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor="welcome_bonus_due_date">{t("welcomeBonusDueDateLabel")}</Label>
+                        <Input id="welcome_bonus_due_date" type="date" {...register("welcome_bonus_due_date")} />
+                      </div>
+                    </div>
+                  ) : null}
+                  <p className="mt-3 text-xs text-muted-foreground">{t("welcomeBonusHint")}</p>
                 </div>
               </>
             ) : null}
