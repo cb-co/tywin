@@ -8,7 +8,9 @@ import {
   getCardGroups,
   getBanks,
   getCardStatements,
+  getCardGroupSiblings,
 } from "@/lib/accounts/queries";
+import { resolveEffectiveBonus, getWelcomeBonusSpend } from "@/lib/accounts/welcome-bonus";
 import { getAccountTransactions, getQuickAddData } from "@/lib/transactions/queries";
 import { AccountActivity } from "@/components/accounts/account-activity";
 import { BalanceChart } from "@/components/accounts/balance-chart-lazy";
@@ -22,13 +24,17 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { MaskedMoney } from "@/components/figure-mask/masked-money";
 
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export default async function AccountDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [account, currencies, cardGroups, banks, activity, quickAddData, statements] =
+  const [account, currencies, cardGroups, banks, activity, quickAddData, statements, siblings] =
     await Promise.all([
       getAccountById(id),
       getCurrencies(),
@@ -37,6 +43,7 @@ export default async function AccountDetailPage({
       getAccountTransactions(id),
       getQuickAddData(),
       getCardStatements(id),
+      getCardGroupSiblings(id),
     ]);
   if (!account) notFound();
 
@@ -57,6 +64,14 @@ export default async function AccountDetailPage({
   const currency = account.currency;
   const isCardType = type === "credit_card";
   const isLoanType = type === "loan";
+
+  const effectiveBonus = isCardType ? resolveEffectiveBonus(id, siblings) : null;
+  const dueDatePassed = effectiveBonus ? effectiveBonus.welcome_bonus_due_date! < todayISO() : true;
+  const showBonus = !!effectiveBonus && !dueDatePassed;
+  const bonusSpent = showBonus
+    ? await getWelcomeBonusSpend(supabase, siblings, effectiveBonus!.welcome_bonus_goal_currency!, effectiveBonus!.welcome_bonus_due_date!)
+    : 0;
+  const bonusPct = showBonus ? (bonusSpent / effectiveBonus!.welcome_bonus_goal_amount!) * 100 : 0;
 
   const owed = account.cardStatus?.owed ?? account.current_balance;
   const util = account.cardStatus?.utilization_pct ?? null;
@@ -109,6 +124,7 @@ export default async function AccountDetailPage({
           cardGroups={cardGroups}
           banks={banks}
           baseCurrency={baseCurrency}
+          effectiveBonus={effectiveBonus}
         />
       </div>
 
@@ -134,6 +150,22 @@ export default async function AccountDetailPage({
                   <span>{formatPercent(util)}</span>
                 </div>
                 <Progress value={Math.min(Math.max(util, 0), 100)} />
+              </div>
+            ) : null}
+            {showBonus ? (
+              <div className="mt-4 max-w-sm space-y-2">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{t("welcomeBonusProgress")}</span>
+                  <span>{formatPercent(bonusPct)}</span>
+                </div>
+                <Progress value={Math.min(Math.max(bonusPct, 0), 100)} />
+                <p className="text-xs text-muted-foreground">
+                  {t("welcomeBonusDetail", {
+                    spent: formatMoney(bonusSpent, effectiveBonus!.welcome_bonus_goal_currency!),
+                    goal: formatMoney(effectiveBonus!.welcome_bonus_goal_amount!, effectiveBonus!.welcome_bonus_goal_currency!),
+                    date: formatDate(effectiveBonus!.welcome_bonus_due_date!, locale),
+                  })}
+                </p>
               </div>
             ) : null}
             {account.payment_due_day ? (
