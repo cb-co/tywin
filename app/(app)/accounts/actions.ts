@@ -79,8 +79,27 @@ export async function updateAccount(id: string, input: AccountInput): Promise<Re
   if (!user) return { error: "You're not signed in." };
 
   // currency is immutable — never included in the update payload.
-  const { error } = await supabase.from("accounts").update(toColumns(parsed.data)).eq("id", id);
+  const columns = toColumns(parsed.data);
+  const { error } = await supabase.from("accounts").update(columns).eq("id", id);
   if (error) return { error: await dbError(error, "updateAccount") };
+
+  // Welcome-bonus goal fields are shared across every currency line of a card
+  // (card_group_id) — fan out so setting/changing/clearing the goal from any
+  // line propagates to its siblings, rather than relying on read-time
+  // resolution across rows that could otherwise silently diverge.
+  if (columns.card_group_id) {
+    const { error: fanOutError } = await supabase
+      .from("accounts")
+      .update({
+        welcome_bonus_goal_amount: columns.welcome_bonus_goal_amount,
+        welcome_bonus_goal_currency: columns.welcome_bonus_goal_currency,
+        welcome_bonus_due_date: columns.welcome_bonus_due_date,
+      })
+      .eq("card_group_id", columns.card_group_id)
+      .neq("id", id);
+    if (fanOutError) return { error: await dbError(fanOutError, "updateAccount") };
+  }
+
   revalidatePath("/accounts");
   revalidatePath(`/accounts/${id}`);
   revalidatePath("/");

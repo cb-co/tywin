@@ -1,4 +1,5 @@
 import { crossRate, getExchangeRates } from "@/lib/fx";
+import { dayAfter } from "@/lib/overview/card-due";
 import type { createClient } from "@/lib/supabase/server";
 import type { CardGroupSibling } from "./queries";
 
@@ -44,7 +45,12 @@ export function sumConvertedSpend(
 /** Total spend (type = 'expense') across every line in `lines`, from the
  *  start of each line's history through `dueDate` (inclusive), converted into
  *  `goalCurrency` using today's live rate. See spec §3/§7 for why a live
- *  rather than historical rate is used. */
+ *  rather than historical rate is used.
+ *
+ *  `occurred_at` is a timestamptz, so "inclusive of dueDate" is implemented
+ *  as a half-open range (`< dayAfter(dueDate)`) rather than `<= dueDate` —
+ *  the latter would coerce to midnight UTC on dueDate and silently drop
+ *  same-day expenses that occurred later in the day. */
 export async function getWelcomeBonusSpend(
   supabase: Awaited<ReturnType<typeof createClient>>,
   lines: CardGroupSibling[],
@@ -59,7 +65,7 @@ export async function getWelcomeBonusSpend(
     .select("account_id, total_amount")
     .eq("type", "expense")
     .in("account_id", ids)
-    .lte("occurred_at", dueDate);
+    .lt("occurred_at", dayAfter(dueDate));
 
   const currencyByAccount = new Map(lines.map((l) => [l.id, l.currency]));
   const rates = await getExchangeRates(goalCurrency);
