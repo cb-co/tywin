@@ -36,7 +36,6 @@ function toRow(v: TransactionInput) {
     to_amount: payment ? v.to_amount ?? null : null,
     include_tax: v.include_tax,
     include_commission: v.include_commission,
-    budget_only: v.type === "expense" ? v.budget_only : false,
     exclude_from_budget: v.type === "expense" ? v.exclude_from_budget : false,
     occurred_at: new Date(v.occurred_at).toISOString(),
     description: v.description || null,

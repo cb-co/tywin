@@ -146,7 +146,6 @@ export async function addCharge(id: string, settledAmount?: number): Promise<Res
     exchange_rate: baseRate(accountCurrency, baseCurrency, rates),
     include_tax: false,
     include_commission: false,
-    budget_only: false,
     occurred_at: new Date().toISOString(),
     description: sub.name,
     subscription_id: sub.id,
