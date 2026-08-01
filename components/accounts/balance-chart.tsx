@@ -11,7 +11,6 @@ import type { TransactionWithRefs } from "@/lib/transactions/queries";
 const dateFmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
 function delta(txn: TransactionWithRefs, accountId: string): number {
-  if (txn.budget_only) return 0;
   if (txn.account_id === accountId) {
     return txn.type === "income" ? txn.amount : -txn.total_amount;
   }

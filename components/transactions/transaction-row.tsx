@@ -98,11 +98,6 @@ export function TransactionRow({
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-foreground">
           {title}
-          {txn.budget_only ? (
-            <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-              {t("budgetOnlyBadge")}
-            </span>
-          ) : null}
           {txn.exclude_from_budget ? (
             <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
               {t("excludeFromBudgetBadge")}

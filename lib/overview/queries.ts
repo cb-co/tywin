@@ -65,7 +65,6 @@ async function statementPaymentsByCard(
     .from("transactions")
     .select("to_account_id,amount,to_amount,occurred_at")
     .eq("type", "payment")
-    .eq("budget_only", false)
     .in(
       "to_account_id",
       settled.map((c) => c.account_id),

@@ -58,7 +58,6 @@ export async function getInsights(month: string): Promise<Insights> {
       .from("transactions")
       .select("base_total_amount,occurred_at")
       .eq("type", "expense")
-      .eq("budget_only", false)
       .eq("exclude_from_budget", false)
       .gte("occurred_at", addMonths(month, -1))
       .lt("occurred_at", addMonths(month, 1)),

@@ -274,14 +274,13 @@ export async function getNetWorthHistory(): Promise<NetWorthHistory> {
   const [{ data: transactions }, { data: cardPayments }, { data: loanPayments }] = await Promise.all([
     supabase
       .from("transactions")
-      .select("type,account_id,to_account_id,amount,to_amount,total_amount,budget_only,occurred_at")
+      .select("type,account_id,to_account_id,amount,to_amount,total_amount,occurred_at")
       .gte("occurred_at", months[1]),
     cardIds.length
       ? supabase
           .from("transactions")
           .select("to_account_id,amount,to_amount,occurred_at")
           .eq("type", "payment")
-          .eq("budget_only", false)
           .in("to_account_id", cardIds)
           .gte("occurred_at", cardPaymentsFrom)
       : { data: [] },
@@ -290,7 +289,6 @@ export async function getNetWorthHistory(): Promise<NetWorthHistory> {
           .from("transactions")
           .select("to_account_id,amount,to_amount,occurred_at,created_at,id")
           .eq("type", "payment")
-          .eq("budget_only", false)
           .in("to_account_id", loanIds)
           // The amortization split depends on payment order, so match the
           // ordering loan_status walks them in.
