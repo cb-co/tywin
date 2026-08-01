@@ -833,7 +833,6 @@ export type Database = {
           amount: number
           base_amount: number
           base_total_amount: number
-          budget_only: boolean
           category_id: string | null
           created_at: string
           currency: string
@@ -862,7 +861,6 @@ export type Database = {
           amount: number
           base_amount?: number
           base_total_amount?: number
-          budget_only?: boolean
           category_id?: string | null
           created_at?: string
           currency: string
@@ -891,7 +889,6 @@ export type Database = {
           amount?: number
           base_amount?: number
           base_total_amount?: number
-          budget_only?: boolean
           category_id?: string | null
           created_at?: string
           currency?: string
