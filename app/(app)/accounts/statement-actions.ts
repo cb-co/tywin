@@ -247,6 +247,7 @@ export async function confirmStatementImport(formData: FormData): Promise<{ erro
   const fileName = String(formData.get("file_name") ?? "");
   const parsed = parseIncomingStatement(String(formData.get("parsed_statement") ?? ""));
   if (!accountId || !fileName || !parsed) return { error: t("invalidUpload") };
+  const excludeFromBudget = formData.get("exclude_from_budget") !== "false";
 
   // Defense-in-depth against a corrupted/stale client payload — cheap, pure,
   // no re-extraction. See design spec §1.
@@ -304,6 +305,7 @@ export async function confirmStatementImport(formData: FormData): Promise<{ erro
     card_group_id: account.card_group_id ?? "",
     file_name: fileName,
     file_path: "",
+    exclude_from_budget: excludeFromBudget,
     sections: parsed.sections.map((s) => {
       const rate = baseRate(s.currency, baseCurrency, rates);
       const fxFallback = s.currency !== baseCurrency && !rates[s.currency];

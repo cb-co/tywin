@@ -36,6 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 type Preview = NonNullable<StatementPreviewResult["preview"]>;
@@ -63,6 +64,7 @@ export function StatementsPanel({
   const [passwordIncorrect, setPasswordIncorrect] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [mappings, setMappings] = useState<Record<string, string>>({});
+  const [excludeFromBudget, setExcludeFromBudget] = useState(true);
   const [parsedStatement, setParsedStatement] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -113,6 +115,7 @@ export function StatementsPanel({
     fd.set("file_name", preview.fileName);
     fd.set("parsed_statement", parsedStatement);
     fd.set("mappings", JSON.stringify(mappings));
+    fd.set("exclude_from_budget", String(excludeFromBudget));
     startTransition(async () => {
       const result = await confirmStatementImport(fd);
       if (result.error) {
@@ -126,6 +129,7 @@ export function StatementsPanel({
       setFile(null);
       setPassword("");
       setParsedStatement(null);
+      setExcludeFromBudget(true);
       router.refresh();
     });
   }
@@ -280,6 +284,17 @@ export function StatementsPanel({
               </div>
             </div>
           ))}
+          <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3">
+            <Label htmlFor="exclude_from_budget" className="font-normal text-muted-foreground">
+              {t("excludeFromBudgetLabel")}
+              <span className="ml-1.5 block text-xs">{t("excludeFromBudgetHint")}</span>
+            </Label>
+            <Switch
+              id="exclude_from_budget"
+              checked={excludeFromBudget}
+              onCheckedChange={setExcludeFromBudget}
+            />
+          </div>
           <div className="flex gap-2">
             <Button disabled={pending || !allMapped} isLoading={pending} onClick={onConfirm}>
               {t("confirmButton")}
@@ -292,6 +307,7 @@ export function StatementsPanel({
                 setFile(null);
                 setPassword("");
                 setParsedStatement(null);
+                setExcludeFromBudget(true);
               }}
             >
               {t("cancelButton")}
