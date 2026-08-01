@@ -226,11 +226,14 @@ export function TransactionForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, toAccountId, accountId]);
 
-  // Income never carries a category; expense needs one.
+  // Income never carries a category; expense needs one; a payment starts
+  // uncategorized rather than silently inheriting whatever was picked
+  // before switching type.
   useEffect(() => {
     if (type === "income") setValue("category_id", "");
     else if (type === "expense" && !getValues("category_id"))
       setValue("category_id", categories[0]?.id ?? "");
+    else if (type === "payment" && !isEdit) setValue("category_id", "none");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type]);
 

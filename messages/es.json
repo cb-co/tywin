@@ -685,7 +685,6 @@
     "togglesTitle": "Opciones por transacción",
     "toggleTax": "Aplicar impuesto — activado por defecto en pagos de préstamos",
     "toggleFee": "Aplicar comisión de red — exenta automáticamente en transferencias del mismo banco",
-    "toggleBudgetOnly": "Solo presupuesto — cuenta un gasto para tu presupuesto sin que sea una salida de dinero \"real\"",
     "addingTitle": "Registrar movimientos",
     "addingBody": "Usa el diálogo de transacción desde el Libro mayor, o el botón flotante Añadir rápido disponible en cualquier pantalla. El Libro mayor agrupa todo por día y filtra por tipo, cuenta, categoría o texto libre — elimina cualquier registro directamente.",
     "merchantCalloutTitle": "Los movimientos importados se mantienen exactos.",

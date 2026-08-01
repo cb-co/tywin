@@ -685,7 +685,6 @@
     "togglesTitle": "Per-transaction toggles",
     "toggleTax": "Apply tax — on by default for loan payments",
     "toggleFee": "Apply network fee — waived automatically for same-bank transfers",
-    "toggleBudgetOnly": "Budget only — counts an expense toward your budget without it being a \"real\" outflow",
     "addingTitle": "Adding entries",
     "addingBody": "Use the transaction dialog from the Ledger, or the floating Quick Add button available on every screen. The Ledger groups everything by day and filters by type, account, category, or free text — delete any entry inline.",
     "merchantCalloutTitle": "Imported lines stay accurate.",

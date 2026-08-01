@@ -57,7 +57,7 @@ export async function getInsights(month: string): Promise<Insights> {
     supabase
       .from("transactions")
       .select("base_total_amount,occurred_at")
-      .eq("type", "expense")
+      .in("type", ["expense", "payment"])
       .eq("exclude_from_budget", false)
       .gte("occurred_at", addMonths(month, -1))
       .lt("occurred_at", addMonths(month, 1)),
@@ -170,9 +170,10 @@ export type CardPayments = {
 };
 
 /** Sum of payments made *to* credit cards this month — what actually left your
- *  accounts to settle card balances, regardless of how the underlying charges
- *  were categorized (they're excluded from category budgets to avoid double
- *  counting; see 20260724100000_exclude_from_budget.sql). */
+ *  accounts to settle card balances. This totals every payment regardless of
+ *  category, independent of category_usage/spend_distribution (which now
+ *  count *categorized* card payments toward budget instead of excluding
+ *  them; see 20260731130000_card_payment_default_and_cashflow.sql). */
 export async function getCardPayments(month: string): Promise<CardPayments> {
   const supabase = await createClient();
   const [{ data: profile }, { data: cards }] = await Promise.all([

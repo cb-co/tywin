@@ -105,7 +105,7 @@ export async function addCharge(id: string, settledAmount?: number): Promise<Res
 
   const { data: sub } = await supabase
     .from("subscriptions")
-    .select("*, account:accounts!subscriptions_account_id_fkey(currency)")
+    .select("*, account:accounts!subscriptions_account_id_fkey(currency,type)")
     .eq("id", id)
     .maybeSingle();
   if (!sub) return { error: ts("notFound") };
@@ -149,6 +149,7 @@ export async function addCharge(id: string, settledAmount?: number): Promise<Res
     occurred_at: new Date().toISOString(),
     description: sub.name,
     subscription_id: sub.id,
+    exclude_from_budget: sub.account?.type === "credit_card",
   });
   if (error) return { error: await dbError(error, "addCharge") };
   revalidatePath("/subscriptions");

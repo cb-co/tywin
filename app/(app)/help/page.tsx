@@ -219,7 +219,6 @@ export default async function HelpPage() {
               <ul className="mt-2 space-y-1.5 text-sm text-foreground">
                 <li>{t("toggleTax")}</li>
                 <li>{t("toggleFee")}</li>
-                <li>{t("toggleBudgetOnly")}</li>
               </ul>
 
               <h3 className="mt-4 text-sm font-semibold text-foreground">{t("addingTitle")}</h3>
