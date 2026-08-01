@@ -46,7 +46,6 @@ type FormValues = {
   transfer_rate: string;
   include_tax: boolean;
   include_commission: boolean;
-  budget_only: boolean;
   exclude_from_budget: boolean;
   occurred_at: string;
   description: string;
@@ -149,7 +148,6 @@ export function TransactionForm({
               : "",
           include_tax: transaction.include_tax,
           include_commission: transaction.include_commission,
-          budget_only: transaction.budget_only,
           exclude_from_budget: transaction.exclude_from_budget,
           occurred_at: toDateOnly(transaction.occurred_at),
           description: transaction.description ?? "",
@@ -163,7 +161,6 @@ export function TransactionForm({
           transfer_rate: "",
           include_tax: false,
           include_commission: !(firstAccount?.network_fee_optional ?? true),
-          budget_only: false,
           exclude_from_budget: false,
           occurred_at: todayLocal(),
           description: "",
@@ -202,18 +199,9 @@ export function TransactionForm({
     type === "payment" && !!src && !!dst && src.currency !== dst.currency;
   const sameBankPayment =
     type === "payment" && !!src?.bank_id && !!dst?.bank_id && src.bank_id === dst.bank_id;
-  const cardPayment = type === "payment" && dst?.type === "credit_card";
   // Transfer tax and network fee model money leaving a bank account via
   // wire/ACH — meaningless from a card, cash, loan, or investment origin.
   const srcIsBankAccount = src?.type === "checking" || src?.type === "savings";
-
-  // Payments into credit cards carry no category — the imported statement
-  // lines hold the real spending categories; a categorized payment would
-  // double-deduct the budget (spec §3.7).
-  useEffect(() => {
-    if (cardPayment) setValue("category_id", "none");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cardPayment]);
 
   /* A starting point for the required rate, one tap away. Offered rather than
      prefilled: the market rate is a good guess, but the user's actual rate is
@@ -234,6 +222,7 @@ export function TransactionForm({
     if (isEdit || !src) return;
     setValue("include_tax", type === "payment" && dst?.type === "loan");
     setValue("include_commission", !sameBankPayment && !src.network_fee_optional);
+    setValue("exclude_from_budget", type === "expense" && src.type === "credit_card");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, toAccountId, accountId]);
 
@@ -448,8 +437,8 @@ export function TransactionForm({
         </div>
       ) : null}
 
-      {/* Category (expense + payment, minus card payments — those carry no category) */}
-      {type !== "income" && !cardPayment ? (
+      {/* Category (expense + payment; income has none) */}
+      {type !== "income" ? (
         <div className="space-y-2">
           <Label>
             {t("categoryLabel")}
@@ -511,21 +500,6 @@ export function TransactionForm({
                 )}
               />
             </>
-          ) : null}
-          {type === "expense" ? (
-            <Controller
-              control={control}
-              name="budget_only"
-              render={({ field }) => (
-                <ToggleRow
-                  id="budget_only"
-                  label={t("budgetOnlyLabel")}
-                  checked={field.value}
-                  onChange={field.onChange}
-                  disabled={fromStatement}
-                />
-              )}
-            />
           ) : null}
           {type === "expense" ? (
             <Controller
