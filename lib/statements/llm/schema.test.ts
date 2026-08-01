@@ -53,8 +53,11 @@ describe("StatementSchema", () => {
   });
 
   it("rejects a missing required field", () => {
-    const { closingBalance, ...rest } = VALID.sections[0];
-    const bad = { ...VALID, sections: [rest] };
+    // Deleted rather than destructured-and-dropped: the point is that the key
+    // is absent, and an unused `closingBalance` binding is a lint error.
+    const section: Record<string, unknown> = { ...VALID.sections[0] };
+    delete section.closingBalance;
+    const bad = { ...VALID, sections: [section] };
     expect(() => StatementSchema.parse(bad)).toThrow();
   });
 });

@@ -32,11 +32,20 @@ export function BalanceChart({
   const t = useTranslations("AccountDetail");
   const series = useMemo(() => {
     const asc = [...transactions].sort((a, b) => a.occurred_at.localeCompare(b.occurred_at));
+    // A plain loop, not `map` with an outer accumulator: reassigning a captured
+    // variable from inside a render-phase callback is what
+    // `react-hooks/immutability` rejects. `running` stays unrounded across
+    // iterations and is rounded only for display, so a long run of fractional
+    // movements can't compound a rounding drift into the line.
+    const points: { date: string; balance: number }[] = [];
     let running = startingBalance;
-    const points = asc.map((t) => {
-      running += delta(t, accountId);
-      return { date: dateFmt.format(new Date(t.occurred_at)), balance: Math.round(running * 100) / 100 };
-    });
+    for (const txn of asc) {
+      running += delta(txn, accountId);
+      points.push({
+        date: dateFmt.format(new Date(txn.occurred_at)),
+        balance: Math.round(running * 100) / 100,
+      });
+    }
     return [{ date: t("chartStartLabel"), balance: startingBalance }, ...points];
   }, [transactions, accountId, startingBalance, t]);
 

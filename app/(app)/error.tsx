@@ -4,8 +4,10 @@ import { TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 
+// `error` stays in the props type — Next.js passes it to every error boundary
+// and the shape is part of the contract — but nothing here renders it, so it
+// is deliberately not destructured.
 export default function AppError({
-  error,
   reset,
 }: {
   error: Error & { digest?: string };

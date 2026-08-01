@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext } from "react";
 import useSound from "use-sound";
+import { useStoredBoolean } from "@/lib/use-stored-boolean";
 
 const STORAGE_KEY = "cashly:sound-enabled";
 
@@ -21,33 +22,11 @@ export function useUiSound() {
   return ctx;
 }
 
-function readStoredPreference(): boolean {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored === null ? true : stored === "1";
-  } catch {
-    return true;
-  }
-}
-
 export function SoundProvider({ children }: { children: React.ReactNode }) {
   // Default true (on) is the safe SSR-compatible value — localStorage isn't
-  // available during server rendering, so the real preference is read back
-  // in the effect below, client-only, same pattern as the theme toggle.
-  const [enabled, setEnabledState] = useState(true);
-
-  useEffect(() => {
-    setEnabledState(readStoredPreference());
-  }, []);
-
-  function setEnabled(v: boolean) {
-    setEnabledState(v);
-    try {
-      localStorage.setItem(STORAGE_KEY, v ? "1" : "0");
-    } catch {
-      /* Non-fatal: the preference just won't persist across reloads. */
-    }
-  }
+  // available during server rendering, so that's what the server and the
+  // hydrating render use before the stored preference takes over.
+  const [enabled, setEnabled] = useStoredBoolean(STORAGE_KEY, true);
 
   const [rawPlaySuccess] = useSound("/sounds/success.wav", { volume: 0.5 });
   const [rawPlayDelete] = useSound("/sounds/delete.wav", { volume: 0.5 });

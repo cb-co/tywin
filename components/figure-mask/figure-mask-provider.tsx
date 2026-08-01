@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext } from "react";
 import { formatMoney } from "@/lib/format";
+import { useStoredBoolean } from "@/lib/use-stored-boolean";
 import { maskFigure } from "./mask-figure";
 
 const STORAGE_KEY = "cashly:figures-masked";
@@ -32,34 +33,14 @@ export function useMaskedFormatMoney() {
   };
 }
 
-function readStoredPreference(): boolean {
-  try {
-    return localStorage.getItem(STORAGE_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
 export function FigureMaskProvider({ children }: { children: React.ReactNode }) {
   // Default false (unmasked) is the safe SSR-compatible value — localStorage
-  // isn't available during server rendering, so the real preference is read
-  // back in the effect below, client-only, same pattern as sound and theme.
-  const [masked, setMasked] = useState(false);
-
-  useEffect(() => {
-    setMasked(readStoredPreference());
-  }, []);
+  // isn't available during server rendering, so that's what the server and the
+  // hydrating render use before the stored preference takes over.
+  const [masked, setMasked] = useStoredBoolean(STORAGE_KEY, false);
 
   function toggle() {
-    setMasked((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
-      } catch {
-        /* Non-fatal: the preference just won't persist across reloads. */
-      }
-      return next;
-    });
+    setMasked(!masked);
   }
 
   return <Ctx.Provider value={{ masked, toggle }}>{children}</Ctx.Provider>;
