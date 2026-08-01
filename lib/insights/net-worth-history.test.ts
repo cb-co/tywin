@@ -15,7 +15,6 @@ const tx = (over: Partial<Parameters<typeof accountMovement>[0]> = {}) => ({
   amount: 100,
   to_amount: null,
   total_amount: 100,
-  budget_only: false,
   occurred_at: "2026-07-15T12:00:00+00:00",
   ...over,
 });
@@ -58,8 +57,7 @@ describe("accountMovement", () => {
     // Pre-to_amount rows fall back to `amount`, as the view's coalesce does.
     expect(accountMovement({ ...p, to_amount: null }, "savings")).toBe(100);
   });
-  it("ignores budget-only rows and unrelated accounts", () => {
-    expect(accountMovement(tx({ budget_only: true }), "checking")).toBe(0);
+  it("ignores unrelated accounts", () => {
     expect(accountMovement(tx(), "savings")).toBe(0);
   });
 });

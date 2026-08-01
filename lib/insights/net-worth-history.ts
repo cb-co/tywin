@@ -59,7 +59,6 @@ type TxRow = {
   amount: number;
   to_amount: number | null;
   total_amount: number;
-  budget_only: boolean;
   occurred_at: string;
 };
 
@@ -106,7 +105,6 @@ const dateOf = (occurredAt: string) => occurredAt.slice(0, 10);
  * destination's currency (`to_amount`), which is why it can't just be `amount`.
  */
 export function accountMovement(tx: TxRow, accountId: string): number {
-  if (tx.budget_only) return 0;
   if (tx.account_id === accountId) {
     if (tx.type === "income") return Number(tx.amount);
     if (tx.type === "expense" || tx.type === "payment") return -Number(tx.total_amount);
