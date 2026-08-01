@@ -61,6 +61,8 @@ as $$
          end as status
   from public.categories c
   cross join m
+  left join public.category_budgets b
+    on b.category_id = c.id and b.month = m.month
   left join (
     select t.category_id, sum(t.base_total_amount) as used
     from public.transactions t, m
@@ -105,7 +107,13 @@ group by t.user_id, date_trunc('month', t.occurred_at)::date;
 
 -- Statement import: the panel's "exclude these expenses from budget"
 -- checkbox (default checked) now reaches the inserted rows. Body is
--- otherwise identical to 20260722120000_statement_import.sql's definition.
+-- otherwise identical to 20260722160000_statement_fx_fallback.sql's
+-- definition — the true latest `import_card_statement` before this
+-- migration (NOT 20260722120000, which two later migrations,
+-- 20260722130000_import_checksum_guard.sql and
+-- 20260722150000_import_reject_duplicate_sections.sql, already
+-- superseded; this preserves both of their guards plus the fx_fallback
+-- capture from 20260722160000 itself).
 create or replace function public.import_card_statement(p jsonb)
 returns uuid
 language plpgsql
@@ -113,16 +121,18 @@ security invoker
 set search_path = ''
 as $$
 declare
-  v_user      uuid := (select auth.uid());
-  v_import    uuid;
-  v_stmt      uuid;
-  v_line      uuid;
-  v_txn       uuid;
-  sec         jsonb;
-  ln          jsonb;
-  v_account   uuid;
-  v_currency  text;
-  v_exclude   boolean := coalesce((p->>'exclude_from_budget')::boolean, true);
+  v_user     uuid := (select auth.uid());
+  v_import   uuid;
+  v_stmt     uuid;
+  v_line     uuid;
+  v_txn      uuid;
+  sec        jsonb;
+  ln         jsonb;
+  v_account  uuid;
+  v_currency text;
+  v_movement numeric;
+  v_computed numeric;
+  v_exclude  boolean := coalesce((p->>'exclude_from_budget')::boolean, true);
 begin
   if v_user is null then
     raise exception 'not authenticated';
@@ -137,6 +147,11 @@ begin
     end if;
   end if;
 
+  if (select count(*) from jsonb_array_elements(p->'sections') s) <>
+     (select count(distinct s->>'account_id') from jsonb_array_elements(p->'sections') s) then
+    raise exception 'duplicate account_id across sections: each section must import to a distinct credit line';
+  end if;
+
   insert into public.statement_imports (user_id, parser_id, card_group_id, file_name, file_path)
   values (v_user, p->>'parser_id', nullif(p->>'card_group_id','')::uuid,
           p->>'file_name', nullif(p->>'file_path',''))
@@ -148,6 +163,30 @@ begin
       where id = v_account and user_id = v_user and type = 'credit_card';
     if v_currency is null then
       raise exception 'account % is not one of your credit cards', v_account;
+    end if;
+
+    if (sec->>'previous_balance') is null
+       or (sec->>'total_balance') is null
+       or (sec->>'total_debits') is null
+       or (sec->>'total_credits') is null then
+      raise exception 'section % is missing balance fields required for checksum validation',
+        sec->>'section_key';
+    end if;
+
+    -- Defense in depth: the statement's own arithmetic must tie before any
+    -- write. previous + Σlines = closing when lines exist; stated totals
+    -- otherwise (line-less sections like Cuotas). App-layer validation can
+    -- be bypassed by calling this RPC directly, so the invariant lives here.
+    if jsonb_array_length(coalesce(sec->'lines', '[]'::jsonb)) > 0 then
+      select coalesce(sum((l->>'amount')::numeric), 0) into v_movement
+      from jsonb_array_elements(sec->'lines') l;
+    else
+      v_movement := (sec->>'total_debits')::numeric - (sec->>'total_credits')::numeric;
+    end if;
+    v_computed := (sec->>'previous_balance')::numeric + v_movement;
+    if v_computed <> (sec->>'total_balance')::numeric then
+      raise exception 'section % checksum mismatch: computed % vs stated %',
+        sec->>'section_key', v_computed, (sec->>'total_balance')::numeric;
     end if;
 
     delete from public.card_statements
@@ -203,11 +242,12 @@ begin
 
         insert into public.transactions (
           user_id, type, account_id, category_id, amount, currency, exchange_rate,
-          occurred_at, description, statement_line_id, exclude_from_budget
+          fx_fallback, occurred_at, description, statement_line_id, exclude_from_budget
         ) values (
           v_user, 'expense', v_account, (ln->>'category_id')::uuid,
           (ln->>'amount')::numeric, v_currency,
           coalesce(nullif(sec->>'exchange_rate','')::numeric, 1),
+          coalesce((sec->>'fx_fallback')::boolean, false),
           (ln->>'made_on')::timestamptz, ln->>'description', v_line, v_exclude
         ) returning id into v_txn;
 
@@ -224,11 +264,13 @@ $$;
 revoke execute on function public.import_card_statement(jsonb) from anon;
 ```
 
-- [ ] **Step 2: Read the file back and confirm three things**
+- [ ] **Step 2: Read the file back and confirm five things**
 
-1. `category_usage`'s `used` subquery has no `and not (t.type = 'payment' and exists (...))` clause left.
-2. `monthly_cashflow` joins `accounts a` (inner, on `t.account_id`) and `accounts da` (left, on `t.to_account_id`), and neither `expense` nor `net` reference `budget_only`.
-3. `import_card_statement`'s expense insert list includes `exclude_from_budget` as its last column, with `v_exclude` as the matching last value.
+1. `category_usage` still has `left join public.category_budgets b on b.category_id = c.id and b.month = m.month` (right after `cross join m`) — its `select` list references `b.amount` three times and would fail to create without this join in scope.
+2. `category_usage`'s `used` subquery has no `and not (t.type = 'payment' and exists (...))` clause left.
+3. `monthly_cashflow` joins `accounts a` (inner, on `t.account_id`) and `accounts da` (left, on `t.to_account_id`), and neither `expense` nor `net` reference `budget_only`.
+4. `import_card_statement` still has the duplicate-account-across-sections guard (the `if (select count(*) ... <> (select count(distinct ...` block), the checksum validation block (the `if (sec->>'previous_balance') is null ...` and `v_computed <> ... ` checks), and `fx_fallback` in both the transactions column list and its values (`coalesce((sec->>'fx_fallback')::boolean, false)`) — these come from three migrations after the one this task's comment used to cite, and dropping any of them silently reopens a previously-fixed data-integrity bug.
+5. `import_card_statement`'s expense insert list includes `exclude_from_budget` as its last column, with `v_exclude` as the matching last value.
 
 - [ ] **Step 3: Commit**
 
