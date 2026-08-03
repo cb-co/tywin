@@ -280,6 +280,13 @@ export type Database = {
             foreignKeyName: "card_statement_lines_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
+            referencedRelation: "account_commitments"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "card_statement_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
           },
@@ -414,6 +421,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "card_statements_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_commitments"
             referencedColumns: ["account_id"]
           },
           {
@@ -586,6 +600,101 @@ export type Database = {
         }
         Relationships: []
       }
+      goal_contributions: {
+        Row: {
+          account_id: string
+          amount: number
+          base_amount: number
+          created_at: string
+          currency: string
+          exchange_rate: number
+          goal_id: string
+          id: string
+          note: string | null
+          occurred_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          base_amount?: number
+          created_at?: string
+          currency: string
+          exchange_rate?: number
+          goal_id: string
+          id?: string
+          note?: string | null
+          occurred_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          base_amount?: number
+          created_at?: string
+          currency?: string
+          exchange_rate?: number
+          goal_id?: string
+          id?: string
+          note?: string | null
+          occurred_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_contributions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "goal_contributions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_commitments"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "goal_contributions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_contributions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "card_cost_of_carry"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "goal_contributions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "card_status"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "goal_contributions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "loan_status"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "goal_contributions_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "savings_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           base_currency: string
@@ -610,6 +719,48 @@ export type Database = {
           id?: string
           onboarded_at?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      savings_goals: {
+        Row: {
+          archived_at: string | null
+          color: string | null
+          created_at: string
+          emoji: string | null
+          id: string
+          name: string
+          sort_order: number
+          target_amount: number
+          target_date: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          color?: string | null
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          target_amount: number
+          target_date?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          color?: string | null
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          target_amount?: number
+          target_date?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -694,6 +845,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "statement_section_mappings_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_commitments"
             referencedColumns: ["account_id"]
           },
           {
@@ -788,6 +946,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "subscriptions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_commitments"
             referencedColumns: ["account_id"]
           },
           {
@@ -924,6 +1089,13 @@ export type Database = {
             foreignKeyName: "transactions_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
+            referencedRelation: "account_commitments"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
           },
@@ -980,6 +1152,13 @@ export type Database = {
             foreignKeyName: "transactions_to_account_id_fkey"
             columns: ["to_account_id"]
             isOneToOne: false
+            referencedRelation: "account_commitments"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "transactions_to_account_id_fkey"
+            columns: ["to_account_id"]
+            isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
           },
@@ -1015,6 +1194,14 @@ export type Database = {
           base_movement: number | null
           currency: string | null
           starting_balance: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      account_commitments: {
+        Row: {
+          account_id: string | null
+          committed_raw: number | null
           user_id: string | null
         }
         Relationships: []
