@@ -19,6 +19,7 @@ import { setBudget, deleteCategory, copyPreviousMonth } from "@/app/(app)/budget
 import { addMonths, monthLabel } from "@/lib/budgets/month";
 import { formatMoney } from "@/lib/format";
 import type { BudgetOverview, BudgetRow } from "@/lib/budgets/queries";
+import { colorCardStyle } from "@/lib/palette";
 import { CategoryDialog } from "./category-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -231,7 +232,7 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
       ) : view === "grid" ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((row) => (
-            <Card key={row.category_id} className="gap-0 p-5">
+            <Card key={row.category_id} className="gap-0 p-5" style={colorCardStyle(row.color)}>
               <div className="flex items-center gap-3">
                 <span
                   className="flex size-9 shrink-0 items-center justify-center rounded-lg"
@@ -310,7 +311,11 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
       ) : (
         <div className="divide-y">
           {rows.map((row) => (
-            <div key={row.category_id} className="group flex items-center gap-4 py-4">
+            <div
+              key={row.category_id}
+              className="group -mx-3 flex items-center gap-4 rounded-lg px-3 py-4"
+              style={colorCardStyle(row.color)}
+            >
               <span
                 className="flex size-9 shrink-0 items-center justify-center rounded-lg"
                 style={{

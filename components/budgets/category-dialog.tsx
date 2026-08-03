@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { useUiSound } from "@/components/sound/sound-provider";
 import { createCategory, updateCategory } from "@/app/(app)/budgets/actions";
 import type { BudgetRow } from "@/lib/budgets/queries";
+import { SWATCHES } from "@/lib/palette";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,11 +22,6 @@ import {
 } from "@/components/ui/dialog";
 
 type Values = { name: string; emoji: string };
-
-// The first seven categorical series, literal rather than `var(--chart-n)`
-// because a category colour is stored on the row and has to survive a theme
-// switch. Keep in step with the light-mode `--chart-*` values in globals.css.
-const SWATCHES = ["#3e5fad", "#b6770b", "#008f7d", "#be563d", "#8949a3", "#7e903e", "#1b8abd"];
 
 export function CategoryDialog({
   mode = "create",
@@ -96,7 +92,7 @@ export function CategoryDialog({
           </div>
           <div className="space-y-2">
             <Label>{t("colorLabel")}</Label>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-8 gap-2">
               {SWATCHES.map((c) => (
                 <button
                   key={c}
