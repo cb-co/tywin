@@ -1798,7 +1798,7 @@ export function ContributeDialog({
                   id="contrib-rate"
                   type="number"
                   step="0.00000001"
-                  min="0"
+                  min="0.00000001"
                   required
                   className="tabular-nums"
                   {...register("exchange_rate")}
