@@ -27,15 +27,13 @@ export const SWATCHES = [
 ];
 
 /**
- * The wash a coloured card takes. Mixing against `var(--card)` and
- * `var(--border)` rather than fixed values is what makes this theme-correct for
- * free: the same 5% over ivory and over near-black both land as a gentle cast
- * in the right direction.
+ * The wash a coloured card takes. Mixing against `var(--card)` rather than a
+ * fixed value is what makes this theme-correct for free: the same 5% over ivory
+ * and over near-black both land as a gentle cast in the right direction.
  */
 export function colorCardStyle(color: string | null): CSSProperties {
   if (!color) return {};
   return {
     backgroundColor: `color-mix(in oklab, ${color} 5%, var(--card))`,
-    borderColor: `color-mix(in oklab, ${color} 25%, var(--border))`,
   };
 }

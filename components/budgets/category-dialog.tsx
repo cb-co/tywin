@@ -92,7 +92,7 @@ export function CategoryDialog({
           </div>
           <div className="space-y-2">
             <Label>{t("colorLabel")}</Label>
-            <div className="grid grid-cols-8 gap-2">
+            <div className="flex flex-wrap gap-2">
               {SWATCHES.map((c) => (
                 <button
                   key={c}
