@@ -320,7 +320,26 @@
   "Goals": {
     "nameRequired": "Give the goal a name",
     "accountMissing": "That account no longer exists",
-    "accountNotContributable": "Pick an account you can save from — not a credit card or loan"
+    "accountNotContributable": "Pick an account you can save from — not a credit card or loan",
+    "sectionTitle": "Savings goals",
+    "addGoal": "Add goal",
+    "goalDeleted": "Goal deleted",
+    "emptyTitle": "No savings goals yet",
+    "emptyDescription": "Set a target, then commit money to it from an account. Your balance stays put — we just tell you how much is still uncommitted.",
+    "totals": "Saved {saved} · Target {target} · Backed {backed}",
+    "totalsBorrowed": "{amount} borrowed back",
+    "amountOfTarget": "{saved} of {target}",
+    "contribute": "Contribute",
+    "editAria": "Edit {name}",
+    "deleteAria": "Delete {name}",
+    "paceShortfall": "{amount} borrowed back",
+    "paceComplete": "Target reached",
+    "paceOverdue": "Past its target date",
+    "paceNone": "No pace yet",
+    "paceNeedVsActual": "Need {required}/mo · saving {actual}/mo",
+    "paceOnTrack": "On track",
+    "paceBehind": "Behind",
+    "paceProjection": "Saving {actual}/mo → ~{months} months"
   },
   "GoalDialog": {
     "addTitle": "New goal",

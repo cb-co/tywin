@@ -320,7 +320,26 @@
   "Goals": {
     "nameRequired": "Ponle un nombre a la meta",
     "accountMissing": "Esa cuenta ya no existe",
-    "accountNotContributable": "Elige una cuenta desde la que puedas ahorrar, no una tarjeta de crédito ni un préstamo"
+    "accountNotContributable": "Elige una cuenta desde la que puedas ahorrar, no una tarjeta de crédito ni un préstamo",
+    "sectionTitle": "Metas de ahorro",
+    "addGoal": "Agregar meta",
+    "goalDeleted": "Meta eliminada",
+    "emptyTitle": "Aún no hay metas de ahorro",
+    "emptyDescription": "Define un objetivo y comprométele dinero desde una cuenta. Tu saldo no se mueve: solo te decimos cuánto sigue libre.",
+    "totals": "Ahorrado {saved} · Objetivo {target} · Respaldado {backed}",
+    "totalsBorrowed": "{amount} tomado de vuelta",
+    "amountOfTarget": "{saved} de {target}",
+    "contribute": "Aportar",
+    "editAria": "Editar {name}",
+    "deleteAria": "Eliminar {name}",
+    "paceShortfall": "{amount} tomado de vuelta",
+    "paceComplete": "Objetivo alcanzado",
+    "paceOverdue": "Pasó su fecha objetivo",
+    "paceNone": "Aún sin ritmo",
+    "paceNeedVsActual": "Necesitas {required}/mes · ahorras {actual}/mes",
+    "paceOnTrack": "Al día",
+    "paceBehind": "Atrasado",
+    "paceProjection": "Ahorrando {actual}/mes → ~{months} meses"
   },
   "GoalDialog": {
     "addTitle": "Nueva meta",
