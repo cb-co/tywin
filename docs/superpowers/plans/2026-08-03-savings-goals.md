@@ -857,7 +857,7 @@ describe("computePace — with a target date", () => {
   });
 
   it("is behind when actual falls short of required", () => {
-    // 100 of 1000, 2 months to Oct => need 450/mo. 30 over 3 months = 10/mo.
+    // 100 of 1000, 3 months to Oct (Aug+Sep+Oct) => need 300/mo. 30 over 3 months = 10/mo.
     const p = computePace(
       input({
         saved: 100,
@@ -866,7 +866,7 @@ describe("computePace — with a target date", () => {
         contributions: [contrib(10, "2026-06-10"), contrib(20, "2026-07-10")],
       }),
     );
-    expect(p).toEqual({ kind: "behind", required: 450, actual: 10 });
+    expect(p).toEqual({ kind: "behind", required: 300, actual: 10 });
   });
 
   it("treats a target inside the current month as one month of runway", () => {
@@ -1019,9 +1019,12 @@ export function computePace(input: PaceInput): Pace {
 
   if (targetDate) {
     const targetMonth = `${targetDate.slice(0, 7)}-01`;
-    // A target inside the current month still gets one month of runway; zero
-    // would make `required` infinite.
-    const monthsLeft = Math.max(monthsBetween(thisMonth, targetMonth), 1);
+    // Runway is counted INCLUSIVELY: on 3 Aug with a 31 Oct target you can
+    // still save in August, September and October — three months, not two.
+    // The `+ 1` is what makes it inclusive; `max(…, 1)` then keeps a target
+    // inside the current month at one month rather than zero, which would make
+    // `required` infinite.
+    const monthsLeft = Math.max(monthsBetween(thisMonth, targetMonth) + 1, 1);
     const required = round2(outstanding / monthsLeft);
     return required <= actual
       ? { kind: "on-track", required, actual }

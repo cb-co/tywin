@@ -373,7 +373,7 @@ The overview dashboard and net worth are unchanged and keep showing real balance
 ### 4.1 Per-goal pace, on the card
 
 ```
-monthsLeft   = max(months from this month's start to target_date's month, 1)
+monthsLeft   = max(months from this month to target_date's month, 0) + 1   -- inclusive
 required/mo  = (target − saved) / monthsLeft
 actual/mo    = Σ base_amount over the last 3 months / 3
                (or Σ since first contribution / months elapsed, min 1, if younger)
