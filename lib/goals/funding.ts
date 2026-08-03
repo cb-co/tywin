@@ -104,13 +104,15 @@ export function computeFunding(
     }
   }
 
-  // 2. Clamp each account, then hand its capacity to its goals newest first.
+  // 2. Clamp each account, then hand its capacity to its goals oldest first,
+  // ensuring that newer commitments are the first to lose their backing when
+  // balance is insufficient.
   const accounts = new Map<string, AccountFunding>();
   const backed = new Map<string, number>();
 
   for (const { account_id, balance } of balances) {
     const byGoal = pairsByAccount.get(account_id);
-    const raw = byGoal ? [...byGoal.values()].reduce((s, p) => s + p.net, 0) : 0;
+    const raw = byGoal ? [...byGoal.values()].reduce((s, p) => s + Math.max(p.net, 0), 0) : 0;
     const committed = round4(Math.min(Math.max(raw, 0), Math.max(balance, 0)));
 
     accounts.set(account_id, {

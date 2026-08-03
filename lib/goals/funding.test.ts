@@ -139,4 +139,18 @@ describe("computeFunding — goals", () => {
     expect(f.goals.get("g1")).toEqual({ goalId: "g1", saved: 400, backed: 0, shortfall: 400 });
     expect(f.accounts.has("card")).toBe(false);
   });
+
+  it("does not let an over-withdrawn pair eat another goal's capacity", () => {
+    const f = computeFunding(
+      [
+        c("A", "chk", 100, "2026-06-01"),
+        c("A", "chk", -400, "2026-07-01"),
+        c("B", "chk", 600, "2026-06-15"),
+      ],
+      [bal("chk", 1000)],
+    );
+    expect(f.accounts.get("chk")?.committed).toBe(600);
+    expect(f.goals.get("B")).toEqual({ goalId: "B", saved: 600, backed: 600, shortfall: 0 });
+    expect(f.goals.get("A")).toEqual({ goalId: "A", saved: -300, backed: 0, shortfall: 0 });
+  });
 });
