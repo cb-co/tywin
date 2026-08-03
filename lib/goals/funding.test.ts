@@ -1,5 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { computeFunding, type BalanceRow, type ContributionRow } from "./funding";
+import { clampCommitment, computeFunding, type BalanceRow, type ContributionRow } from "./funding";
+
+describe("clampCommitment", () => {
+  it("clamps to [0, balance] regardless of which side is out of range", () => {
+    // raw above balance: capped at the balance.
+    expect(clampCommitment(400, 200)).toBe(200);
+    // raw below balance: passes through unchanged.
+    expect(clampCommitment(400, 1000)).toBe(400);
+    // negative raw: floored at zero.
+    expect(clampCommitment(-50, 1000)).toBe(0);
+    // negative balance: commits nothing against it.
+    expect(clampCommitment(400, -50)).toBe(0);
+  });
+});
 
 let seq = 0;
 /** A contribution in base currency (rate 1) unless `base` says otherwise. */

@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { computeFunding, type ContributionRow } from "./funding";
+import { clampCommitment, computeFunding, round4, type ContributionRow } from "./funding";
 import { computePace, type Pace } from "./pace";
 
 export type ContributableAccount = { id: string; name: string; currency: string };
@@ -113,33 +113,29 @@ export async function getGoalsOverview(): Promise<GoalsOverview> {
 /**
  * Committed/available per account, for the accounts page. Separate from
  * `getGoalsOverview` so `/accounts` does not pay for goal and pace assembly it
- * never renders.
+ * never renders — and reads `account_commitments`, which is already summed
+ * per account, rather than pulling every contribution row and re-deriving
+ * the total in JS.
  */
 export async function getAccountFunding(): Promise<
   Map<string, { committed: number; available: number }>
 > {
   const supabase = await createClient();
-  const [{ data: contributions }, { data: balances }] = await Promise.all([
-    supabase.from("goal_contributions").select("id,goal_id,account_id,amount,base_amount,occurred_at"),
+  const [{ data: commitments }, { data: balances }] = await Promise.all([
+    supabase.from("account_commitments").select("account_id,committed_raw"),
     supabase.from("account_balances").select("account_id,balance"),
   ]);
 
-  const funding = computeFunding(
-    (contributions ?? []).map((c) => ({
-      id: c.id,
-      goal_id: c.goal_id,
-      account_id: c.account_id,
-      amount: Number(c.amount),
-      base_amount: Number(c.base_amount),
-      occurred_at: c.occurred_at,
-    })),
-    (balances ?? []).map((b) => ({ account_id: b.account_id!, balance: Number(b.balance) })),
+  const balByAcct = new Map(
+    (balances ?? []).map((b) => [b.account_id!, Number(b.balance)]),
   );
 
-  return new Map(
-    [...funding.accounts.values()].map((a) => [
-      a.accountId,
-      { committed: a.committed, available: a.available },
-    ]),
-  );
+  const funding = new Map<string, { committed: number; available: number }>();
+  for (const c of commitments ?? []) {
+    if (!c.account_id) continue;
+    const balance = balByAcct.get(c.account_id) ?? 0;
+    const committed = round4(clampCommitment(Number(c.committed_raw ?? 0), balance));
+    funding.set(c.account_id, { committed, available: round4(balance - committed) });
+  }
+  return funding;
 }

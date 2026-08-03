@@ -65,7 +65,20 @@ type Pair = {
 };
 
 /** Money is stored at 4dp; rounding here keeps float drift out of the totals. */
-const round4 = (n: number) => Math.round(n * 1e4) / 1e4;
+export const round4 = (n: number) => Math.round(n * 1e4) / 1e4;
+
+/**
+ * An account cannot hold back more than it has:
+ *
+ *   committed(account) = min( max(raw, 0), max(balance, 0) )
+ *
+ * The single definition of the clamp rule, shared by `computeFunding` (which
+ * derives `raw` from individual contribution rows) and `getAccountFunding`
+ * (which reads `raw` pre-summed from the `account_commitments` view).
+ */
+export function clampCommitment(raw: number, balance: number): number {
+  return Math.min(Math.max(raw, 0), Math.max(balance, 0));
+}
 
 export function computeFunding(
   contributions: ContributionRow[],
@@ -113,7 +126,7 @@ export function computeFunding(
   for (const { account_id, balance } of balances) {
     const byGoal = pairsByAccount.get(account_id);
     const raw = byGoal ? [...byGoal.values()].reduce((s, p) => s + Math.max(p.net, 0), 0) : 0;
-    const committed = round4(Math.min(Math.max(raw, 0), Math.max(balance, 0)));
+    const committed = round4(clampCommitment(raw, balance));
 
     accounts.set(account_id, {
       accountId: account_id,

@@ -139,7 +139,7 @@
     "groupAssetsTitle": "Propiedades y bienes",
     "groupAssetsBlurb": "Valores estimados que tú mantienes al día.",
     "estimatedValue": "Valor estimado",
-    "availableCommitted": "{available} disponible · {committed} comprometido"
+    "availableCommitted": "<available></available> disponible · <committed></committed> comprometido"
   },
   "AccountDetail": {
     "backLink": "Cuentas",
