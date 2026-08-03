@@ -29,6 +29,7 @@
 | File | Responsibility |
 |---|---|
 | `supabase/migrations/20260803120000_savings_goals.sql` | Tables, RLS, triggers, `account_commitments` view |
+| `lib/palette.ts` | Shared identity swatches + card wash, used by budgets and goals |
 | `lib/goals/funding.ts` | Pure: clamp + per-goal backing allocation |
 | `lib/goals/funding.test.ts` | Tests for the above |
 | `lib/goals/pace.ts` | Pure: required vs. actual savings pace |
@@ -43,7 +44,7 @@
 **Modify**
 | File | Change |
 |---|---|
-| `components/budgets/category-dialog.tsx` | `SWATCHES` 7 → 16, two-row grid |
+| `components/budgets/category-dialog.tsx` | Import `SWATCHES` from `lib/palette`, two-row grid |
 | `components/budgets/budget-grid.tsx` | Card shading from the category colour |
 | `app/(app)/budgets/page.tsx` | Band headings, separator, goals band |
 | `lib/budgets/month.ts` | Export `monthsBetween` |
@@ -259,18 +260,21 @@ git commit -m "feat(goals): add savings_goals, goal_contributions, account_commi
 Independent of the goals data model — ships a visible improvement to budgets on its own.
 
 **Files:**
-- Modify: `components/budgets/category-dialog.tsx` (the `SWATCHES` const, ~line 28, and the swatch grid, ~lines 97–112)
+- Create: `lib/palette.ts`
+- Modify: `components/budgets/category-dialog.tsx` (delete the local `SWATCHES` const at ~line 28, import it instead; swatch grid at ~lines 97–112)
 - Modify: `components/budgets/budget-grid.tsx` (the grid `Card`, ~line 234; the table row, ~line 313)
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: `export const SWATCHES: string[]` (16 entries) from `components/budgets/category-dialog.tsx`, imported by `components/goals/goal-dialog.tsx` in Task 6. Also `export function colorCardStyle(color: string | null): React.CSSProperties`, used by both `budget-grid.tsx` and `goal-grid.tsx`.
+- Produces, both from `lib/palette.ts`: `export const SWATCHES: string[]` (16 entries) and `export function colorCardStyle(color: string | null): CSSProperties`. Consumed by `budget-grid.tsx`, `category-dialog.tsx`, and by `components/goals/*` in Tasks 6–7.
 
-- [ ] **Step 1: Replace `SWATCHES` and export it**
+These live in `lib/` rather than in `category-dialog.tsx` because they are shared design tokens, not dialog internals — putting them in the dialog would make every goals component import from a budgets component.
 
-In `components/budgets/category-dialog.tsx`, replace the existing const (currently 7 entries) with:
+- [ ] **Step 1: Create `lib/palette.ts`**
 
 ```ts
+import type { CSSProperties } from "react";
+
 /**
  * Identity colours for categories and goals. Stored as literal hex on the row —
  * not `var(--chart-n)` — because the value has to survive a theme switch.
@@ -303,7 +307,7 @@ export const SWATCHES = [
  * free: the same 5% over ivory and over near-black both land as a gentle cast
  * in the right direction.
  */
-export function colorCardStyle(color: string | null): React.CSSProperties {
+export function colorCardStyle(color: string | null): CSSProperties {
   if (!color) return {};
   return {
     backgroundColor: `color-mix(in oklab, ${color} 5%, var(--card))`,
@@ -312,7 +316,17 @@ export function colorCardStyle(color: string | null): React.CSSProperties {
 }
 ```
 
-- [ ] **Step 2: Make the swatch grid wrap to two rows of eight**
+- [ ] **Step 2: Point `category-dialog.tsx` at the shared palette**
+
+Delete the local `SWATCHES` const and its comment block from `components/budgets/category-dialog.tsx`, and import it instead:
+
+```tsx
+import { SWATCHES } from "@/lib/palette";
+```
+
+Everything else in that file — `useState(category?.color ?? SWATCHES[0])`, the `SWATCHES.map(...)` — keeps working unchanged.
+
+- [ ] **Step 3: Make the swatch grid wrap to two rows of eight**
 
 In the same file, change the swatch container class from `flex flex-wrap gap-2` to a fixed grid so 16 swatches land as 8 × 2:
 
@@ -322,12 +336,12 @@ In the same file, change the swatch container class from `flex flex-wrap gap-2` 
 
 The `SWATCHES.map(...)` body is unchanged.
 
-- [ ] **Step 3: Shade the budget cards**
+- [ ] **Step 4: Shade the budget cards**
 
-In `components/budgets/budget-grid.tsx`, add to the existing import from `./category-dialog`:
+In `components/budgets/budget-grid.tsx`, add the import (leaving the existing `CategoryDialog` import alone):
 
 ```tsx
-import { CategoryDialog, colorCardStyle } from "./category-dialog";
+import { colorCardStyle } from "@/lib/palette";
 ```
 
 In the **grid** view, change the card open tag from:
@@ -353,17 +367,17 @@ to:
 ```
 The negative margin plus matching padding keeps the row's content aligned exactly where it was while letting the wash extend past the text.
 
-- [ ] **Step 4: Verify it builds and lints**
+- [ ] **Step 5: Verify it builds and lints**
 
 ```bash
 npm run lint && npx tsc --noEmit
 ```
 Expected: no errors.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add components/budgets/category-dialog.tsx components/budgets/budget-grid.tsx
+git add lib/palette.ts components/budgets/category-dialog.tsx components/budgets/budget-grid.tsx
 git commit -m "feat(budgets): expand swatches to 16 and wash cards in their colour"
 ```
 
@@ -1444,7 +1458,7 @@ git commit -m "feat(goals): add goals queries and server actions"
 - Create: `components/goals/contribute-dialog.tsx`
 
 **Interfaces:**
-- Consumes: `SWATCHES` from `@/components/budgets/category-dialog` (Task 2), `createGoal`/`updateGoal`/`addContribution` (Task 5), `GoalCardRow`/`ContributableAccount` (Task 5).
+- Consumes: `SWATCHES` from `@/lib/palette` (Task 2), `createGoal`/`updateGoal`/`addContribution` (Task 5), `GoalCardRow`/`ContributableAccount` (Task 5).
 - Produces: `<GoalDialog mode? goal? trigger />`, `<ContributeDialog goal accounts baseCurrency trigger />`.
 
 - [ ] **Step 1: Write `components/goals/goal-dialog.tsx`**
@@ -1459,7 +1473,7 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useUiSound } from "@/components/sound/sound-provider";
 import { createGoal, updateGoal } from "@/app/(app)/budgets/goal-actions";
-import { SWATCHES } from "@/components/budgets/category-dialog";
+import { SWATCHES } from "@/lib/palette";
 import type { GoalCardRow } from "@/lib/goals/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1926,7 +1940,7 @@ import { useTranslations } from "next-intl";
 import { useUiSound } from "@/components/sound/sound-provider";
 import { Plus, Trash2, Pencil, PiggyBank } from "lucide-react";
 import { deleteGoal } from "@/app/(app)/budgets/goal-actions";
-import { colorCardStyle } from "@/components/budgets/category-dialog";
+import { colorCardStyle } from "@/lib/palette";
 import { formatMoney } from "@/lib/format";
 import type { GoalCardRow, GoalsOverview } from "@/lib/goals/queries";
 import type { Pace } from "@/lib/goals/pace";
