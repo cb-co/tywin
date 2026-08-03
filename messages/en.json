@@ -4,7 +4,7 @@
     "accounts": "Accounts",
     "transactions": "Transactions",
     "activity": "Activity",
-    "budgets": "Budgets",
+    "budgets": "Budgets & Goals",
     "subscriptions": "Subscriptions",
     "insights": "Insights",
     "settings": "Settings",
@@ -280,8 +280,9 @@
     "linePaymentBadge": "Payment (skipped)"
   },
   "Budgets": {
-    "pageTitle": "Budgets",
-    "pageDescription": "A monthly budget per category, with what's used and what's left.",
+    "pageTitle": "Budgets & Goals",
+    "pageDescription": "What you plan to spend this month, and what you're saving toward.",
+    "sectionTitle": "Budgets",
     "gridViewAria": "Grid view",
     "tableViewAria": "Table view",
     "prevMonth": "Previous month",

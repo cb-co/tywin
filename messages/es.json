@@ -4,7 +4,7 @@
     "accounts": "Cuentas",
     "transactions": "Transacciones",
     "activity": "Actividad",
-    "budgets": "Presupuestos",
+    "budgets": "Presupuestos y metas",
     "subscriptions": "Suscripciones",
     "insights": "Análisis",
     "settings": "Configuración",
@@ -280,8 +280,9 @@
     "linePaymentBadge": "Pago (omitido)"
   },
   "Budgets": {
-    "pageTitle": "Presupuestos",
-    "pageDescription": "Un presupuesto mensual por categoría, con lo usado y lo que queda.",
+    "pageTitle": "Presupuestos y metas",
+    "pageDescription": "Lo que planeas gastar este mes y aquello para lo que estás ahorrando.",
+    "sectionTitle": "Presupuestos",
     "gridViewAria": "Vista de cuadrícula",
     "tableViewAria": "Vista de tabla",
     "prevMonth": "Mes anterior",
