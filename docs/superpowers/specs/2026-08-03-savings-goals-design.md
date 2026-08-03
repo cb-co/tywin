@@ -226,6 +226,7 @@ BUDGETS                                            ← xs uppercase tracking-wid
 ─────────────────────────── <Separator />
 
 SAVINGS GOALS                                        [+ Add goal]
+  Saved $3,200 · Target $11,000 · Backed $3,000 · $200 borrowed back
   ┌──────────────────┐ ┌──────────────────┐
   │ 🏝️ Japan Trip     │ │ 🛟 Emergency     │
   │ $800 of $1,000   │ │ $2,400 of $10,000│
@@ -257,7 +258,84 @@ A goal that has been spent into looks visibly hollowed out rather than merely re
 smaller number. Bar width is `clamp(saved / target, 0, 1)` — clamped at the bottom because
 net withdrawals can drive `saved` negative — and the split within it is `backed : shortfall`.
 
-### 3.2 Dialogs
+### 3.2 The totals row
+
+The goals band carries a totals line, mirroring the `Budget · Used · Remaining` row
+`BudgetGrid` already renders:
+
+```
+Saved $3,200 · Target $11,000 · Backed $3,000 · $200 borrowed back
+```
+
+The fourth figure is `Σ saved − Σ backed` and appears **only when non-zero**, in
+`text-destructive` — the same treatment `BudgetGrid` gives a negative `remaining`.
+
+This is the aggregate honesty check. The clamp makes per-account over-commitment impossible
+(`committed(a) ≤ max(balance(a), 0)`, so `Σ committed ≤ Σ positive balances`), which leaves
+exactly two ways for the totals to drift, and this one line surfaces both:
+
+- Goals quietly hollowed out by spending — five goals each 10% unbacked is invisible on any
+  single card but obvious in the total.
+- An overdrawn account. `Σ positive balances` is not `Σ balances`: $1,000 in Checking fully
+  committed while a second account sits at −$500 means $1,000 committed against $500 of net
+  cash. The clamp can't catch this because it is per-account by construction.
+
+The sum of *targets* exceeding total assets is deliberately **not** flagged. Wanting $50k of
+goals on $5k of savings is the ordinary condition of having goals, not an error state.
+
+### 3.3 Colour palette and card shading
+
+The swatch list grows from 7 to **16**, and the chosen colour now tints the whole card rather
+than only the chip. This applies to **budget categories and goals alike** — same swatches,
+same shading, since they share the grid.
+
+The current `SWATCHES` array in `category-dialog.tsx` holds 7 colours while `globals.css`
+defines 8 `--chart-*` values; `--chart-8` (`#c4486d`) was simply never added. The new list is
+those 8 plus 8 more:
+
+```ts
+const SWATCHES = [
+  // the eight --chart-* light values
+  "#3e5fad", "#b6770b", "#008f7d", "#be563d", "#8949a3", "#7e903e", "#1b8abd", "#c4486d",
+  // eight added, hues placed in the gaps of the wheel above
+  "#b56e3a", "#89812c", "#45902e", "#2f914e", "#8471d1", "#c752b0", "#cb5c62", "#867e72",
+];
+```
+
+Rendered as a two-row grid of eight.
+
+The added colours were derived, not eyeballed:
+
+- **Luminance window.** A swatch is stored as a literal hex and used as chip *foreground* in
+  both themes, so it must clear 3:1 against the light card (`#ffffff`) and the dark card
+  (`#191714`). That bounds relative luminance to `0.126 … 0.300`; all eight sit mid-window at
+  ~0.213, giving ≈4.0:1 light and ≈4.5:1 dark.
+- **Saturation.** Fixed at 0.51, the median of the existing eight, so the additions read as
+  the same family rather than as a louder second set. `#867e72` (graphite) is the one
+  deliberate exception at 0.08 — a neutral is genuinely useful for a catch-all category.
+- **Hue placement.** The existing eight sit at 222, 38, 172, 12, 283, 73, 199, 342. The new
+  hues (25, 55, 106, 139, 252, 312, 357, plus the neutral) fill the widest gaps, the largest
+  being the 99° hole between 73 and 172.
+
+Two pairs land close — `#cb5c62` against the existing terracotta, `#89812c` against the
+existing olive. That is accepted rather than designed out: unlike the `--chart-*` series,
+which must survive being told apart in a legend under CVD simulation, these are identity
+colours always rendered beside their own name and emoji. Distinguishability is carried by the
+label, so hue coverage matters more than pairwise separation.
+
+**Card shading.** When a category or goal has a colour, its card takes a wash of it:
+
+```
+backgroundColor: color-mix(in oklab, {color} 5%, var(--card))
+borderColor:     color-mix(in oklab, {color} 25%, var(--border))
+```
+
+Mixing against `var(--card)` and `var(--border)` rather than a fixed value is what makes this
+theme-correct for free: the same 5% over ivory and over near-black both land as a gentle cast
+in the right direction. The chip keeps its existing 16% treatment. A row with a null colour
+renders exactly as it does today.
+
+### 3.4 Dialogs
 
 Both modelled on `CategoryDialog` (`react-hook-form`, `useTransition`, sonner toast,
 `useUiSound`, `router.refresh()`).
@@ -273,7 +351,7 @@ minus sign.
 Deleting a goal cascades its contributions, which releases the commitment on the origin
 accounts. Deletion is confirmed, matching how category deletion behaves.
 
-### 3.3 Accounts page
+### 3.5 Accounts page
 
 `AccountWithStatus` gains `committed` and `available`. `getAccountsWithStatus` and
 `getAccountById` fetch `account_commitments` alongside `account_balances` and apply the clamp.
@@ -381,6 +459,8 @@ existing `lib/insights/net-worth-history.test.ts`.
 **Modified**
 
 - `app/(app)/budgets/page.tsx` — band headings and separator
+- `components/budgets/category-dialog.tsx` — `SWATCHES` 7 → 16, two-row grid
+- `components/budgets/budget-grid.tsx` — card shading in both grid and table views
 - `lib/accounts/queries.ts`, `components/accounts/account-card.tsx` — available line
 - `app/(app)/insights/page.tsx` — one card in `sectionPosition`
 - `messages/en.json`, `messages/es.json`
@@ -400,6 +480,12 @@ the spend donut; `category_usage`.
   goals problem.
 - Goal-to-goal transfers. Withdraw and re-contribute covers it.
 - Shared or multi-user goals.
-- Blocking over-commitment across accounts. The sum of all goals may exceed total assets;
-  the clamp keeps each account honest, and per-goal shortfalls surface the consequence. A
-  hard block would be a wrong answer for someone deliberately planning ahead.
+- Blocking over-commitment. The clamp makes it impossible per account, and the goals totals
+  row (§3.2) surfaces the two residual cases. A hard block would be a wrong answer for
+  someone deliberately planning ahead.
+- Migrating stored colours from literal hex to theme-aware tokens. Storing `"#3e5fad"`
+  rather than `"chart-1"` is why a swatch can't shift between light and dark, and it is why
+  the existing `--chart-1` indigo measures only 2.93:1 on the dark card. Worth fixing, but
+  it needs a data migration across `categories` and is not this feature's job — the 16
+  swatches here are all chosen to clear both surfaces, so the new work doesn't extend the
+  problem.
