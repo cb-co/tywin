@@ -166,4 +166,33 @@ describe("computeFunding — goals", () => {
     expect(f.goals.get("B")).toEqual({ goalId: "B", saved: 600, backed: 600, shortfall: 0 });
     expect(f.goals.get("A")).toEqual({ goalId: "A", saved: -300, backed: 0, shortfall: 0 });
   });
+
+  // Regression guard for the account_commitments SQL view (see migration
+  // 20260803180000_account_commitments_clamp_pairs.sql): the view's
+  // `committed_raw` must reproduce the SUM-OF-PER-PAIR-CLAMPED-NET below, not
+  // a flat sum of every contribution row. The two diverge whenever an
+  // account funds two-plus goals and at least one is net-negative — a flat
+  // sum lets the negative goal eat into another goal's capacity, which
+  // silently under-reports `committed` (and over-reports `available`) on the
+  // accounts page. If this test ever needs to change, the view's `sum(...)`
+  // must change with it.
+  it("commits the sum of each pair's net clamped to >= 0, not a flat sum of all rows", () => {
+    const rows = [
+      c("A", "chk", 100, "2026-06-01"),
+      c("A", "chk", -400, "2026-07-01"),
+      c("B", "chk", 600, "2026-06-15"),
+    ];
+
+    const perPairClampedSum = 0 /* pair A: max(100 - 400, 0) */ + 600 /* pair B: max(600, 0) */;
+    const flatSum = rows.reduce((sum, r) => sum + r.amount, 0); // 100 - 400 + 600 = 300
+
+    expect(perPairClampedSum).toBe(600);
+    expect(flatSum).toBe(300);
+    expect(perPairClampedSum).not.toBe(flatSum);
+
+    // computeFunding must land on the per-pair-clamped figure, not the flat one.
+    const f = computeFunding(rows, [bal("chk", 1000)]);
+    expect(f.accounts.get("chk")?.committed).toBe(perPairClampedSum);
+    expect(f.accounts.get("chk")?.committed).not.toBe(flatSum);
+  });
 });

@@ -121,6 +121,15 @@ export async function getAccountFunding(): Promise<
   Map<string, { committed: number; available: number }>
 > {
   const supabase = await createClient();
+  // account_commitments.committed_raw must stay in step with the `raw` this
+  // function's TypeScript counterpart (computeFunding, in ./funding.ts) would
+  // compute: the sum, per (account, goal) pair, of that pair's net clamped to
+  // >= 0 — NOT a flat sum of every contribution row. A pair that has been
+  // over-withdrawn contributes 0 capacity, never negative capacity that could
+  // eat another goal's share. See migration
+  // 20260803180000_account_commitments_clamp_pairs.sql, which fixed the view
+  // to match after it drifted from computeFunding's per-pair clamp (added in
+  // Task 3's fix round, after the view already shipped in Task 1).
   const [{ data: commitments }, { data: balances }] = await Promise.all([
     supabase.from("account_commitments").select("account_id,committed_raw"),
     supabase.from("account_balances").select("account_id,balance"),
