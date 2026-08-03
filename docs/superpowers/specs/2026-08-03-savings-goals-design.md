@@ -178,18 +178,22 @@ know how much of *its own* progress is actually backed. Allocation runs per
 `(account, goal)` pair rather than per contribution row — simpler than walking individual
 rows, and withdrawals net out for free:
 
-For each account, order the goals it funds by **most recent contribution date, newest
-first**, and give each its full net amount until the account's `committed` capacity is
-exhausted. Anything unallocated is that goal's shortfall.
+For each account, allocate its `committed` capacity to the goals it funds in **oldest-first**
+order — ranking each goal by its most recent contribution to that account — giving each its
+full net amount until capacity runs out. Anything unallocated is that goal's shortfall.
+
+Note the inversion: allocating **oldest-first** is precisely what makes the **newest**
+commitment the first to lose its backing. The two orderings are the same rule stated from
+opposite ends, and it is easy to write the comparator backwards.
 
 Pairs whose net amount is zero or negative (the goal was withdrawn from that account at
 least as much as was put in) are skipped: they consume no capacity and receive no
 allocation. Ties in contribution date are broken by `goal_contributions.id` so the result
 is stable across requests.
 
-Newest-first ("the money you set aside most recently is the first borrowed back") is chosen
-because it is deterministic, explainable in one sentence, and matches the intuition that
-recent commitments are the least settled.
+"The money you set aside most recently is the first borrowed back" is chosen because it is
+deterministic, explainable in one sentence, and matches the intuition that recent
+commitments are the least settled.
 
 Each goal therefore carries three figures:
 

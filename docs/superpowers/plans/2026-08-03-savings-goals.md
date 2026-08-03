@@ -690,12 +690,17 @@ export function computeFunding(
 
     // A pair that has been fully withdrawn consumes no capacity and receives
     // no allocation.
+    //
+    // Oldest first — which is what makes the NEWEST commitment the first to
+    // lose its backing. The two orderings are the same rule read from opposite
+    // ends, so the comparator is easy to write backwards; the "borrows back
+    // from the most recently funded goal first" test is what pins it.
     const funded = [...byGoal.values()]
       .filter((p) => p.net > 0)
       .sort((a, b) =>
         a.latestAt === b.latestAt
-          ? b.latestId.localeCompare(a.latestId)
-          : a.latestAt < b.latestAt ? 1 : -1,
+          ? a.latestId.localeCompare(b.latestId)
+          : a.latestAt > b.latestAt ? 1 : -1,
       );
 
     let remaining = committed;
@@ -729,7 +734,7 @@ export function computeFunding(
 - [ ] **Step 4: Run the tests to verify they pass**
 
 Run: `npx vitest run lib/goals/funding.test.ts`
-Expected: PASS, 17 tests.
+Expected: PASS, 15 tests.
 
 - [ ] **Step 5: Commit**
 
