@@ -317,6 +317,11 @@
     "toastAdded": "Categoría añadida",
     "toastUpdated": "Categoría actualizada"
   },
+  "Goals": {
+    "nameRequired": "Ponle un nombre a la meta",
+    "accountMissing": "Esa cuenta ya no existe",
+    "accountNotContributable": "Elige una cuenta desde la que puedas ahorrar, no una tarjeta de crédito ni un préstamo"
+  },
   "TransactionTypes": {
     "expense": "Gasto",
     "income": "Ingreso",

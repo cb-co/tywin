@@ -317,6 +317,11 @@
     "toastAdded": "Category added",
     "toastUpdated": "Category updated"
   },
+  "Goals": {
+    "nameRequired": "Give the goal a name",
+    "accountMissing": "That account no longer exists",
+    "accountNotContributable": "Pick an account you can save from — not a credit card or loan"
+  },
   "TransactionTypes": {
     "expense": "Expense",
     "income": "Income",
