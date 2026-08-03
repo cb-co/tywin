@@ -52,7 +52,7 @@ export function ContributeDialog({
   const tc = useTranslations("Common");
   const { playSuccess, playError } = useUiSound();
 
-  const { register, handleSubmit, reset } = useForm<Values>({
+  const { register, handleSubmit, reset, setValue } = useForm<Values>({
     defaultValues: { amount: "", occurred_at: today(), note: "", exchange_rate: "" },
   });
 
@@ -133,7 +133,15 @@ export function ContributeDialog({
               <Label htmlFor="contrib-account">{t("accountLabel")}</Label>
               <Select
                 value={accountId}
-                onValueChange={(v) => setAccountId(v ?? "")}
+                onValueChange={(v) => {
+                  setAccountId(v ?? "");
+                  // A rate typed for the previous account is meaningless for a
+                  // different one — clearing it forces a fresh entry instead of
+                  // silently converting at the wrong rate (or, for a same-
+                  // currency account, hiding a stale value that would only
+                  // resurface if the user switches back to a foreign account).
+                  setValue("exchange_rate", "");
+                }}
                 items={accountItems}
               >
                 <SelectTrigger id="contrib-account" className="w-full">
