@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -23,13 +23,18 @@ const TOUCH_TARGET = "[@media(hover:none)]:size-9";
 
 export function GoalGrid({ overview }: { overview: GoalsOverview }) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
+  // Tracks which goal's delete is in flight, not a page-level boolean — a
+  // shared `pending` would disable every card's Trash2 button the moment any
+  // one of them starts deleting.
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const t = useTranslations("Goals");
   const { playDelete, playError } = useUiSound();
   const { goals, totalSaved, totalTarget, totalBacked, totalShortfall, baseCurrency, accounts } =
     overview;
 
   function onDelete(id: string) {
+    setDeletingId(id);
     startTransition(async () => {
       const result = await deleteGoal(id);
       if (result.error) {
@@ -40,6 +45,7 @@ export function GoalGrid({ overview }: { overview: GoalsOverview }) {
         playDelete();
         router.refresh();
       }
+      setDeletingId(null);
     });
   }
 
@@ -150,10 +156,10 @@ export function GoalGrid({ overview }: { overview: GoalsOverview }) {
                   aria-label={t("deleteAria", { name: goal.name })}
                   className={cn("text-muted-foreground hover:text-destructive", TOUCH_TARGET)}
                   onClick={() => onDelete(goal.id)}
-                  disabled={pending}
-                  isLoading={pending}
+                  disabled={deletingId === goal.id}
+                  isLoading={deletingId === goal.id}
                 >
-                  {pending ? null : <Trash2 className="size-4" />}
+                  {deletingId === goal.id ? null : <Trash2 className="size-4" />}
                 </Button>
               </div>
             </Card>

@@ -51,6 +51,11 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
   const [pending, startTransition] = useTransition();
   const [navPending, startNavTransition] = useTransition();
   const [view, setView] = useState<"grid" | "table">("grid");
+  // Tracks which row's delete is in flight, separate from the shared `pending`
+  // above — that one also covers the budget-amount save and "Copy last month",
+  // so keying delete off it would disable every row's Trash2 button the
+  // moment any one of them starts deleting.
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const t = useTranslations("Budgets");
   const { playSuccess, playDelete, playError } = useUiSound();
   const { rows, totalBudget, totalUsed, baseCurrency } = overview;
@@ -79,6 +84,7 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
   }
 
   function onDelete(id: string) {
+    setDeletingId(id);
     startTransition(async () => {
       const result = await deleteCategory(id);
       if (result.error) {
@@ -89,6 +95,7 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
         playDelete();
         router.refresh();
       }
+      setDeletingId(null);
     });
   }
 
@@ -299,10 +306,10 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
                   aria-label={t("deleteAria", { name: row.name })}
                   className={cn("text-muted-foreground hover:text-destructive", TOUCH_TARGET)}
                   onClick={() => onDelete(row.category_id)}
-                  disabled={pending}
-                  isLoading={pending}
+                  disabled={deletingId === row.category_id}
+                  isLoading={deletingId === row.category_id}
                 >
-                  {pending ? null : <Trash2 className="size-4" />}
+                  {deletingId === row.category_id ? null : <Trash2 className="size-4" />}
                 </Button>
               </div>
             </Card>
@@ -385,10 +392,10 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
                     aria-label={t("deleteAria", { name: row.name })}
                     className={cn("text-muted-foreground hover:text-destructive", TOUCH_TARGET)}
                     onClick={() => onDelete(row.category_id)}
-                    disabled={pending}
-                    isLoading={pending}
+                    disabled={deletingId === row.category_id}
+                    isLoading={deletingId === row.category_id}
                   >
-                    {pending ? null : <Trash2 className="size-4" />}
+                    {deletingId === row.category_id ? null : <Trash2 className="size-4" />}
                   </Button>
                 </div>
               </div>
