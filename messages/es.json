@@ -138,7 +138,8 @@
     "perMonth": "{amount}/mes",
     "groupAssetsTitle": "Propiedades y bienes",
     "groupAssetsBlurb": "Valores estimados que tú mantienes al día.",
-    "estimatedValue": "Valor estimado"
+    "estimatedValue": "Valor estimado",
+    "availableCommitted": "{available} disponible · {committed} comprometido"
   },
   "AccountDetail": {
     "backLink": "Cuentas",

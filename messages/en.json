@@ -138,7 +138,8 @@
     "perMonth": "{amount}/mo",
     "groupAssetsTitle": "Property & assets",
     "groupAssetsBlurb": "Estimated values you keep up to date.",
-    "estimatedValue": "Estimated value"
+    "estimatedValue": "Estimated value",
+    "availableCommitted": "{available} available · {committed} committed"
   },
   "AccountDetail": {
     "backLink": "Accounts",
