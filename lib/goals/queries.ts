@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { clampCommitment, computeFunding, round4, type ContributionRow } from "./funding";
+import { computeFunding, type ContributionRow } from "./funding";
 import { computePace, type Pace } from "./pace";
 
 export type ContributableAccount = { id: string; name: string; currency: string };
@@ -113,38 +113,39 @@ export async function getGoalsOverview(): Promise<GoalsOverview> {
 /**
  * Committed/available per account, for the accounts page. Separate from
  * `getGoalsOverview` so `/accounts` does not pay for goal and pace assembly it
- * never renders — and reads `account_commitments`, which is already summed
- * per account, rather than pulling every contribution row and re-deriving
- * the total in JS.
+ * never renders. Reads the raw contribution rows and hands them to
+ * `computeFunding` — the same function `getGoalsOverview` uses — rather than
+ * a SQL view: the per-(account, goal)-pair clamp rule that decides how much
+ * capacity a net-negative pair consumes is subtle enough that it drifted out
+ * of step once between a SQL copy and this TypeScript one (see migration
+ * 20260803190000_drop_account_commitments.sql). Keeping a single encoding,
+ * covered by the tests in ./funding.test.ts, is worth the extra row fetch.
  */
 export async function getAccountFunding(): Promise<
   Map<string, { committed: number; available: number }>
 > {
   const supabase = await createClient();
-  // account_commitments.committed_raw must stay in step with the `raw` this
-  // function's TypeScript counterpart (computeFunding, in ./funding.ts) would
-  // compute: the sum, per (account, goal) pair, of that pair's net clamped to
-  // >= 0 — NOT a flat sum of every contribution row. A pair that has been
-  // over-withdrawn contributes 0 capacity, never negative capacity that could
-  // eat another goal's share. See migration
-  // 20260803180000_account_commitments_clamp_pairs.sql, which fixed the view
-  // to match after it drifted from computeFunding's per-pair clamp (added in
-  // Task 3's fix round, after the view already shipped in Task 1).
-  const [{ data: commitments }, { data: balances }] = await Promise.all([
-    supabase.from("account_commitments").select("account_id,committed_raw"),
+  const [{ data: contributions }, { data: balances }] = await Promise.all([
+    supabase.from("goal_contributions").select("id,goal_id,account_id,amount,base_amount,occurred_at"),
     supabase.from("account_balances").select("account_id,balance"),
   ]);
 
-  const balByAcct = new Map(
-    (balances ?? []).map((b) => [b.account_id!, Number(b.balance)]),
+  const funding = computeFunding(
+    (contributions ?? []).map((c) => ({
+      id: c.id,
+      goal_id: c.goal_id,
+      account_id: c.account_id,
+      amount: Number(c.amount),
+      base_amount: Number(c.base_amount),
+      occurred_at: c.occurred_at,
+    })),
+    (balances ?? []).map((b) => ({ account_id: b.account_id!, balance: Number(b.balance) })),
   );
 
-  const funding = new Map<string, { committed: number; available: number }>();
-  for (const c of commitments ?? []) {
-    if (!c.account_id) continue;
-    const balance = balByAcct.get(c.account_id) ?? 0;
-    const committed = round4(clampCommitment(Number(c.committed_raw ?? 0), balance));
-    funding.set(c.account_id, { committed, available: round4(balance - committed) });
-  }
-  return funding;
+  return new Map(
+    [...funding.accounts.values()].map((a) => [
+      a.accountId,
+      { committed: a.committed, available: a.available },
+    ]),
+  );
 }

@@ -161,7 +161,12 @@ export function computeFunding(
   // 3. Assemble per-goal figures.
   const goals = new Map<string, GoalFunding>();
   for (const [goalId, savedBase] of saved) {
-    const backedBase = round4(backed.get(goalId) ?? 0);
+    // `backed` is accumulated from allocations against positive pairs only —
+    // it can never itself go negative — but a goal net-negative overall
+    // (withdrawals outweighing contributions) has `saved` below `backed`'s
+    // floor of 0. Clamping here, not in the accumulator, keeps "backed can't
+    // exceed what's actually saved" true without touching the allocation math.
+    const backedBase = round4(Math.min(backed.get(goalId) ?? 0, Math.max(savedBase, 0)));
     goals.set(goalId, {
       goalId,
       saved: round4(savedBase),

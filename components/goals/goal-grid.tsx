@@ -13,6 +13,14 @@ import type { GoalCardRow, GoalsOverview } from "@/lib/goals/queries";
 import type { Pace } from "@/lib/goals/pace";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { EmptyState } from "@/components/empty-state";
 import { cn } from "@/lib/utils";
 import { GoalDialog } from "./goal-dialog";
@@ -28,12 +36,18 @@ export function GoalGrid({ overview }: { overview: GoalsOverview }) {
   // shared `pending` would disable every card's Trash2 button the moment any
   // one of them starts deleting.
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  // The goal pending confirmation, not just its id — the dialog needs the
+  // name to state what is being lost, and holding the row avoids a lookup
+  // back into `goals` while it is closing.
+  const [confirmGoal, setConfirmGoal] = useState<GoalCardRow | null>(null);
   const t = useTranslations("Goals");
+  const tc = useTranslations("Common");
   const { playDelete, playError } = useUiSound();
   const { goals, totalSaved, totalTarget, totalBacked, totalShortfall, baseCurrency, accounts } =
     overview;
 
   function onDelete(id: string) {
+    setConfirmGoal(null);
     setDeletingId(id);
     startTransition(async () => {
       const result = await deleteGoal(id);
@@ -155,7 +169,7 @@ export function GoalGrid({ overview }: { overview: GoalsOverview }) {
                   size="icon-sm"
                   aria-label={t("deleteAria", { name: goal.name })}
                   className={cn("text-muted-foreground hover:text-destructive", TOUCH_TARGET)}
-                  onClick={() => onDelete(goal.id)}
+                  onClick={() => setConfirmGoal(goal)}
                   disabled={deletingId === goal.id}
                   isLoading={deletingId === goal.id}
                 >
@@ -166,6 +180,40 @@ export function GoalGrid({ overview }: { overview: GoalsOverview }) {
           ))}
         </div>
       )}
+
+      {/* Same confirmation pattern as account deletion (account-detail-actions)
+          and statement deletion (statements-panel): a single controlled
+          dialog outside the loop, keyed off the row pending confirmation
+          rather than one Dialog per card. Goal deletion has no undo and no
+          contribution-history UI to fall back on, so — unlike category
+          deletion on /budgets — this cannot be a bare click. */}
+      <Dialog open={confirmGoal !== null} onOpenChange={(open) => !open && setConfirmGoal(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("deleteConfirmTitle", { name: confirmGoal?.name ?? "" })}</DialogTitle>
+            <DialogDescription>
+              {t("deleteConfirmDescription", { name: confirmGoal?.name ?? "" })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmGoal(null)}
+              disabled={deletingId === confirmGoal?.id}
+            >
+              {tc("cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => confirmGoal && onDelete(confirmGoal.id)}
+              disabled={deletingId === confirmGoal?.id}
+              isLoading={deletingId === confirmGoal?.id}
+            >
+              {deletingId === confirmGoal?.id ? t("deleting") : tc("delete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

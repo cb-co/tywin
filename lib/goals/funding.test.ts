@@ -153,6 +153,26 @@ describe("computeFunding — goals", () => {
     expect(f.accounts.has("card")).toBe(false);
   });
 
+  it("clamps backed so it can never exceed a non-negative saved", () => {
+    // Goal funded +100 from account A (balance 1000, fully covered), then
+    // +50 followed by -200 from account B (balance 1000): that pair nets
+    // negative, so it is skipped for allocation, but its base_amount still
+    // drags `saved` below zero. `backed` must not report more than the goal
+    // has actually saved.
+    const f = computeFunding(
+      [
+        c("g1", "A", 100, "2026-07-01"),
+        c("g1", "B", 50, "2026-07-02"),
+        c("g1", "B", -200, "2026-07-03"),
+      ],
+      [bal("A", 1000), bal("B", 1000)],
+    );
+    const g1 = f.goals.get("g1")!;
+    expect(g1.saved).toBe(-50);
+    expect(g1.backed).toBeLessThanOrEqual(Math.max(g1.saved, 0));
+    expect(g1).toEqual({ goalId: "g1", saved: -50, backed: 0, shortfall: 0 });
+  });
+
   it("does not let an over-withdrawn pair eat another goal's capacity", () => {
     const f = computeFunding(
       [
@@ -167,15 +187,15 @@ describe("computeFunding — goals", () => {
     expect(f.goals.get("A")).toEqual({ goalId: "A", saved: -300, backed: 0, shortfall: 0 });
   });
 
-  // Regression guard for the account_commitments SQL view (see migration
-  // 20260803180000_account_commitments_clamp_pairs.sql): the view's
-  // `committed_raw` must reproduce the SUM-OF-PER-PAIR-CLAMPED-NET below, not
-  // a flat sum of every contribution row. The two diverge whenever an
-  // account funds two-plus goals and at least one is net-negative — a flat
-  // sum lets the negative goal eat into another goal's capacity, which
-  // silently under-reports `committed` (and over-reports `available`) on the
-  // accounts page. If this test ever needs to change, the view's `sum(...)`
-  // must change with it.
+  // This used to also be a regression guard for the account_commitments SQL
+  // view's `committed_raw`, which had to reproduce the
+  // SUM-OF-PER-PAIR-CLAMPED-NET below rather than a flat sum of every
+  // contribution row — the two diverge whenever an account funds two-plus
+  // goals and at least one is net-negative. That view drifted from this rule
+  // once (see migration 20260803180000_account_commitments_clamp_pairs.sql)
+  // and was dropped in 20260803190000_drop_account_commitments.sql rather
+  // than fixed again: `computeFunding` is now the only place this rule is
+  // encoded, and this test guards it alone.
   it("commits the sum of each pair's net clamped to >= 0, not a flat sum of all rows", () => {
     const rows = [
       c("A", "chk", 100, "2026-06-01"),
