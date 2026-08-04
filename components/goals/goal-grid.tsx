@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -10,7 +11,7 @@ import { deleteGoal } from "@/app/(app)/budgets/goal-actions";
 import { colorCardStyle } from "@/lib/palette";
 import { formatMoney } from "@/lib/format";
 import type { GoalCardRow, GoalsOverview } from "@/lib/goals/queries";
-import type { Pace } from "@/lib/goals/pace";
+import { GoalBar, PaceLine } from "./goal-progress";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -110,7 +111,14 @@ export function GoalGrid({ overview }: { overview: GoalsOverview }) {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {goals.map((goal) => (
             <Card key={goal.id} className="gap-0 p-5" style={colorCardStyle(goal.color)}>
-              <div className="flex items-center gap-3">
+              {/* Only this chip+name block is a Link, not the whole card — the
+                  card also holds Contribute/edit/delete buttons below, and
+                  nesting those inside an anchor would be an invalid,
+                  inaccessible interactive-in-interactive structure. */}
+              <Link
+                href={`/budgets/goals/${goal.id}`}
+                className="-m-1 flex items-center gap-3 rounded-lg p-1 transition-colors hover:bg-foreground/[0.03]"
+              >
                 <span
                   className="flex size-9 shrink-0 items-center justify-center rounded-lg"
                   style={{
@@ -131,7 +139,7 @@ export function GoalGrid({ overview }: { overview: GoalsOverview }) {
                     })}
                   </p>
                 </div>
-              </div>
+              </Link>
 
               <GoalBar goal={goal} />
 
@@ -184,9 +192,10 @@ export function GoalGrid({ overview }: { overview: GoalsOverview }) {
       {/* Same confirmation pattern as account deletion (account-detail-actions)
           and statement deletion (statements-panel): a single controlled
           dialog outside the loop, keyed off the row pending confirmation
-          rather than one Dialog per card. Goal deletion has no undo and no
-          contribution-history UI to fall back on, so — unlike category
-          deletion on /budgets — this cannot be a bare click. */}
+          rather than one Dialog per card. Deleting the goal takes its whole
+          contribution history with it (the detail page has no undo either),
+          so — unlike category deletion on /budgets — this cannot be a bare
+          click. */}
       <Dialog open={confirmGoal !== null} onOpenChange={(open) => !open && setConfirmGoal(null)}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
@@ -216,82 +225,4 @@ export function GoalGrid({ overview }: { overview: GoalsOverview }) {
       </Dialog>
     </section>
   );
-}
-
-/**
- * Two segments: what is actually there in the goal's own colour, then what has
- * been borrowed back in a warning tint. A goal spent into looks visibly
- * hollowed out rather than merely reporting a smaller number.
- */
-function GoalBar({ goal }: { goal: GoalCardRow }) {
-  const target = goal.target_amount;
-  // Clamped at the bottom because net withdrawals can drive `saved` negative.
-  const filled = target > 0 ? Math.min(Math.max(goal.saved / target, 0), 1) * 100 : 0;
-  const backedShare = goal.saved > 0 ? Math.min(goal.backed / goal.saved, 1) : 0;
-
-  return (
-    <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-muted">
-      <div
-        className="h-full transition-all"
-        style={{
-          width: `${filled * backedShare}%`,
-          backgroundColor: goal.color ?? "var(--brand)",
-        }}
-      />
-      <div
-        className="h-full transition-all"
-        style={{
-          width: `${filled * (1 - backedShare)}%`,
-          backgroundColor: "color-mix(in oklab, var(--warning) 45%, var(--muted))",
-        }}
-      />
-    </div>
-  );
-}
-
-function PaceLine({ pace, currency }: { pace: Pace; currency: string }) {
-  const t = useTranslations("Goals");
-  switch (pace.kind) {
-    case "shortfall":
-      return (
-        <span className="text-destructive">
-          {t("paceShortfall", { amount: formatMoney(pace.amount, currency) })}
-        </span>
-      );
-    case "complete":
-      return <span className="text-success">{t("paceComplete")}</span>;
-    case "overdue":
-      return <span className="text-destructive">{t("paceOverdue")}</span>;
-    case "no-pace":
-      return <>{t("paceNone")}</>;
-    case "on-track":
-      return (
-        <>
-          {t("paceNeedVsActual", {
-            required: formatMoney(pace.required, currency),
-            actual: formatMoney(pace.actual, currency),
-          })}{" "}
-          <span className="text-success">{t("paceOnTrack")}</span>
-        </>
-      );
-    case "behind":
-      return (
-        <>
-          {t("paceNeedVsActual", {
-            required: formatMoney(pace.required, currency),
-            actual: formatMoney(pace.actual, currency),
-          })}{" "}
-          <span className="text-warning">{t("paceBehind")}</span>
-        </>
-      );
-    case "projection":
-      return (
-        <>
-          {t("paceProjection", {
-            actual: formatMoney(pace.actual, currency),
-            months: pace.months,
-          })}
-        </>
-      );
-  }
 }

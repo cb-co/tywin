@@ -382,6 +382,20 @@
     "pickAccount": "Elige una cuenta desde la que ahorrar",
     "amountRequired": "Ingresa un monto"
   },
+  "GoalDetail": {
+    "backLink": "Volver a Presupuestos y Metas",
+    "balanceOverTime": "Saldo a través del tiempo",
+    "seriesBalance": "Saldo",
+    "historyEmpty": "Aún no hay aportes — agrega uno para empezar el gráfico.",
+    "contributionsTitle": "Aportes",
+    "contributionsEmptyTitle": "Aún no hay aportes",
+    "contributionsEmptyDescription": "Agrega uno para empezar a seguir el progreso de esta meta.",
+    "contributionDeleted": "Aporte eliminado",
+    "deleteContributionAria": "Eliminar aporte de {amount} el {date}",
+    "deleteContributionConfirmTitle": "¿Eliminar este aporte?",
+    "deleteContributionConfirmDescription": "{amount} del {date} se eliminará permanentemente. No se puede deshacer.",
+    "deleting": "Eliminando…"
+  },
   "TransactionTypes": {
     "expense": "Gasto",
     "income": "Ingreso",

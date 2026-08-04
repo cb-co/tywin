@@ -382,6 +382,20 @@
     "pickAccount": "Pick an account to save from",
     "amountRequired": "Enter an amount"
   },
+  "GoalDetail": {
+    "backLink": "Back to Budgets & Goals",
+    "balanceOverTime": "Balance over time",
+    "seriesBalance": "Balance",
+    "historyEmpty": "No contributions yet — add one to start the chart.",
+    "contributionsTitle": "Contributions",
+    "contributionsEmptyTitle": "No contributions yet",
+    "contributionsEmptyDescription": "Add one to start tracking progress toward this goal.",
+    "contributionDeleted": "Contribution deleted",
+    "deleteContributionAria": "Delete contribution of {amount} on {date}",
+    "deleteContributionConfirmTitle": "Delete this contribution?",
+    "deleteContributionConfirmDescription": "{amount} on {date} will be permanently removed. This can't be undone.",
+    "deleting": "Deleting…"
+  },
   "TransactionTypes": {
     "expense": "Expense",
     "income": "Income",
