@@ -44,7 +44,7 @@ export function AccountGallery({
   baseCurrency: string;
 }) {
   const t = useTranslations("Accounts");
-  const groupName = new Map(cardGroups.map((g) => [g.id, g.name]));
+  const groupById = new Map(cardGroups.map((g) => [g.id, g]));
   const groupLabels: Record<GroupKey, { title: string; blurb: string }> = {
     cash: { title: t("groupCashTitle"), blurb: t("groupCashBlurb") },
     assets: { title: t("groupAssetsTitle"), blurb: t("groupAssetsBlurb") },
@@ -108,17 +108,22 @@ export function AccountGallery({
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {group.key === "cards"
-              ? clusterCards(group.items).map((cluster) =>
-                  cluster.items.length >= 2 ? (
+              ? clusterCards(group.items).map((cluster) => {
+                  if (cluster.items.length < 2) {
+                    return <AccountCard key={cluster.key} account={cluster.items[0]} />;
+                  }
+                  const cardGroup = groupById.get(cluster.key);
+                  return (
                     <CardGroupTile
                       key={cluster.key}
-                      name={groupName.get(cluster.key) ?? t("cardGroupFallbackName")}
+                      name={cardGroup?.name ?? t("cardGroupFallbackName")}
+                      brand={cardGroup?.brand ?? null}
+                      last4={cardGroup?.last4 ?? null}
+                      artColor={cardGroup?.art_color ?? null}
                       accounts={cluster.items}
                     />
-                  ) : (
-                    <AccountCard key={cluster.key} account={cluster.items[0]} />
-                  ),
-                )
+                  );
+                })
               : group.items.map((account) => (
                   <AccountCard key={account.id} account={account} />
                 ))}

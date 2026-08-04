@@ -3,6 +3,9 @@ import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { ColorTile } from "@/components/ui/color-tile";
+import { PaymentCard } from "./payment-card";
+import { inferNetwork, inferLast4 } from "@/lib/accounts/network";
 import { formatMoney, formatPercent, formatDayOfMonth } from "@/lib/format";
 import { accountTypeMeta, type AccountType } from "@/lib/accounts/meta";
 import type { AccountWithStatus } from "@/lib/accounts/queries";
@@ -22,6 +25,10 @@ export function AccountCard({ account }: { account: AccountWithStatus }) {
   const meta = accountTypeMeta(type);
   const Icon = meta.icon;
   const currency = account.currency;
+  // A card belonging to a group is rendered by the gallery's CardGroupTile —
+  // its face lives there, once per physical card. Rendering a second face
+  // here would double-count it.
+  const isStandaloneCard = type === "credit_card" && !account.card_group_id;
 
   return (
     <Link href={`/accounts/${account.id}`} className="group block">
@@ -29,28 +36,29 @@ export function AccountCard({ account }: { account: AccountWithStatus }) {
           deepen the shadow — `group-hover:ring-*` was styling an edge that
           isn't drawn. */}
       <Card className="lift h-full gap-0 p-5 group-hover:shadow-(--shadow-card-hover)">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <span
-              className="flex size-9 items-center justify-center rounded-lg"
-              style={{
-                backgroundColor: account.color
-                  ? `color-mix(in oklab, ${account.color} 16%, transparent)`
-                  : "var(--accent)",
-                color: account.color ?? "var(--accent-foreground)",
-              }}
-            >
-              <Icon className="size-[18px]" />
-            </span>
-            <div className="min-w-0">
-              <p className="truncate font-medium text-foreground">{account.name}</p>
-              <p className="text-xs text-muted-foreground">
-                {tType(type)} · {currency}
-              </p>
+        {isStandaloneCard ? (
+          <PaymentCard
+            name={account.name}
+            last4={inferLast4(account.name)}
+            network={inferNetwork(account.name)}
+            color={account.color}
+            owed={account.cardStatus?.owed ?? account.current_balance}
+            currency={currency}
+          />
+        ) : (
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <ColorTile color={account.color} icon={Icon} size="sm" />
+              <div className="min-w-0">
+                <p className="truncate font-medium text-foreground">{account.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {tType(type)} · {currency}
+                </p>
+              </div>
             </div>
+            <ChevronRight className="size-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
           </div>
-          <ChevronRight className="size-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
-        </div>
+        )}
 
         {type === "credit_card" ? (
           <CardBody

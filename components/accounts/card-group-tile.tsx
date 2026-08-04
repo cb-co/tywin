@@ -1,33 +1,52 @@
 import Link from "next/link";
-import { CreditCard, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
-import { formatMoney, formatPercent } from "@/lib/format";
+import { MoneyDisplay } from "@/components/ui/money-display";
+import { PaymentCard } from "./payment-card";
+import { inferNetwork, inferLast4 } from "@/lib/accounts/network";
+import { formatPercent } from "@/lib/format";
 import type { AccountWithStatus } from "@/lib/accounts/queries";
 
-/** Two or more currency lines of one physical card, rendered as a single tile. */
+/**
+ * Two or more currency lines of one physical card, rendered as a single tile.
+ *
+ * The card group IS the physical card, so the face — the art, the network
+ * mark, the last four digits — renders exactly once here. The currency lines
+ * beneath it are rows on the same card, not separate cards.
+ */
 export function CardGroupTile({
   name,
+  brand,
+  last4,
+  artColor,
   accounts,
 }: {
   name: string;
+  brand: string | null;
+  last4: string | null;
+  artColor: string | null;
   accounts: AccountWithStatus[];
 }) {
   const t = useTranslations("Accounts");
+  const network = inferNetwork(name, brand);
+  const resolvedLast4 = inferLast4(name, last4);
+  const owed = accounts.reduce((sum, a) => sum + (a.cardStatus?.owed ?? a.current_balance), 0);
+  const currency = accounts[0]?.currency;
+
   return (
     <Card className="h-full gap-0 p-5">
-      <div className="flex items-center gap-3">
-        <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-          <CreditCard className="size-[18px]" />
-        </span>
-        <div className="min-w-0">
-          <p className="truncate font-medium text-foreground">{name}</p>
-          <p className="text-xs text-muted-foreground">{t("currencyLines", { count: accounts.length })}</p>
-        </div>
-      </div>
-      <div className="mt-3 divide-y">
+      <PaymentCard
+        name={name}
+        last4={resolvedLast4}
+        network={network}
+        color={artColor}
+        owed={owed}
+        currency={currency}
+      />
+      <div className="mt-4 divide-y">
         {accounts.map((a) => {
-          const owed = a.cardStatus?.owed ?? a.current_balance;
+          const lineOwed = a.cardStatus?.owed ?? a.current_balance;
           const util = a.cardStatus?.utilization_pct ?? null;
           return (
             <Link
@@ -46,7 +65,7 @@ export function CardGroupTile({
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="figure text-base text-foreground">{formatMoney(owed, a.currency)}</span>
+                <MoneyDisplay amount={lineOwed} currency={a.currency} size="inline" />
                 <ChevronRight className="size-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
               </div>
             </Link>
