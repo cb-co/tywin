@@ -299,7 +299,7 @@
     font-family: var(--font-inter), var(--font-jakarta), sans-serif;
     font-variant-numeric: tabular-nums lining-nums;
     letter-spacing: -0.01em;
-    font-weight: 600;
+    font-weight: inherit;
   }
 }
 

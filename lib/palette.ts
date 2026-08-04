@@ -1,5 +1,3 @@
-import type { CSSProperties } from "react";
-
 /**
  * Identity colours for categories, accounts and goals. Stored as literal hex on
  * the row — not `var(--chart-n)` — because the value has to survive a theme
@@ -47,15 +45,3 @@ export const SWATCH_CLASS =
   "ring-offset-2 ring-offset-background transition-all " +
   "focus-visible:ring-2 focus-visible:ring-ring " +
   "data-[active=true]:ring-2 data-[active=true]:ring-foreground";
-
-/**
- * The wash a coloured card takes. Mixing against `var(--card)` rather than a
- * fixed value is what makes this theme-correct for free: the same 5% over ivory
- * and over near-black both land as a gentle cast in the right direction.
- */
-export function colorCardStyle(color: string | null): CSSProperties {
-  if (!color) return {};
-  return {
-    backgroundColor: `color-mix(in oklab, ${color} 5%, var(--card))`,
-  };
-}
