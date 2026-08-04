@@ -434,7 +434,7 @@
     "amountLabel": "Amount",
     "amountPlaceholder": "0.00",
     "ratePrefix": "1 {currency} =",
-    "destinationLands": "{account} receives {amount} {currency}",
+    "destinationLands": "{account} receives {amount}",
     "ratePlaceholder": "Rate",
     "useMarketRate": "Use market rate ({rate})",
     "transferRateInvalid": "Enter a conversion rate for this transfer",

@@ -26,6 +26,7 @@ import {
 import { ACCOUNT_GROUPS, accountOptionLabel, accountTypeMeta, type AccountType } from "@/lib/accounts/meta";
 import { destinationAmount } from "@/lib/transactions/money";
 import { crossRate } from "@/lib/fx";
+import { formatMoney } from "@/lib/format";
 import { useUiSound } from "@/components/sound/sound-provider";
 
 type FormValues = {
@@ -394,8 +395,7 @@ export function TransactionForm({
         {landing !== null && dst ? (
           <p className="text-xs text-muted-foreground">
             {t("destinationLands", {
-              amount: landing.toLocaleString(undefined, { maximumFractionDigits: 2 }),
-              currency: dst.currency,
+              amount: formatMoney(landing, dst.currency),
               account: dst.name,
             })}
           </p>

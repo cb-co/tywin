@@ -434,7 +434,7 @@
     "amountLabel": "Monto",
     "amountPlaceholder": "0.00",
     "ratePrefix": "1 {currency} =",
-    "destinationLands": "{account} recibe {amount} {currency}",
+    "destinationLands": "{account} recibe {amount}",
     "ratePlaceholder": "Tasa",
     "useMarketRate": "Usar tasa del mercado ({rate})",
     "transferRateInvalid": "Introduce una tasa de conversión para esta transferencia",
