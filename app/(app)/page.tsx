@@ -103,7 +103,7 @@ export default async function OverviewPage() {
       {/* Net worth hero */}
       <div className="rise" style={{ "--i": 1 } as React.CSSProperties}>
         <HeroCard label={t("netWorth")}>
-          <MoneyDisplay amount={o.netWorth} currency={o.baseCurrency} size="hero" />
+          <MoneyDisplay amount={o.netWorth} currency={o.baseCurrency} size="hero" animate />
           <p className="mt-3 text-sm opacity-80">{t("netWorthBody", { currency: o.baseCurrency })}</p>
         </HeroCard>
       </div>
@@ -115,14 +115,14 @@ export default async function OverviewPage() {
             <ColorTile color="var(--success)" icon={ArrowDownLeft} />
             <p className="text-xs text-muted-foreground">{t("incomeThisMonth")}</p>
           </div>
-          <MoneyDisplay amount={o.monthIncome} currency={o.baseCurrency} size="stat" className="mt-2 text-success" />
+          <MoneyDisplay amount={o.monthIncome} currency={o.baseCurrency} size="stat" animate className="mt-2 text-success" />
         </Card>
         <Card className="rise p-5" style={{ "--i": 3 } as React.CSSProperties}>
           <div className="flex items-center gap-3">
             <ColorTile color={null} icon={ArrowUpRight} />
             <p className="text-xs text-muted-foreground">{t("spendingThisMonth")}</p>
           </div>
-          <MoneyDisplay amount={o.monthExpense} currency={o.baseCurrency} size="stat" className="mt-2 text-foreground" />
+          <MoneyDisplay amount={o.monthExpense} currency={o.baseCurrency} size="stat" animate className="mt-2 text-foreground" />
         </Card>
         <Card className="rise p-5" style={{ "--i": 4 } as React.CSSProperties}>
           <div className="flex items-center gap-3">
@@ -130,7 +130,7 @@ export default async function OverviewPage() {
             <p className="text-xs text-muted-foreground">{t("budgetUsed")}</p>
           </div>
           <div className="mt-2 flex items-end justify-between gap-2">
-            <MoneyDisplay amount={o.totalUsed} currency={o.baseCurrency} size="stat" className="text-foreground" />
+            <MoneyDisplay amount={o.totalUsed} currency={o.baseCurrency} size="stat" animate className="text-foreground" />
             <StatPill tone={budgetPct >= 100 ? "destructive" : "neutral"}>
               {o.totalBudget > 0 ? formatPercent(budgetPct) : "—"}
             </StatPill>

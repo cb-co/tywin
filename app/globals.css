@@ -317,14 +317,25 @@
 /* ============================================================
    Motion layer
 
-   MOTION_INTENSITY 5 of 10. This is a finance app: motion exists to
-   explain hierarchy, acknowledge input, and show state changes. It
-   never decorates. Only `transform` and `opacity` are animated so
-   everything stays on the compositor.
+   MOTION_INTENSITY 7 of 10. Motion still does the structural work —
+   explaining hierarchy, acknowledging input, showing state changes —
+   but it is now also allowed to carry delight, which is a change from
+   the earlier "it never decorates" rule. A figure counting up and a
+   goal bursting when it lands are decoration in the strict sense, and
+   they are the point: this is money the person actually saved, and
+   the app should say so rather than silently swapping a number.
+
+   The licence is bounded. Delight is reserved for moments the person
+   caused and would want marked; it never fires on passive render, on
+   navigation, or more than once for the same event. Only `transform`
+   and `opacity` are animated so everything stays on the compositor.
 
    Every animation below is gated behind `prefers-reduced-motion:
    no-preference`. Under `reduce`, elements render in their final
-   state instantly — nothing is hidden, nothing is lost.
+   state instantly — nothing is hidden, nothing is lost. Raising the
+   intensity raises the stakes on that block, not the exceptions to
+   it: every animation added here MUST get an explicit end-state
+   entry in the `reduce` block at the bottom of this layer.
    ============================================================ */
 @layer utilities {
   /* Shared easing. A gentle overshoot-free decelerate curve. */
@@ -417,9 +428,14 @@
     .lift:hover {
       transform: translate3d(0, -2px, 0);
     }
+    /* A real press, not a hint of one. The old 0.995 was below the
+       threshold where the eye registers a size change at all, so the
+       click had no tactile receipt; 0.96 is unmistakable. The duration
+       drops with it — a press that takes 80ms to arrive feels like lag,
+       whereas 60ms reads as the surface responding under the finger. */
     .lift:active {
-      transform: translate3d(0, 0, 0) scale(0.995);
-      transition-duration: 80ms;
+      transform: translate3d(0, 0, 0) scale(0.96);
+      transition-duration: 60ms;
     }
   }
 
@@ -517,6 +533,29 @@
     display: none;
   }
 
+  /* --- Celebration ----------------------------------------------------
+     A ring that swells out of a progress bar and fades, fired once when a
+     goal is actually reached. This is the clearest case of the raised
+     MOTION_INTENSITY: it marks a moment the person earned, so it is
+     allowed to be decorative — but only on the transition into
+     completion, never on render of an already-finished goal. The element
+     is mounted only for the duration of the burst, so a later arrival
+     restarts it from the top. */
+  .burst {
+    animation: burst 700ms var(--ease-out-soft) both;
+  }
+
+  @keyframes burst {
+    from {
+      opacity: 0.65;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(1.35);
+    }
+  }
+
   /* --- Reduced motion --------------------------------------------------
      Collapse every animation to its end state. `animation: none` with
      `fill-mode: both` would strand elements at `opacity: 0`, so each
@@ -544,6 +583,21 @@
        belt and braces in case the class lands late. */
     .splash {
       display: none;
+    }
+
+    /* The burst is the one animation whose end state IS invisible, so
+       unlike everything above it, resetting to `opacity: 0` is correct
+       rather than the stranding bug the note at the top warns about. It
+       carries no information — the completed bar and the "reached" copy
+       both remain — so removing it costs nothing. The success sound still
+       plays: `reduce` is a statement about motion, not about feedback.
+
+       The count-up has no entry here because it is not a CSS animation.
+       It reads the same media query in JavaScript and renders its final
+       value immediately — see components/ui/count-up.tsx. */
+    .burst {
+      animation: none;
+      opacity: 0;
     }
   }
 }
