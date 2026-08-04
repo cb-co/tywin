@@ -78,6 +78,14 @@ export function AccountCard({ account }: { account: AccountWithStatus }) {
             <p className="mt-1 text-xs text-muted-foreground">
               {type === "asset" ? t("estimatedValue") : t("currentBalance")}
             </p>
+            {account.committed > 0 && (
+              <p className="mt-1 text-xs text-muted-foreground tabular-nums">
+                {t.rich("availableCommitted", {
+                  available: () => <MaskedMoney amount={account.available} currency={currency} />,
+                  committed: () => <MaskedMoney amount={account.committed} currency={currency} />,
+                })}
+              </p>
+            )}
           </div>
         )}
       </Card>

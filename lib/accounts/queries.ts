@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
+import { getAccountFunding } from "@/lib/goals/queries";
 
 type AccountRow = Database["public"]["Tables"]["accounts"]["Row"];
 type CardRow = Database["public"]["Views"]["card_status"]["Row"];
@@ -11,13 +12,17 @@ export type CardStatementRow = Database["public"]["Tables"]["card_statements"]["
 
 export type AccountWithStatus = AccountRow & {
   balance: number | null;
+  /** Committed to savings goals, in the account's own currency. */
+  committed: number;
+  /** balance − committed. Never negative unless the balance itself is. */
+  available: number;
   cardStatus: CardRow | null;
   loanStatus: LoanRow | null;
 };
 
 export async function getAccountsWithStatus(): Promise<AccountWithStatus[]> {
   const supabase = await createClient();
-  const [{ data: accounts }, { data: balances }, { data: cards }, { data: loans }] =
+  const [{ data: accounts }, { data: balances }, { data: cards }, { data: loans }, funding] =
     await Promise.all([
       supabase
         .from("accounts")
@@ -28,18 +33,25 @@ export async function getAccountsWithStatus(): Promise<AccountWithStatus[]> {
       supabase.from("account_balances").select("*"),
       supabase.from("card_status").select("*"),
       supabase.from("loan_status").select("*"),
+      getAccountFunding(),
     ]);
 
   const balByAcct = new Map((balances ?? []).map((b) => [b.account_id, b.balance]));
   const cardByAcct = new Map((cards ?? []).map((c) => [c.account_id, c]));
   const loanByAcct = new Map((loans ?? []).map((l) => [l.account_id, l]));
 
-  return (accounts ?? []).map((a) => ({
-    ...a,
-    balance: balByAcct.get(a.id) ?? a.starting_balance,
-    cardStatus: cardByAcct.get(a.id) ?? null,
-    loanStatus: loanByAcct.get(a.id) ?? null,
-  }));
+  return (accounts ?? []).map((a) => {
+    const balance = balByAcct.get(a.id) ?? a.starting_balance;
+    const f = funding.get(a.id);
+    return {
+      ...a,
+      balance,
+      committed: f?.committed ?? 0,
+      available: f?.available ?? balance,
+      cardStatus: cardByAcct.get(a.id) ?? null,
+      loanStatus: loanByAcct.get(a.id) ?? null,
+    };
+  });
 }
 
 export async function getAccountById(id: string): Promise<AccountWithStatus | null> {
@@ -51,15 +63,21 @@ export async function getAccountById(id: string): Promise<AccountWithStatus | nu
     .maybeSingle();
   if (!account) return null;
 
-  const [{ data: balance }, { data: card }, { data: loan }] = await Promise.all([
+  const [{ data: balance }, { data: card }, { data: loan }, funding] = await Promise.all([
     supabase.from("account_balances").select("balance").eq("account_id", id).maybeSingle(),
     supabase.from("card_status").select("*").eq("account_id", id).maybeSingle(),
     supabase.from("loan_status").select("*").eq("account_id", id).maybeSingle(),
+    getAccountFunding(),
   ]);
+
+  const resolved = balance?.balance ?? account.starting_balance;
+  const f = funding.get(id);
 
   return {
     ...account,
-    balance: balance?.balance ?? account.starting_balance,
+    balance: resolved,
+    committed: f?.committed ?? 0,
+    available: f?.available ?? resolved,
     cardStatus: card ?? null,
     loanStatus: loan ?? null,
   };

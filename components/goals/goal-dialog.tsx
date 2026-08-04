@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useUiSound } from "@/components/sound/sound-provider";
-import { createCategory, updateCategory } from "@/app/(app)/budgets/actions";
-import type { BudgetRow } from "@/lib/budgets/queries";
+import { createGoal, updateGoal } from "@/app/(app)/budgets/goal-actions";
 import { SWATCHES } from "@/lib/palette";
+import type { GoalCardRow } from "@/lib/goals/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,33 +21,39 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-type Values = { name: string; emoji: string };
+type Values = { name: string; emoji: string; target_amount: string; target_date: string };
 
-export function CategoryDialog({
+export function GoalDialog({
   mode = "create",
-  category,
+  goal,
   trigger,
 }: {
   mode?: "create" | "edit";
-  category?: BudgetRow;
+  goal?: GoalCardRow;
   trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
-  const [color, setColor] = useState<string>(category?.color ?? SWATCHES[0]);
+  const [color, setColor] = useState<string>(goal?.color ?? SWATCHES[0]);
   const router = useRouter();
-  const t = useTranslations("CategoryDialog");
+  const t = useTranslations("GoalDialog");
   const tc = useTranslations("Common");
   const { playSuccess, playError } = useUiSound();
-  const { register, handleSubmit, reset } = useForm<Values>({
-    defaultValues: { name: category?.name ?? "", emoji: category?.emoji ?? "" },
+
+  const defaults = (): Values => ({
+    name: goal?.name ?? "",
+    emoji: goal?.emoji ?? "",
+    target_amount: goal ? String(goal.target_amount) : "",
+    target_date: goal?.target_date ?? "",
   });
+
+  const { register, handleSubmit, reset } = useForm<Values>({ defaultValues: defaults() });
 
   function onOpenChange(next: boolean) {
     setOpen(next);
     if (next) {
-      reset({ name: category?.name ?? "", emoji: category?.emoji ?? "" });
-      setColor(category?.color ?? SWATCHES[0]);
+      reset(defaults());
+      setColor(goal?.color ?? SWATCHES[0]);
     }
   }
 
@@ -55,9 +61,9 @@ export function CategoryDialog({
     startTransition(async () => {
       const payload = { ...values, color };
       const result =
-        mode === "edit" && category
-          ? await updateCategory(category.category_id, payload)
-          : await createCategory(payload);
+        mode === "edit" && goal
+          ? await updateGoal(goal.id, payload)
+          : await createGoal(payload);
       if (result.error) {
         toast.error(result.error);
         playError();
@@ -82,17 +88,39 @@ export function CategoryDialog({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="flex gap-3">
             <div className="w-16 space-y-2">
-              <Label htmlFor="emoji">{t("emojiLabel")}</Label>
-              <Input id="emoji" placeholder="🍔" className="text-center" {...register("emoji")} />
+              <Label htmlFor="goal-emoji">{t("emojiLabel")}</Label>
+              <Input id="goal-emoji" placeholder="🏝️" className="text-center" {...register("emoji")} />
             </div>
             <div className="flex-1 space-y-2">
-              <Label htmlFor="name">{t("nameLabel")}</Label>
-              <Input id="name" placeholder={t("namePlaceholder")} {...register("name")} required />
+              <Label htmlFor="goal-name">{t("nameLabel")}</Label>
+              <Input
+                id="goal-name"
+                placeholder={t("namePlaceholder")}
+                required
+                {...register("name")}
+              />
             </div>
           </div>
           <div className="space-y-2">
+            <Label htmlFor="goal-target">{t("targetLabel")}</Label>
+            <Input
+              id="goal-target"
+              type="number"
+              step="0.01"
+              min="0.01"
+              required
+              className="tabular-nums"
+              {...register("target_amount")}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="goal-date">{t("targetDateLabel")}</Label>
+            <Input id="goal-date" type="date" {...register("target_date")} />
+            <p className="text-xs text-muted-foreground">{t("targetDateHint")}</p>
+          </div>
+          <div className="space-y-2">
             <Label>{t("colorLabel")}</Label>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-8 gap-2">
               {SWATCHES.map((c) => (
                 <button
                   key={c}

@@ -38,3 +38,10 @@ export function normalizeMonth(input?: string): string {
   }
   return monthStart();
 }
+
+/** Whole months from one first-of-month string to another. Signed. */
+export function monthsBetween(from: string, to: string): number {
+  const [fy, fm] = from.split("-").map(Number);
+  const [ty, tm] = to.split("-").map(Number);
+  return (ty - fy) * 12 + (tm - fm);
+}
