@@ -1724,5 +1724,14 @@ Then report to the user: what changed, what still needs their action (**pushing 
 ## Deferred / follow-up
 
 - `card_groups.art_url` as a card background image (column exists, unused).
-- `accounts.last4` / `accounts.brand` columns to make standalone cards first-class instead of inferring from the name — needs a migration and form UI.
+- `card_groups.art_color` has no defined source yet. Nothing in the app writes it, so
+  every group face falls back to the default violet. The user's stated ideal is the real
+  card art image, which is hard to source without an upload. Two candidate directions,
+  both unexplored: (a) a user image upload feeding `art_url`; (b) using the existing LLM
+  integration to derive the card art — or at minimum a plausible `art_color` — from the
+  card's name. Needs its own design pass; explicitly not part of this plan.
+- `accounts.brand` column to make standalone cards' network first-class instead of
+  inferring from the name — needs a migration and form UI. Note that per the user's
+  2026-08-04 decision, name-regex inference is now the intended behaviour, with **no**
+  mark rendered when inference fails, so this is a refinement rather than a fix.
 - Settings, Help, Subscriptions, Goals and legal pages get tokens only; bespoke layout work on those was explicitly out of scope.

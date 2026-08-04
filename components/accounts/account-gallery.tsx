@@ -109,19 +109,25 @@ export function AccountGallery({
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {group.key === "cards"
               ? clusterCards(group.items).map((cluster) => {
-                  if (cluster.items.length < 2) {
-                    return <AccountCard key={cluster.key} account={cluster.items[0]} />;
-                  }
+                  // Whether a card belongs to a card_groups row — not how many
+                  // currency lines it currently has — decides whether the
+                  // group tile (and its one-per-card face) renders. A card
+                  // that is the sole member of a fresh group still belongs to
+                  // that group, and must still get a face; `cluster.key` is
+                  // only ever a real card_group_id when a group exists (solo
+                  // cards key off `solo:${id}`, which never matches).
                   const cardGroup = groupById.get(cluster.key);
-                  return (
+                  return cardGroup ? (
                     <CardGroupTile
                       key={cluster.key}
-                      name={cardGroup?.name ?? t("cardGroupFallbackName")}
-                      brand={cardGroup?.brand ?? null}
-                      last4={cardGroup?.last4 ?? null}
-                      artColor={cardGroup?.art_color ?? null}
+                      name={cardGroup.name}
+                      brand={cardGroup.brand}
+                      last4={cardGroup.last4}
+                      artColor={cardGroup.art_color}
                       accounts={cluster.items}
                     />
+                  ) : (
+                    <AccountCard key={cluster.key} account={cluster.items[0]} />
                   );
                 })
               : group.items.map((account) => (

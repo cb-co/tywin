@@ -31,8 +31,16 @@ export function CardGroupTile({
   const t = useTranslations("Accounts");
   const network = inferNetwork(name, brand);
   const resolvedLast4 = inferLast4(name, last4);
+  // Card groups are usually cross-currency (e.g. a USD line and a DOP line on
+  // the same physical card), and there is no FX conversion here to unify
+  // them. The face shows one summed figure only when every line agrees on a
+  // currency; otherwise it shows no figure at all rather than a number that
+  // silently mixes units. `lineCurrencies` (a Set, not `accounts[0]`) is what
+  // decides this, so an empty `accounts` array can never produce a bogus
+  // "uniform" currency.
+  const lineCurrencies = new Set(accounts.map((a) => a.currency));
+  const uniformCurrency = lineCurrencies.size === 1 ? [...lineCurrencies][0] : undefined;
   const owed = accounts.reduce((sum, a) => sum + (a.cardStatus?.owed ?? a.current_balance), 0);
-  const currency = accounts[0]?.currency;
 
   return (
     <Card className="h-full gap-0 p-5">
@@ -41,8 +49,8 @@ export function CardGroupTile({
         last4={resolvedLast4}
         network={network}
         color={artColor}
-        owed={owed}
-        currency={currency}
+        owed={uniformCurrency !== undefined ? owed : undefined}
+        currency={uniformCurrency}
       />
       <div className="mt-4 divide-y">
         {accounts.map((a) => {
