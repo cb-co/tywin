@@ -363,6 +363,12 @@ plan document (added this session). Carry these pointers into the dispatches:
   * Task 14 wires CountUp into MoneyDisplay behind an opt-in `animate` prop and
     must add every new animation to the prefers-reduced-motion reduce block.
 
+--- TASK 15 BLOCKER — RESOLVED 2026-08-04, superseding the block below ----------
+User chose "fix it". commit 469be3d adds `unstable_cache` to the next/cache mock
+in statement-actions.test.ts (lib/fx.ts calls it at module scope, so the whole
+FILE failed to collect). Suite is now genuinely 38/38 files, 272 tests passing.
+Task 15 Step 5 can hold as written. The stale block below is kept for context.
+
 --- TASK 15 BLOCKER — needs a user decision, do not silently fix ----------------
 Task 15 Step 5 demands `npm test` "all pass". It CANNOT, because
 app/(app)/accounts/statement-actions.test.ts fails to COLLECT:
@@ -386,11 +392,16 @@ unrelated test fix into the redesign silently.
    bottom-nav.tsx before being caught. Describe layout maths in prose.
 
 --- STANDING USER ACTIONS -------------------------------------------------------
-  * supabase/migrations/20260804120000_brighten_palette.sql is STILL UNPUSHED.
-    Agents must never run `npm run db:push`. Until it is pushed, rows hold the
-    OLD palette, which is why every consumer must treat a stored colour as an
-    arbitrary hex. Task 15 Step 4 verifies the pre-migration state.
-  * Task 17 will add a SECOND migration (accounts.last4) needing the same.
+  * TWO migrations are now UNPUSHED. Agents must never run `npm run db:push`.
+    1. supabase/migrations/20260804120000_brighten_palette.sql — until pushed,
+       rows hold the OLD palette, which is why every consumer must treat a
+       stored colour as an arbitrary hex. Task 15 Step 4 verifies this state.
+    2. supabase/migrations/20260804130000_accounts_last4.sql (added by Task 17)
+       — the app works in BOTH states by design: reads select("*"), and writes
+       retry once with the column omitted (isMissingLast4 in accounts/actions.ts).
+    AFTER PUSHING #2: run `npm run db:types` (lib/supabase/types.ts was
+    hand-extended because the generator reads the linked remote), and delete the
+    two isMissingLast4 retry branches, which become dead.
 
 --- DEFERRED MINORS FOR THE FINAL WHOLE-BRANCH REVIEW ---------------------------
 Collected above under their tasks. The load-bearing ones:
