@@ -131,7 +131,7 @@ export default async function InsightsPage({
       >
         <ChevronLeft className="size-4" />
       </Link>
-      <span className="min-w-36 text-center text-sm font-medium text-foreground">{monthLabel(month)}</span>
+      <span className="min-w-36 text-center text-sm font-medium text-foreground">{monthLabel(month, locale)}</span>
       <Link
         href={`/insights?month=${addMonths(month, 1)}`}
         aria-label={t("nextMonthAria")}

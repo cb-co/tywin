@@ -10,18 +10,18 @@ export function addMonths(month: string, delta: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
 }
 
-export function monthLabel(month: string): string {
+export function monthLabel(month: string, locale = "en-US"): string {
   const [y, m] = month.split("-").map(Number);
-  return new Date(y, m - 1, 1).toLocaleDateString("en-US", {
+  return new Date(y, m - 1, 1).toLocaleDateString(locale, {
     month: "long",
     year: "numeric",
   });
 }
 
 /** "Jul" — axis-sized label for a month. */
-export function shortMonth(month: string): string {
+export function shortMonth(month: string, locale = "en-US"): string {
   const [y, m] = month.split("-").map(Number);
-  return new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "short" });
+  return new Date(y, m - 1, 1).toLocaleDateString(locale, { month: "short" });
 }
 
 /** Last calendar day of `month`, as "YYYY-MM-DD". */

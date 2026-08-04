@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useUiSound } from "@/components/sound/sound-provider";
 import {
   ChevronLeft,
@@ -57,6 +57,7 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
   // moment any one of them starts deleting.
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const t = useTranslations("Budgets");
+  const locale = useLocale();
   const { playSuccess, playDelete, playError } = useUiSound();
   const { rows, totalBudget, totalUsed, baseCurrency } = overview;
   const remaining = totalBudget - totalUsed;
@@ -128,7 +129,7 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
             <ChevronLeft className="size-4" />
           </Button>
           <span className="min-w-40 text-center text-lg font-medium">
-            {monthLabel(month)}
+            {monthLabel(month, locale)}
           </span>
           <Button
             variant="ghost"
