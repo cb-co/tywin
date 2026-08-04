@@ -232,11 +232,65 @@ comment-scanner trap demands). lint "No issues found", build succeeded, vitest 3
 1 failed file, 271 tests passed — the same documented pre-existing failure, unchanged.
 Task 13: complete (commit 66d435d..70f384e, self-reviewed)
 
+Task 14: react-hooks/set-state-in-effect rejected BOTH first drafts, correctly. Neither was
+suppressed. useCountUp now holds `number | null` where null means "show the real value", writes
+state only from inside the rAF callback, and returns `enabled && shown !== null ? shown : value`
+so the non-animating paths need no state at all. The goal burst dropped React state entirely and
+drives the class on the DOM through a ref — which is ALSO what makes a second arrival replay the
+animation (remove class, force reflow via offsetWidth, re-add) instead of finding it finished.
+Task 14: once-per-arrival trap that nearly shipped — SoundProvider redeclares playSuccess on
+every render, so putting it in the effect deps re-fires the burst on unrelated parent renders.
+Read through a ref synced in its own effect; deps are the single `reached` boolean. wasReached
+is SEEDED with the mount value so an already-complete goal does not celebrate on every visit.
+Task 14: .burst is the one animation whose reduce-block end state is correctly `opacity: 0` —
+it carries no information, unlike everything above it in that block. The success sound still
+plays under reduce; that setting is about motion, not feedback. Noted inline.
+Task 14: STEP 6 NOT DONE — needs a browser (emulate reduce, reload, confirm nothing invisible).
+Carried to the same browser pass as Task 15 Steps 1-4.
+Task 14: complete except Step 6 (commit 70f384e..6e96059, self-reviewed)
+
+Task 16: complete (commit 08da60d). The plan said "translated error"; actions.ts has NO
+translation anywhere and returns English throughout, so the translated message the person reads
+is raised in the dialog and the action keeps an English guard as the backstop for direct
+invocation. Keys landed in the AccountForm namespace (NOT Accounts), both locales verified.
+
+Task 17: complete (commit 1a9ac39). Key decisions:
+ * MIGRATION UNPUSHED: supabase/migrations/20260804130000_accounts_last4.sql. See STANDING
+   USER ACTIONS — there are now TWO unpushed migrations.
+ * Pre-migration safety is implemented as a RETRY, not just a hope: isMissingLast4() detects
+   PGRST204 / 42703 mentioning last4, and create/update re-run once with `last4: undefined`
+   (supabase-js JSON.stringify drops undefined keys, so the column is genuinely omitted).
+   Without it, adding the column ahead of its migration breaks account create/edit for
+   EVERYONE, not just people who fill the optional field. Delete both branches after the push.
+ * Reads needed no guard — every accounts query is select("*"), and inferLast4 treats an absent
+   column the same as an unset one. Verified before relying on it.
+ * lib/supabase/types.ts was HAND-EXTENDED (3 lines, alphabetical). db:types generates from the
+   linked remote, which lacks the column. REGENERATE AFTER PUSHING.
+ * TS trap: `let { data, error } = await ...` breaks the discriminated-union narrowing and the
+   build fails with "'data' is possibly 'null'". Hold the whole response object instead.
+
+Task 15: PARTIALLY DONE (commit 3d2b819) — every item that does not need a browser:
+ * All FOUR raw color-mix tiles replaced with ColorTile. The project-wide grep from Task 9
+   Step 5 is now CLEAN — verified, zero matches.
+ * budget-grid month-switcher totals routed through the mask. The now-unused formatMoney import
+   in that file confirms no unmasked money remains there.
+ * Dead keys cardGroupFallbackName / currencyLines removed from both locales.
+   NOTE: do NOT remove these with a JSON.parse/stringify round-trip — it strips the blank
+   separator lines that group the Help section and produces a 22-line diff for a 4-line change.
+   Delete the lines directly. I made this mistake and reverted it.
+ * lint clean, build succeeds, vitest 271 passed / 1 pre-existing failed file.
+STILL OPEN on Task 15 — Steps 1-4 and Step 6, plus Task 14 Step 6. All need a running dev
+server, which per user preference must not be started without asking. Two questions were put
+to the user at the end of this session: (a) start the dev server for the visual pass, and
+(b) how to resolve the Step 5 test blocker below.
+
 ================================================================================
 == RESUME HERE — handoff written 2026-08-04, session ended by user request     ==
-== UPDATED: Tasks 12 (66d435d) and 13 (70f384e) are DONE. Next is Task 14.     ==
+== UPDATED: Tasks 12,13,14,16,17 DONE and Task 15 partially done. Only the     ==
+== BROWSER pass remains (T15 Steps 1-4 + 6, T14 Step 6) plus the test blocker. ==
 == The pre-computed dark chart candidate below was SUPERSEDED — do not reuse.  ==
 == The "last color-mix instance" claim below is WRONG — see the Task 13 block. ==
+== The color-mix grep is now CLEAN; ignore the stale claim that it is not.     ==
 ================================================================================
 
 HEAD at handoff: 2078145  (branch redesign/playful-app-ui, working tree CLEAN)
