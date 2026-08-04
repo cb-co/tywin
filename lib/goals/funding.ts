@@ -72,9 +72,10 @@ export const round4 = (n: number) => Math.round(n * 1e4) / 1e4;
  *
  *   committed(account) = min( max(raw, 0), max(balance, 0) )
  *
- * The single definition of the clamp rule, shared by `computeFunding` (which
- * derives `raw` from individual contribution rows) and `getAccountFunding`
- * (which reads `raw` pre-summed from the `account_commitments` view).
+ * The single definition of the clamp rule, called from `computeFunding`.
+ * Named rather than inlined because this rule was once duplicated in SQL,
+ * drifted from this definition, and shipped wrong — worth a name even with
+ * one caller.
  */
 export function clampCommitment(raw: number, balance: number): number {
   return Math.min(Math.max(raw, 0), Math.max(balance, 0));
