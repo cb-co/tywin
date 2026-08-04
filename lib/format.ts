@@ -10,12 +10,18 @@ const CURRENCY_LOCALE: Record<string, string> = {
   DOP: "es-DO",
 };
 
-export function formatMoney(
-  amount: number,
-  currency: string,
-  opts?: { compact?: boolean; signed?: boolean; maximumFractionDigits?: number },
-): string {
-  const value = new Intl.NumberFormat(CURRENCY_LOCALE[currency] ?? "en-US", {
+export type MoneyOpts = {
+  compact?: boolean;
+  signed?: boolean;
+  maximumFractionDigits?: number;
+};
+
+/**
+ * The one place currency formatting is configured. `splitMoney` needs the same
+ * configuration to locate the fraction digits, and a second copy would drift.
+ */
+export function moneyFormatter(currency: string, opts?: MoneyOpts): Intl.NumberFormat {
+  return new Intl.NumberFormat(CURRENCY_LOCALE[currency] ?? "en-US", {
     style: "currency",
     currency,
     // es-DO has no narrowSymbol form that keeps "RD$"; "symbol" is required
@@ -23,7 +29,11 @@ export function formatMoney(
     currencyDisplay: currency in CURRENCY_LOCALE ? "symbol" : "narrowSymbol",
     notation: opts?.compact ? "compact" : "standard",
     maximumFractionDigits: opts?.maximumFractionDigits ?? 2,
-  }).format(amount);
+  });
+}
+
+export function formatMoney(amount: number, currency: string, opts?: MoneyOpts): string {
+  const value = moneyFormatter(currency, opts).format(amount);
   if (opts?.signed && amount > 0) return `+${value}`;
   return value;
 }
