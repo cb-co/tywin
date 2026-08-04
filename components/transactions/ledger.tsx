@@ -236,7 +236,7 @@ export function Ledger({
         <div className="space-y-6">
           {byMonth.map(({ monthKey, label, days }) => (
             <div key={monthKey}>
-              <h2 className="sticky top-0 z-10 -mx-1 mb-1 py-2">
+              <h2 className="sticky top-14 z-10 -mx-1 mb-1 py-2 md:top-0">
                 <span className="inline-flex rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground backdrop-blur">
                   {label}
                 </span>

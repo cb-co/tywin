@@ -26,6 +26,7 @@ import { Card } from "@/components/ui/card";
 import { ColorTile } from "@/components/ui/color-tile";
 import { MoneyDisplay } from "@/components/ui/money-display";
 import { StatPill } from "@/components/ui/stat-pill";
+import { useMaskedFormatMoney } from "@/components/figure-mask/figure-mask-provider";
 import { EmptyState } from "@/components/empty-state";
 import { PieChart } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -60,6 +61,7 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const t = useTranslations("Budgets");
   const locale = useLocale();
+  const maskedFormatMoney = useMaskedFormatMoney();
   const { playSuccess, playDelete, playError } = useUiSound();
   const { rows, totalBudget, totalUsed, baseCurrency } = overview;
   const remaining = totalBudget - totalUsed;
@@ -249,8 +251,8 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
                   <p className="truncate text-sm font-medium text-foreground">{row.name}</p>
                   <p className="text-xs text-muted-foreground tabular-nums">
                     {t("amountOfBudget", {
-                      used: formatMoney(row.used, baseCurrency),
-                      budget: formatMoney(row.budget, baseCurrency),
+                      used: maskedFormatMoney(row.used, baseCurrency),
+                      budget: maskedFormatMoney(row.budget, baseCurrency),
                     })}
                   </p>
                 </div>
@@ -334,8 +336,8 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
                   <MoneyDisplay amount={row.used} currency={baseCurrency} size="stat" />
                   <p className="shrink-0 text-xs text-muted-foreground tabular-nums">
                     {t("amountOfBudget", {
-                      used: formatMoney(row.used, baseCurrency),
-                      budget: formatMoney(row.budget, baseCurrency),
+                      used: maskedFormatMoney(row.used, baseCurrency),
+                      budget: maskedFormatMoney(row.budget, baseCurrency),
                     })}
                   </p>
                 </div>
