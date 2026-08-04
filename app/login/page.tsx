@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { LoginForm } from "@/components/auth/login-form";
 import { Logo, Wordmark } from "@/components/brand/logo";
+import { SpotIllustration } from "@/components/brand/spot-illustration";
 
 export default async function LoginPage({
   searchParams,
@@ -21,9 +22,17 @@ export default async function LoginPage({
   return (
     <main className="grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">
       {/* Brand panel */}
-      {/* Ink in both themes. `primary` inverts to ivory in dark mode, and a
-          full-height ivory slab would be the brightest thing on a black page. */}
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-brand-panel p-10 text-brand-panel-foreground lg:flex">
+      {/* The signature gradient, the same slab the overview hero uses — it is
+          the one surface that does not invert, so the first thing a signed-out
+          visitor sees is identical in both themes. This previously reached for
+          background and text utilities built on the removed brand panel tokens;
+          Tailwind emits nothing for an unknown utility rather
+          than failing, so the panel had silently been rendering with no
+          background at all while the build stayed green. Class names are spelt
+          out in prose here on purpose — the content scanner matches class-like
+          tokens inside comments too, and naming a dead one would resurrect it
+          in the stylesheet. */}
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-[image:var(--hero)] p-10 text-(--hero-foreground) lg:flex">
         <div className="flex items-center gap-2.5">
           <Logo />
           <Wordmark />
@@ -32,18 +41,15 @@ export default async function LoginPage({
           <h2 className="text-4xl font-semibold leading-[1.1] tracking-tight">
             {t("heroTitle")}
           </h2>
-          <p className="text-brand-panel-foreground/75">{t("heroBody")}</p>
+          <p className="opacity-75">{t("heroBody")}</p>
         </div>
-        <p className="relative z-10 text-xs text-brand-panel-foreground/60">
-          {t("heroFootnote")}
-        </p>
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-28 -top-28 h-96 w-96 rounded-full border border-brand-panel-foreground/10"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-10 bottom-20 h-64 w-64 rounded-full border border-brand-panel-foreground/10"
+        <p className="relative z-10 text-xs opacity-60">{t("heroFootnote")}</p>
+        {/* Replaces the two outline rings that used to sit here. Painted in the
+            inherited hero foreground rather than `--brand`, which on this
+            gradient would be violet on violet. */}
+        <SpotIllustration
+          scene="wallet"
+          className="pointer-events-none absolute -bottom-8 -right-8 size-80 text-current opacity-40"
         />
       </div>
 

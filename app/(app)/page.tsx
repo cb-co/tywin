@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Wallet, PieChart, Repeat, ArrowUpRight, ArrowDownLeft, CalendarClock } from "lucide-react";
 import { getTranslations, getLocale } from "next-intl/server";
 import { PageHeader } from "@/components/page-header";
+import { SpotIllustration } from "@/components/brand/spot-illustration";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { HeroCard } from "@/components/ui/hero-card";
@@ -56,6 +57,14 @@ export default async function OverviewPage() {
           >
             <MoneyDisplay amount={0} currency={o.baseCurrency} size="hero" />
             <p className="mt-3 max-w-md text-sm opacity-80">{t("netWorthEmptyBody")}</p>
+            {/* Anchored to HeroCard's inner content wrapper, which is the
+                nearest positioned ancestor, and clipped by the card's own
+                overflow-hidden. Painted in the inherited hero foreground —
+                `--brand` would be violet on the violet gradient. */}
+            <SpotIllustration
+              scene="chart"
+              className="pointer-events-none absolute -right-2 -top-12 size-40 text-current opacity-25"
+            />
           </HeroCard>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">

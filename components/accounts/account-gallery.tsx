@@ -1,7 +1,8 @@
 "use client";
 
-import { Plus, Wallet } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { SpotIllustration } from "@/components/brand/spot-illustration";
 import { AccountCard } from "./account-card";
 import { CardGroupTile } from "./card-group-tile";
 import { AccountFormDialog } from "./account-form-dialog";
@@ -55,7 +56,7 @@ export function AccountGallery({
   if (accounts.length === 0) {
     return (
       <EmptyState
-        icon={<Wallet className="size-6" />}
+        illustration={<SpotIllustration scene="wallet" className="size-28" />}
         title={t("emptyTitle")}
         description={t("emptyDescription")}
         action={
