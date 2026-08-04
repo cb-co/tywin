@@ -80,7 +80,8 @@ export async function getQuickAddData(): Promise<QuickAddData> {
         .from("accounts")
         .select("id,name,currency,type,network_fee_optional,bank_id")
         .eq("is_archived", false)
-        .order("sort_order"),
+        .order("sort_order")
+        .order("created_at"),
       supabase.from("categories").select("id,name,emoji,color").order("sort_order"),
       supabase.from("currencies").select("*").order("code"),
       supabase.from("profiles").select("base_currency").maybeSingle(),

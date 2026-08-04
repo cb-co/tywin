@@ -23,7 +23,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ACCOUNT_GROUPS, accountOptionLabel, accountTypeMeta, type AccountType } from "@/lib/accounts/meta";
+import {
+  ACCOUNT_GROUPS,
+  accountOptionLabel,
+  accountTypeMeta,
+  isBankAccount,
+  type AccountType,
+} from "@/lib/accounts/meta";
 import { destinationAmount } from "@/lib/transactions/money";
 import { crossRate } from "@/lib/fx";
 import { formatMoney } from "@/lib/format";
@@ -132,7 +138,13 @@ export function TransactionForm({
     ),
   };
 
-  const firstAccount = accounts.find((a) => a.id === defaultAccountId) ?? accounts[0];
+  // Falling back to accounts[0] would pick whatever the query happened to
+  // return first — a card or loan is a bad default source for a new expense.
+  // A checking/savings account is the one people actually pay out of.
+  const firstAccount =
+    accounts.find((a) => a.id === defaultAccountId) ??
+    accounts.find((a) => isBankAccount(a.type as AccountType)) ??
+    accounts[0];
 
   const { register, handleSubmit, control, setValue, getValues } = useForm<FormValues>({
     defaultValues: transaction
