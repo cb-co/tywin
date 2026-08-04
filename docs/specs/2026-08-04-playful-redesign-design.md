@@ -29,13 +29,16 @@ Three secondary causes, each verified in the code:
 
 ## Constraints
 
-- **No migrations.** Category and account colours are stored as literal hex on
-  user rows. Render treatment can change freely; stored values cannot be
-  repaletted without a migration the user must push manually. The design must
-  work with the existing 16 swatches.
-- **Contrast.** Stored swatches sit in a luminance band of 0.126-0.300, giving
-  ~4:1 against white. Usable behind emoji and single glyphs, **not** behind small
-  text.
+- **One migration, pushed by hand.** Category and account colours are stored as
+  literal hex on user rows. The agent cannot push migrations; the user does.
+  Exactly one is in scope — `supabase/migrations/20260804120000_brighten_palette.sql`,
+  already written — and the UI must render correctly **both before and after** it
+  is applied, since there is a window where it has not been.
+- **Contrast.** Every palette value clears 3:1 against white and against both
+  card surfaces. That covers glyphs, icons and large text on a tile — it does
+  **not** cover small body text on top of one.
+- **No new schema.** Card identity uses columns that already exist
+  (`card_groups.brand`, `.last4`, `.art_color`) plus inference from names.
 - **Both themes stay first-class.** Light is the default and must not become an
   inverted afterthought.
 - **`prefers-reduced-motion` is honoured** for every animation added.
@@ -50,13 +53,15 @@ Three secondary causes, each verified in the code:
 | Palette scope | New cool neutrals + vivid brand + pervasive category colour |
 | Desktop | App-like centred column, richer sidebar rail (not a phone frame) |
 | Bespoke surfaces | 8: shell, overview, transactions, budgets, accounts, insights, login, marketing |
-| Hero gradient | Deep navy → violet (`#141A3D → #4326C9`), premium reading |
+| Hero gradient | Violet → indigo (`#6C4EF5 → #4326C9`), energetic reading |
 | Playfulness | Big numerals, colour tiles, illustrations, celebration + richer motion |
+| Stored palette | Brightened via migration (written; user pushes) |
+| Credit cards | Rendered as physical cards with network mark and masked digits |
 
-Because the hero reads premium rather than toy, playfulness is carried
-disproportionately by the category tiles, the numerals and the motion layer.
-Those three must not be scaled back during implementation without revisiting
-this decision.
+The hero takes the **energetic** reading, not the premium one. This was
+explicitly corrected after the initial choice: the brief is a playful consumer
+app, and a deep navy slab pulls back toward the bank-dashboard feel the redesign
+exists to escape. Violet leads.
 
 ## Foundation
 
@@ -88,7 +93,7 @@ brand moments — not only interactive state.
 ### Hero surface
 
 `--brand-panel` (currently ink in both themes) becomes `--hero`: a diagonal
-gradient `#141A3D → #4326C9`, identical in both themes, always white-on. It is
+gradient `#6C4EF5 → #4326C9`, identical in both themes, always white-on. It is
 the anchor object on the dashboard, login and marketing pages.
 
 The rename is contained: `--brand-panel` and `--brand-panel-foreground` are
@@ -204,10 +209,69 @@ emoji, `MoneyDisplay`, percentage as `StatPill`, ring-style progress.
 
 ### Accounts (`components/accounts/`)
 
-Credit cards render as card-shaped surfaces: gradient derived from the account's
-stored colour, wide aspect, masked number, mark in the top-right. Depository and
-asset accounts keep the current card shape with the new tile and `MoneyDisplay`.
-Loan and credit-card bodies keep their existing data logic untouched.
+Credit cards stop being ordinary cards with a number on them and render as
+**physical cards**. Depository and asset accounts keep the current card shape
+with the new tile and `MoneyDisplay`. Loan and credit-card **data logic is
+untouched** — this is presentation only.
+
+#### `PaymentCard` — the card face
+
+Wide aspect (~1.586:1, the real ISO/IEC 7810 ID-1 ratio), heavy radius, gradient
+fill, with:
+
+- **Masked number** — `•••• •••• •••• 4821`, monospaced tabular, in the
+  card's own foreground. Where no last4 is known, the final group renders as
+  `••••` too, so the card never looks broken.
+- **Network mark** — top-right, see inference below.
+- **Name and owed balance**, with `MoneyDisplay` at `stat` size.
+- **Gradient source**, in priority order: `card_groups.art_color` →
+  `accounts.color` → `--hero`. `art_color` and `art_url` already exist in the
+  schema and are currently unused by the app; `art_color` is now wired up.
+  `art_url` stays unused for now and is noted as future work rather than
+  silently ignored.
+
+The card face must stay legible against a user-chosen colour. Foreground is
+picked by measuring the resolved fill's luminance and choosing white or near-
+black, rather than assuming white — a user can pick a pale account colour and
+white-on-pale is unreadable.
+
+#### Placement rule
+
+Card identity belongs to the **physical card**, and a card group *is* one
+physical card carrying several currency lines
+(`components/accounts/card-group-tile.tsx:8`). Therefore:
+
+- **Account belongs to a card group** → the card face, network mark, and last4
+  render **once, at the group level**. The currency lines beneath it stay as
+  rows — they are lines on the same plastic, not separate cards, and repeating
+  the mark on each would misrepresent that.
+- **Standalone credit card** → the card face renders at the **account level**.
+
+This is the user's explicit rule and the schema agrees with it: `last4` and
+`brand` exist on `card_groups` and on nothing else.
+
+#### Network inference (`lib/accounts/network.ts`, new)
+
+`card_groups.brand` is the source of truth when set. When it is null — always,
+for standalone accounts, which have no `brand` column — the network is inferred
+from the name:
+
+- Match case-insensitively on word boundaries for `visa`, `mastercard`/`master
+  card`/`mc`, `amex`/`american express`, `discover`, `diners`, `jcb`,
+  `unionpay`. `mc` requires a word boundary so it cannot match inside "McDonald".
+- Return `null` when nothing matches, and render a generic chip mark. Inference
+  that guesses wrong is worse than no mark.
+
+**last4** is similarly taken from `card_groups.last4` when present, and
+otherwise inferred from a trailing 4-digit group in the name (`\b(\d{4})\b`) —
+users commonly name cards "Visa Platinum 4821". Inference is skipped if the
+match could plausibly be a year (1900-2099) to avoid turning "Amex 2024" into a
+card number.
+
+Network marks are **simplified geometric SVGs** built in-repo (Mastercard's
+interlocking circles, an Amex square, a Visa-style wordmark), not official brand
+assets. They identify the user's own card, which is ordinary nominative use, but
+they are deliberately not pixel-accurate reproductions of the trademarks.
 
 ### Insights (`components/insights/`)
 
@@ -251,22 +315,30 @@ value immediately.
 
 1. **Button size shift** moves layouts app-wide, including inherit-only pages.
    Blast radius: 29 files import `ui/button`, 17 of them pass an explicit `size`.
-   Mitigation: explicit visual pass over every route, not just bespoke ones.
-2. **Stored colours cannot be repaletted.** Existing categories render in the
-   current, slightly muted hues. Acceptable as tile fills. A brightening
-   migration can be written later for the user to push.
-3. **Contrast on filled tiles** — emoji and single glyphs only, never small text.
+   The user has accepted this and will review the app broadly, so the sizing is
+   chosen for the design rather than to minimise churn.
+2. **The palette migration is applied out-of-band.** The app must look correct
+   with both old and new stored hex, because there is a window between shipping
+   the UI and the user pushing the migration. Nothing may hardcode an assumption
+   that a category's colour is one of the new sixteen.
+3. **Contrast on filled tiles** — glyphs, icons and large text only, never small
+   body text. User-chosen card colours additionally require the measured
+   foreground described under `PaymentCard`.
 4. **Dark surface ladder** can silently collapse when retinting; two rungs
    sharing a value made a tab track vanish inside a dialog once already.
    Re-verify each rung against its neighbours, not against the background.
-5. **Hero reads premium, not toy.** If the result still feels too corporate, the
-   correction is more saturation in tiles/numerals/motion, not a louder hero.
+5. **Network inference can be wrong.** A card named "Popular Platinum" yields no
+   network. The design must degrade to a generic mark rather than guessing, and
+   last4 inference must not turn a year into a card number.
 
 ## Out of scope
 
 Settings, Help, Goals, Subscriptions, Privacy and Terms receive tokens and
-components only, with no bespoke layout work. Schema changes. New fonts. New
-dependencies. Any change to financial calculation logic.
+components only, with no bespoke layout work. New schema columns (including
+`accounts.last4` / `accounts.brand`, which would make standalone cards
+first-class but need form UI the brief did not ask for). `card_groups.art_url`
+as a card background image. New fonts. New dependencies. Any change to financial
+calculation logic.
 
 ## Success criteria
 
@@ -278,3 +350,8 @@ dependencies. Any change to financial calculation logic.
 - Chart palette passes the existing validation criteria on both surfaces.
 - `npm run lint`, `npm run build` and `npm test` pass.
 - The four duplicated tile blocks are replaced by one `ColorTile`.
+- A card group renders exactly one card face and one network mark, regardless of
+  how many currency lines it carries.
+- Network and last4 inference are unit-tested, including the negatives:
+  "McDonald" is not Mastercard, and "Amex 2024" has no last4.
+- The app renders correctly with both the old and the new stored palette.
