@@ -3,14 +3,14 @@
 export function formatMoney(
   amount: number,
   currency: string,
-  opts?: { compact?: boolean; signed?: boolean },
+  opts?: { compact?: boolean; signed?: boolean; maximumFractionDigits?: number },
 ): string {
   const value = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
     currencyDisplay: "narrowSymbol",
     notation: opts?.compact ? "compact" : "standard",
-    maximumFractionDigits: 2,
+    maximumFractionDigits: opts?.maximumFractionDigits ?? 2,
   }).format(amount);
   if (opts?.signed && amount > 0) return `+${value}`;
   return value;

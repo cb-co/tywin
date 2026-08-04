@@ -41,7 +41,7 @@ export function NetWorthChart({ data, currency }: { data: NetWorthPoint[]; curre
           // pinned to zero. The area still fills from zero, so on an
           // all-positive window it runs to the bottom edge of the plot.
           domain={["auto", "auto"]}
-          tickFormatter={(v: number) => maskedFormat(v, currency, { compact: true })}
+          tickFormatter={(v: number) => maskedFormat(v, currency, { compact: true, maximumFractionDigits: 0 })}
         />
         <Tooltip
           contentStyle={{

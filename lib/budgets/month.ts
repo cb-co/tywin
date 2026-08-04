@@ -10,12 +10,20 @@ export function addMonths(month: string, delta: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
 }
 
+/**
+ * "August 2026" / "Agosto 2026" — deliberately not `Intl`'s bare long-date
+ * format, which inserts locale connector words ("agosto de 2026") that read
+ * fine in prose but are too wide for a month-switcher's fixed-width label.
+ */
 export function monthLabel(month: string, locale = "en-US"): string {
   const [y, m] = month.split("-").map(Number);
-  return new Date(y, m - 1, 1).toLocaleDateString(locale, {
-    month: "long",
-    year: "numeric",
-  });
+  const date = new Date(y, m - 1, 1);
+  const parts = new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).formatToParts(
+    date,
+  );
+  const monthName = parts.find((p) => p.type === "month")?.value ?? "";
+  const year = parts.find((p) => p.type === "year")?.value ?? String(y);
+  return `${monthName.charAt(0).toUpperCase()}${monthName.slice(1)} ${year}`;
 }
 
 /** "Jul" — axis-sized label for a month. */

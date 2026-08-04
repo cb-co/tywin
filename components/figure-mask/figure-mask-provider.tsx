@@ -27,7 +27,11 @@ export function useFigureMask() {
  */
 export function useMaskedFormatMoney() {
   const { masked } = useFigureMask();
-  return (amount: number, currency: string, opts?: { compact?: boolean; signed?: boolean }) => {
+  return (
+    amount: number,
+    currency: string,
+    opts?: { compact?: boolean; signed?: boolean; maximumFractionDigits?: number },
+  ) => {
     const formatted = formatMoney(amount, currency, opts);
     return masked ? maskFigure(formatted) : formatted;
   };
