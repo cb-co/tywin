@@ -38,14 +38,26 @@ export function readableForeground(background: string): typeof PAPER | typeof IN
 }
 
 /**
- * A two-stop gradient derived from one colour, for card faces. The second stop
- * is the same hue darkened, so any user colour yields a plausible card without
- * needing a second stored value.
+ * The card-face background derived from one colour, so any user colour yields a
+ * plausible card without needing a second stored value.
+ *
+ * Two layers. Underneath, the same hue darkened along the diagonal. On top, a
+ * soft off-centre highlight — the thing that makes a flat fill read as a
+ * physical object catching light rather than a coloured rectangle. It is
+ * deliberately weak; a strong sheen looks like a gloss filter.
+ *
+ * The highlight is measured, not assumed white: on a pale card a white sheen is
+ * invisible, so it flips to a shadow instead. Same discipline as
+ * `readableForeground` — the fill is arbitrary user data.
  */
 export function gradientFrom(hex: string): string {
   const [r, g, b] = channels(hex);
   const dark = `#${[r, g, b]
     .map((c) => Math.round(c * 0.62).toString(16).padStart(2, "0"))
     .join("")}`;
-  return `linear-gradient(135deg, ${hex} 0%, ${dark} 100%)`;
+  const sheen = relativeLuminance(hex) > 0.45 ? "0, 0, 0" : "255, 255, 255";
+  return [
+    `radial-gradient(115% 85% at 18% 0%, rgba(${sheen}, 0.16) 0%, rgba(${sheen}, 0.05) 40%, transparent 70%)`,
+    `linear-gradient(135deg, ${hex} 0%, ${dark} 100%)`,
+  ].join(", ");
 }

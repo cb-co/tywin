@@ -190,7 +190,6 @@ export type Database = {
           brand: string | null
           created_at: string
           id: string
-          last4: string | null
           name: string
           updated_at: string
           user_id: string
@@ -201,7 +200,6 @@ export type Database = {
           brand?: string | null
           created_at?: string
           id?: string
-          last4?: string | null
           name: string
           updated_at?: string
           user_id: string
@@ -212,7 +210,6 @@ export type Database = {
           brand?: string | null
           created_at?: string
           id?: string
-          last4?: string | null
           name?: string
           updated_at?: string
           user_id?: string

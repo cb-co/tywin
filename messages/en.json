@@ -210,7 +210,6 @@
     "noGroup": "No group",
     "newGroup": "New group…",
     "groupNamePlaceholder": "Group name (e.g. Visa Signature)",
-    "groupLast4Placeholder": "Last 4 digits (optional)",
     "groupHint": "Group two currency lines of the same physical card so they render as one.",
     "welcomeBonusToggleLabel": "Track a welcome bonus goal",
     "welcomeBonusGoalAmountLabel": "Spend goal",
@@ -234,7 +233,6 @@
     "addAccountButton": "Add account",
     "saveChangesButton": "Save changes",
     "toastNameGroupOrNone": "Name the new card group, or pick “No group”.",
-    "toastLast4Invalid": "Last 4 digits must be exactly four numbers.",
     "toastNameBankOrNone": "Name the new bank, or pick “No bank”.",
     "toastAccountAdded": "Account added",
     "toastAccountUpdated": "Account updated"

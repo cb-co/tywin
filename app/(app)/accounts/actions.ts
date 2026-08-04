@@ -196,24 +196,14 @@ export async function createBank(name: string): Promise<Result> {
   return { id: data.id };
 }
 
-export async function createCardGroup(name: string, last4?: string): Promise<Result> {
+export async function createCardGroup(name: string): Promise<Result> {
   const trimmed = name.trim();
   if (!trimmed) return { error: "Group name is required." };
-
-  // The column carries a check constraint (`^[0-9]{4}$`), but that is the
-  // backstop, not the validation the person sees: a constraint violation
-  // surfaces as an opaque database error. Empty means "not supplied" and is
-  // stored as null, since the card group is perfectly usable without it.
-  const digits = last4?.trim() ?? "";
-  if (digits && !/^[0-9]{4}$/.test(digits)) {
-    return { error: "Last 4 digits must be exactly four numbers." };
-  }
-
   const { supabase, user } = await requireUser();
   if (!user) return { error: "You're not signed in." };
   const { data, error } = await supabase
     .from("card_groups")
-    .insert({ name: trimmed, user_id: user.id, last4: digits || null })
+    .insert({ name: trimmed, user_id: user.id })
     .select("id")
     .single();
   if (error) return { error: await dbError(error, "createCardGroup") };

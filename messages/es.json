@@ -210,7 +210,6 @@
     "noGroup": "Sin grupo",
     "newGroup": "Grupo nuevo…",
     "groupNamePlaceholder": "Nombre del grupo (ej. Visa Signature)",
-    "groupLast4Placeholder": "Últimos 4 dígitos (opcional)",
     "groupHint": "Agrupa dos líneas de moneda de la misma tarjeta física para que se muestren como una sola.",
     "welcomeBonusToggleLabel": "Seguir una meta de bono de bienvenida",
     "welcomeBonusGoalAmountLabel": "Meta de gasto",
@@ -234,7 +233,6 @@
     "addAccountButton": "Añadir cuenta",
     "saveChangesButton": "Guardar cambios",
     "toastNameGroupOrNone": "Ponle nombre al nuevo grupo de tarjeta, o elige “Sin grupo”.",
-    "toastLast4Invalid": "Los últimos 4 dígitos deben ser exactamente cuatro números.",
     "toastNameBankOrNone": "Ponle nombre al nuevo banco, o elige “Sin banco”.",
     "toastAccountAdded": "Cuenta añadida",
     "toastAccountUpdated": "Cuenta actualizada"

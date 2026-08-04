@@ -8,9 +8,12 @@ import { useCountUp } from "@/components/ui/count-up";
 import { cn } from "@/lib/utils";
 
 const SIZES = {
-  // Jakarta at 800 with tight tracking. This is the loudest object on a screen.
-  hero: { head: "text-5xl sm:text-6xl font-extrabold tracking-[-0.03em]", cents: "text-[0.6em]" },
-  stat: { head: "text-2xl font-extrabold tracking-[-0.02em]", cents: "text-[0.62em]" },
+  // Inter at 700 with tight tracking (`.figure` sets the family). This is the
+  // loudest object on a screen, but 800 was overdoing it — at hero size the
+  // counters started to close up and the figure read as a solid mass rather
+  // than a number. 700 keeps the authority and gets the digits back.
+  hero: { head: "text-5xl sm:text-6xl font-bold tracking-[-0.03em]", cents: "text-[0.6em]" },
+  stat: { head: "text-2xl font-bold tracking-[-0.02em]", cents: "text-[0.62em]" },
   inline: { head: "text-base font-semibold", cents: "text-[0.75em]" },
 } as const;
 
@@ -59,7 +62,7 @@ export function MoneyDisplay({
     <span className={cn("figure tabular-nums", s.head, className)}>
       {head}
       {cents ? (
-        <span className={cn(s.cents, "font-bold opacity-60")}>
+        <span className={cn(s.cents, "font-semibold opacity-60")}>
           {sep}
           {cents}
         </span>

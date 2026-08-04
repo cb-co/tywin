@@ -14,23 +14,35 @@ import type { AccountWithStatus } from "@/lib/accounts/queries";
  * The card group IS the physical card, so the face — the art, the network
  * mark, the last four digits — renders exactly once here. The currency lines
  * beneath it are rows on the same card, not separate cards.
+ *
+ * Note the asymmetry: art and network belong to the group, digits belong to the
+ * lines. That is not an inconsistency — the group is where you choose how the
+ * card LOOKS, and there is a form for it; the digits are a property of the
+ * physical card that every line already reports, so storing them a second time
+ * on the group only created a value with no way to edit it.
  */
 export function CardGroupTile({
   name,
   brand,
-  last4,
   artColor,
   accounts,
 }: {
   name: string;
   brand: string | null;
-  last4: string | null;
   artColor: string | null;
   accounts: AccountWithStatus[];
 }) {
   const t = useTranslations("Accounts");
   const network = inferNetwork(name, brand);
-  const resolvedLast4 = inferLast4(name, last4);
+  // The digits come from the LINES, not from the group. A group has no digits of
+  // its own to edit — it is an arrangement of currency lines of one physical
+  // card, and every one of those lines carries the same four digits. Taking the
+  // first line that resolves means the value follows whatever the person set on
+  // the account, with the group's own name as a last resort for groups whose
+  // lines are all named without digits.
+  const resolvedLast4 =
+    accounts.map((a) => inferLast4(a.name, a.last4)).find((v) => v !== null) ??
+    inferLast4(name);
   // Card groups are usually cross-currency (e.g. a USD line and a DOP line on
   // the same physical card), and there is no FX conversion here to unify
   // them. The face shows one summed figure only when every line agrees on a

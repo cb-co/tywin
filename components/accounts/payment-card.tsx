@@ -46,13 +46,23 @@ export function PaymentCard({
   // A stored colour is arbitrary user data — validate its shape before it
   // reaches colour maths that assumes a 6-digit hex. A 3- or 8-digit value
   // would misparse and yield a foreground measured against the wrong colour.
-  const fill = color && HEX6.test(color) ? color : "#4326C9";
+  // Toned well down from the old #4326C9, which was the hero gradient's end
+  // stop — full brand chroma read as a novelty purple on an object that is
+  // meant to look issued rather than designed. Same hue, roughly half the
+  // chroma, so it still belongs to the palette without shouting.
+  const fill = color && HEX6.test(color) ? color : "#494B9A";
   const fg = readableForeground(fill);
 
   const body = (
     <div
       className={cn(
-        "relative flex aspect-[1.586] w-full flex-col justify-between overflow-hidden rounded-3xl p-5 shadow-(--shadow-card)",
+        // A real ID-1 card's corner radius is 3.18mm on an 85.6mm width — under
+        // 4% of the long edge. The app's own rounded-3xl is 44px, which at these
+        // sizes is nearer a squircle than a card and was the main reason the
+        // silhouette did not read. A fixed 12px is right at every width for the
+        // same reason it is right on the physical object: the radius is an
+        // absolute size, not a proportion of how large the card is displayed.
+        "relative flex aspect-[1.586] w-full flex-col justify-between overflow-hidden rounded-[0.75rem] p-5 shadow-(--shadow-card)",
         className,
       )}
       style={{ backgroundImage: gradientFrom(fill), color: fg }}

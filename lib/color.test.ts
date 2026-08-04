@@ -43,9 +43,21 @@ describe("readableForeground", () => {
 });
 
 describe("gradientFrom", () => {
-  it("produces a CSS linear-gradient containing the source colour", () => {
+  // Two stacked layers, and the order is the whole point: CSS paints the first
+  // background-image on TOP, so the highlight has to come first or the base
+  // gradient covers it.
+  it("puts the sheen above a linear base carrying the source colour", () => {
     const g = gradientFrom("#4361F0");
-    expect(g).toMatch(/^linear-gradient\(/);
+    expect(g).toMatch(/^radial-gradient\(/);
+    expect(g).toContain("linear-gradient(135deg,");
+    expect(g.indexOf("radial-gradient")).toBeLessThan(g.indexOf("linear-gradient"));
     expect(g.toLowerCase()).toContain("#4361f0");
+  });
+
+  // The highlight is measured against the fill, not assumed white — a white
+  // sheen on a pale card is invisible.
+  it("flips the sheen to a shadow on a pale fill", () => {
+    expect(gradientFrom("#101018")).toContain("rgba(255, 255, 255,");
+    expect(gradientFrom("#F4E9C8")).toContain("rgba(0, 0, 0,");
   });
 });

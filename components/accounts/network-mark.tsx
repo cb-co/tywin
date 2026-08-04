@@ -52,7 +52,7 @@ export function NetworkMark({
     <span
       className={cn(
         base,
-        "inline-flex items-center text-sm font-extrabold tracking-widest uppercase",
+        "inline-flex items-center text-sm font-bold tracking-widest uppercase",
       )}
     >
       {network === "unionpay" ? "UnionPay" : network}

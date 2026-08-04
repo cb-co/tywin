@@ -123,7 +123,6 @@ export function AccountGallery({
                       key={cluster.key}
                       name={cardGroup.name}
                       brand={cardGroup.brand}
-                      last4={cardGroup.last4}
                       artColor={cardGroup.art_color}
                       accounts={cluster.items}
                     />

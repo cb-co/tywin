@@ -300,6 +300,13 @@
   }
   html {
     @apply font-sans;
+    /* Jakarta's 400 sits lighter than most grotesques at the same nominal
+       weight, so body copy read thin against the heavy figures. 450 — a real
+       instance on the variable axis, not a synthesised one — lifts it just
+       enough to sit comfortably under the 700 the figures now use. Narrowing
+       the range from both ends is the point: the spread was the problem, not
+       either end on its own. */
+    font-weight: 450;
   }
 }
 

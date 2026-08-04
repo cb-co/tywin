@@ -140,7 +140,6 @@ export function AccountFormDialog({
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [newGroupName, setNewGroupName] = useState("");
-  const [newGroupLast4, setNewGroupLast4] = useState("");
   const [newBankName, setNewBankName] = useState("");
   const router = useRouter();
   const t = useTranslations("AccountForm");
@@ -184,7 +183,6 @@ export function AccountFormDialog({
     if (next) {
       reset(defaultsFor(account, baseCurrency, effectiveBonus));
       setNewGroupName("");
-      setNewGroupLast4("");
       setNewBankName("");
     }
   }
@@ -198,17 +196,7 @@ export function AccountFormDialog({
           playError();
           return;
         }
-        // Empty is fine — the field is optional. A partial entry is not: four
-        // digits or none, since three digits would fail the column's check
-        // constraint and surface as a raw database error. The action repeats
-        // this check as a backstop, but in English, alongside its siblings; the
-        // translated message the person actually reads comes from here.
-        if (newGroupLast4 && !/^[0-9]{4}$/.test(newGroupLast4)) {
-          toast.error(t("toastLast4Invalid"));
-          playError();
-          return;
-        }
-        const created = await createCardGroup(newGroupName.trim(), newGroupLast4);
+        const created = await createCardGroup(newGroupName.trim());
         if (created.error) {
           toast.error(created.error);
           playError();
@@ -436,29 +424,14 @@ export function AccountFormDialog({
                       </Select>
                     )}
                   />
+                  {/* No digits field here: a group takes its digits from its
+                      lines, each of which has its own. */}
                   {groupSel === "new" ? (
-                    <div className="grid gap-2 sm:grid-cols-[1fr_10rem]">
-                      <Input
-                        placeholder={t("groupNamePlaceholder")}
-                        value={newGroupName}
-                        onChange={(e) => setNewGroupName(e.target.value)}
-                      />
-                      {/* Optional. Supplying it beats the digits inferred from
-                          the group's name, which is the only source otherwise.
-                          Non-digits are dropped as they are typed rather than
-                          rejected on submit — there is no valid reason to type
-                          one, so silently refusing them is less friction than
-                          an error. */}
-                      <Input
-                        placeholder={t("groupLast4Placeholder")}
-                        value={newGroupLast4}
-                        inputMode="numeric"
-                        maxLength={4}
-                        onChange={(e) =>
-                          setNewGroupLast4(e.target.value.replace(/\D/g, "").slice(0, 4))
-                        }
-                      />
-                    </div>
+                    <Input
+                      placeholder={t("groupNamePlaceholder")}
+                      value={newGroupName}
+                      onChange={(e) => setNewGroupName(e.target.value)}
+                    />
                   ) : null}
                   <p className="text-xs text-muted-foreground">
                     {t("groupHint")}
