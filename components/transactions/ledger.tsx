@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Search, ArrowLeftRight } from "lucide-react";
 import { deleteTransaction } from "@/app/(app)/transactions/actions";
 import type { TransactionWithRefs, QuickAddData } from "@/lib/transactions/queries";
@@ -46,6 +46,7 @@ export function Ledger({
   const [pending, startTransition] = useTransition();
   const t = useTranslations("Transactions");
   const tType = useTranslations("TransactionTypes");
+  const locale = useLocale();
   const { playDelete, playError } = useUiSound();
   const [type, setType] = useState("all");
   const [accountId, setAccountId] = useState("all");
@@ -82,6 +83,28 @@ export function Ledger({
     }
     return [...map.entries()];
   }, [filtered]);
+
+  // Groups the (already-ordered) day sections under a sticky month pill.
+  // Presentational only — it doesn't touch `filtered`'s order, so it relies
+  // on same-month days being contiguous, which holds as long as the ledger
+  // stays sorted by date.
+  const monthFormatter = useMemo(
+    () => new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }),
+    [locale],
+  );
+  const byMonth = useMemo(() => {
+    const map = new Map<string, [string, TransactionWithRefs[]][]>();
+    for (const entry of byDay) {
+      const [day] = entry;
+      const monthKey = day.slice(0, 7); // "YYYY-MM"
+      if (!map.has(monthKey)) map.set(monthKey, []);
+      map.get(monthKey)!.push(entry);
+    }
+    return [...map.entries()].map(([monthKey, days]) => {
+      const [y, m] = monthKey.split("-").map(Number);
+      return { monthKey, label: monthFormatter.format(new Date(y, m - 1, 1)), days };
+    });
+  }, [byDay, monthFormatter]);
 
   /* Value→label maps for the closed trigger. Base UI's `<Select.Value>`
      renders the raw value unless `items` is given on the root, so these
@@ -211,14 +234,31 @@ export function Ledger({
         />
       ) : (
         <div className="space-y-6">
-          {byDay.map(([day, rows]) => (
-            <div key={day}>
-              <p className="mb-1 text-xs font-medium text-muted-foreground">
-                {dayFormatter.format(new Date(day))}
-              </p>
-              <div className="divide-y">
-                {rows.map((txn) => (
-                  <TransactionRow key={txn.id} txn={txn} data={data} onDelete={onDelete} pending={pending} />
+          {byMonth.map(({ monthKey, label, days }) => (
+            <div key={monthKey}>
+              <h2 className="sticky top-0 z-10 -mx-1 mb-1 py-2">
+                <span className="inline-flex rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground backdrop-blur">
+                  {label}
+                </span>
+              </h2>
+              <div className="space-y-6">
+                {days.map(([day, rows]) => (
+                  <div key={day}>
+                    <p className="mb-1 text-xs font-medium text-muted-foreground">
+                      {dayFormatter.format(new Date(day))}
+                    </p>
+                    <div className="divide-y">
+                      {rows.map((txn) => (
+                        <TransactionRow
+                          key={txn.id}
+                          txn={txn}
+                          data={data}
+                          onDelete={onDelete}
+                          pending={pending}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
