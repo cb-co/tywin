@@ -27,9 +27,10 @@ export const SWATCHES = [
  * A colour swatch button, shared by the category and goal dialogs.
  *
  * Selection is marked by a white tick inside the swatch, not by a ring alone.
- * A ring cannot carry this job: `--ring` is the blue `#2f55ab`, and `--chart-1`
- * is `#3e5fad` — selecting the first swatch drew a blue ring around a blue
- * circle and was all but invisible. Several other swatches are blue-adjacent.
+ * A ring cannot carry this job: `--ring` is the brand violet `#6C4EF5` and the
+ * first swatch is `#4361F0` — selecting it drew a violet ring around a
+ * violet-blue circle and was all but invisible. Several other swatches are
+ * blue-adjacent, and `--chart-1` is now that same violet too.
  *
  * The tick is literal white rather than a token because the swatch beneath it
  * is a literal hex that does not change with the theme. Every swatch sits in

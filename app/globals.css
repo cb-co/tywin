@@ -144,18 +144,23 @@
   --hero-foreground: #ffffff;
 
   /* Categorical series. Fixed order, never cycled. Validated for the light
-     surface: lightness band, chroma floor, adjacent-pair separation under
-     deutan/protan/tritan simulation, and >= 3:1 against the surface. Slot 1 is
-     the lead data hue — it used to be the brand green, and with the brand now
-     neutral the charts finally own their own colour instead of borrowing it. */
-  --chart-1: #3e5fad;
-  --chart-2: #b6770b;
-  --chart-3: #008f7d;
-  --chart-4: #be563d;
-  --chart-5: #8949a3;
-  --chart-6: #7e903e;
-  --chart-7: #1b8abd;
-  --chart-8: #c4486d;
+     surface: lightness band (OKLab L 0.558..0.673), chroma floor (0.116),
+     adjacent-pair separation under deutan/protan/tritan simulation, and
+     >= 3:1 against the surface. Slot 1 is the lead data hue and is now the
+     brand violet itself: with charts appearing on hero-adjacent surfaces, a
+     lead series in a foreign blue read as a second, competing brand. The
+     tightest pair against white is amber and olive at 3.05:1 — enough for
+     marks, glyphs and large text, not for small text on a filled area.
+     lib/palette.test.ts parses these values out of this file and fails the
+     build if an edit drops one below 3:1. */
+  --chart-1: #6C4EF5;
+  --chart-2: #CE830A;
+  --chart-3: #00A08A;
+  --chart-4: #E85B3F;
+  --chart-5: #9B4FBC;
+  --chart-6: #899C39;
+  --chart-7: #1A96CE;
+  --chart-8: #DB4A76;
 
   --radius: 1.25rem;
 
@@ -247,15 +252,21 @@
   --ring: #8B72FF;
 
   /* Same eight entities, re-stepped for the dark surface rather than flipped:
-     each hue is lifted into the dark lightness band and re-validated there. */
-  --chart-1: #6286d8;
-  --chart-2: #bf8532;
-  --chart-3: #24a592;
-  --chart-4: #ce6c54;
-  --chart-5: #a867c3;
-  --chart-6: #8a9c4a;
-  --chart-7: #329acd;
-  --chart-8: #d5587c;
+     each hue and chroma is carried over unchanged and only the lightness is
+     lifted into the dark band (OKLab L 0.646..0.703, spread 0.057), then
+     re-validated there. Carrying chroma across means a category keeps the
+     same identity in both themes and only its brightness moves. Slot 1 is the
+     dark-theme brand violet, the same value as --ring and --sidebar-primary,
+     so the lead series and the brand stay one colour on both themes. Tightest
+     against the dark card is the violet at 5.09:1. */
+  --chart-1: #8B72FF;
+  --chart-2: #D88C1F;
+  --chart-3: #2FB39D;
+  --chart-4: #F36549;
+  --chart-5: #BA6DDC;
+  --chart-6: #97AA48;
+  --chart-7: #35A8E1;
+  --chart-8: #ED5B85;
 
   /* Dark mode gets the same lit top edge, in white at low alpha. A cast shadow
      is nearly invisible against near-black, so on this theme the edge is doing
