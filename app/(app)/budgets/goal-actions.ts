@@ -104,6 +104,18 @@ export async function deleteGoal(id: string): Promise<Result> {
   return {};
 }
 
+export async function deleteContribution(id: string): Promise<Result> {
+  const t = await getTranslations("Common");
+  const { supabase, user } = await requireUser();
+  if (!user) return { error: t("notSignedIn") };
+  // Deleting a contribution changes both the goal's progress and the origin
+  // account's available balance, same as adding one does.
+  const { error } = await supabase.from("goal_contributions").delete().eq("id", id);
+  if (error) return { error: await dbError(error, "deleteContribution") };
+  revalidateAll();
+  return {};
+}
+
 const contributionSchema = z.object({
   goal_id: z.string().uuid(),
   account_id: z.string().uuid(),
