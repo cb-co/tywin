@@ -8,16 +8,17 @@ import { useQuickAdd } from "./quick-add-provider";
 export function QuickAddButton() {
   const { setOpen } = useQuickAdd();
   const t = useTranslations("QuickAdd");
-  // Plain and lightly raised. This used to carry a `primary`-tinted shadow and
-  // ring, which read as a halo around the button rather than as elevation —
-  // and once `primary` became ivory, that halo turned into a glow in dark
-  // mode. `--shadow-float` is neutral and tight to the element, so the fill
-  // keeps the same solid ink as every other default button.
+  // The one branded control on screen: quick-add is the app's signature
+  // action, so it gets the hero gradient rather than reading as just another
+  // utility button. `variant="brand"` already supplies the gradient fill,
+  // matching foreground ink, `rounded-full`, and `--shadow-float`; only the
+  // fixed position and the larger 60px size are added here.
   return (
     <Button
       onClick={() => setOpen(true)}
+      variant="brand"
       size="icon"
-      className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-50 h-14 w-14 rounded-full shadow-(--shadow-float) transition-transform hover:scale-105 md:bottom-6"
+      className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-50 size-15 transition-transform hover:scale-105 md:bottom-6"
       aria-label={t("title")}
     >
       <Plus className="h-6 w-6" />

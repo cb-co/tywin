@@ -8,9 +8,12 @@ export function BottomNav() {
   return (
     // Equal columns rather than `justify-around`: even spacing stops the
     // longest label (es "Transacciones") from stealing width from its
-    // neighbours and pushing the row out of alignment.
+    // neighbours and pushing the row out of alignment. At a 360px-wide
+    // Spanish viewport the five equal 1fr tracks still divide evenly, so
+    // "Transacciones" gets exactly the same column as "Resumen" and truncates
+    // on its own rather than squeezing a sibling.
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 grid items-center border-t bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+      className="fixed inset-x-4 bottom-4 z-40 grid items-center rounded-full bg-card/90 pb-[env(safe-area-inset-bottom)] shadow-(--shadow-card) backdrop-blur md:hidden"
       style={{
         gridTemplateColumns: `repeat(${MOBILE_NAV_ITEMS.length}, minmax(0, 1fr))`,
       }}

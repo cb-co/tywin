@@ -39,10 +39,17 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
                 horizontally on mobile. */}
             <div className="flex min-w-0 flex-1 flex-col md:h-dvh md:overflow-y-auto">
               <MobileHeader />
-              {/* Bottom padding clears the bar (~56px) *and* the FAB above it,
-                  which tops out at 136px. pb-24 only reserved 96px, so the last
-                  rows of a list scrolled under the button. */}
-              <main className="flex-1 p-4 pb-[calc(9rem+env(safe-area-inset-bottom))] md:p-6 md:pb-6">
+              {/* Bottom padding clears both floating elements above the
+                  content. The nav pill floats `bottom-4` (16px) off the
+                  screen edge with ~56px of its own content height, so its
+                  top edge sits ~72px up. The FAB (now 60px, up from 56px)
+                  keeps its `bottom-[5rem]` (80px) offset, so its top edge
+                  sits at 80 + 60 = 140px — the taller of the two, and the
+                  binding constraint. 9.5rem (152px) clears the FAB's 140px
+                  with a 12px buffer; `env(safe-area-inset-bottom)` stays in
+                  the calc so notched phones get the same buffer on top of
+                  their inset. */}
+              <main className="flex-1 p-4 pb-[calc(9.5rem+env(safe-area-inset-bottom))] md:p-6 md:pb-6">
                 {children}
               </main>
             </div>
