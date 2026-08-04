@@ -12,8 +12,16 @@ export function BottomNav() {
     // Spanish viewport the five equal 1fr tracks still divide evenly, so
     // "Transacciones" gets exactly the same column as "Resumen" and truncates
     // on its own rather than squeezing a sibling.
+    // No border: this now floats as a shadowed capsule, so the hairline that
+    // separated the old flush bar from the page would just cut across the
+    // rounded pill — the card shadow below already does that separating
+    // job. The safe-area inset lives in the bottom offset's calc rather
+    // than as interior padding: a fixed offset pins this box's own bottom
+    // edge, so padding there would grow the capsule upward from that fixed
+    // floor, stranding the inset as dead space under the icon row instead
+    // of riding the whole pill higher off a notched phone's home indicator.
     <nav
-      className="fixed inset-x-4 bottom-4 z-40 grid items-center rounded-full bg-card/90 pb-[env(safe-area-inset-bottom)] shadow-(--shadow-card) backdrop-blur md:hidden"
+      className="fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-40 grid items-center rounded-full bg-card/90 shadow-(--shadow-card) backdrop-blur md:hidden"
       style={{
         gridTemplateColumns: `repeat(${MOBILE_NAV_ITEMS.length}, minmax(0, 1fr))`,
       }}
