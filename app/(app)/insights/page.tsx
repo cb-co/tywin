@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { getInsights, getCostOfCarry, getCardPayments } from "@/lib/insights/queries";
 import { getNetWorthHistory } from "@/lib/insights/net-worth-history";
+import { getGoalsOverview } from "@/lib/goals/queries";
 import { formatMoney, formatDate } from "@/lib/format";
 import { normalizeMonth, addMonths, monthLabel } from "@/lib/budgets/month";
 import {
@@ -15,6 +16,7 @@ import {
 } from "@/components/insights/lazy-charts";
 import { BudgetBars } from "@/components/insights/budget-bars";
 import { DebtHealth } from "@/components/insights/debt-health";
+import { SavingsGoals } from "@/components/insights/savings-goals";
 
 function ChartCard({
   title,
@@ -100,11 +102,12 @@ export default async function InsightsPage({
 }) {
   const { month: monthParam } = await searchParams;
   const month = normalizeMonth(monthParam);
-  const [insights, carry, cardPayments, netWorth] = await Promise.all([
+  const [insights, carry, cardPayments, netWorth, goals] = await Promise.all([
     getInsights(month),
     getCostOfCarry(),
     getCardPayments(month),
     getNetWorthHistory(),
+    getGoalsOverview(),
   ]);
   const cur = insights.baseCurrency;
   const t = await getTranslations("Insights");
@@ -175,6 +178,15 @@ export default async function InsightsPage({
 
           <ChartCard title={t("cardCashFlow")} className="@[34rem]:col-span-2">
             <CashflowChart data={insights.trend} currency={cur} />
+          </ChartCard>
+
+          <ChartCard title={t("cardSavingsGoals")} className="@[34rem]:col-span-2">
+            <SavingsGoals
+              goals={goals.goals}
+              totalSaved={goals.totalSaved}
+              totalTarget={goals.totalTarget}
+              currency={goals.baseCurrency}
+            />
           </ChartCard>
         </Section>
 

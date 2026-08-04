@@ -341,7 +341,8 @@
     "paceNeedVsActual": "Need {required}/mo · saving {actual}/mo",
     "paceOnTrack": "On track",
     "paceBehind": "Behind",
-    "paceProjection": "Saving {actual}/mo → ~{months} months"
+    "paceProjection": "Saving {actual}/mo → ~{months} months",
+    "paceProjectionShort": "~{months} months"
   },
   "GoalDialog": {
     "addTitle": "New goal",
@@ -531,7 +532,10 @@
     "costOfCarryApr": "{rate}% APR",
     "costOfCarryTotal": "Total ({currency})",
     "costOfCarryEmpty": "Import a card statement to see what carrying your balances would cost.",
-    "costOfCarryAsOf": "as of {date}"
+    "costOfCarryAsOf": "as of {date}",
+    "cardSavingsGoals": "Savings goals",
+    "savingsGoalsTotal": "Total saved",
+    "savingsGoalsEmpty": "No savings goals yet"
   },
   "Settings": {
     "pageTitle": "Settings",
