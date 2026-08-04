@@ -28,6 +28,7 @@ function toColumns(v: AccountInput) {
     statement_closing_day: nullIf(!card, v.statement_closing_day ?? null),
     current_balance: card ? v.current_balance : 0,
     card_group_id: nullIf(!card, orNull(v.card_group_id)),
+    last4: nullIf(!card, orNull(v.last4)),
     welcome_bonus_goal_amount: nullIf(!card, v.welcome_bonus_goal_amount ?? null),
     welcome_bonus_goal_currency: nullIf(!card, orNull(v.welcome_bonus_goal_currency)),
     welcome_bonus_due_date: nullIf(!card, orNull(v.welcome_bonus_due_date)),
@@ -42,6 +43,31 @@ function toColumns(v: AccountInput) {
     // shared by cards and loans
     payment_due_day: nullIf(!card && !loan, v.payment_due_day ?? null),
   };
+}
+
+/**
+ * `accounts.last4` ships ahead of its migration
+ * (supabase/migrations/20260804130000_accounts_last4.sql), which only the user
+ * can push. Until they do, the column does not exist and any write naming it is
+ * rejected outright — which would break account creation and editing for
+ * everyone, not just people who filled the optional field in.
+ *
+ * Reads need no such guard: every accounts query selects `*`, so a missing
+ * column simply comes back absent, and `inferLast4` treats undefined exactly as
+ * it treats null.
+ *
+ * Both branches disappear on their own once the migration lands, at which point
+ * the retry stops being reachable. Delete this then.
+ */
+function isMissingLast4(error: { code?: string; message?: string } | null) {
+  if (!error) return false;
+  // PostgREST rejects columns absent from its schema cache (PGRST204) before
+  // Postgres ever sees the statement; 42703 is Postgres' own undefined_column,
+  // for the paths that reach it directly.
+  return (
+    (error.code === "PGRST204" || error.code === "42703") &&
+    (error.message ?? "").includes("last4")
+  );
 }
 
 async function requireUser() {
@@ -59,16 +85,26 @@ export async function createAccount(input: AccountInput): Promise<Result> {
   const { supabase, user } = await requireUser();
   if (!user) return { error: "You're not signed in." };
 
-  const { data, error } = await supabase
-    .from("accounts")
-    .insert({ ...toColumns(parsed.data), currency: parsed.data.currency, user_id: user.id })
-    .select("id")
-    .single();
+  const row = { ...toColumns(parsed.data), currency: parsed.data.currency, user_id: user.id };
+  // Held as one response object rather than destructured: the result is a union
+  // discriminated on `error`, and pulling `data` and `error` into separate
+  // mutable bindings loses the correlation between them.
+  let res = await supabase.from("accounts").insert(row).select("id").single();
+  if (isMissingLast4(res.error)) {
+    // supabase-js serialises the payload with JSON.stringify, which drops
+    // undefined keys — so this genuinely omits the column rather than sending
+    // a null for it.
+    res = await supabase
+      .from("accounts")
+      .insert({ ...row, last4: undefined })
+      .select("id")
+      .single();
+  }
 
-  if (error) return { error: await dbError(error, "createAccount") };
+  if (res.error) return { error: await dbError(res.error, "createAccount") };
   revalidatePath("/accounts");
   revalidatePath("/");
-  return { id: data.id };
+  return { id: res.data.id };
 }
 
 export async function updateAccount(id: string, input: AccountInput): Promise<Result> {
@@ -80,7 +116,13 @@ export async function updateAccount(id: string, input: AccountInput): Promise<Re
 
   // currency is immutable — never included in the update payload.
   const columns = toColumns(parsed.data);
-  const { error } = await supabase.from("accounts").update(columns).eq("id", id);
+  let { error } = await supabase.from("accounts").update(columns).eq("id", id);
+  if (isMissingLast4(error)) {
+    ({ error } = await supabase
+      .from("accounts")
+      .update({ ...columns, last4: undefined })
+      .eq("id", id));
+  }
   if (error) return { error: await dbError(error, "updateAccount") };
 
   // Welcome-bonus goal fields are shared across every currency line of a card

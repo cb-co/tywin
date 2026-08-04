@@ -21,6 +21,17 @@ export const accountInput = z
     payment_due_day: z.coerce.number().int().min(1).max(31).optional(),
     current_balance: z.coerce.number().min(0).default(0),
     card_group_id: z.string().uuid().optional().or(z.literal("")),
+    // Four digits or nothing. The pattern is checked here on purpose: the
+    // `color` field above is `max(9)` with no pattern, which is exactly how a
+    // malformed hex reached the card face, and the database's own check
+    // constraint is a backstop that surfaces as an opaque error rather than a
+    // usable message.
+    last4: z
+      .string()
+      .trim()
+      .regex(/^[0-9]{4}$/, "Enter exactly four digits")
+      .optional()
+      .or(z.literal("")),
     welcome_bonus_goal_amount: z.preprocess(
       (v) => (v === "" ? undefined : v),
       z.coerce.number().min(0).optional(),

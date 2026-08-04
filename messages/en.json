@@ -204,6 +204,8 @@
     "startingBalanceLabel": "Starting balance",
     "currentBalanceOwedLabel": "Current balance owed",
     "creditLimitLabel": "Credit limit",
+    "last4Label": "Last 4 digits",
+    "last4Placeholder": "Optional",
     "statementClosingDayLabel": "Statement closing day",
     "paymentDueDayLabel": "Payment due day",
     "cardGroupLabel": "Card group",

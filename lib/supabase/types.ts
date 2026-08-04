@@ -53,6 +53,7 @@ export type Database = {
           installment_amount: number | null
           interest_rate: number | null
           is_archived: boolean
+          last4: string | null
           logo_url: string | null
           name: string
           network_fee_amount: number
@@ -86,6 +87,7 @@ export type Database = {
           installment_amount?: number | null
           interest_rate?: number | null
           is_archived?: boolean
+          last4?: string | null
           logo_url?: string | null
           name: string
           network_fee_amount?: number
@@ -119,6 +121,7 @@ export type Database = {
           installment_amount?: number | null
           interest_rate?: number | null
           is_archived?: boolean
+          last4?: string | null
           logo_url?: string | null
           name?: string
           network_fee_amount?: number

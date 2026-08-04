@@ -39,7 +39,11 @@ export function AccountCard({ account }: { account: AccountWithStatus }) {
         {isStandaloneCard ? (
           <PaymentCard
             name={account.name}
-            last4={inferLast4(account.name)}
+            // A stored value beats name inference; inferLast4 already falls
+            // back when it is null, undefined or malformed. It reads as
+            // undefined until the accounts.last4 migration is pushed, which is
+            // the same branch as an unset value.
+            last4={inferLast4(account.name, account.last4)}
             network={inferNetwork(account.name)}
             color={account.color}
             owed={account.cardStatus?.owed ?? account.current_balance}

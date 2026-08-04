@@ -57,6 +57,7 @@ type FormValues = {
   network_fee_amount: string;
   network_fee_optional: boolean;
   credit_limit: string;
+  last4: string;
   statement_closing_day: string;
   payment_due_day: string;
   current_balance: string;
@@ -99,6 +100,7 @@ function defaultsFor(
     network_fee_amount: str(account?.network_fee_amount) || "0",
     network_fee_optional: account?.network_fee_optional ?? true,
     credit_limit: str(account?.credit_limit),
+    last4: account?.last4 ?? "",
     statement_closing_day: str(account?.statement_closing_day),
     payment_due_day: str(account?.payment_due_day),
     current_balance: str(account?.current_balance) || "0",
@@ -384,6 +386,25 @@ export function AccountFormDialog({
                 <div className="space-y-2">
                   <Label htmlFor="credit_limit">{t("creditLimitLabel")}</Label>
                   <Input id="credit_limit" type="number" step="0.01" min="0" {...register("credit_limit")} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="last4">{t("last4Label")}</Label>
+                  {/* Optional. When empty the card face keeps inferring digits
+                      from the account name, which was the only source before
+                      this field existed. Not type="number": leading zeroes are
+                      significant here and a spinner makes no sense on digits
+                      that are an identifier rather than a quantity. */}
+                  <Input
+                    id="last4"
+                    inputMode="numeric"
+                    maxLength={4}
+                    placeholder={t("last4Placeholder")}
+                    {...register("last4", {
+                      onChange: (e) => {
+                        e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4);
+                      },
+                    })}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="statement_closing_day">{t("statementClosingDayLabel")}</Label>

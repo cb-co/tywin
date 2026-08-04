@@ -204,6 +204,8 @@
     "startingBalanceLabel": "Saldo inicial",
     "currentBalanceOwedLabel": "Saldo actual adeudado",
     "creditLimitLabel": "Límite de crédito",
+    "last4Label": "Últimos 4 dígitos",
+    "last4Placeholder": "Opcional",
     "statementClosingDayLabel": "Día de cierre del estado de cuenta",
     "paymentDueDayLabel": "Día de vencimiento del pago",
     "cardGroupLabel": "Grupo de tarjeta",
