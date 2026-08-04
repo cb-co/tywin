@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { setBudget, deleteCategory, copyPreviousMonth } from "@/app/(app)/budgets/actions";
 import { addMonths, monthLabel } from "@/lib/budgets/month";
-import { formatMoney, formatPercent } from "@/lib/format";
+import { formatPercent } from "@/lib/format";
 import type { BudgetOverview, BudgetRow } from "@/lib/budgets/queries";
 import { CategoryDialog } from "./category-dialog";
 import { Button } from "@/components/ui/button";
@@ -158,16 +158,16 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
           <div className="flex gap-6 text-sm">
             <div>
               <p className="text-xs text-muted-foreground">{t("budgetLabel")}</p>
-              <p className="figure tabular-nums">{formatMoney(totalBudget, baseCurrency)}</p>
+              <p className="figure tabular-nums">{maskedFormatMoney(totalBudget, baseCurrency)}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">{t("usedLabel")}</p>
-              <p className="figure tabular-nums">{formatMoney(totalUsed, baseCurrency)}</p>
+              <p className="figure tabular-nums">{maskedFormatMoney(totalUsed, baseCurrency)}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">{t("remainingLabel")}</p>
               <p className={`figure tabular-nums ${remaining < 0 ? "text-destructive" : ""}`}>
-                {formatMoney(remaining, baseCurrency)}
+                {maskedFormatMoney(remaining, baseCurrency)}
               </p>
             </div>
           </div>

@@ -76,12 +76,12 @@ export default async function OverviewPage() {
               style={{ "--i": i + 2 } as React.CSSProperties}
             >
               <Card className="lift h-full p-5 group-hover:shadow-(--shadow-card-hover)">
-                <span
-                  className="flex size-10 items-center justify-center rounded-lg transition-transform duration-200 ease-out group-hover:scale-110"
-                  style={{ backgroundColor: `color-mix(in oklab, ${tint} 16%, transparent)`, color: tint }}
-                >
-                  <Icon className="size-5" />
-                </span>
+                <ColorTile
+                  color={tint}
+                  icon={Icon}
+                  size="md"
+                  className="transition-transform duration-200 ease-out group-hover:scale-110"
+                />
                 <p className="mt-4 text-lg font-medium text-foreground">{t(`starter${key}Title`)}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{t(`starter${key}Body`)}</p>
               </Card>

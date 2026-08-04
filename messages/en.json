@@ -124,8 +124,6 @@
     "groupCardsBlurb": "Reconciled balances and utilization.",
     "groupLoansTitle": "Loans",
     "groupLoansBlurb": "Outstanding balance and payoff progress.",
-    "cardGroupFallbackName": "Card group",
-    "currencyLines": "{count} currency lines",
     "usedPercent": "{pct} used · {currency}",
     "currentBalance": "Current balance",
     "owed": "Owed",

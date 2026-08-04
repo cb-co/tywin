@@ -21,6 +21,7 @@ import { AccountDetailActions } from "@/components/accounts/account-detail-actio
 import { StatementsPanel } from "@/components/accounts/statements-panel";
 import { AmortizationTable } from "@/components/accounts/amortization-table";
 import { Card } from "@/components/ui/card";
+import { ColorTile } from "@/components/ui/color-tile";
 import { Progress } from "@/components/ui/progress";
 import { MaskedMoney } from "@/components/figure-mask/masked-money";
 
@@ -97,17 +98,7 @@ export default async function AccountDetailPage({
 
       <div className="flex flex-wrap items-start justify-between gap-4 border-b pb-5">
         <div className="flex items-center gap-3">
-          <span
-            className="flex size-11 items-center justify-center rounded-xl"
-            style={{
-              backgroundColor: account.color
-                ? `color-mix(in oklab, ${account.color} 16%, transparent)`
-                : "var(--accent)",
-              color: account.color ?? "var(--accent-foreground)",
-            }}
-          >
-            <Icon className="size-5" />
-          </span>
+          <ColorTile color={account.color} icon={Icon} size="md" />
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               {account.name}

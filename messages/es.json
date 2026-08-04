@@ -124,8 +124,6 @@
     "groupCardsBlurb": "Saldos reconciliados y utilización.",
     "groupLoansTitle": "Préstamos",
     "groupLoansBlurb": "Saldo pendiente y progreso de pago.",
-    "cardGroupFallbackName": "Grupo de tarjeta",
-    "currencyLines": "{count} líneas de moneda",
     "usedPercent": "{pct} usado · {currency}",
     "currentBalance": "Saldo actual",
     "owed": "Adeudado",
