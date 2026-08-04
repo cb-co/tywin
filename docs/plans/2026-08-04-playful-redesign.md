@@ -1721,6 +1721,100 @@ Then report to the user: what changed, what still needs their action (**pushing 
 
 ---
 
+## Task 16: last4 on the card-group form
+
+> **Added 2026-08-04 by user decision**, not part of the original plan. Execution order puts
+> this **before** Task 15, so the sweep covers it. Needs **no migration** — the column and its
+> check constraint already exist.
+
+**Files:**
+- Modify: `components/accounts/account-form-dialog.tsx`, `app/(app)/accounts/actions.ts`,
+  `messages/en.json`, `messages/es.json`
+
+**Context:** `card_groups.last4` already exists with a database check constraint
+(`supabase/migrations/20260717234225_accounts.sql:7` — `last4 text check (last4 is null or
+last4 ~ '^[0-9]{4}$')`). Nothing writes it: `createCardGroup` inserts only `name` and `user_id`
+(`app/(app)/accounts/actions.ts:157-170`). Task 8 already consumes it — `CardGroupTile` passes
+the stored value through `inferLast4(name, last4)`, so a written value takes precedence over
+name inference immediately, with no further wiring.
+
+- [ ] **Step 1: Extend the action**
+
+Change `createCardGroup(name: string)` to `createCardGroup(name: string, last4?: string)`.
+Normalise empty string to `null`. Reject a non-null value that is not exactly four digits with
+a translated error rather than letting the DB constraint raise — the constraint is the backstop,
+not the user-facing validation. Keep the existing `revalidatePath("/accounts")`.
+
+- [ ] **Step 2: Add the input**
+
+In `account-form-dialog.tsx`, the card-group branch at `:191-204` currently collects only
+`newGroupName`. Add an **optional** four-digit input beside it, shown only when
+`cardGroupId === "new"`. Use `inputMode="numeric"`, `maxLength={4}`, and make clear in the label
+or placeholder that it is optional. Pass it to `createCardGroup`.
+
+- [ ] **Step 3: i18n**
+
+Add the label, placeholder and validation-error strings to **both** `messages/en.json` and
+`messages/es.json`. A missing `es` key throws at request time, not build time.
+
+- [ ] **Step 4: Verify**
+
+`./node_modules/.bin/vitest run`, `npm run lint`, `npm run build`. Confirm by reading both
+locale files that every new key exists in each.
+
+---
+
+## Task 17: accounts.last4 for standalone cards
+
+> **Added 2026-08-04 by user decision**, not part of the original plan. Execution order puts
+> this **before** Task 15. This task **adds a second migration**; the user pushes it, and the
+> agent must never run `npm run db:push`.
+
+**Files:**
+- Create: `supabase/migrations/<timestamp>_accounts_last4.sql`
+- Modify: `lib/accounts/schema.ts`, `components/accounts/account-form-dialog.tsx`,
+  `app/(app)/accounts/actions.ts`, `components/accounts/account-card.tsx`,
+  `messages/en.json`, `messages/es.json`
+
+**Context:** the `accounts` table has **no** `last4` column, so a standalone credit card's
+digits can only be inferred from its name today (`inferLast4(account.name)`). The original plan
+listed this under Deferred; the user asked for it.
+
+- [ ] **Step 1: Write the migration**
+
+Add `last4 text check (last4 is null or last4 ~ '^[0-9]{4}$')` to `public.accounts`, mirroring
+the `card_groups` constraint exactly. Nullable, no default, no backfill.
+
+**Do not run it.** Report to the user that it needs pushing, alongside
+`20260804120000_brighten_palette.sql`.
+
+- [ ] **Step 2: Regenerate or hand-extend the Database types**
+
+Whatever this repo's convention is for `Database["public"]["Tables"]["accounts"]["Row"]` — check
+how the type is produced before editing it by hand.
+
+- [ ] **Step 3: Schema, action and form**
+
+Add an optional four-digit `last4` to `lib/accounts/schema.ts` with a real hex-style regex check
+(note the existing colour field is `z.string().trim().max(9)` with no pattern, which is how a
+malformed hex reached `PaymentCard` — do not repeat that looseness). Wire an optional input into
+the credit-card branch of the account form, and persist it in the create/update actions.
+
+- [ ] **Step 4: Consume it**
+
+In `account-card.tsx`, pass the stored value as `inferLast4(account.name, account.last4)` so an
+explicit value beats name inference. `inferLast4` already prefers a valid stored value, so no
+change to `lib/accounts/network.ts` is needed.
+
+- [ ] **Step 5: i18n and verify**
+
+New strings into **both** locale files. Then `./node_modules/.bin/vitest run`, `npm run lint`,
+`npm run build`. The app must still work **before** the migration is pushed — until then the
+column does not exist, so guard the select/insert or the accounts page will break for everyone.
+This is the same both-states discipline the palette migration required.
+
+---
+
 ## Deferred / follow-up
 
 - `card_groups.art_url` as a card background image (column exists, unused).
