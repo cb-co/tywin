@@ -165,8 +165,78 @@ class-like tokens ANYWHERE in file text including comments, so this emitted thre
 one invalid. Reworded to prose-only and added a warning note. Saved to memory as a repo-wide trap.
 Task 11: complete (commits 26dcc31..2078145, review clean)
 
+Task 12: implemented directly by the controller, not via a subagent — this session's
+harness instructions forbid dispatching agents unless the user asks, which overrides the
+skill's dispatch loop. Steps followed as written; no brief deviation otherwise.
+Task 12: DARK VALUES — did NOT use the handoff's pre-computed candidate. Validated all four
+criteria the rationale states (not just the 3:1 the handoff checked) and the candidate lost on
+two: OKLab L spread 0.085 vs the committed set's 0.040, and chroma floor 0.108. Generated
+instead by carrying each NEW light hue AND chroma across unchanged and lifting only lightness,
+anchored on the committed set's per-slot L offsets re-centred at 0.685. Result
+#8B72FF #D88C1F #2FB39D #F36549 #BA6DDC #97AA48 #35A8E1 #ED5B85: L spread 0.057, chroma floor
+0.115, min contrast 5.09:1 vs #16161f, and better protan (0.138 vs 0.109) and deutan (0.126 vs
+0.111) adjacent-pair separation than the candidate. Tritan min 0.114 is below the candidate's
+0.137 but above the committed set's shipped 0.084. Script kept nowhere — regenerate from the
+method above if these are ever revisited.
+Task 12: took option (a) on the DESIGN TRAP — lib/palette.test.ts reads app/globals.css via
+`new URL("../app/globals.css", import.meta.url)` (cwd-independent) and slices the `:root` and
+`.dark` blocks. Added a guard test asserting the parse actually found 8+8 values, so a broken
+parse cannot make the contrast assertions vacuously true. Mutation-checked: setting --chart-3
+to #FFF2A0 fails with "expected 1.1375661230490883 to be >= 3". Also asserts slot 1 == --ring
+on each theme, so a future brand re-hue drags the lead series with it.
+Task 12: fixed in passing — spend-donut.tsx had THREE unmasked money figures (centre total,
+tooltip, legend rows), all now masked. The centre one is fixed by Step 3's MoneyDisplay swap;
+the other two were the same defect class as the Task 9 finding and are in this task's file.
+Task 12: minor (deferred): app/(app)/page.tsx:18 and marketing-home.tsx:10 use var(--chart-1)
+as a nav-tile tint, which is now the same violet as --brand/--ring. Intentional per the design
+(lead hue IS the brand) but worth an eyeball at Task 15 Step 1 — those tiles no longer read as
+a distinct colour from the hero.
+Task 12: verification — lint clean ("No issues found"), build succeeded (24/24 static pages),
+./node_modules/.bin/vitest run = 37 passed / 1 failed FILE, 271 tests passed. The 1 failed file
+is the documented pre-existing statement-actions.test.ts collection error, unchanged.
+Task 12: complete (commit 2078145..66d435d, self-reviewed)
+
+Task 13: CONFIRMED THE LEDGER'S OPEN QUESTION — Task 1 had NOT already fixed app/login/page.tsx.
+It still carried the background/text utilities built on the removed brand panel tokens. The build
+stayed green because Tailwind v4 emits NOTHING for an unknown utility rather than erroring, so
+the login brand panel had been shipping with no background at all. This is the same failure mode
+as the comment-scanner trap, in reverse, and no automated check on this branch would have caught
+it. Fixed to the hero gradient.
+Task 13: LEDGER CORRECTION — the claim that marketing-home.tsx held "the LAST" raw
+`color-mix(in oklab, ${` was WRONG. Four existed; Task 13 removed only the one it owns. Still
+open, all out of Task 13's file scope, all one-line ColorTile swaps, ALL FOR TASK 15:
+  * app/(app)/page.tsx:72                (STARTER_CARDS tile, literal var(--chart-n) tint)
+  * app/(app)/accounts/[id]/page.tsx:104 (stored account.color — ColorTile is built for this)
+  * app/(app)/budgets/goals/[id]/page.tsx:43 (stored goal.color — same)
+Task 9 Step 5's grep does NOT go clean until these three land. Do not re-report this as a
+Task 13 gap.
+Task 13: deviated from the brief's Step 1 snippet — scenes paint `fill="currentColor"` with the
+wrapper defaulting to `text-brand`, instead of `fill="var(--brand)"`. Default rendering is
+byte-identical to the brief's intent; the indirection exists because Step 2 puts a scene ON the
+hero gradient, where `--brand` is violet on violet and disappears. The brief's own constraint
+line already permits currentColor. Hero call sites override with `text-current` (twMerge drops
+the default, verified lib/utils.ts uses twMerge not bare clsx).
+Task 13: Step 3's "new button sizes" was already satisfied — marketing-home already used
+size="lg"/size="sm" and button.tsx already carries the Task 5 h-12/h-10 scale. No work needed.
+Task 13: Step 4 note — the OVERVIEW empty state does not use the EmptyState component at all;
+it is a HeroCard in app/(app)/page.tsx. Illustration placed inside it, absolutely positioned
+against HeroCard's inner `relative` content wrapper and clipped by the card's overflow-hidden.
+app/(app)/page.tsx is not in the brief's Files list but Step 4 names the overview explicitly.
+Task 13: minor (deferred): EmptyState now takes both `icon` and `illustration`; they are
+alternatives, illustration wins. Only account-gallery.tsx was migrated. The other six call sites
+(ledger, contributions-list, goal-grid, subscriptions-view, account-activity, budget-grid) still
+pass `icon` and render unchanged — fine, but the split is worth a look during the Task 15 sweep.
+Task 13: verification — grep for the dead token clean (needed two passes: my own explanatory
+comment quoted the class name and matched it; reworded to prose, which is ALSO what the Tailwind
+comment-scanner trap demands). lint "No issues found", build succeeded, vitest 37 passed /
+1 failed file, 271 tests passed — the same documented pre-existing failure, unchanged.
+Task 13: complete (commit 66d435d..70f384e, self-reviewed)
+
 ================================================================================
 == RESUME HERE — handoff written 2026-08-04, session ended by user request     ==
+== UPDATED: Tasks 12 (66d435d) and 13 (70f384e) are DONE. Next is Task 14.     ==
+== The pre-computed dark chart candidate below was SUPERSEDED — do not reuse.  ==
+== The "last color-mix instance" claim below is WRONG — see the Task 13 block. ==
 ================================================================================
 
 HEAD at handoff: 2078145  (branch redesign/playful-app-ui, working tree CLEAN)
