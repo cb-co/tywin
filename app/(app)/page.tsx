@@ -64,7 +64,7 @@ export default async function OverviewPage() {
               className="group rise"
               style={{ "--i": i + 2 } as React.CSSProperties}
             >
-              <Card className="lift h-full p-5 group-hover:ring-foreground/20">
+              <Card className="lift h-full p-5 group-hover:shadow-(--shadow-card-hover)">
                 <span
                   className="flex size-10 items-center justify-center rounded-lg transition-transform duration-200 ease-out group-hover:scale-110"
                   style={{ backgroundColor: `color-mix(in oklab, ${tint} 16%, transparent)`, color: tint }}
