@@ -8,7 +8,7 @@ import { useTranslations } from "next-intl";
 import { useUiSound } from "@/components/sound/sound-provider";
 import { createCategory, updateCategory } from "@/app/(app)/budgets/actions";
 import type { BudgetRow } from "@/lib/budgets/queries";
-import { SWATCHES } from "@/lib/palette";
+import { SWATCH_CLASS, SWATCHES } from "@/lib/palette";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Check } from "lucide-react";
 
 type Values = { name: string; emoji: string };
 
@@ -99,10 +100,13 @@ export function CategoryDialog({
                   type="button"
                   onClick={() => setColor(c)}
                   aria-label={t("colorSwatchAria", { color: c })}
-                  className="size-7 rounded-full ring-offset-2 ring-offset-background transition-all data-[active=true]:ring-2 data-[active=true]:ring-ring"
+                  aria-pressed={color === c}
+                  className={SWATCH_CLASS}
                   data-active={color === c}
                   style={{ backgroundColor: c }}
-                />
+                >
+                  {color === c ? <Check className="size-4" strokeWidth={3} /> : null}
+                </button>
               ))}
             </div>
           </div>
