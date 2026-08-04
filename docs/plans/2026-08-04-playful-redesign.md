@@ -1332,7 +1332,19 @@ git commit -m "feat(accounts): render credit cards as physical card faces"
 ## Task 9: Budgets, transactions and the four duplicates
 
 **Files:**
-- Modify: `components/budgets/budget-grid.tsx:243-340`, `components/transactions/transaction-row.tsx:86-124`
+- Modify: `components/budgets/budget-grid.tsx:243-340`, `components/transactions/transaction-row.tsx:86-124`, `components/goals/goal-grid.tsx:113`
+
+- [ ] **Step 0: Unblock goal-grid.tsx**
+
+Task 4 removed `colorCardStyle` from `lib/palette.ts`. `components/goals/goal-grid.tsx:113` is a third call site the original plan missed — found by Task 4's implementer, who correctly left it untouched since it wasn't in that task's scope. It currently reads:
+
+```tsx
+<Card key={goal.id} className="gap-0 p-5" style={colorCardStyle(goal.color)}>
+```
+
+Goals is inherit-only per the spec (tokens and components, no bespoke layout work), so this is a mechanical unblock, not a redesign: drop the `style={colorCardStyle(goal.color)}` prop entirely and remove the now-dead `import { colorCardStyle } from "@/lib/palette"` at the top of the file. The card loses its 5% colour wash and falls back to the plain `Card` background — that is the correct outcome for an inherit-only surface, not a regression to fix later.
+
+Run `grep -rn "colorCardStyle" --include=*.ts --include=*.tsx app components lib` after this step and confirm it returns nothing.
 
 - [ ] **Step 1: Replace both budget tile blocks**
 
