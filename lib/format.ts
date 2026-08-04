@@ -1,14 +1,26 @@
 /** Money and number formatting for the Tywin UI. */
 
+/**
+ * Locale to format each currency in. Defaults to "en-US", whose narrowSymbol
+ * is what we want for nearly every currency. DOP is the exception: en-US's
+ * narrowSymbol for it is just "$", indistinguishable from USD, so it's
+ * formatted in es-DO instead, which renders the unambiguous "RD$".
+ */
+const CURRENCY_LOCALE: Record<string, string> = {
+  DOP: "es-DO",
+};
+
 export function formatMoney(
   amount: number,
   currency: string,
   opts?: { compact?: boolean; signed?: boolean; maximumFractionDigits?: number },
 ): string {
-  const value = new Intl.NumberFormat("en-US", {
+  const value = new Intl.NumberFormat(CURRENCY_LOCALE[currency] ?? "en-US", {
     style: "currency",
     currency,
-    currencyDisplay: "narrowSymbol",
+    // es-DO has no narrowSymbol form that keeps "RD$"; "symbol" is required
+    // there. Every other currency stays on narrowSymbol as before.
+    currencyDisplay: currency in CURRENCY_LOCALE ? "symbol" : "narrowSymbol",
     notation: opts?.compact ? "compact" : "standard",
     maximumFractionDigits: opts?.maximumFractionDigits ?? 2,
   }).format(amount);
