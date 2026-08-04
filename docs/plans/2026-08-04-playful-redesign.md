@@ -247,7 +247,7 @@ git commit -m "feat(design): retint tokens to cool neutrals and violet brand"
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: `SWATCHES: string[]` (16 uppercase hex), unchanged `SWATCH_CLASS`, and `colorCardStyle` is **removed** (Task 4 replaces its only role).
+- Produces: `SWATCHES: string[]` (16 uppercase hex), unchanged `SWATCH_CLASS`. `colorCardStyle` is untouched by this task — its removal is Task 4 Step 3's job, not this one's; do not delete it here.
 
 - [ ] **Step 1: Write the failing test**
 
