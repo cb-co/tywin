@@ -280,13 +280,6 @@ export type Database = {
             foreignKeyName: "card_statement_lines_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
-            referencedRelation: "account_commitments"
-            referencedColumns: ["account_id"]
-          },
-          {
-            foreignKeyName: "card_statement_lines_account_id_fkey"
-            columns: ["account_id"]
-            isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
           },
@@ -421,13 +414,6 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "account_balances"
-            referencedColumns: ["account_id"]
-          },
-          {
-            foreignKeyName: "card_statements_account_id_fkey"
-            columns: ["account_id"]
-            isOneToOne: false
-            referencedRelation: "account_commitments"
             referencedColumns: ["account_id"]
           },
           {
@@ -655,13 +641,6 @@ export type Database = {
             foreignKeyName: "goal_contributions_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
-            referencedRelation: "account_commitments"
-            referencedColumns: ["account_id"]
-          },
-          {
-            foreignKeyName: "goal_contributions_account_id_fkey"
-            columns: ["account_id"]
-            isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
           },
@@ -851,13 +830,6 @@ export type Database = {
             foreignKeyName: "statement_section_mappings_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
-            referencedRelation: "account_commitments"
-            referencedColumns: ["account_id"]
-          },
-          {
-            foreignKeyName: "statement_section_mappings_account_id_fkey"
-            columns: ["account_id"]
-            isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
           },
@@ -946,13 +918,6 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "account_balances"
-            referencedColumns: ["account_id"]
-          },
-          {
-            foreignKeyName: "subscriptions_account_id_fkey"
-            columns: ["account_id"]
-            isOneToOne: false
-            referencedRelation: "account_commitments"
             referencedColumns: ["account_id"]
           },
           {
@@ -1089,13 +1054,6 @@ export type Database = {
             foreignKeyName: "transactions_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
-            referencedRelation: "account_commitments"
-            referencedColumns: ["account_id"]
-          },
-          {
-            foreignKeyName: "transactions_account_id_fkey"
-            columns: ["account_id"]
-            isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
           },
@@ -1152,13 +1110,6 @@ export type Database = {
             foreignKeyName: "transactions_to_account_id_fkey"
             columns: ["to_account_id"]
             isOneToOne: false
-            referencedRelation: "account_commitments"
-            referencedColumns: ["account_id"]
-          },
-          {
-            foreignKeyName: "transactions_to_account_id_fkey"
-            columns: ["to_account_id"]
-            isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
           },
@@ -1194,14 +1145,6 @@ export type Database = {
           base_movement: number | null
           currency: string | null
           starting_balance: number | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
-      account_commitments: {
-        Row: {
-          account_id: string | null
-          committed_raw: number | null
           user_id: string | null
         }
         Relationships: []
