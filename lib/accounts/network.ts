@@ -7,8 +7,12 @@
  * wrong network mark on someone's card is worse than a generic one.
  */
 
-export type CardNetwork =
-  | "visa" | "mastercard" | "amex" | "discover" | "diners" | "jcb" | "unionpay";
+/** A tuple, not a bare union, so zod and the LLM schema can enumerate it. */
+export const CARD_NETWORKS = [
+  "visa", "mastercard", "amex", "discover", "diners", "jcb", "unionpay",
+] as const;
+
+export type CardNetwork = (typeof CARD_NETWORKS)[number];
 
 /**
  * Ordered because the first match wins. Each pattern is anchored on word

@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { relativeLuminance, contrastRatio, readableForeground, gradientFrom } from "./color";
+import {
+  relativeLuminance,
+  contrastRatio,
+  readableForeground,
+  gradientFrom,
+  toOklch,
+  fromOklch,
+} from "./color";
 
 describe("relativeLuminance", () => {
   it("is 0 for black and 1 for white", () => {
@@ -59,5 +66,30 @@ describe("gradientFrom", () => {
   it("flips the sheen to a shadow on a pale fill", () => {
     expect(gradientFrom("#101018")).toContain("rgba(255, 255, 255,");
     expect(gradientFrom("#F4E9C8")).toContain("rgba(0, 0, 0,");
+  });
+
+  // The far corner brightens. A darkening ramp gives a vignette; the reference
+  // card art is lit, and that direction is the whole look.
+  it("ends lighter than it starts, for every hue", () => {
+    for (const accent of ["#1B4B8F", "#E8833A", "#C74BC0", "#0A0A0A", "#2E3B4A"]) {
+      const far = gradientFrom(accent).match(/(#[0-9a-f]{6}) 100%/i)?.[1];
+      expect(far, `${accent} far stop`).toBeDefined();
+      expect(toOklch(far!).l, `${accent} lifts`).toBeGreaterThan(toOklch(accent).l);
+    }
+  });
+
+  // A near-white accent cannot lift a full step without leaving the gamut. It
+  // must still produce a real colour rather than NaN or a clipped hue shift.
+  it("stays in gamut at the top of the lightness range", () => {
+    const far = gradientFrom("#F2F4FF").match(/(#[0-9a-f]{6}) 100%/i)?.[1];
+    expect(far).toMatch(/^#[0-9a-f]{6}$/i);
+  });
+});
+
+describe("oklch round trip", () => {
+  it("returns the colour it was given", () => {
+    for (const hex of ["#1B4B8F", "#E8833A", "#ffffff", "#000000", "#7F7F7F"]) {
+      expect(fromOklch(toOklch(hex)).toLowerCase()).toBe(hex.toLowerCase());
+    }
   });
 });

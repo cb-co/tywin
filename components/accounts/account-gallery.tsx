@@ -37,12 +37,15 @@ export function AccountGallery({
   cardGroups,
   banks,
   baseCurrency,
+  holder,
 }: {
   accounts: AccountWithStatus[];
   currencies: CurrencyRow[];
   cardGroups: CardGroupRow[];
   banks: BankRow[];
   baseCurrency: string;
+  /** Cardholder name for card faces — the profile name, as embossed. */
+  holder: string;
 }) {
   const t = useTranslations("Accounts");
   const groupById = new Map(cardGroups.map((g) => [g.id, g]));
@@ -124,14 +127,15 @@ export function AccountGallery({
                       name={cardGroup.name}
                       brand={cardGroup.brand}
                       artColor={cardGroup.art_color}
+                      holder={holder}
                       accounts={cluster.items}
                     />
                   ) : (
-                    <AccountCard key={cluster.key} account={cluster.items[0]} />
+                    <AccountCard key={cluster.key} account={cluster.items[0]} holder={holder} />
                   );
                 })
               : group.items.map((account) => (
-                  <AccountCard key={account.id} account={account} />
+                  <AccountCard key={account.id} account={account} holder={holder} />
                 ))}
           </div>
         </section>

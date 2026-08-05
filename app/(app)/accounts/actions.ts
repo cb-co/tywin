@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { accountInput, type AccountInput } from "@/lib/accounts/schema";
+import { hasCardAccent } from "@/lib/accounts/card-art";
+import { inferCardArt } from "@/lib/accounts/llm/card-art";
 import { dbError } from "@/lib/errors";
 
 type Result = { error?: string; id?: string };
@@ -46,28 +48,70 @@ function toColumns(v: AccountInput) {
 }
 
 /**
- * `accounts.last4` ships ahead of its migration
- * (supabase/migrations/20260804130000_accounts_last4.sql), which only the user
- * can push. Until they do, the column does not exist and any write naming it is
- * rejected outright — which would break account creation and editing for
- * everyone, not just people who filled the optional field in.
+ * Two account columns ship ahead of their migrations — `last4`
+ * (20260804130000) and `brand` (20260804150000) — and only the user can push
+ * those. Until they do, the columns do not exist and any write naming one is
+ * rejected outright, which would break account creation and editing for
+ * EVERYONE, not just people who touched the new fields.
  *
  * Reads need no such guard: every accounts query selects `*`, so a missing
- * column simply comes back absent, and `inferLast4` treats undefined exactly as
- * it treats null.
+ * column simply comes back absent, and both consumers treat undefined the same
+ * as an unset value.
  *
- * Both branches disappear on their own once the migration lands, at which point
- * the retry stops being reachable. Delete this then.
+ * Written against the column NAME the database reports rather than a hardcoded
+ * list, so it covers both columns with one mechanism and needs no edit if a
+ * third ever ships this way.
+ *
+ * All of this becomes unreachable once both migrations land. Delete it then.
  */
-function isMissingLast4(error: { code?: string; message?: string } | null) {
-  if (!error) return false;
+const PENDING_COLUMNS = ["last4", "brand"] as const;
+
+function pendingColumn(error: { code?: string; message?: string } | null) {
+  if (!error) return null;
   // PostgREST rejects columns absent from its schema cache (PGRST204) before
   // Postgres ever sees the statement; 42703 is Postgres' own undefined_column,
   // for the paths that reach it directly.
-  return (
-    (error.code === "PGRST204" || error.code === "42703") &&
-    (error.message ?? "").includes("last4")
-  );
+  if (error.code !== "PGRST204" && error.code !== "42703") return null;
+  const message = error.message ?? "";
+  return PENDING_COLUMNS.find((c) => message.includes(c)) ?? null;
+}
+
+/** The same payload with whichever column the database rejected removed. */
+function withoutColumn<T extends object>(row: T, column: string): T {
+  // supabase-js serialises with JSON.stringify, which drops undefined keys — so
+  // this genuinely omits the column rather than sending a null for it.
+  return { ...row, [column]: undefined };
+}
+
+/**
+ * Card art for an account being written, or nothing.
+ *
+ * The gate is deliberately "no accent stored yet", not "is being created". That
+ * one condition does all the work asked of it:
+ *
+ *   - editing a card that already has art costs nothing, so routine edits do
+ *     not each burn an inference call;
+ *   - a card created BEFORE this feature has no accent, so it resolves the
+ *     first time it is touched, with no backfill flag to carry around;
+ *   - a card the model could not place stays unresolved rather than being
+ *     written a wrong colour, and simply renders the default.
+ *
+ * Only credit cards get art — a chequing account has no physical face to match.
+ *
+ * Inference failure is silent and returns nothing at all: this runs inside a
+ * save the person asked for, and a card whose colour could not be guessed is
+ * not a reason to fail writing their account.
+ */
+async function resolveArtFor(
+  v: AccountInput,
+): Promise<{ color?: string; brand?: string } | undefined> {
+  if (v.type !== "credit_card") return undefined;
+  if (hasCardAccent(v.color)) return undefined;
+
+  const art = await inferCardArt(v.name);
+  if (!art) return undefined;
+
+  return { color: art.accent, ...(art.network ? { brand: art.network } : {}) };
 }
 
 async function requireUser() {
@@ -85,20 +129,23 @@ export async function createAccount(input: AccountInput): Promise<Result> {
   const { supabase, user } = await requireUser();
   if (!user) return { error: "You're not signed in." };
 
-  const row = { ...toColumns(parsed.data), currency: parsed.data.currency, user_id: user.id };
+  let row = {
+    ...toColumns(parsed.data),
+    ...(await resolveArtFor(parsed.data)),
+    currency: parsed.data.currency,
+    user_id: user.id,
+  };
   // Held as one response object rather than destructured: the result is a union
   // discriminated on `error`, and pulling `data` and `error` into separate
   // mutable bindings loses the correlation between them.
   let res = await supabase.from("accounts").insert(row).select("id").single();
-  if (isMissingLast4(res.error)) {
-    // supabase-js serialises the payload with JSON.stringify, which drops
-    // undefined keys — so this genuinely omits the column rather than sending
-    // a null for it.
-    res = await supabase
-      .from("accounts")
-      .insert({ ...row, last4: undefined })
-      .select("id")
-      .single();
+  // Loops because two columns can be pending at once; each pass drops the one
+  // the database named and retries.
+  for (let attempt = 0; attempt < PENDING_COLUMNS.length; attempt++) {
+    const column = pendingColumn(res.error);
+    if (!column) break;
+    row = withoutColumn(row, column);
+    res = await supabase.from("accounts").insert(row).select("id").single();
   }
 
   if (res.error) return { error: await dbError(res.error, "createAccount") };
@@ -115,13 +162,13 @@ export async function updateAccount(id: string, input: AccountInput): Promise<Re
   if (!user) return { error: "You're not signed in." };
 
   // currency is immutable — never included in the update payload.
-  const columns = toColumns(parsed.data);
+  let columns = { ...toColumns(parsed.data), ...(await resolveArtFor(parsed.data)) };
   let { error } = await supabase.from("accounts").update(columns).eq("id", id);
-  if (isMissingLast4(error)) {
-    ({ error } = await supabase
-      .from("accounts")
-      .update({ ...columns, last4: undefined })
-      .eq("id", id));
+  for (let attempt = 0; attempt < PENDING_COLUMNS.length; attempt++) {
+    const column = pendingColumn(error);
+    if (!column) break;
+    columns = withoutColumn(columns, column);
+    ({ error } = await supabase.from("accounts").update(columns).eq("id", id));
   }
   if (error) return { error: await dbError(error, "updateAccount") };
 
@@ -146,6 +193,76 @@ export async function updateAccount(id: string, input: AccountInput): Promise<Re
   revalidatePath(`/accounts/${id}`);
   revalidatePath("/");
   return { id };
+}
+
+/**
+ * Fills in art for cards that predate the feature.
+ *
+ * Everything else resolves art on save, which covers new cards and any card the
+ * person edits. Cards created before card art existed would otherwise sit on
+ * the default colour forever, because nothing ever writes them again. This
+ * closes that gap without a one-off script: the accounts page calls it once
+ * when it notices unresolved cards, and after it succeeds there is nothing left
+ * to find, so it stops firing on its own.
+ *
+ * Standalone cards only — a card that belongs to a group is drawn by the
+ * group's face, and the group is handled in the same pass below.
+ *
+ * Failures are swallowed per row. One card whose name the model cannot place
+ * must not stop the rest from resolving, and none of this is worth an error in
+ * front of someone who only opened a page.
+ */
+export async function backfillCardArt(): Promise<{ filled: number }> {
+  const { supabase, user } = await requireUser();
+  if (!user) return { filled: 0 };
+
+  const [{ data: accounts }, { data: groups }] = await Promise.all([
+    supabase
+      .from("accounts")
+      .select("id, name, color, card_group_id")
+      .eq("type", "credit_card")
+      .is("card_group_id", null)
+      .is("color", null),
+    supabase.from("card_groups").select("id, name, art_color").is("art_color", null),
+  ]);
+
+  let filled = 0;
+
+  for (const account of accounts ?? []) {
+    const art = await inferCardArt(account.name);
+    if (!art) continue;
+    let row: { color?: string; brand?: string } = {
+      color: art.accent,
+      ...(art.network ? { brand: art.network } : {}),
+    };
+    let { error } = await supabase.from("accounts").update(row).eq("id", account.id);
+    for (let attempt = 0; attempt < PENDING_COLUMNS.length; attempt++) {
+      const column = pendingColumn(error);
+      if (!column) break;
+      row = withoutColumn(row, column);
+      ({ error } = await supabase.from("accounts").update(row).eq("id", account.id));
+    }
+    if (!error) filled++;
+  }
+
+  for (const group of groups ?? []) {
+    const art = await inferCardArt(group.name);
+    if (!art) continue;
+    const { error } = await supabase
+      .from("card_groups")
+      .update({
+        art_color: art.accent,
+        ...(art.network ? { brand: art.network } : {}),
+      })
+      .eq("id", group.id);
+    if (!error) filled++;
+  }
+
+  if (filled > 0) {
+    revalidatePath("/accounts");
+    revalidatePath("/");
+  }
+  return { filled };
 }
 
 export async function archiveAccount(id: string, archived: boolean): Promise<Result> {
@@ -201,9 +318,20 @@ export async function createCardGroup(name: string): Promise<Result> {
   if (!trimmed) return { error: "Group name is required." };
   const { supabase, user } = await requireUser();
   if (!user) return { error: "You're not signed in." };
+
+  // A group IS the physical card, so its face is the one that needs art. Same
+  // gate as an account: a new group has no accent, so this always runs once
+  // here and never again unless the accent is cleared.
+  const art = await inferCardArt(trimmed);
+
   const { data, error } = await supabase
     .from("card_groups")
-    .insert({ name: trimmed, user_id: user.id })
+    .insert({
+      name: trimmed,
+      user_id: user.id,
+      ...(art ? { art_color: art.accent } : {}),
+      ...(art?.network ? { brand: art.network } : {}),
+    })
     .select("id")
     .single();
   if (error) return { error: await dbError(error, "createCardGroup") };

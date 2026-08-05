@@ -113,6 +113,7 @@
   },
   "Accounts": {
     "pageTitle": "Accounts",
+    "cardholder": "Cardholder",
     "pageDescription": "Bank accounts, credit cards, loans, and assets.",
     "addAccount": "Add account",
     "addFirstAccount": "Add your first account",

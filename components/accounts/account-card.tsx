@@ -18,7 +18,13 @@ function utilizationTone(pct: number) {
   return "text-muted-foreground";
 }
 
-export function AccountCard({ account }: { account: AccountWithStatus }) {
+export function AccountCard({
+  account,
+  holder,
+}: {
+  account: AccountWithStatus;
+  holder: string;
+}) {
   const t = useTranslations("Accounts");
   const tType = useTranslations("AccountTypes");
   const type = account.type as AccountType;
@@ -38,16 +44,14 @@ export function AccountCard({ account }: { account: AccountWithStatus }) {
       <Card className="lift h-full gap-0 p-5 group-hover:shadow-(--shadow-card-hover)">
         {isStandaloneCard ? (
           <PaymentCard
-            name={account.name}
+            holder={holder}
             // A stored value beats name inference; inferLast4 already falls
             // back when it is null, undefined or malformed. It reads as
             // undefined until the accounts.last4 migration is pushed, which is
             // the same branch as an unset value.
             last4={inferLast4(account.name, account.last4)}
-            network={inferNetwork(account.name)}
+            network={inferNetwork(account.name, account.brand)}
             color={account.color}
-            owed={account.cardStatus?.owed ?? account.current_balance}
-            currency={currency}
           />
         ) : (
           <div className="flex items-start justify-between">
@@ -71,12 +75,6 @@ export function AccountCard({ account }: { account: AccountWithStatus }) {
             util={account.cardStatus?.utilization_pct ?? null}
             dueDay={account.payment_due_day}
             currency={currency}
-            // The face above already shows the owed figure (masked, via
-            // MoneyDisplay) when it renders. Showing it again here — in
-            // plaintext, since this block predates figure masking — would
-            // both duplicate it and leak the real number next to its masked
-            // twin.
-            showOwed={!isStandaloneCard}
           />
         ) : type === "loan" ? (
           <LoanBody
@@ -118,34 +116,29 @@ function CardBody({
   util,
   dueDay,
   currency,
-  showOwed = true,
 }: {
   owed: number;
   limit: number | null;
   util: number | null;
   dueDay: number | null;
   currency: string;
-  /** False when a card face above this block already shows the owed figure. */
-  showOwed?: boolean;
 }) {
   const t = useTranslations("Accounts");
   return (
     <div className="mt-5 space-y-3">
-      {showOwed || util !== null ? (
-        <div className={cn("flex items-end", showOwed ? "justify-between" : "justify-end")}>
-          {showOwed ? (
-            <div>
-              <p className="figure text-2xl leading-none text-foreground">{formatMoney(owed, currency)}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{t("owed")}</p>
-            </div>
-          ) : null}
-          {util !== null ? (
-            <span className={cn("text-sm font-medium", utilizationTone(util))}>
-              {formatPercent(util)}
-            </span>
-          ) : null}
+      {/* The face above carries no figure, so this block is the only place the
+          owed amount appears on a card tile. */}
+      <div className="flex items-end justify-between">
+        <div>
+          <p className="figure text-2xl leading-none text-foreground">{formatMoney(owed, currency)}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t("owed")}</p>
         </div>
-      ) : null}
+        {util !== null ? (
+          <span className={cn("text-sm font-medium", utilizationTone(util))}>
+            {formatPercent(util)}
+          </span>
+        ) : null}
+      </div>
       {util !== null ? <Progress value={Math.min(Math.max(util, 0), 100)} /> : null}
       <div className="flex justify-between text-xs text-muted-foreground">
         <span>{limit ? t("limitAmount", { amount: formatMoney(limit, currency) }) : t("noLimitSet")}</span>

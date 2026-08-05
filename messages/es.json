@@ -113,6 +113,7 @@
   },
   "Accounts": {
     "pageTitle": "Cuentas",
+    "cardholder": "Titular",
     "pageDescription": "Cuentas bancarias, tarjetas de crédito, préstamos y activos.",
     "addAccount": "Añadir cuenta",
     "addFirstAccount": "Añade tu primera cuenta",
