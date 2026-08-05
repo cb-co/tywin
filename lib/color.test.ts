@@ -8,6 +8,7 @@ import {
   fromOklch,
   cardForeground,
   cardGradientStops,
+  cardSurfaces,
 } from "./color";
 
 describe("relativeLuminance", () => {
@@ -52,14 +53,18 @@ describe("readableForeground", () => {
 });
 
 describe("gradientFrom", () => {
-  // Two stacked layers, and the order is the whole point: CSS paints the first
-  // background-image on TOP, so the highlight has to come first or the base
-  // gradient covers it.
-  it("puts the sheen above a linear base carrying the source colour", () => {
+  // Layer order is the whole point: CSS paints the FIRST background-image on
+  // top, so the base ramp must come last or it covers both light layers. The
+  // specular band leads, then the ambient glow, then the ramp.
+  it("stacks specular, then ambient, then the base ramp", () => {
     const g = gradientFrom("#4361F0");
-    expect(g).toMatch(/^radial-gradient\(/);
-    expect(g).toContain("linear-gradient(135deg,");
-    expect(g.indexOf("radial-gradient")).toBeLessThan(g.indexOf("linear-gradient"));
+    expect(g).toMatch(/^linear-gradient\(105deg,/);
+    expect(g).toContain("radial-gradient(");
+    const ramp = g.indexOf("linear-gradient(135deg,");
+    expect(ramp).toBeGreaterThan(g.indexOf("radial-gradient("));
+    expect(ramp).toBeGreaterThan(0);
+    // The ramp is last, so nothing may follow its own opening paren.
+    expect(g.slice(ramp + "linear-gradient(".length)).not.toContain("gradient(");
     expect(g.toLowerCase()).toContain("#4361f0");
   });
 
@@ -105,13 +110,18 @@ describe("cardForeground", () => {
     }
   });
 
-  // Whatever it picks must survive BOTH ends of the ramp, not just one.
-  it("clears 3:1 against both gradient stops", () => {
-    for (const accent of ["#1B4B8F", "#9A9A9A", "#E8C34A", "#0A0A0A", "#C74BC0"]) {
+  // Whatever it picks must survive every surface the face presents — both ends
+  // of the ramp AND both ends under the full sheen. The gloss brightens exactly
+  // the region the text sits on, so it counts.
+  it("clears 3:1 against every surface, sheen included", () => {
+    for (const accent of ["#1B4B8F", "#9A9A9A", "#E8C34A", "#0A0A0A", "#C74BC0", "#494B9A"]) {
       const fg = cardForeground(accent);
       const { near, far } = cardGradientStops(accent);
       expect(contrastRatio(fg, near), `${accent} near`).toBeGreaterThanOrEqual(3);
       expect(contrastRatio(fg, far), `${accent} far`).toBeGreaterThanOrEqual(3);
+      for (const surface of cardSurfaces(accent)) {
+        expect(contrastRatio(fg, surface), `${accent} on ${surface}`).toBeGreaterThanOrEqual(3);
+      }
     }
   });
 });

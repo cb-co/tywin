@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { SETTINGS_ITEM } from "@/lib/nav";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { FigureMaskToggle } from "@/components/figure-mask/figure-mask-toggle";
 import { Logo, Wordmark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
@@ -15,11 +17,17 @@ export function MobileHeader() {
       </Link>
       {/* Every destination has a home: five tabs in the bottom bar (two of
           them behind Activity) and Settings here. No overflow menu means
-          nothing can clip off the right edge. Theme and language used to sit
-          here too; they are set-once preferences and now live in Settings,
-          which buys back the room this row was short of. */}
+          nothing can clip off the right edge.
+
+          Theme and language stay here as well as in Settings. On a phone this
+          bar is the only persistent chrome — there is no sidebar to fall back
+          on — so burying a theme switch two taps deep costs more than the strip
+          of width it returns. The desktop sidebar does drop them, because there
+          the footer had other things competing for the same space. */}
       <div className="flex items-center gap-0.5">
         <FigureMaskToggle />
+        <ThemeToggle />
+        <LanguageSwitcher />
         <Button
           variant="ghost"
           size="icon"

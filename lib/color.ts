@@ -98,6 +98,14 @@ export function fromOklch(color: Oklch): string {
 /**
  * How the far corner differs from the accent. Fixed by design.
  *
+ * The lift is 0.11, not the 0.15 it started at. That ceiling is set by
+ * legibility, not taste: a bigger lift pushes mid-lightness accents — a mid
+ * blue like Amex's #2557D6 is the worst case — into a band where NEITHER white
+ * nor near-black clears 3:1 once the gloss is on top. Clamping accents out of
+ * that band was tried and rejected; it turned a magenta card neon and a silver
+ * one grey, destroying the real card colours this feature exists to reproduce.
+ * Lower lift, honest colours.
+ *
  * There is deliberately NO hue rotation. An earlier version rotated +15°, which
  * looks like the reference art on warm accents but turns every blue into violet
  * — and the default accent is a navy, so the most common card in the app came
@@ -105,7 +113,7 @@ export function fromOklch(color: Oklch): string {
  * made, not a formula, and no single rotation is safe across the wheel. Lifting
  * lightness and easing chroma gives the same lit, moulded read on every hue.
  */
-const LIFT = 0.15;
+const LIFT = 0.11;
 const SOFTEN = 0.92;
 
 /** The two stops of a card's gradient: the accent, and the lit far corner. */
@@ -122,6 +130,31 @@ export function cardGradientStops(hex: string): { near: string; far: string } {
 }
 
 /**
+ * Which way the light layers push. On a pale accent a white sheen is invisible,
+ * so the highlight becomes a shadow instead. Measured, never assumed.
+ */
+function sheenChannel(hex: string): 0 | 255 {
+  return relativeLuminance(hex) > 0.45 ? 0 : 255;
+}
+
+/**
+ * The strongest the light layers can get where they overlap.
+ *
+ * The specular band peaks at 0.11 and the ambient glow at 0.035, and they can
+ * cross near the top-left, compositing to 1 − (1−0.11)(1−0.035) ≈ 0.14. Any
+ * higher and the same mid-lightness accents that constrain LIFT stop clearing
+ * 3:1 — the gloss brightens exactly the region the text sits on. Kept in step
+ * with the alphas in `gradientFrom`, and guarded by lib/color.test.ts.
+ */
+const SHEEN_PEAK = 0.14;
+
+/** `base` with a flat white or black wash over it at `alpha`. */
+function composite(base: string, channel: 0 | 255, alpha: number): string {
+  const mixed = channels(base).map((c) => Math.round(c * (1 - alpha) + channel * alpha));
+  return `#${mixed.map((c) => c.toString(16).padStart(2, "0")).join("")}`;
+}
+
+/**
  * Whichever of white or near-black stays readable across a WHOLE card face.
  *
  * Not `readableForeground(accent)` — that was a real bug. The accent is only
@@ -130,14 +163,33 @@ export function cardGradientStops(hex: string): { near: string; far: string } {
  * accent could pick white on the strength of its darkest corner and then put
  * white text on a much paler one. A silver Amex card did precisely that.
  *
- * Both stops are tested and the winner is whichever has the better WORST case,
- * so the answer holds everywhere on the face rather than at one corner.
+ * Four surfaces are tested, not two: both ends of the ramp, and both ends again
+ * under the brightest the specular and ambient layers can stack to. The gloss
+ * is what makes the face look like an object, but it is also lightening the
+ * very region the text sits on, so it has to be part of the contrast question
+ * rather than something applied afterwards and hoped about.
+ *
+ * The winner is whichever has the better WORST case, so the answer holds
+ * everywhere on the face rather than at one favourable corner.
  */
 export function cardForeground(hex: string): typeof PAPER | typeof INK {
   const { near, far } = cardGradientStops(hex);
-  const paperWorst = Math.min(contrastRatio(PAPER, near), contrastRatio(PAPER, far));
-  const inkWorst = Math.min(contrastRatio(INK, near), contrastRatio(INK, far));
-  return paperWorst >= inkWorst ? PAPER : INK;
+  const channel = sheenChannel(hex);
+  const surfaces = [
+    near,
+    far,
+    composite(near, channel, SHEEN_PEAK),
+    composite(far, channel, SHEEN_PEAK),
+  ];
+  const worst = (fg: string) => Math.min(...surfaces.map((s) => contrastRatio(fg, s)));
+  return worst(PAPER) >= worst(INK) ? PAPER : INK;
+}
+
+/** Every surface the face can present, for tests and contrast checks. */
+export function cardSurfaces(hex: string): string[] {
+  const { near, far } = cardGradientStops(hex);
+  const channel = sheenChannel(hex);
+  return [near, far, composite(near, channel, SHEEN_PEAK), composite(far, channel, SHEEN_PEAK)];
 }
 
 /**
@@ -148,21 +200,34 @@ export function cardForeground(hex: string): typeof PAPER | typeof INK {
  * app is lit the same way, which is what makes a wall of them read as a set
  * rather than as unrelated rectangles.
  *
- * Two layers. Underneath, a 135° ramp from the accent to a lighter, slightly
- * softer version of itself. Note it brightens toward the far corner rather than
- * darkening: that is what gives these faces the lit, moulded look of a real
- * card instead of the flat vignette a darkening ramp produces.
+ * Three layers, listed top to bottom because that is CSS background order.
  *
- * On top, a weak off-centre highlight. It is deliberately faint; a strong sheen
- * looks like a gloss filter. The highlight is measured, not assumed white: on a
- * pale accent a white sheen is invisible, so it flips to a shadow. Same
- * discipline as `cardForeground`.
+ * 1. A SPECULAR BAND — a narrow diagonal streak of light across the face. This
+ *    is the layer that does most of the work of looking like laminated
+ *    plastic. Real card photographs almost always catch one hard-edged
+ *    reflection running across them, and its narrowness is what sells it: a
+ *    wide soft one reads as a gradient, a tight one reads as a surface. It is
+ *    tilted off both axes (105°) because a band square to the card looks
+ *    printed on rather than reflected.
+ * 2. An AMBIENT GLOW at the top-left, the soft fill light around the specular.
+ * 3. The BASE RAMP, accent to a lighter, slightly softer version of itself.
+ *    Note it brightens toward the far corner rather than darkening: that is
+ *    what gives the face a lit, moulded look instead of the flat vignette a
+ *    darkening ramp produces.
+ *
+ * Both light layers are deliberately weak — they composite to about 0.14 at
+ * most. That is not timidity, it is the legibility ceiling: past it the mid
+ * blues stop clearing 3:1, and it is also roughly where a sheen stops reading
+ * as a reflection and starts reading as a gloss filter. They flip to shadow on
+ * a pale accent, where a white highlight would be invisible. `cardForeground`
+ * accounts for both.
  */
 export function gradientFrom(hex: string): string {
   const { far } = cardGradientStops(hex);
-  const sheen = relativeLuminance(hex) > 0.45 ? "0, 0, 0" : "255, 255, 255";
+  const s = sheenChannel(hex) === 0 ? "0, 0, 0" : "255, 255, 255";
   return [
-    `radial-gradient(115% 85% at 18% 0%, rgba(${sheen}, 0.16) 0%, rgba(${sheen}, 0.05) 40%, transparent 70%)`,
+    `linear-gradient(105deg, transparent 26%, rgba(${s}, 0.03) 36%, rgba(${s}, 0.11) 44%, rgba(${s}, 0.08) 48%, rgba(${s}, 0.02) 56%, transparent 68%)`,
+    `radial-gradient(115% 85% at 18% 0%, rgba(${s}, 0.035) 0%, rgba(${s}, 0.012) 42%, transparent 70%)`,
     `linear-gradient(135deg, ${hex} 0%, ${far} 100%)`,
   ].join(", ");
 }

@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
  */
 function CornerDots() {
   return (
-    <svg viewBox="0 0 26 6" aria-hidden className="h-[1.8cqw] w-auto opacity-60">
+    <svg viewBox="0 0 26 6" aria-hidden className="h-1.5 w-auto opacity-60">
       <circle cx="3" cy="3" r="3" fill="currentColor" />
       <circle cx="13" cy="3" r="3" fill="currentColor" />
       <circle cx="23" cy="3" r="3" fill="currentColor" />
@@ -37,13 +37,13 @@ function CornerDots() {
  */
 function CardNumber({ last4 }: { last4: string | null }) {
   return (
-    <p className="flex items-center gap-[0.55em] font-mono text-[4.2cqw]">
+    <p className="flex items-center gap-[0.55em] font-mono text-sm">
       {[0, 1, 2].map((i) => (
         <span key={i} className="relative top-[0.16em] tracking-[0.22em]">
           ****
         </span>
       ))}
-      <span className="text-[4.8cqw] tracking-[0.12em]">{last4 ?? "****"}</span>
+      <span className="text-base tracking-[0.12em]">{last4 ?? "****"}</span>
     </p>
   );
 }
@@ -57,18 +57,19 @@ function CardNumber({ last4 }: { last4: string | null }) {
  * that make the real object look right — and the reference art this is built
  * from sits nearer 1.72 for exactly that reason.
  *
- * EVERY dimension inside the face is a percentage of the face's own width
- * (`cqw`, against the `@container` on the root) rather than a fixed pixel size.
- * This is the difference between a card and a box with text in it. The tile is
- * roughly 45% wider on a phone than in the desktop three-column grid, so fixed
- * type left the contents marooned in the middle of a much larger rectangle —
- * the card grew and nothing on it did. Sized this way the face is effectively a
- * photograph: identical at any width, which is also how the real object behaves.
- * The percentages are calibrated so the desktop rendering is unchanged.
+ * The face is CAPPED at 22rem rather than filling its tile. That is what keeps
+ * it looking right on a phone: single-column, the tile runs ~28% wider than a
+ * desktop grid column, and with fixed type the contents ended up marooned in
+ * the middle of a much larger rectangle — the card grew and nothing on it did.
+ * Capping the width means every dimension inside can stay a fixed size and the
+ * proportions hold everywhere.
  *
- * The corner radius scales for the same reason. It lands on the real card's
- * 3.6% of the long edge, which happens to be the 12px it was already using at
- * desktop width.
+ * An earlier attempt sized everything in `cqw` against a container on this
+ * element. It broke badly: an element does NOT query itself, so the card's own
+ * padding and radius resolved against the nearest ANCESTOR container — the
+ * viewport — giving a 44px corner radius and 73px of padding on desktop. Only
+ * the descendants resolved correctly. A cap plus fixed sizes needs none of
+ * that machinery.
  *
  * The face carries identity only — holder, masked number, network, colour. It
  * deliberately shows NO balance. A real card does not print one, and the tile
@@ -106,18 +107,34 @@ export function PaymentCard({
   const body = (
     <div
       className={cn(
-        "@container relative flex aspect-[1.7] w-full flex-col justify-between overflow-hidden rounded-[3.6cqw] p-[6cqw] shadow-(--shadow-card)",
+        "relative mx-auto flex aspect-[1.7] w-full max-w-[22rem] flex-col justify-between overflow-hidden rounded-[0.75rem] p-5 shadow-(--shadow-card)",
         className,
       )}
       style={{ backgroundImage: gradientFrom(fill), color: fg }}
     >
-      <div className="flex items-start justify-between gap-[3.6cqw]">
+      {/* The lit edge. A real card is a moulded object with a thickness, and
+          the single strongest cue for that is a bright top edge with a darker
+          one beneath — light from above catching the bevel. Fixed white and
+          black rather than polarity-flipped like the sheen, because each is
+          simply invisible on the theme that would fight it: a white top edge
+          disappears on a pale card, a dark bottom edge disappears on a dark
+          one. Neither can hurt, so neither needs a branch.
+
+          A separate element rather than more insets on the card, because the
+          card's own box-shadow is a token and layering onto it here would mean
+          restating it. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-[inherit] shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.14)]"
+      />
+
+      <div className="relative flex items-start justify-between gap-3">
         <CornerDots />
         <NetworkMark network={network} foreground={fg} className="shrink-0" />
       </div>
 
-      <div className="space-y-[1.8cqw]">
-        <p className="truncate text-[4.56cqw] leading-none">{holder}</p>
+      <div className="relative space-y-1.5">
+        <p className="truncate text-[0.95rem] leading-none">{holder}</p>
         <CardNumber last4={last4} />
       </div>
     </div>
