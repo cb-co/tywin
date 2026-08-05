@@ -143,6 +143,9 @@ export function fromOklch(color: Oklch): string {
  * one grey, destroying the real card colours this feature exists to reproduce.
  * Lower lift, honest colours.
  *
+ * It is a CEILING rather than the value every accent gets — see `liftFor`, which
+ * scales it down at the dark end.
+ *
  * There is deliberately NO hue rotation. An earlier version rotated +15°, which
  * looks like the reference art on warm accents but turns every blue into violet
  * — and the default accent is a navy, so the most common card in the app came
@@ -153,13 +156,38 @@ export function fromOklch(color: Oklch): string {
 const LIFT = 0.11;
 const SOFTEN = 0.92;
 
+/**
+ * How much of the lift an accent actually gets, scaled by its own lightness.
+ *
+ * A FLAT lift is the reason black cards did not look black. It is an absolute
+ * step in perceptual lightness, so the darker the accent the larger it is in
+ * relative terms: a stored #1A1A1A — a real Visa Infinite — has L 0.218, and
+ * +0.11 took its far corner to #353535. Two thirds of the face was then mid
+ * grey, the specular band lifted it to #515151, and the card read as charcoal.
+ * The accent was right all along; the ramp was spending it.
+ *
+ * It is also what a lit surface actually does. Light landing on a black lacquer
+ * card does not turn it grey — a dark surface reflects little of what hits it,
+ * and almost all of what you see on a real black card is the narrow specular,
+ * which is a separate layer here and untouched by this. Scaling the ramp by
+ * lightness is the physical behaviour, not a special case for dark cards.
+ *
+ * The floor of 0.25 is what keeps a black card from going FLAT, which reads as
+ * a hole in the page rather than as an object. From L 0.6 up the scale reaches
+ * 1 and nothing changes: mid and pale accents keep the exact ramp they had, so
+ * this reclaims the dark end without re-tuning colours that were already right.
+ */
+function liftFor(l: number): number {
+  return LIFT * (0.25 + 0.75 * Math.min(1, l / 0.6));
+}
+
 /** The two stops of a card's gradient: the accent, and the lit far corner. */
 export function cardGradientStops(hex: string): { near: string; far: string } {
   const accent = toOklch(hex);
   return {
     near: hex,
     far: fromOklch({
-      l: Math.min(0.97, accent.l + LIFT),
+      l: Math.min(0.97, accent.l + liftFor(accent.l)),
       c: accent.c * SOFTEN,
       h: accent.h,
     }),

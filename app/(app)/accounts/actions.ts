@@ -50,17 +50,25 @@ function toColumns(v: AccountInput) {
 /**
  * Card art for an account being written, or nothing.
  *
- * The gate is deliberately "no accent stored yet", not "is being created". That
- * one condition does all the work asked of it:
- *
- *   - editing a card that already has art costs nothing, so routine edits do
- *     not each burn an inference call;
- *   - a card created BEFORE this feature has no accent, so it resolves the
- *     first time it is touched, with no backfill flag to carry around;
- *   - a card the model could not place stays unresolved rather than being
- *     written a wrong colour, and simply renders the default.
- *
  * Only credit cards get art — a chequing account has no physical face to match.
+ * Beyond that, the gate is "is there anything NEW to judge", and `previousName`
+ * is what answers it.
+ *
+ * The gate used to be "no accent stored yet", which reads as though it costs one
+ * call per card and does not. The colour is a form field, so an empty one means
+ * the model was asked and could not place the name — a permanent state for any
+ * card named "Tarjeta principal" — and every later edit of that card asked
+ * again, inside the save, where the person is watching. Once the name is
+ * unchanged there is nothing a second call could learn.
+ *
+ *   - creating a card passes no previous name, so it always resolves;
+ *   - renaming re-resolves, since the name is the entire input;
+ *   - editing anything else on a card the model could not place costs nothing;
+ *   - a card whose accent is already set costs nothing either way.
+ *
+ * CLEARING the colour field re-opens it, and that is the deliberate re-roll
+ * gesture: a card wearing an accent nobody likes can be sent back through
+ * inference by emptying the field, without having to rename it.
  *
  * Inference failure is silent and returns nothing at all: this runs inside a
  * save the person asked for, and a card whose colour could not be guessed is
@@ -68,9 +76,16 @@ function toColumns(v: AccountInput) {
  */
 async function resolveArtFor(
   v: AccountInput,
+  previous?: { name: string; color: string | null },
 ): Promise<{ color?: string; brand?: string } | undefined> {
   if (v.type !== "credit_card") return undefined;
   if (hasCardAccent(v.color)) return undefined;
+
+  if (previous) {
+    const renamed = previous.name !== v.name;
+    const cleared = hasCardAccent(previous.color);
+    if (!renamed && !cleared) return undefined;
+  }
 
   const art = await inferCardArt(v.name);
   if (!art) return undefined;
@@ -114,8 +129,21 @@ export async function updateAccount(id: string, input: AccountInput): Promise<Re
   const { supabase, user } = await requireUser();
   if (!user) return { error: "You're not signed in." };
 
+  /* Read before the write: what the card was called, and what it was wearing.
+     Both are gone the moment the update lands, and together they are how
+     resolveArtFor tells a rename or a deliberate re-roll from the routine edit
+     that must not cost a model call. */
+  const { data: previous } = await supabase
+    .from("accounts")
+    .select("name, color")
+    .eq("id", id)
+    .maybeSingle();
+
   // currency is immutable — never included in the update payload.
-  const columns = { ...toColumns(parsed.data), ...(await resolveArtFor(parsed.data)) };
+  const columns = {
+    ...toColumns(parsed.data),
+    ...(await resolveArtFor(parsed.data, previous ?? undefined)),
+  };
   const { error } = await supabase.from("accounts").update(columns).eq("id", id);
   if (error) return { error: await dbError(error, "updateAccount") };
 

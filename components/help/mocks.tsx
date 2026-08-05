@@ -1,5 +1,8 @@
 import { ArrowLeftRight, Banknote, CreditCard, Tags, Wallet } from "lucide-react";
+import { siSpotify } from "simple-icons";
 import { Card } from "@/components/ui/card";
+import { BrandGlyph } from "@/components/ui/brand-glyph";
+import { readableForeground } from "@/lib/color";
 import { cn } from "@/lib/utils";
 
 function MockLabel({ children }: { children: React.ReactNode }) {
@@ -234,6 +237,19 @@ export function BudgetsMock({
   );
 }
 
+/**
+ * Two subscription rows, deliberately showing BOTH marks a person will see.
+ *
+ * The first row is a service the app recognised — its real logo on its real
+ * brand colour. The second is one it did not, wearing the initial on the theme's
+ * accent. Drawing only the good case would leave anyone whose gym or ISP shows a
+ * letter thinking something had failed, when that is the finished state.
+ *
+ * Spotify by name, because the mark has to be one people actually recognise for
+ * the row to make its point. The glyph is a static import, so only this one path
+ * ships — see components/accounts/network-mark for why slug lookups may not
+ * happen in a client bundle.
+ */
 export function SubscriptionsMock({
   streaming,
   streamingCycle,
@@ -246,16 +262,28 @@ export function SubscriptionsMock({
   cloudCycle: string;
 }) {
   const rows = [
-    { initials: "ST", name: streaming, cycle: streamingCycle, amt: "$15.99" },
-    { initials: "CL", name: cloud, cycle: cloudCycle, amt: "$99.00" },
+    {
+      name: streaming,
+      cycle: streamingCycle,
+      amt: "$15.99",
+      mark: <BrandGlyph path={siSpotify.path} className="size-[55%]" />,
+      style: { backgroundColor: `#${siSpotify.hex}`, color: readableForeground(`#${siSpotify.hex}`) },
+    },
+    { name: cloud, cycle: cloudCycle, amt: "$99.00", mark: "C", style: undefined },
   ];
   return (
     <MockPanel>
       <div className="divide-y">
-        {rows.map(({ initials, name, cycle, amt }, i) => (
+        {rows.map(({ name, cycle, amt, mark, style }, i) => (
           <div key={i} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-accent text-[0.65rem] font-bold text-accent-foreground">
-              {initials}
+            <span
+              className={cn(
+                "tile-sheen flex size-8 shrink-0 items-center justify-center rounded-full text-[0.7rem] font-semibold",
+                style ? undefined : "bg-accent text-accent-foreground",
+              )}
+              style={style}
+            >
+              {mark}
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-foreground">{name}</p>

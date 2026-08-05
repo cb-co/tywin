@@ -138,6 +138,7 @@
     "availableCommitted": "<available></available> available · <committed></committed> committed"
   },
   "AccountDetail": {
+    "cardholder": "Cardholder",
     "backLink": "Accounts",
     "archived": "Archived",
     "balanceOwed": "Balance owed",
@@ -753,6 +754,11 @@
     "accountPageActivity": "A transfer-fee summary and the complete activity feed",
     "accountPageActions": "Edit, Archive / Restore, or Delete (with a confirmation step)",
     "statementsTitle": "Statements (credit cards)",
+    "cardFaceTitle": "Card faces",
+    "cardFaceBody": "Credit cards are drawn as the physical object. Cashly reads the card's name to pick its colour and its network mark — an Amex Platinum comes out silver, a Visa Infinite black — and the face appears on the card's own page as well as in the list.",
+    "cardFaceReroll": "Not the colour you expected? Clear the colour field and save. Cashly guesses again from the name, and a colour you type in yourself is always kept as-is.",
+    "accountPageFace": "The card face, so you know at a glance which card you're on.",
+    "subBrand": "Logos and colours appear on their own — Cashly recognises the service from the name you gave it. Anything it doesn't recognise keeps its initial, which is a finished look, not a missing one.",
     "statementsBody": "Click Import and upload a card statement PDF — password-protected files are supported, with a retry if you mistype the password. Cashly splits it into sections (one per currency line on the card), you confirm which account each maps to, then Confirm to import. This creates the underlying transactions and powers the cost-of-carry estimate in Insights.",
     "accountsMockChecking": "Everyday Checking",
     "accountsMockCheckingBank": "Ridgeline Bank · USD",
@@ -822,7 +828,7 @@
     "settingsTitle": "Settings",
     "settingsIntro": "The essentials, in one place.",
     "settingsName": "Display name and base currency",
-    "settingsTheme": "Theme — light or dark",
+    "settingsTheme": "Theme — light or dark, from here or the sidebar",
     "settingsSound": "Sound on/off",
     "settingsInstall": "Install Cashly as an app (PWA)",
     "settingsAccount": "Sign out, or delete your account (with confirmation)",

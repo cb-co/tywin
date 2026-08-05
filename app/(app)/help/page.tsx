@@ -168,6 +168,10 @@ export default async function HelpPage() {
               </div>
               <p className="mt-2 text-sm text-muted-foreground">{t("cardGroupNote")}</p>
 
+              <h3 className="mt-5 text-sm font-semibold text-foreground">{t("cardFaceTitle")}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">{t("cardFaceBody")}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{t("cardFaceReroll")}</p>
+
               <h3 className="mt-4 text-sm font-semibold text-foreground">{t("loanFieldsTitle")}</h3>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {(["fieldPrincipal", "fieldInterestRate", "fieldTerm", "fieldInstallment", "fieldStartDate"] as const).map((k) => (
@@ -183,6 +187,7 @@ export default async function HelpPage() {
 
               <h3 className="mt-5 text-sm font-semibold text-foreground">{t("accountPageTitle")}</h3>
               <ul className="mt-2 space-y-1.5 text-sm text-foreground">
+                <li>{t("accountPageFace")}</li>
                 <li>{t("accountPageBalance")}</li>
                 <li>{t("accountPageUtilization")}</li>
                 <li>{t("accountPageAmortization")}</li>
@@ -281,6 +286,7 @@ export default async function HelpPage() {
                 <li>{t("subCycle")}</li>
                 <li>{t("subLink")}</li>
                 <li>{t("subViews")}</li>
+                <li>{t("subBrand")}</li>
               </ul>
               <p className="mt-3 text-sm text-muted-foreground">{t("subLogCharge")}</p>
             </div>

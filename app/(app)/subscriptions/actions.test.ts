@@ -1,22 +1,26 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { Mock } from "vitest";
 
-vi.mock("@/lib/subscriptions/llm/brand-color", () => ({ inferBrandColor: vi.fn() }));
+vi.mock("@/lib/subscriptions/llm/brand", () => ({ inferBrand: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn(), unstable_cache: <T,>(fn: T) => fn }));
 vi.mock("next-intl/server", () => ({
   getTranslations: vi.fn(async () => (key: string) => key),
 }));
 
-import { inferBrandColor } from "@/lib/subscriptions/llm/brand-color";
+import { inferBrand } from "@/lib/subscriptions/llm/brand";
 import { createClient } from "@/lib/supabase/server";
-import {
-  createSubscription,
-  resolveSubscriptionColor,
-  updateSubscription,
-} from "./actions";
+import { NO_SIMPLE_ICON } from "@/lib/brand/logo-uri";
+import { createSubscription, resolveSubscriptionBrand, updateSubscription } from "./actions";
 
-const infer = inferBrandColor as unknown as Mock;
+const infer = inferBrand as unknown as Mock;
+
+/** What the model returns when it recognised the service outright. */
+const found = (color: string, logoUri: string) => ({ color, logoUri, answered: true });
+/** Answered, but the name is a gym nobody has drawn a logo for. */
+const nothing = { color: null, logoUri: null, answered: true };
+/** Did not answer at all — timeout, abort, 500. */
+const failed = { color: null, logoUri: null, answered: false };
 
 const VALID = {
   name: "Netflix",
@@ -26,7 +30,7 @@ const VALID = {
   is_active: true,
 };
 
-type Row = { name?: string; color: string | null };
+type Row = { name?: string; color?: string | null; logo_url?: string | null };
 
 /**
  * A Supabase stub narrow enough to answer two questions: what the read on
@@ -76,7 +80,7 @@ describe("saving a subscription never calls the model", () => {
   });
 
   it("does not infer on update", async () => {
-    const writes = stub({ data: { color: null } });
+    const writes = stub({ data: { name: "Netflix" } });
 
     await updateSubscription("sub-1", VALID);
 
@@ -87,54 +91,129 @@ describe("saving a subscription never calls the model", () => {
 });
 
 /**
- * The gate, now that it lives in the one place that writes the column. It has to
- * hold whether it is reached from a create, an edit, or a backfill of a row that
- * predates the feature — all three arrive here identically.
+ * A rename invalidates the brand, because the brand was inferred from the name.
+ * Without this, "Netflix" edited to "Spotify" keeps Netflix's red and mark.
  */
-describe("resolveSubscriptionColor only calls the model when the colour is empty", () => {
-  it("infers and stores when the row has no colour", async () => {
-    infer.mockResolvedValue("#E50914");
-    const writes = stub({ data: { name: "Netflix", color: null } });
+describe("renaming clears the brand so it resolves again", () => {
+  it("clears colour and logo when the name changed", async () => {
+    const writes = stub({ data: { name: "Netflix" } });
 
-    expect(await resolveSubscriptionColor("sub-1")).toEqual({ resolved: true });
-    expect(writes).toEqual([{ color: "#E50914" }]);
+    await updateSubscription("sub-1", { ...VALID, name: "Spotify" });
+
+    expect(writes[0]).toMatchObject({ name: "Spotify", color: null, logo_url: null });
+  });
+
+  it("leaves the brand alone when the name did not change", async () => {
+    const writes = stub({ data: { name: "Netflix" } });
+
+    await updateSubscription("sub-1", { ...VALID, amount: 22.99 });
+
+    expect(writes[0]).not.toHaveProperty("color");
+    expect(writes[0]).not.toHaveProperty("logo_url");
+  });
+
+  // Clearing a brand over a question we could not answer is the worse error.
+  it("treats an unreadable row as not renamed", async () => {
+    const writes = stub({ data: null });
+
+    await updateSubscription("sub-1", { ...VALID, name: "Spotify" });
+
+    expect(writes[0]).not.toHaveProperty("color");
+  });
+});
+
+/**
+ * The gate, and the reason it reads `logo_url` rather than "do we have a brand".
+ * Most subscriptions are a gym or a local ISP that no icon set has ever drawn,
+ * so "no brand" is their permanent state — gating on it meant a fresh model call
+ * on every edit of those rows, forever, for the same nothing.
+ */
+describe("resolveSubscriptionBrand runs once per name, not once per save", () => {
+  it("infers and stores when the row has never been resolved", async () => {
+    infer.mockResolvedValue(found("#E50914", "simple-icons:netflix"));
+    const writes = stub({ data: { name: "Netflix", color: null, logo_url: null } });
+
+    expect(await resolveSubscriptionBrand("sub-1")).toEqual({ resolved: true });
+    expect(writes).toEqual([{ color: "#E50914", logo_url: "simple-icons:netflix" }]);
   });
 
   // The name comes off the row, not from the caller: this action is reachable
   // with any id, so what it judges should be data RLS already scoped.
   it("judges the stored name rather than anything passed in", async () => {
-    infer.mockResolvedValue("#1DB954");
-    stub({ data: { name: "Spotify", color: null } });
+    infer.mockResolvedValue(found("#1DB954", "simple-icons:spotify"));
+    stub({ data: { name: "Spotify", color: null, logo_url: null } });
 
-    await resolveSubscriptionColor("sub-1");
+    await resolveSubscriptionBrand("sub-1");
 
     expect(infer).toHaveBeenCalledWith("Spotify");
   });
 
-  it("does NOT infer when the row already has a colour", async () => {
-    const writes = stub({ data: { name: "Netflix", color: "#E50914" } });
+  // THE regression this gate exists for. The model answered, there was no mark,
+  // and that has to be recorded or the next save asks again.
+  it("records the attempt when the model finds nothing", async () => {
+    infer.mockResolvedValue(nothing);
+    const writes = stub({ data: { name: "Gimnasio Bella Vista", color: null, logo_url: null } });
 
-    expect(await resolveSubscriptionColor("sub-1")).toEqual({ resolved: false });
+    expect(await resolveSubscriptionBrand("sub-1")).toEqual({ resolved: false });
+    expect(writes).toEqual([{ logo_url: NO_SIMPLE_ICON }]);
+  });
+
+  it("does NOT infer again once an attempt is recorded", async () => {
+    const writes = stub({
+      data: { name: "Gimnasio Bella Vista", color: null, logo_url: NO_SIMPLE_ICON },
+    });
+
+    expect(await resolveSubscriptionBrand("sub-1")).toEqual({ resolved: false });
     expect(infer).not.toHaveBeenCalled();
     expect(writes).toHaveLength(0);
   });
 
-  // Nothing renders a value the colour maths cannot parse, so treating it as
-  // occupied would strand the row forever.
-  it("re-infers when the stored value is not a usable hex", async () => {
-    infer.mockResolvedValue("#E50914");
-    const writes = stub({ data: { name: "Netflix", color: "#FFF" } });
+  it("does NOT infer when the row already has a logo", async () => {
+    const writes = stub({
+      data: { name: "Netflix", color: "#E50914", logo_url: "simple-icons:netflix" },
+    });
 
-    expect(await resolveSubscriptionColor("sub-1")).toEqual({ resolved: true });
-    expect(writes).toEqual([{ color: "#E50914" }]);
+    expect(await resolveSubscriptionBrand("sub-1")).toEqual({ resolved: false });
+    expect(infer).not.toHaveBeenCalled();
+    expect(writes).toHaveLength(0);
   });
 
-  // A failed read tells us nothing about the stored colour. Guessing over it
-  // would overwrite a good value we could not see.
+  // A colour with no logo is every row saved before logos existed. Those heal on
+  // their next save rather than needing a migration.
+  it("still resolves a row that has a colour but was never looked up", async () => {
+    infer.mockResolvedValue(found("#E50914", "simple-icons:netflix"));
+    const writes = stub({ data: { name: "Netflix", color: "#111111", logo_url: null } });
+
+    expect(await resolveSubscriptionBrand("sub-1")).toEqual({ resolved: true });
+    expect(writes).toEqual([{ color: "#E50914", logo_url: "simple-icons:netflix" }]);
+  });
+
+  // A logo with no usable colour must not blank the colour already on the row.
+  it("writes only the logo when no colour came back", async () => {
+    infer.mockResolvedValue({ color: null, logoUri: "simple-icons:notion", answered: true });
+    const writes = stub({ data: { name: "Notion", color: "#111111", logo_url: null } });
+
+    expect(await resolveSubscriptionBrand("sub-1")).toEqual({ resolved: true });
+    expect(writes).toEqual([{ logo_url: "simple-icons:notion" }]);
+  });
+
+  /* A call that never answered says nothing about the NAME — only about the
+     network that day. Recording it as an attempt would strand the row unbranded
+     forever, which is the opposite failure to the one above. */
+  it("records nothing when the call failed, so the next save retries", async () => {
+    infer.mockResolvedValue(failed);
+    const writes = stub({ data: { name: "Netflix", color: null, logo_url: null } });
+
+    expect(await resolveSubscriptionBrand("sub-1")).toEqual({ resolved: false });
+    expect(writes).toHaveLength(0);
+  });
+
+  // A failed read tells us nothing about the stored brand. Guessing over it
+  // would overwrite good values we could not see.
   it("does NOT infer when the read failed", async () => {
     const writes = stub({ data: null, error: { message: "boom" } });
 
-    expect(await resolveSubscriptionColor("sub-1")).toEqual({ resolved: false });
+    expect(await resolveSubscriptionBrand("sub-1")).toEqual({ resolved: false });
     expect(infer).not.toHaveBeenCalled();
     expect(writes).toHaveLength(0);
   });
@@ -142,18 +221,8 @@ describe("resolveSubscriptionColor only calls the model when the colour is empty
   it("does NOT infer when the row is missing", async () => {
     const writes = stub({ data: null });
 
-    expect(await resolveSubscriptionColor("nope")).toEqual({ resolved: false });
+    expect(await resolveSubscriptionBrand("nope")).toEqual({ resolved: false });
     expect(infer).not.toHaveBeenCalled();
-    expect(writes).toHaveLength(0);
-  });
-
-  // A guess that came back empty — an unplaceable name, or a cold call that ran
-  // past its budget — must not write anything at all.
-  it("writes nothing when inference returns null", async () => {
-    infer.mockResolvedValue(null);
-    const writes = stub({ data: { name: "Some Obscure Thing", color: null } });
-
-    expect(await resolveSubscriptionColor("sub-1")).toEqual({ resolved: false });
     expect(writes).toHaveLength(0);
   });
 });

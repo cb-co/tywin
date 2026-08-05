@@ -37,11 +37,11 @@ const SYSTEM_PROMPT = `You identify consumer credit and debit cards from the nam
 Return two things.
 
 1. accent — the dominant colour of the PHYSICAL card, as a 6-digit hex INCLUDING the leading # (for example #1B4B8F, never 1B4B8F).
-   - If you recognise the specific card product, use that card's real colour. An Amex Platinum is silver-grey, an Amex Gold is warm gold, a Chase Sapphire Reserve is deep blue.
+   - If you recognise the specific card product, use that card's real colour. An Amex Platinum is bright silver, an Amex Gold is warm gold, a Chase Sapphire Reserve is deep blue, a Visa Infinite black card is near-black.
+   - Give the colour the card ACTUALLY is, at full strength. Premium cards are defined by their finish: a platinum card is a light metallic silver around #E5E4E2, and a black card is a true near-black around #101010. Do not lighten a black card toward grey or darken a silver one toward grey — grey is what both look like when hedged, and it is the one answer that makes them indistinguishable.
    - If you recognise only the issuing bank, use that bank's primary brand colour.
    - If you recognise neither, choose a plausible, sober card colour. Never invent a wildly bright or novelty colour for a card you do not recognise.
-   - The colour is used as a card background with text on top. Stay in the mid-to-dark range so it reads as a card. Avoid near-white (lighter than #D0D0D0) and pure black.
-   - Prefer a saturated, confident colour over a muddy one.
+   - Prefer a saturated, confident colour over a muddy one. Only pure white (#FFFFFF) is out of range; everything else is fair, and the app measures its own text contrast against whatever you return.
 
 2. network — the payment network, ONLY when the name makes it certain.
    - Return null if you are not sure. A wrong network mark on someone's card is worse than no mark at all.

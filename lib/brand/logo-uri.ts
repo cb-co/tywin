@@ -26,6 +26,34 @@
 
 export const SIMPLE_ICON_SCHEME = "simple-icons:";
 
+/**
+ * What gets stored when the model answered but named no icon we ship.
+ *
+ * The scheme with an empty path: "we looked in this set and there is nothing
+ * here". It exists because `logo_url` has to answer two different questions with
+ * one column — WHICH mark to draw, and WHETHER anyone has looked yet — and null
+ * can only answer the first. Without it, a subscription the icon set does not
+ * cover ("Gimnasio Bella Vista") is indistinguishable from one that has never
+ * been through inference, so every single save fired another model call that
+ * could only ever return the same nothing.
+ *
+ * `simpleIconSlug` already rejects it — an empty path fails the slug pattern —
+ * so nothing downstream needs to know it exists. It draws no glyph, exactly like
+ * an empty column, and only `brandResolved` tells them apart.
+ */
+export const NO_SIMPLE_ICON = SIMPLE_ICON_SCHEME;
+
+/**
+ * Whether this row has already been through brand inference.
+ *
+ * ANY non-empty value counts, not just ours: an `https://` logo means a person
+ * or some future upload path put it there, and re-inferring over that would
+ * replace a deliberate choice with a guess.
+ */
+export function brandResolved(logoUrl: string | null | undefined): boolean {
+  return !!logoUrl?.trim();
+}
+
 /** Slugs are the project's own: lowercase alphanumerics, dots and dashes. */
 const SLUG = /^[a-z0-9.\-+]+$/;
 

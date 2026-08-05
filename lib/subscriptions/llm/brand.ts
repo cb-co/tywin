@@ -76,9 +76,19 @@ export type BrandIdentity = {
   color: string | null;
   /** A `simple-icons:` URI for `subscriptions.logo_url`, or null. */
   logoUri: string | null;
+  /**
+   * Whether the model actually answered, as opposed to the call failing.
+   *
+   * The caller records the attempt so it never repeats, and this is the line
+   * between an attempt and a non-event. "Netflix" answering with nothing usable
+   * is a real answer about a real name and will not improve on a retry; a
+   * timeout, an abort or a 500 says nothing about the name at all, and marking
+   * it as tried would strand that subscription unbranded forever.
+   */
+  answered: boolean;
 };
 
-const UNRESOLVED: BrandIdentity = { color: null, logoUri: null };
+const UNRESOLVED: BrandIdentity = { color: null, logoUri: null, answered: false };
 
 /**
  * Resolves the brand identity for one subscription name. Never throws, and
@@ -126,6 +136,7 @@ export async function inferBrand(name: string): Promise<BrandIdentity> {
     return {
       color: icon && usableBrandColor(icon.hex) ? icon.hex : modelColor,
       logoUri: icon ? simpleIconUri(icon.slug) : null,
+      answered: true,
     };
   } catch {
     return UNRESOLVED;

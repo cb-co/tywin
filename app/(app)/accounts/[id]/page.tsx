@@ -22,6 +22,9 @@ import { StatementsPanel } from "@/components/accounts/statements-panel";
 import { AmortizationTable } from "@/components/accounts/amortization-table";
 import { Card } from "@/components/ui/card";
 import { ColorTile } from "@/components/ui/color-tile";
+import { PaymentCard } from "@/components/accounts/payment-card";
+import { inferNetwork, inferLast4 } from "@/lib/accounts/network";
+import { profileLabel } from "@/lib/profile";
 import { Progress } from "@/components/ui/progress";
 import { MaskedMoney } from "@/components/figure-mask/masked-money";
 
@@ -53,10 +56,10 @@ export default async function AccountDetailPage({
   const tType = await getTranslations("AccountTypes");
 
   const supabase = await createClient();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("base_currency")
-    .maybeSingle();
+  const [{ data: profile }, { data: auth }] = await Promise.all([
+    supabase.from("profiles").select("base_currency, display_name").maybeSingle(),
+    supabase.auth.getUser(),
+  ]);
   const baseCurrency = profile?.base_currency ?? "USD";
 
   const type = account.type as AccountType;
@@ -65,6 +68,29 @@ export default async function AccountDetailPage({
   const currency = account.currency;
   const isCardType = type === "credit_card";
   const isLoanType = type === "loan";
+
+  /* The face of the physical card this page is about.
+   *
+   * It was only ever on the accounts grid, which left the detail page — the one
+   * screen wholly about this card — identifying it with the same generic tile a
+   * chequing account gets. The face is how a person recognises which card they
+   * are looking at, so it belongs here more than anywhere.
+   *
+   * A card that belongs to a GROUP takes the group's art and name: the group is
+   * the physical card, and its currency lines are what this page can be one of.
+   * Reading the account's own colour there would draw a face nobody holds.
+   */
+  const cardGroup = account.card_group_id
+    ? (cardGroups.find((g) => g.id === account.card_group_id) ?? null)
+    : null;
+  const face = isCardType
+    ? {
+        holder: profileLabel(profile?.display_name, auth.user?.email) || t("cardholder"),
+        last4: inferLast4(account.name, account.last4),
+        network: inferNetwork(cardGroup?.name ?? account.name, cardGroup?.brand ?? account.brand),
+        color: cardGroup ? cardGroup.art_color : account.color,
+      }
+    : null;
 
   const effectiveBonus = isCardType ? resolveEffectiveBonus(id, siblings) : null;
   const dueDatePassed = effectiveBonus ? effectiveBonus.welcome_bonus_due_date! < todayISO() : true;
@@ -98,7 +124,10 @@ export default async function AccountDetailPage({
 
       <div className="flex flex-wrap items-start justify-between gap-4 border-b pb-5">
         <div className="flex items-center gap-3">
-          <ColorTile color={account.color} icon={Icon} size="md" />
+          {/* The tile stands down where a face is drawn below — two portraits of
+              the same object, one of them generic, and the generic one wins the
+              eye by sitting first. Non-card accounts keep it. */}
+          {face ? null : <ColorTile color={account.color} icon={Icon} size="md" />}
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               {account.name}
@@ -118,6 +147,11 @@ export default async function AccountDetailPage({
           effectiveBonus={effectiveBonus}
         />
       </div>
+
+      {/* Not wrapped in a Card: the face carries its own shadow and radius, and
+          putting it on a panel reads as a picture OF a card rather than as the
+          card. It caps its own width, so it sits left rather than stretching. */}
+      {face ? <PaymentCard {...face} className="mx-0" /> : null}
 
       {/* Hero figure. The clamp() font-size is text-4xl on anything ≥ ~424px
           but scales down on narrow phones so 8-9 digit balances (large ARS

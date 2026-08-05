@@ -6,9 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { subscriptionInput, type SubscriptionInput } from "@/lib/subscriptions/schema";
 import { baseRate, getExchangeRates } from "@/lib/fx";
 import { settledCharge } from "@/lib/subscriptions/charge";
-import { hasBrandColor } from "@/lib/subscriptions/brand-color";
 import { inferBrand } from "@/lib/subscriptions/llm/brand";
-import { simpleIconSlug } from "@/lib/brand/logo-uri";
+import { brandResolved, NO_SIMPLE_ICON } from "@/lib/brand/logo-uri";
 import { dbError } from "@/lib/errors";
 
 type Result = { error?: string; id?: string };
@@ -62,12 +61,31 @@ export async function updateSubscription(id: string, input: unknown): Promise<Re
   const { supabase, user } = await requireUser();
   if (!user) return { error: t("notSignedIn") };
 
-  // `color` is deliberately absent from the payload: it is not a form field, and
-  // resolveSubscriptionBrand is the only thing that writes it, along with
-  // `logo_url` beside it.
+  /* The stored name decides two things: whether the brand on this row is still
+     the right brand, and whether inference has anything new to work from. Read
+     before the write, because after it the old name is gone. A read that FAILS
+     is treated as "not renamed" — leaving a brand in place is a smaller error
+     than clearing one over a question we could not answer. */
+  const { data: existing } = await supabase
+    .from("subscriptions")
+    .select("name")
+    .eq("id", id)
+    .maybeSingle();
+  const renamed = !!existing && existing.name !== parsed.data.name;
+
+  /* `color` and `logo_url` are not form fields, and resolveSubscriptionBrand is
+     normally the only thing that writes them. A RENAME is the exception, and it
+     has to be: both were inferred from the old name, so "Netflix" edited to
+     "Spotify" would otherwise keep Netflix's red and Netflix's mark. Clearing
+     them here both removes the wrong answer immediately and re-opens the gate
+     below, which is what makes the new name resolve. */
   const { error } = await supabase
     .from("subscriptions")
-    .update({ ...toRow(parsed.data), currency: parsed.data.currency })
+    .update({
+      ...toRow(parsed.data),
+      currency: parsed.data.currency,
+      ...(renamed ? { color: null, logo_url: null } : {}),
+    })
     .eq("id", id);
   if (error) return { error: await dbError(error, "updateSubscription") };
   revalidate();
@@ -87,24 +105,27 @@ export async function updateSubscription(id: string, input: unknown): Promise<Re
  * path there is no such trade: the save returns immediately and the colour can
  * take as long as it needs, arriving on the refresh that follows.
  *
- * The gate is "nothing usable stored yet", which does all the work asked of it:
+ * The gate is `logo_url` — EMPTY OR NOT, rather than usable or not — and the
+ * distinction is the whole reason this runs once per name instead of once per
+ * save. The obvious gate is "do we have a brand yet", and it is wrong: most
+ * subscriptions are a gym, a parking space or a local ISP that no icon set has
+ * ever drawn, so "no brand yet" is their PERMANENT state, and gating on it fired
+ * a fresh model call on every edit of every such row, forever, to be told the
+ * same nothing. What the gate has to ask is whether anyone has LOOKED. So the
+ * column records the attempt: a real URI when a mark was found, NO_SIMPLE_ICON
+ * when the model answered and there was none. Both are non-empty; both close the
+ * gate.
  *
- *   - a subscription that already has both costs nothing, so editing an amount
- *     does not each burn an inference call;
- *   - a subscription created BEFORE this feature has neither, so it resolves the
- *     first time it is saved, with no backfill flag to carry around;
- *   - a value that is present but UNUSABLE — a colour that is not a 6-digit hex,
- *     a logo URI naming no icon we ship — counts as empty and re-resolves, since
- *     nothing renders such a value and treating it as occupied would strand the
- *     row forever;
- *   - a name the model cannot place stays unresolved and renders the theme's
- *     neutral accent under the name's initial, rather than being written a wrong
- *     brand.
+ * That leaves it answering every case with one condition:
  *
- * A row with a colour but no logo still re-resolves, and that is deliberate: it
- * is exactly the state every subscription saved before logos existed is in, and
- * the call that would fetch the logo returns the colour anyway. The gate asks for
- * BOTH so that those rows heal on their next save instead of needing a migration.
+ *   - a row that has been through inference costs nothing on save, whether or
+ *     not it came back with anything;
+ *   - a row created BEFORE this feature has an empty column, so it resolves the
+ *     first time it is saved — no backfill flag, no migration;
+ *   - a RENAME clears the column (see updateSubscription), so the new name gets
+ *     its one call;
+ *   - a call that FAILED — timed out, aborted, threw — writes nothing, so the
+ *     attempt is not recorded and the next save tries again.
  *
  * The name is read from the ROW rather than taken as an argument: this is a
  * server action reachable with any id, so it should decide what to judge from
@@ -129,26 +150,26 @@ export async function resolveSubscriptionBrand(id: string): Promise<{ resolved: 
   // A failed read is not the same as an empty row. Guessing over it would
   // overwrite good values we simply could not see.
   if (readError || !existing) return { resolved: false };
-  if (hasBrandColor(existing.color) && simpleIconSlug(existing.logo_url)) {
-    return { resolved: false };
-  }
+  if (brandResolved(existing.logo_url)) return { resolved: false };
 
-  const { color, logoUri } = await inferBrand(existing.name);
-  if (!color && !logoUri) return { resolved: false };
+  const { color, logoUri, answered } = await inferBrand(existing.name);
+  if (!answered) return { resolved: false };
 
-  /* Only what was actually resolved is written. A call that placed the logo but
-     not the colour must not blank a colour already on the row — the two fields
-     come back independently, and a null here means "no answer", never "clear
-     it". */
-  const patch: { color?: string; logo_url?: string } = {};
+  /* The attempt is always recorded, the colour only when there is one. A call
+     that placed the logo but not the colour must not blank a colour already on
+     the row — the two come back independently, and a null colour means "no
+     answer", never "clear it". `logo_url` is the opposite: it is the record that
+     this ran, so it is written either way, falling back to the sentinel. */
+  const patch: { color?: string; logo_url: string } = { logo_url: logoUri ?? NO_SIMPLE_ICON };
   if (color) patch.color = color;
-  if (logoUri) patch.logo_url = logoUri;
 
   const { error } = await supabase.from("subscriptions").update(patch).eq("id", id);
   if (error) return { resolved: false };
 
   revalidate();
-  return { resolved: true };
+  // Only a real answer is worth the caller's refresh. Recording that there was
+  // nothing to find changes nothing on screen.
+  return { resolved: !!color || !!logoUri };
 }
 
 export async function deleteSubscription(id: string): Promise<Result> {

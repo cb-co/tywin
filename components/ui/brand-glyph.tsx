@@ -15,7 +15,16 @@
  * it and the card face already names the network. Announcing "Netflix" twice
  * helps nobody.
  */
-export function BrandGlyph({ path, className }: { path: string; className?: string }) {
+export function BrandGlyph({
+  path,
+  className,
+  style,
+}: {
+  path: string;
+  className?: string;
+  /** For callers that set the colour from a measured value rather than a class. */
+  style?: React.CSSProperties;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -24,6 +33,7 @@ export function BrandGlyph({ path, className }: { path: string; className?: stri
       aria-hidden="true"
       focusable="false"
       className={className}
+      style={style}
     >
       <path d={path} />
     </svg>
