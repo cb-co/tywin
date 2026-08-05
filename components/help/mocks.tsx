@@ -1,6 +1,7 @@
-import { ArrowLeftRight, Banknote, CreditCard, Tags, Wallet } from "lucide-react";
+import { ArrowLeftRight, Banknote, Tags, Wallet } from "lucide-react";
 import { siSpotify } from "simple-icons";
 import { Card } from "@/components/ui/card";
+import { PaymentCard } from "@/components/accounts/payment-card";
 import { BrandGlyph } from "@/components/ui/brand-glyph";
 import { readableForeground } from "@/lib/color";
 import { cn } from "@/lib/utils";
@@ -76,20 +77,55 @@ export function OverviewMock({
   );
 }
 
+/**
+ * The accounts screen, led by the thing that actually distinguishes it.
+ *
+ * This drew a credit card as a generic tile with a CreditCard icon, which was
+ * true when it was written and is not now — cards are rendered as the physical
+ * object, and a guide that shows a tile teaches someone to look for the wrong
+ * thing. The real PaymentCard is used rather than an imitation of it, so this
+ * cannot drift from the screen again: any change to the face shows up here.
+ *
+ * The face sits FIRST and the chequing row second, inverting the old order.
+ * That is the hierarchy of the real screen — cards are the objects people
+ * recognise at a glance, and a row of text is what everything else looks like.
+ *
+ * A sober navy rather than a real product's colour: the labels around it are
+ * generic ("Credit card"), and dressing it as somebody's Amex would promise a
+ * specific card the copy never names.
+ */
 export function AccountsMock({
   checking,
   checkingBank,
   card,
   cardDue,
+  holder,
 }: {
   checking: string;
   checkingBank: string;
   card: string;
   cardDue: string;
+  /** The name embossed on the face, as the real one takes from the profile. */
+  holder: string;
 }) {
   return (
     <MockPanel>
-      <div className="flex items-center gap-3 rounded-lg border bg-background p-3">
+      <div className="mx-auto max-w-[15rem]">
+        <PaymentCard holder={holder} last4="4821" network="visa" color="#1B4B8F" />
+      </div>
+
+      <div className="mt-3 flex items-baseline justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-foreground">{card}</p>
+          <p className="truncate text-xs text-muted-foreground">{cardDue}</p>
+        </div>
+        <p className="figure shrink-0 text-sm text-destructive">$1,120.40</p>
+      </div>
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+        <div className="h-full w-[34%] rounded-full bg-primary" />
+      </div>
+
+      <div className="mt-4 flex items-center gap-3 rounded-lg border bg-background p-3">
         <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-accent text-accent-foreground">
           <Wallet className="size-4" />
         </span>
@@ -98,19 +134,6 @@ export function AccountsMock({
           <p className="truncate text-xs text-muted-foreground">{checkingBank}</p>
         </div>
         <p className="figure text-sm text-foreground">$4,382.10</p>
-      </div>
-      <div className="mt-2 flex items-center gap-3 rounded-lg border bg-background p-3">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-accent text-accent-foreground">
-          <CreditCard className="size-4" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-foreground">{card}</p>
-          <p className="truncate text-xs text-muted-foreground">{cardDue}</p>
-        </div>
-        <p className="figure text-sm text-destructive">$1,120.40</p>
-      </div>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
-        <div className="h-full w-[34%] rounded-full bg-primary" />
       </div>
     </MockPanel>
   );

@@ -758,11 +758,12 @@
     "cardFaceBody": "Las tarjetas de crédito se dibujan como el objeto físico. Cashly lee el nombre de la tarjeta para elegir su color y su marca de red — una Amex Platinum sale plateada, una Visa Infinite negra — y la cara aparece tanto en la lista como en la página de la propia tarjeta.",
     "cardFaceReroll": "¿No es el color que esperabas? Borra el campo de color y guarda: Cashly lo vuelve a deducir del nombre. Un color que escribas tú siempre se respeta tal cual.",
     "accountPageFace": "La cara de la tarjeta, para saber de un vistazo cuál estás viendo.",
-    "subBrand": "Los logos y colores aparecen solos: Cashly reconoce el servicio por el nombre que le pusiste. Lo que no reconoce conserva su inicial, que es un resultado terminado, no algo que falte.",
+    "subBrand": "Los logos y colores aparecen solos: Cashly reconoce el servicio por el nombre que le pusiste. Lo que no reconoce conserva su inicial, que es un resultado terminado, no algo que falte. Si renombras una suscripción, la vuelve a buscar.",
     "statementsBody": "Pulsa Importar y sube el PDF del estado de cuenta de tu tarjeta — se admiten archivos protegidos con contraseña, con reintento si te equivocas al escribirla. Cashly lo divide en secciones (una por cada línea de moneda de la tarjeta), tú confirmas a qué cuenta corresponde cada una y luego pulsas Importar para confirmar. Esto crea las transacciones correspondientes y alimenta la estimación de coste de financiación en Análisis.",
     "accountsMockChecking": "Cuenta corriente diaria",
     "accountsMockCheckingBank": "Banco Ridgeline · USD",
     "accountsMockCard": "Tarjeta Signature",
+    "accountsMockHolder": "ANA GARCÍA",
     "accountsMockCardDue": "Banco Ridgeline · vence en 6 días",
 
     "transactionsTitle": "Transacciones",

@@ -102,34 +102,34 @@ describe("inferBrand logo", () => {
 });
 
 /**
- * `answered` is what lets the caller record an attempt without stranding rows.
- * A model that answered "nothing" will answer the same next time; a call that
- * never happened says nothing about the name at all.
+ * Every way of coming back empty returns the same shape. The caller stores what
+ * it is given and nothing else, so a failure and an unplaceable name are one
+ * case here: the row keeps its initial on the theme's neutral accent.
  */
-describe("inferBrand reports whether the model answered", () => {
-  it("answered, even when neither field resolved", async () => {
+describe("inferBrand comes back empty rather than throwing", () => {
+  it("when neither field resolved", async () => {
     mockReturn({ color: "not a colour", slug: "nope" });
-    expect(await inferBrand("Parqueo")).toEqual({ color: null, logoUri: null, answered: true });
+    expect(await inferBrand("Parqueo")).toEqual({ color: null, logoUri: null });
   });
 
-  it("did not answer when the call failed", async () => {
+  it("when the call failed", async () => {
     (generateObject as unknown as Mock).mockRejectedValue(new Error("boom"));
-    expect(await inferBrand("Netflix")).toEqual({ color: null, logoUri: null, answered: false });
+    expect(await inferBrand("Netflix")).toEqual({ color: null, logoUri: null });
   });
 
   // An abort is not special-cased: a save must not fail because a guess was slow.
-  it("did not answer when the call was aborted", async () => {
+  it("when the call was aborted", async () => {
     (generateObject as unknown as Mock).mockRejectedValue(
       Object.assign(new Error("The operation was aborted due to timeout"), {
         name: "TimeoutError",
       }),
     );
-    expect(await inferBrand("Netflix")).toMatchObject({ answered: false });
+    expect(await inferBrand("Netflix")).toEqual({ color: null, logoUri: null });
   });
 
   // No name, no signal — not worth a network round trip.
   it("does not call the model for a blank name", async () => {
-    expect(await inferBrand("   ")).toMatchObject({ answered: false });
+    expect(await inferBrand("   ")).toEqual({ color: null, logoUri: null });
     expect(generateObject).not.toHaveBeenCalled();
   });
 });

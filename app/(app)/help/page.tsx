@@ -203,6 +203,7 @@ export default async function HelpPage() {
               checkingBank={t("accountsMockCheckingBank")}
               card={t("accountsMockCard")}
               cardDue={t("accountsMockCardDue")}
+              holder={t("accountsMockHolder")}
             />
           </HelpChapter>
 
