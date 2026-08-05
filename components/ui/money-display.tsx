@@ -8,11 +8,11 @@ import { useCountUp } from "@/components/ui/count-up";
 import { cn } from "@/lib/utils";
 
 const SIZES = {
-  // Inter at 700 with tight tracking (`.figure` sets the family). This is the
-  // loudest object on a screen, but 800 was overdoing it — at hero size the
-  // counters started to close up and the figure read as a solid mass rather
-  // than a number. 700 keeps the authority and gets the digits back.
-  hero: { head: "text-5xl sm:text-6xl font-bold tracking-[-0.03em]", cents: "text-[0.6em]" },
+  // Inter with tight tracking (`.figure` sets the family). The hero is the
+  // loudest object on a screen, but it is already carrying size, colour and a
+  // gradient slab — at 700 the weight was the third thing shouting, so it sits
+  // at 600 and lets the scale do the work.
+  hero: { head: "text-5xl sm:text-6xl font-semibold tracking-[-0.03em]", cents: "text-[0.6em]" },
   stat: { head: "text-2xl font-bold tracking-[-0.02em]", cents: "text-[0.62em]" },
   inline: { head: "text-base font-semibold", cents: "text-[0.75em]" },
 } as const;

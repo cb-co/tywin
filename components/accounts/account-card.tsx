@@ -46,9 +46,7 @@ export function AccountCard({
           <PaymentCard
             holder={holder}
             // A stored value beats name inference; inferLast4 already falls
-            // back when it is null, undefined or malformed. It reads as
-            // undefined until the accounts.last4 migration is pushed, which is
-            // the same branch as an unset value.
+            // back when it is null or malformed.
             last4={inferLast4(account.name, account.last4)}
             network={inferNetwork(account.name, account.brand)}
             color={account.color}
@@ -86,7 +84,7 @@ export function AccountCard({
           />
         ) : (
           <div className="mt-5">
-            <p className="figure text-2xl leading-none text-foreground">
+            <p className="figure text-2xl font-semibold leading-none text-foreground">
               <MaskedMoney amount={account.balance ?? account.starting_balance} currency={currency} />
             </p>
             {/* An asset's figure is an estimate you set by hand, not a balance
@@ -130,7 +128,7 @@ function CardBody({
           owed amount appears on a card tile. */}
       <div className="flex items-end justify-between">
         <div>
-          <p className="figure text-2xl leading-none text-foreground">{formatMoney(owed, currency)}</p>
+          <p className="figure text-2xl font-semibold leading-none text-foreground">{formatMoney(owed, currency)}</p>
           <p className="mt-1 text-xs text-muted-foreground">{t("owed")}</p>
         </div>
         {util !== null ? (
@@ -166,7 +164,7 @@ function LoanBody({
   return (
     <div className="mt-5 space-y-3">
       <div>
-        <p className="figure text-2xl leading-none text-foreground">{formatMoney(outstanding, currency)}</p>
+        <p className="figure text-2xl font-semibold leading-none text-foreground">{formatMoney(outstanding, currency)}</p>
         <p className="mt-1 text-xs text-muted-foreground">{t("outstanding")}</p>
       </div>
       {term ? <Progress value={pct} /> : null}

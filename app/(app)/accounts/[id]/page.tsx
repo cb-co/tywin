@@ -126,7 +126,7 @@ export default async function AccountDetailPage({
         {isCardType ? (
           <>
             <p className="text-sm font-medium text-muted-foreground">{t("balanceOwed")}</p>
-            <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] leading-none text-foreground">
+            <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] font-semibold leading-none text-foreground">
               {formatMoney(owed, currency)}
             </p>
             {statements[0] ? (
@@ -168,7 +168,7 @@ export default async function AccountDetailPage({
         ) : isLoanType ? (
           <>
             <p className="text-sm font-medium text-muted-foreground">{t("outstandingBalance")}</p>
-            <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] leading-none text-foreground">
+            <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] font-semibold leading-none text-foreground">
               {formatMoney(outstanding, currency)}
             </p>
             {progressTerm ? (
@@ -189,7 +189,7 @@ export default async function AccountDetailPage({
             <p className="text-sm font-medium text-muted-foreground">
               {type === "asset" ? t("estimatedValue") : t("currentBalance")}
             </p>
-            <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] leading-none text-foreground">
+            <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] font-semibold leading-none text-foreground">
               <MaskedMoney amount={account.balance ?? account.starting_balance} currency={currency} />
             </p>
             <p className="mt-3 text-sm text-muted-foreground">

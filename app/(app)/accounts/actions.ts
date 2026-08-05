@@ -48,42 +48,6 @@ function toColumns(v: AccountInput) {
 }
 
 /**
- * Two account columns ship ahead of their migrations — `last4`
- * (20260804130000) and `brand` (20260804150000) — and only the user can push
- * those. Until they do, the columns do not exist and any write naming one is
- * rejected outright, which would break account creation and editing for
- * EVERYONE, not just people who touched the new fields.
- *
- * Reads need no such guard: every accounts query selects `*`, so a missing
- * column simply comes back absent, and both consumers treat undefined the same
- * as an unset value.
- *
- * Written against the column NAME the database reports rather than a hardcoded
- * list, so it covers both columns with one mechanism and needs no edit if a
- * third ever ships this way.
- *
- * All of this becomes unreachable once both migrations land. Delete it then.
- */
-const PENDING_COLUMNS = ["last4", "brand"] as const;
-
-function pendingColumn(error: { code?: string; message?: string } | null) {
-  if (!error) return null;
-  // PostgREST rejects columns absent from its schema cache (PGRST204) before
-  // Postgres ever sees the statement; 42703 is Postgres' own undefined_column,
-  // for the paths that reach it directly.
-  if (error.code !== "PGRST204" && error.code !== "42703") return null;
-  const message = error.message ?? "";
-  return PENDING_COLUMNS.find((c) => message.includes(c)) ?? null;
-}
-
-/** The same payload with whichever column the database rejected removed. */
-function withoutColumn<T extends object>(row: T, column: string): T {
-  // supabase-js serialises with JSON.stringify, which drops undefined keys — so
-  // this genuinely omits the column rather than sending a null for it.
-  return { ...row, [column]: undefined };
-}
-
-/**
  * Card art for an account being written, or nothing.
  *
  * The gate is deliberately "no accent stored yet", not "is being created". That
@@ -129,24 +93,13 @@ export async function createAccount(input: AccountInput): Promise<Result> {
   const { supabase, user } = await requireUser();
   if (!user) return { error: "You're not signed in." };
 
-  let row = {
+  const row = {
     ...toColumns(parsed.data),
     ...(await resolveArtFor(parsed.data)),
     currency: parsed.data.currency,
     user_id: user.id,
   };
-  // Held as one response object rather than destructured: the result is a union
-  // discriminated on `error`, and pulling `data` and `error` into separate
-  // mutable bindings loses the correlation between them.
-  let res = await supabase.from("accounts").insert(row).select("id").single();
-  // Loops because two columns can be pending at once; each pass drops the one
-  // the database named and retries.
-  for (let attempt = 0; attempt < PENDING_COLUMNS.length; attempt++) {
-    const column = pendingColumn(res.error);
-    if (!column) break;
-    row = withoutColumn(row, column);
-    res = await supabase.from("accounts").insert(row).select("id").single();
-  }
+  const res = await supabase.from("accounts").insert(row).select("id").single();
 
   if (res.error) return { error: await dbError(res.error, "createAccount") };
   revalidatePath("/accounts");
@@ -162,14 +115,8 @@ export async function updateAccount(id: string, input: AccountInput): Promise<Re
   if (!user) return { error: "You're not signed in." };
 
   // currency is immutable — never included in the update payload.
-  let columns = { ...toColumns(parsed.data), ...(await resolveArtFor(parsed.data)) };
-  let { error } = await supabase.from("accounts").update(columns).eq("id", id);
-  for (let attempt = 0; attempt < PENDING_COLUMNS.length; attempt++) {
-    const column = pendingColumn(error);
-    if (!column) break;
-    columns = withoutColumn(columns, column);
-    ({ error } = await supabase.from("accounts").update(columns).eq("id", id));
-  }
+  const columns = { ...toColumns(parsed.data), ...(await resolveArtFor(parsed.data)) };
+  const { error } = await supabase.from("accounts").update(columns).eq("id", id);
   if (error) return { error: await dbError(error, "updateAccount") };
 
   // Welcome-bonus goal fields are shared across every currency line of a card
@@ -231,17 +178,10 @@ export async function backfillCardArt(): Promise<{ filled: number }> {
   for (const account of accounts ?? []) {
     const art = await inferCardArt(account.name);
     if (!art) continue;
-    let row: { color?: string; brand?: string } = {
-      color: art.accent,
-      ...(art.network ? { brand: art.network } : {}),
-    };
-    let { error } = await supabase.from("accounts").update(row).eq("id", account.id);
-    for (let attempt = 0; attempt < PENDING_COLUMNS.length; attempt++) {
-      const column = pendingColumn(error);
-      if (!column) break;
-      row = withoutColumn(row, column);
-      ({ error } = await supabase.from("accounts").update(row).eq("id", account.id));
-    }
+    const { error } = await supabase
+      .from("accounts")
+      .update({ color: art.accent, ...(art.network ? { brand: art.network } : {}) })
+      .eq("id", account.id);
     if (!error) filled++;
   }
 

@@ -12,19 +12,21 @@ layouts on inherited screens. That is the main thing this guide is hunting for.
 
 ## Before you start
 
-### 1. Decide which migration state you are testing
+### 1. Migrations — all pushed
 
-**There are two unpushed migrations, and the app is supposed to work in both
-states.** This is the highest-risk area on the branch, and the only part that
-cannot be checked after the fact.
+All four are live as of 2026-08-04, so the dual-state testing this guide
+originally called for no longer applies:
 
 ```
-supabase/migrations/20260804120000_brighten_palette.sql   # brighter swatches
-supabase/migrations/20260804130000_accounts_last4.sql     # accounts.last4
+20260804120000_brighten_palette.sql       # brighter swatches
+20260804130000_accounts_last4.sql         # accounts.last4
+20260804140000_drop_card_groups_last4.sql # group digits come from the lines
+20260804150000_accounts_brand.sql         # inferred network
 ```
 
-Do **pass A before pushing** and **pass B after**. Section 10 covers both.
-Agents must never run `npm run db:push` — that is yours.
+`npm run db:types` was re-run against the live schema and produced no diff.
+The pre-migration retry code in `app/(app)/accounts/actions.ts` has been
+deleted, since it is now unreachable.
 
 ### 2. Start the app
 
@@ -309,38 +311,27 @@ In DevTools, emulate `prefers-reduced-motion: reduce`, then **reload** `/`,
 
 ---
 
-## 10. Migration states
+## 10. Card art inference (LLM)
 
-### Pass A — before pushing anything
+Art is resolved from the card's name via Gemini, using the same key and call
+path as the statement extractor. The gate is **"no accent stored yet"**.
 
-| Check | Expected |
+| Step | Expected |
 |---|---|
-| Category, account and goal tiles | Render correctly with the **old, duller** stored hex values |
-| Card faces | Correct with old colours |
-| Charts | Correct — these come from CSS, not the database, so they are already new |
-| Saving an account with **last 4 digits** filled in | **Succeeds** (digits not persisted — expected) |
-| Saving an account normally | Succeeds |
-| Editing an existing account | Succeeds |
+| Create a card named after a real product ("Amex Platinum", "Chase Sapphire Reserve") | Face takes that card's real colour; network mark appears if the name makes it certain |
+| Create a card with an unrecognisable name ("test 1234") | Face falls back to the deep **finance blue** default — a finished look, not a placeholder |
+| **Edit** a card that already has a colour | Colour does **not** change, and no inference call is made |
+| Open `/accounts` with cards created before this feature | They resolve shortly after load, then the page refreshes once |
+| Open `/accounts` again | Nothing re-fires — everything already has an accent |
+| Create a card group | The group's face gets art from the group name |
 
-> Nothing may assume a stored colour is one of the new swatches. Every consumer
-> must treat it as an arbitrary hex.
+> **Bug shapes:** inference running on every edit (it must not); a card getting
+> a wrong colour written that never gets revisited; the backfill re-firing on
+> every visit; a save failing because inference failed (it must be silent).
 
-### Pass B — after `npm run db:push`
-
-| Check | Expected |
-|---|---|
-| Existing categories/accounts/goals | Colours become brighter and more saturated; **identity is preserved** — a blue category stays blue |
-| Saving an account with last 4 digits | Digits now **persist**; reload and confirm |
-| Card face | Stored digits beat name inference |
-
-Then, per the ledger:
-
-```bash
-npm run db:types    # lib/supabase/types.ts was hand-extended; regenerate it
-```
-
-…and the two `isMissingLast4` retry branches in `app/(app)/accounts/actions.ts`
-become dead code and should be deleted.
+Colours are validated before storage — a model answering `"navy"` or `"#FFF"`
+is rejected rather than stored, since `#FFF` misparses as `rgb(0, 15, 255)` in
+the colour maths. That is covered by `lib/accounts/llm/card-art.test.ts`.
 
 ---
 
