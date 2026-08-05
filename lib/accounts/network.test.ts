@@ -18,13 +18,19 @@ describe("inferNetwork", () => {
     ["MC Classic", "mastercard"],
     ["Amex Gold", "amex"],
     ["American Express Platinum", "amex"],
-    ["Discover it", "discover"],
-    ["Diners Club", "diners"],
-    ["JCB Standard", "jcb"],
-    ["UnionPay Debit", "unionpay"],
   ])("infers %s as %s", (name, expected) => {
     expect(inferNetwork(name)).toBe(expected);
   });
+
+  // Dropped from CARD_NETWORKS: not issued in the DR, so they were four marks
+  // nobody would see. They must fall through to "no mark" like any other
+  // unrecognised name, NOT throw or half-match.
+  it.each(["Discover it", "Diners Club", "JCB Standard", "UnionPay Debit"])(
+    "returns null for the unsupported network in %o",
+    (name) => {
+      expect(inferNetwork(name)).toBeNull();
+    },
+  );
 
   it("is case insensitive", () => {
     expect(inferNetwork("visa platinum")).toBe("visa");

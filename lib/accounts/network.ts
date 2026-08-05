@@ -7,10 +7,17 @@
  * wrong network mark on someone's card is worse than a generic one.
  */
 
-/** A tuple, not a bare union, so zod and the LLM schema can enumerate it. */
-export const CARD_NETWORKS = [
-  "visa", "mastercard", "amex", "discover", "diners", "jcb", "unionpay",
-] as const;
+/**
+ * A tuple, not a bare union, so zod and the LLM schema can enumerate it.
+ *
+ * Three networks, not the seven this once listed. Discover, Diners, JCB and
+ * UnionPay are not issued in the DR, so carrying them meant four marks nobody
+ * would ever see, each needing a licensed logo asset to look right. A card
+ * naming one now simply gets no mark, which is the same graceful path as any
+ * other unrecognised name — nothing breaks, and the row is cheap to restore if
+ * the app ever ships somewhere they circulate.
+ */
+export const CARD_NETWORKS = ["visa", "mastercard", "amex"] as const;
 
 export type CardNetwork = (typeof CARD_NETWORKS)[number];
 
@@ -22,10 +29,6 @@ const PATTERNS: ReadonlyArray<readonly [CardNetwork, RegExp]> = [
   ["visa", /\bvisa\b/],
   ["mastercard", /\b(?:mastercard|master\s+card|mc)\b/],
   ["amex", /\b(?:amex|american\s+express)\b/],
-  ["discover", /\bdiscover\b/],
-  ["diners", /\bdiners(?:\s+club)?\b/],
-  ["jcb", /\bjcb\b/],
-  ["unionpay", /\b(?:unionpay|union\s+pay)\b/],
 ];
 
 function match(value: string | null | undefined): CardNetwork | null {
