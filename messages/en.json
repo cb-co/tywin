@@ -563,6 +563,8 @@
     "baseCurrencyDescription": "Dashboards and net worth convert into this currency.",
     "themeTitle": "Theme",
     "themeDescription": "System, light, or dark.",
+    "languageTitle": "Language",
+    "languageDescription": "English or Spanish.",
     "soundEffectsTitle": "Sound effects",
     "soundEffectsDescription": "Light sounds for saves, deletes, and errors.",
     "categoriesTitle": "Categories",

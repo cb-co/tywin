@@ -8,6 +8,7 @@ import { Check, CircleHelp, LogOut, Trash2 } from "lucide-react";
 import { deleteAccount, updateBaseCurrency, updateDisplayName } from "@/app/(app)/settings/actions";
 import type { CurrencyRow } from "@/lib/accounts/queries";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { InstallAppRow } from "@/components/pwa/install-app-row";
 import { Row } from "@/components/settings/row";
 import { Button } from "@/components/ui/button";
@@ -191,8 +192,12 @@ export function SettingsPanel({
           <ThemeToggle />
         </Row>
 
+        <Row index={4} title={t("languageTitle")} description={t("languageDescription")}>
+          <LanguageSwitcher />
+        </Row>
+
         <Row
-          index={4}
+          index={5}
           title={t("soundEffectsTitle")}
           description={t("soundEffectsDescription")}
         >
@@ -203,13 +208,13 @@ export function SettingsPanel({
           />
         </Row>
 
-        <Row index={5} title={t("categoriesTitle")} description={t("categoriesDescription")}>
+        <Row index={6} title={t("categoriesTitle")} description={t("categoriesDescription")}>
           <Button variant="outline" size="sm" render={<a href="/budgets" />} nativeButton={false}>
             {t("manageCategoriesButton")}
           </Button>
         </Row>
 
-        <Row index={6} title={t("sessionTitle")} description={t("sessionDescription")}>
+        <Row index={7} title={t("sessionTitle")} description={t("sessionDescription")}>
           <form action="/auth/signout" method="post">
             <Button type="submit" variant="outline" size="sm">
               <LogOut className="size-4" />
@@ -218,9 +223,9 @@ export function SettingsPanel({
           </form>
         </Row>
 
-        <InstallAppRow index={7} />
+        <InstallAppRow index={8} />
 
-        <Row index={8} title={t("helpTitle")} description={t("helpDescription")}>
+        <Row index={9} title={t("helpTitle")} description={t("helpDescription")}>
           <Button variant="outline" size="sm" render={<a href="/help" />} nativeButton={false}>
             <CircleHelp className="size-4" />
             {t("helpButton")}

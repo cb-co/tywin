@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { NetworkMark } from "./network-mark";
-import { readableForeground, gradientFrom } from "@/lib/color";
+import { cardForeground, gradientFrom } from "@/lib/color";
 import { DEFAULT_CARD_ACCENT, HEX6 } from "@/lib/accounts/card-art";
 import type { CardNetwork } from "@/lib/accounts/network";
 import { cn } from "@/lib/utils";
@@ -62,7 +62,9 @@ function CardNumber({ last4 }: { last4: string | null }) {
  *
  * The foreground is MEASURED from the resolved fill rather than assumed white:
  * the accent can come from card-art inference or from stored user data, and
- * white on a pale gold card is unreadable.
+ * white on a pale silver card is unreadable. `cardForeground` weighs both ends
+ * of the gradient, not just the accent — the name and number sit at the bottom
+ * left, where the face has already lightened.
  */
 export function PaymentCard({
   holder,
@@ -84,7 +86,7 @@ export function PaymentCard({
   // reaches colour maths that assumes a 6-digit hex. A 3- or 8-digit value
   // would misparse and yield a foreground measured against the wrong colour.
   const fill = color && HEX6.test(color) ? color : DEFAULT_CARD_ACCENT;
-  const fg = readableForeground(fill);
+  const fg = cardForeground(fill);
 
   const body = (
     <div
@@ -96,7 +98,7 @@ export function PaymentCard({
     >
       <div className="flex items-start justify-between gap-3">
         <CornerDots />
-        <NetworkMark network={network} fill={fill} className="shrink-0" />
+        <NetworkMark network={network} foreground={fg} className="shrink-0" />
       </div>
 
       <div className="space-y-1.5">

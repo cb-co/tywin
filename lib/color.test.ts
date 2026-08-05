@@ -6,6 +6,8 @@ import {
   gradientFrom,
   toOklch,
   fromOklch,
+  cardForeground,
+  cardGradientStops,
 } from "./color";
 
 describe("relativeLuminance", () => {
@@ -83,6 +85,34 @@ describe("gradientFrom", () => {
   it("stays in gamut at the top of the lightness range", () => {
     const far = gradientFrom("#F2F4FF").match(/(#[0-9a-f]{6}) 100%/i)?.[1];
     expect(far).toMatch(/^#[0-9a-f]{6}$/i);
+  });
+});
+
+describe("cardForeground", () => {
+  // The bug this exists to stop: a mid-tone accent whose DARKEST corner favours
+  // white, on a face that lightens by a full lift toward the bottom right —
+  // exactly where the holder name and number sit. A silver Amex card shipped
+  // white-on-silver this way.
+  it("picks ink for a mid-tone accent that lightens under the text", () => {
+    for (const silver of ["#9A9A9A", "#A8A8A8", "#B4B0A6"]) {
+      expect(cardForeground(silver), silver).toBe("#14141c");
+    }
+  });
+
+  it("still picks white on genuinely dark accents", () => {
+    for (const dark of ["#1B4B8F", "#0A0A0A", "#2E3B4A", "#494B9A"]) {
+      expect(cardForeground(dark), dark).toBe("#ffffff");
+    }
+  });
+
+  // Whatever it picks must survive BOTH ends of the ramp, not just one.
+  it("clears 3:1 against both gradient stops", () => {
+    for (const accent of ["#1B4B8F", "#9A9A9A", "#E8C34A", "#0A0A0A", "#C74BC0"]) {
+      const fg = cardForeground(accent);
+      const { near, far } = cardGradientStops(accent);
+      expect(contrastRatio(fg, near), `${accent} near`).toBeGreaterThanOrEqual(3);
+      expect(contrastRatio(fg, far), `${accent} far`).toBeGreaterThanOrEqual(3);
+    }
   });
 });
 

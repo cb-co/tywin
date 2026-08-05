@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { SETTINGS_ITEM } from "@/lib/nav";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { FigureMaskToggle } from "@/components/figure-mask/figure-mask-toggle";
 import { Logo, Wordmark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
@@ -17,11 +15,11 @@ export function MobileHeader() {
       </Link>
       {/* Every destination has a home: five tabs in the bottom bar (two of
           them behind Activity) and Settings here. No overflow menu means
-          nothing can clip off the right edge. */}
+          nothing can clip off the right edge. Theme and language used to sit
+          here too; they are set-once preferences and now live in Settings,
+          which buys back the room this row was short of. */}
       <div className="flex items-center gap-0.5">
         <FigureMaskToggle />
-        <ThemeToggle />
-        <LanguageSwitcher />
         <Button
           variant="ghost"
           size="icon"

@@ -563,6 +563,8 @@
     "baseCurrencyDescription": "Los paneles y el patrimonio neto se convierten a esta moneda.",
     "themeTitle": "Tema",
     "themeDescription": "Sistema, claro u oscuro.",
+    "languageTitle": "Idioma",
+    "languageDescription": "Inglés o español.",
     "soundEffectsTitle": "Efectos de sonido",
     "soundEffectsDescription": "Sonidos sutiles al guardar, eliminar o si algo falla.",
     "categoriesTitle": "Categorías",

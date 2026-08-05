@@ -95,9 +95,50 @@ export function fromOklch(color: Oklch): string {
     .join("")}`;
 }
 
-/** How far the far corner lifts and rotates from the accent. Fixed by design. */
-const LIFT = 0.13;
-const ROTATE = 15;
+/**
+ * How the far corner differs from the accent. Fixed by design.
+ *
+ * There is deliberately NO hue rotation. An earlier version rotated +15°, which
+ * looks like the reference art on warm accents but turns every blue into violet
+ * — and the default accent is a navy, so the most common card in the app came
+ * out purple. The reference's hue shifts are per-card decisions a designer
+ * made, not a formula, and no single rotation is safe across the wheel. Lifting
+ * lightness and easing chroma gives the same lit, moulded read on every hue.
+ */
+const LIFT = 0.15;
+const SOFTEN = 0.92;
+
+/** The two stops of a card's gradient: the accent, and the lit far corner. */
+export function cardGradientStops(hex: string): { near: string; far: string } {
+  const accent = toOklch(hex);
+  return {
+    near: hex,
+    far: fromOklch({
+      l: Math.min(0.97, accent.l + LIFT),
+      c: accent.c * SOFTEN,
+      h: accent.h,
+    }),
+  };
+}
+
+/**
+ * Whichever of white or near-black stays readable across a WHOLE card face.
+ *
+ * Not `readableForeground(accent)` — that was a real bug. The accent is only
+ * the top-left corner, and the face lightens by a full lift toward the bottom
+ * right, which is exactly where the holder name and number sit. A mid-tone
+ * accent could pick white on the strength of its darkest corner and then put
+ * white text on a much paler one. A silver Amex card did precisely that.
+ *
+ * Both stops are tested and the winner is whichever has the better WORST case,
+ * so the answer holds everywhere on the face rather than at one corner.
+ */
+export function cardForeground(hex: string): typeof PAPER | typeof INK {
+  const { near, far } = cardGradientStops(hex);
+  const paperWorst = Math.min(contrastRatio(PAPER, near), contrastRatio(PAPER, far));
+  const inkWorst = Math.min(contrastRatio(INK, near), contrastRatio(INK, far));
+  return paperWorst >= inkWorst ? PAPER : INK;
+}
 
 /**
  * The card-face background derived from a single accent, so one stored value
@@ -108,24 +149,17 @@ const ROTATE = 15;
  * rather than as unrelated rectangles.
  *
  * Two layers. Underneath, a 135° ramp from the accent to a lighter, slightly
- * warmer-rotated version of itself. Note it brightens toward the far corner
- * rather than darkening: that is what gives these faces the lit, moulded look
- * of a real card instead of the flat vignette a darkening ramp produces. On an
- * achromatic accent the rotation has nothing to act on, so a near-black card
- * simply lifts to charcoal — which is exactly right.
+ * softer version of itself. Note it brightens toward the far corner rather than
+ * darkening: that is what gives these faces the lit, moulded look of a real
+ * card instead of the flat vignette a darkening ramp produces.
  *
  * On top, a weak off-centre highlight. It is deliberately faint; a strong sheen
  * looks like a gloss filter. The highlight is measured, not assumed white: on a
  * pale accent a white sheen is invisible, so it flips to a shadow. Same
- * discipline as `readableForeground`.
+ * discipline as `cardForeground`.
  */
 export function gradientFrom(hex: string): string {
-  const accent = toOklch(hex);
-  const far = fromOklch({
-    l: Math.min(0.97, accent.l + LIFT),
-    c: accent.c,
-    h: (accent.h + ROTATE) % 360,
-  });
+  const { far } = cardGradientStops(hex);
   const sheen = relativeLuminance(hex) > 0.45 ? "0, 0, 0" : "255, 255, 255";
   return [
     `radial-gradient(115% 85% at 18% 0%, rgba(${sheen}, 0.16) 0%, rgba(${sheen}, 0.05) 40%, transparent 70%)`,
