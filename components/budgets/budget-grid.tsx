@@ -17,13 +17,16 @@ import {
 } from "lucide-react";
 import { setBudget, deleteCategory, copyPreviousMonth } from "@/app/(app)/budgets/actions";
 import { addMonths, monthLabel } from "@/lib/budgets/month";
-import { formatMoney } from "@/lib/format";
+import { formatPercent } from "@/lib/format";
 import type { BudgetOverview, BudgetRow } from "@/lib/budgets/queries";
-import { colorCardStyle } from "@/lib/palette";
 import { CategoryDialog } from "./category-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { ColorTile } from "@/components/ui/color-tile";
+import { MoneyDisplay } from "@/components/ui/money-display";
+import { StatPill } from "@/components/ui/stat-pill";
+import { useMaskedFormatMoney } from "@/components/figure-mask/figure-mask-provider";
 import { EmptyState } from "@/components/empty-state";
 import { PieChart } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -58,6 +61,7 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const t = useTranslations("Budgets");
   const locale = useLocale();
+  const maskedFormatMoney = useMaskedFormatMoney();
   const { playSuccess, playDelete, playError } = useUiSound();
   const { rows, totalBudget, totalUsed, baseCurrency } = overview;
   const remaining = totalBudget - totalUsed;
@@ -154,16 +158,16 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
           <div className="flex gap-6 text-sm">
             <div>
               <p className="text-xs text-muted-foreground">{t("budgetLabel")}</p>
-              <p className="figure tabular-nums">{formatMoney(totalBudget, baseCurrency)}</p>
+              <p className="figure tabular-nums">{maskedFormatMoney(totalBudget, baseCurrency)}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">{t("usedLabel")}</p>
-              <p className="figure tabular-nums">{formatMoney(totalUsed, baseCurrency)}</p>
+              <p className="figure tabular-nums">{maskedFormatMoney(totalUsed, baseCurrency)}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">{t("remainingLabel")}</p>
               <p className={`figure tabular-nums ${remaining < 0 ? "text-destructive" : ""}`}>
-                {formatMoney(remaining, baseCurrency)}
+                {maskedFormatMoney(remaining, baseCurrency)}
               </p>
             </div>
           </div>
@@ -240,28 +244,24 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
       ) : view === "grid" ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((row) => (
-            <Card key={row.category_id} className="gap-0 p-5" style={colorCardStyle(row.color)}>
+            <Card key={row.category_id} className="gap-0 p-5">
               <div className="flex items-center gap-3">
-                <span
-                  className="flex size-9 shrink-0 items-center justify-center rounded-lg"
-                  style={{
-                    backgroundColor: row.color
-                      ? `color-mix(in oklab, ${row.color} 16%, transparent)`
-                      : "var(--accent)",
-                    color: row.color ?? "var(--accent-foreground)",
-                  }}
-                >
-                  {row.emoji ? <span className="text-sm">{row.emoji}</span> : row.name[0]}
-                </span>
+                <ColorTile color={row.color} emoji={row.emoji} name={row.name} size="md" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-foreground">{row.name}</p>
                   <p className="text-xs text-muted-foreground tabular-nums">
                     {t("amountOfBudget", {
-                      used: formatMoney(row.used, baseCurrency),
-                      budget: formatMoney(row.budget, baseCurrency),
+                      used: maskedFormatMoney(row.used, baseCurrency),
+                      budget: maskedFormatMoney(row.budget, baseCurrency),
                     })}
                   </p>
                 </div>
+              </div>
+              <div className="mt-3 flex items-end justify-between gap-2">
+                <MoneyDisplay amount={row.used} currency={baseCurrency} size="stat" />
+                <StatPill tone={row.status === "over" ? "destructive" : "neutral"}>
+                  {formatPercent(barPct(row.used, row.budget))}
+                </StatPill>
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
                 <div
@@ -322,27 +322,22 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
             <div
               key={row.category_id}
               className="group -mx-3 flex items-center gap-4 rounded-lg px-3 py-4"
-              style={colorCardStyle(row.color)}
             >
-              <span
-                className="flex size-9 shrink-0 items-center justify-center rounded-lg"
-                style={{
-                  backgroundColor: row.color
-                    ? `color-mix(in oklab, ${row.color} 16%, transparent)`
-                    : "var(--accent)",
-                  color: row.color ?? "var(--accent-foreground)",
-                }}
-              >
-                {row.emoji ? <span className="text-sm">{row.emoji}</span> : row.name[0]}
-              </span>
+              <ColorTile color={row.color} emoji={row.emoji} name={row.name} size="md" />
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
                   <p className="truncate text-sm font-medium text-foreground">{row.name}</p>
+                  <StatPill tone={row.status === "over" ? "destructive" : "neutral"}>
+                    {formatPercent(barPct(row.used, row.budget))}
+                  </StatPill>
+                </div>
+                <div className="mt-1 flex items-baseline justify-between gap-2">
+                  <MoneyDisplay amount={row.used} currency={baseCurrency} size="stat" />
                   <p className="shrink-0 text-xs text-muted-foreground tabular-nums">
                     {t("amountOfBudget", {
-                      used: formatMoney(row.used, baseCurrency),
-                      budget: formatMoney(row.budget, baseCurrency),
+                      used: maskedFormatMoney(row.used, baseCurrency),
+                      budget: maskedFormatMoney(row.budget, baseCurrency),
                     })}
                   </p>
                 </div>

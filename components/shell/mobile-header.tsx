@@ -17,7 +17,13 @@ export function MobileHeader() {
       </Link>
       {/* Every destination has a home: five tabs in the bottom bar (two of
           them behind Activity) and Settings here. No overflow menu means
-          nothing can clip off the right edge. */}
+          nothing can clip off the right edge.
+
+          Theme and language stay here as well as in Settings. On a phone this
+          bar is the only persistent chrome — there is no sidebar to fall back
+          on — so burying a theme switch two taps deep costs more than the strip
+          of width it returns. The desktop sidebar does drop them, because there
+          the footer had other things competing for the same space. */}
       <div className="flex items-center gap-0.5">
         <FigureMaskToggle />
         <ThemeToggle />

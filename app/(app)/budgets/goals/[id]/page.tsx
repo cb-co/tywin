@@ -8,6 +8,7 @@ import { GoalBar, PaceLine } from "@/components/goals/goal-progress";
 import { GoalBalanceChart } from "@/components/goals/goal-balance-chart-lazy";
 import { ContributionsList } from "@/components/goals/contributions-list";
 import { Card } from "@/components/ui/card";
+import { ColorTile } from "@/components/ui/color-tile";
 
 export default async function GoalDetailPage({
   params,
@@ -36,17 +37,7 @@ export default async function GoalDetailPage({
       <div className="space-y-3 border-b pb-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <span
-              className="flex size-11 shrink-0 items-center justify-center rounded-xl text-lg"
-              style={{
-                backgroundColor: goal.color
-                  ? `color-mix(in oklab, ${goal.color} 16%, transparent)`
-                  : "var(--accent)",
-                color: goal.color ?? "var(--accent-foreground)",
-              }}
-            >
-              {goal.emoji ? <span>{goal.emoji}</span> : goal.name[0]}
-            </span>
+            <ColorTile color={goal.color} emoji={goal.emoji} name={goal.name} size="md" />
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">{goal.name}</h1>
           </div>
           <p className="figure text-lg font-medium tabular-nums text-foreground">

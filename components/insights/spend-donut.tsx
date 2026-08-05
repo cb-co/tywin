@@ -2,7 +2,8 @@
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useTranslations } from "next-intl";
-import { formatMoney } from "@/lib/format";
+import { useMaskedFormatMoney } from "@/components/figure-mask/figure-mask-provider";
+import { MoneyDisplay } from "@/components/ui/money-display";
 import type { Insights } from "@/lib/insights/queries";
 
 export function SpendDonut({
@@ -15,6 +16,7 @@ export function SpendDonut({
   currency: string;
 }) {
   const t = useTranslations("Insights");
+  const maskedFormat = useMaskedFormatMoney();
   if (data.length === 0) {
     return <p className="py-10 text-center text-sm text-muted-foreground">{t("spendDonutEmpty")}</p>;
   }
@@ -35,14 +37,21 @@ export function SpendDonut({
               data={data}
               dataKey="value"
               nameKey="name"
-              innerRadius="64%"
+              // A heavier band than the hairline ring this replaced: at 40% of
+              // the radius the arcs are objects in their own right rather than
+              // an outline around the total. The hole still clears the centred
+              // figure below — a `stat` money figure is 24px with a shrunk
+              // tail, and 58% of a 128px radius leaves ~148px of clear width.
+              innerRadius="58%"
               outerRadius="98%"
               // A 2px gap in the surface colour between segments, plus rounded
               // ends. The previous flat ring was one continuous band of colour
               // with hairline wedges cut out of it; separating the arcs is what
               // makes them read as distinct quantities rather than a pie chart
-              // texture.
-              cornerRadius={5}
+              // texture. The radius is well under half the new band width, so
+              // the caps read as softened rather than turning thin slices into
+              // lozenges.
+              cornerRadius={10}
               paddingAngle={2}
               stroke="var(--card)"
               strokeWidth={2}
@@ -58,17 +67,22 @@ export function SpendDonut({
                 borderRadius: 8,
                 fontSize: 12,
               }}
-              formatter={(value) => formatMoney(Number(value), currency)}
+              formatter={(value) => maskedFormat(Number(value), currency)}
             />
           </PieChart>
         </ResponsiveContainer>
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+        {/* Inset so a long total wraps inside the hole instead of running out
+            over the arcs. */}
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-0.5 px-14 text-center">
           <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
             {t("thisMonth")}
           </span>
-          <span className="figure text-2xl leading-none text-foreground">
-            {formatMoney(total, currency)}
-          </span>
+          <MoneyDisplay
+            amount={total}
+            currency={currency}
+            size="stat"
+            className="leading-none"
+          />
         </div>
       </div>
       {/* Each row carries its share as well as its amount. The ring shows
@@ -91,7 +105,7 @@ export function SpendDonut({
                   {share.toFixed(share < 10 ? 1 : 0)}%
                 </span>
                 <span className="figure tabular-nums text-foreground">
-                  {formatMoney(d.value, currency)}
+                  {maskedFormat(d.value, currency)}
                 </span>
               </span>
             </li>

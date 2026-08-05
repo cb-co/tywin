@@ -8,12 +8,12 @@ import { useTranslations } from "next-intl";
 import { useUiSound } from "@/components/sound/sound-provider";
 import { Plus, Trash2, Pencil, PiggyBank } from "lucide-react";
 import { deleteGoal } from "@/app/(app)/budgets/goal-actions";
-import { colorCardStyle } from "@/lib/palette";
 import { formatMoney } from "@/lib/format";
 import type { GoalCardRow, GoalsOverview } from "@/lib/goals/queries";
 import { GoalBar, PaceLine } from "./goal-progress";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ColorTile } from "@/components/ui/color-tile";
 import {
   Dialog,
   DialogContent,
@@ -110,7 +110,7 @@ export function GoalGrid({ overview }: { overview: GoalsOverview }) {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {goals.map((goal) => (
-            <Card key={goal.id} className="gap-0 p-5" style={colorCardStyle(goal.color)}>
+            <Card key={goal.id} className="gap-0 p-5">
               {/* Only this chip+name block is a Link, not the whole card — the
                   card also holds Contribute/edit/delete buttons below, and
                   nesting those inside an anchor would be an invalid,
@@ -119,17 +119,7 @@ export function GoalGrid({ overview }: { overview: GoalsOverview }) {
                 href={`/budgets/goals/${goal.id}`}
                 className="-m-1 flex items-center gap-3 rounded-lg p-1 transition-colors hover:bg-foreground/[0.03]"
               >
-                <span
-                  className="flex size-9 shrink-0 items-center justify-center rounded-lg"
-                  style={{
-                    backgroundColor: goal.color
-                      ? `color-mix(in oklab, ${goal.color} 16%, transparent)`
-                      : "var(--accent)",
-                    color: goal.color ?? "var(--accent-foreground)",
-                  }}
-                >
-                  {goal.emoji ? <span className="text-sm">{goal.emoji}</span> : goal.name[0]}
-                </span>
+                <ColorTile color={goal.color} emoji={goal.emoji} name={goal.name} size="md" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-foreground">{goal.name}</p>
                   <p className="text-xs text-muted-foreground tabular-nums">

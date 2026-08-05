@@ -2,8 +2,11 @@ import Link from "next/link";
 import { ArrowUpRight, PieChart, Repeat, TrendingUp, Wallet } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Logo, Wordmark } from "@/components/brand/logo";
+import { SpotIllustration } from "@/components/brand/spot-illustration";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ColorTile } from "@/components/ui/color-tile";
+import { HeroCard } from "@/components/ui/hero-card";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
 const FEATURES = [
@@ -53,17 +56,15 @@ export async function MarketingHome() {
         {/* A real slice of the app's own dashboard components, not a fake
             screenshot: same Card primitives, illustrative numbers. */}
         <div className="rise" style={{ "--i": 1 } as React.CSSProperties}>
-          <Card className="relative overflow-hidden p-7">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[radial-gradient(circle,var(--brand)_0%,transparent_70%)] opacity-[0.18] dark:opacity-[0.15]"
-            />
-            <p className="text-sm font-medium text-muted-foreground">{t("netWorth")}</p>
-            <p className="figure mt-2 text-5xl leading-none text-foreground">
-              $48,213.62
-            </p>
-            <p className="mt-3 text-sm text-muted-foreground">{t("netWorthCaption")}</p>
-          </Card>
+          {/* The same gradient slab the signed-in overview leads with, so the
+              preview is the real thing rather than a lookalike. The figure stays
+              a literal string: MoneyDisplay reads the figure-mask context, which
+              only exists inside the app shell, and these numbers are
+              illustrative anyway. */}
+          <HeroCard label={t("netWorth")}>
+            <p className="figure text-5xl leading-none">$48,213.62</p>
+            <p className="mt-3 text-sm opacity-80">{t("netWorthCaption")}</p>
+          </HeroCard>
           <div className="mt-4 grid grid-cols-3 gap-3">
             <Card className="p-4">
               <p className="text-xs text-muted-foreground">{t("incomeLabel")}</p>
@@ -89,15 +90,7 @@ export async function MarketingHome() {
               className="rise p-6"
               style={{ "--i": i + 2 } as React.CSSProperties}
             >
-              <span
-                className="flex size-10 items-center justify-center rounded-lg"
-                style={{
-                  backgroundColor: `color-mix(in oklab, ${tint} 16%, transparent)`,
-                  color: tint,
-                }}
-              >
-                <Icon className="size-5" />
-              </span>
+              <ColorTile color={tint} icon={Icon} size="md" />
               <p className="mt-4 text-lg font-medium text-foreground">
                 {t(`feature${key}Title`)}
               </p>
@@ -111,6 +104,7 @@ export async function MarketingHome() {
 
       <section className="border-t">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-4 px-6 py-16 text-center">
+          <SpotIllustration scene="chart" className="size-24" />
           <h2 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
             {t("ctaTitle")}
           </h2>

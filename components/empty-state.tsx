@@ -1,13 +1,21 @@
 import { cn } from "@/lib/utils";
 
+/**
+ * `illustration` and `icon` are alternatives, not a stack: an empty state gets
+ * one piece of art, and showing both reads as a rendering fault. The
+ * illustration wins where both are supplied, because a caller passing one is
+ * asking for the larger treatment.
+ */
 export function EmptyState({
   icon,
+  illustration,
   title,
   description,
   action,
   className,
 }: {
   icon?: React.ReactNode;
+  illustration?: React.ReactNode;
   title: string;
   description: string;
   action?: React.ReactNode;
@@ -20,7 +28,9 @@ export function EmptyState({
         className,
       )}
     >
-      {icon ? (
+      {illustration ? (
+        <div className="mb-4">{illustration}</div>
+      ) : icon ? (
         <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground">
           {icon}
         </span>

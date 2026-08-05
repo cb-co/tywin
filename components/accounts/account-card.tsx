@@ -3,6 +3,9 @@ import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { ColorTile } from "@/components/ui/color-tile";
+import { PaymentCard } from "./payment-card";
+import { inferNetwork, inferLast4 } from "@/lib/accounts/network";
 import { formatMoney, formatPercent, formatDayOfMonth } from "@/lib/format";
 import { accountTypeMeta, type AccountType } from "@/lib/accounts/meta";
 import type { AccountWithStatus } from "@/lib/accounts/queries";
@@ -15,41 +18,53 @@ function utilizationTone(pct: number) {
   return "text-muted-foreground";
 }
 
-export function AccountCard({ account }: { account: AccountWithStatus }) {
+export function AccountCard({
+  account,
+  holder,
+}: {
+  account: AccountWithStatus;
+  holder: string;
+}) {
   const t = useTranslations("Accounts");
   const tType = useTranslations("AccountTypes");
   const type = account.type as AccountType;
   const meta = accountTypeMeta(type);
   const Icon = meta.icon;
   const currency = account.currency;
+  // A card belonging to a group is rendered by the gallery's CardGroupTile —
+  // its face lives there, once per physical card. Rendering a second face
+  // here would double-count it.
+  const isStandaloneCard = type === "credit_card" && !account.card_group_id;
 
   return (
     <Link href={`/accounts/${account.id}`} className="group block">
-      {/* Cards are ringed, not bordered, so the hover has to move the ring —
-          `group-hover:border-*` was styling an edge that isn't drawn. */}
-      <Card className="lift h-full gap-0 p-5 group-hover:ring-foreground/20">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <span
-              className="flex size-9 items-center justify-center rounded-lg"
-              style={{
-                backgroundColor: account.color
-                  ? `color-mix(in oklab, ${account.color} 16%, transparent)`
-                  : "var(--accent)",
-                color: account.color ?? "var(--accent-foreground)",
-              }}
-            >
-              <Icon className="size-[18px]" />
-            </span>
-            <div className="min-w-0">
-              <p className="truncate font-medium text-foreground">{account.name}</p>
-              <p className="text-xs text-muted-foreground">
-                {tType(type)} · {currency}
-              </p>
+      {/* Cards carry a soft shadow rather than a ring, so the hover has to
+          deepen the shadow — `group-hover:ring-*` was styling an edge that
+          isn't drawn. */}
+      <Card className="lift h-full gap-0 p-5 group-hover:shadow-(--shadow-card-hover)">
+        {isStandaloneCard ? (
+          <PaymentCard
+            holder={holder}
+            // A stored value beats name inference; inferLast4 already falls
+            // back when it is null or malformed.
+            last4={inferLast4(account.name, account.last4)}
+            network={inferNetwork(account.name, account.brand)}
+            color={account.color}
+          />
+        ) : (
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <ColorTile color={account.color} icon={Icon} size="sm" />
+              <div className="min-w-0">
+                <p className="truncate font-medium text-foreground">{account.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {tType(type)} · {currency}
+                </p>
+              </div>
             </div>
+            <ChevronRight className="size-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
           </div>
-          <ChevronRight className="size-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
-        </div>
+        )}
 
         {type === "credit_card" ? (
           <CardBody
@@ -69,7 +84,7 @@ export function AccountCard({ account }: { account: AccountWithStatus }) {
           />
         ) : (
           <div className="mt-5">
-            <p className="figure text-2xl leading-none text-foreground">
+            <p className="figure text-2xl font-semibold leading-none text-foreground">
               <MaskedMoney amount={account.balance ?? account.starting_balance} currency={currency} />
             </p>
             {/* An asset's figure is an estimate you set by hand, not a balance
@@ -109,9 +124,11 @@ function CardBody({
   const t = useTranslations("Accounts");
   return (
     <div className="mt-5 space-y-3">
+      {/* The face above carries no figure, so this block is the only place the
+          owed amount appears on a card tile. */}
       <div className="flex items-end justify-between">
         <div>
-          <p className="figure text-2xl leading-none text-foreground">{formatMoney(owed, currency)}</p>
+          <p className="figure text-2xl font-semibold leading-none text-foreground">{formatMoney(owed, currency)}</p>
           <p className="mt-1 text-xs text-muted-foreground">{t("owed")}</p>
         </div>
         {util !== null ? (
@@ -147,7 +164,7 @@ function LoanBody({
   return (
     <div className="mt-5 space-y-3">
       <div>
-        <p className="figure text-2xl leading-none text-foreground">{formatMoney(outstanding, currency)}</p>
+        <p className="figure text-2xl font-semibold leading-none text-foreground">{formatMoney(outstanding, currency)}</p>
         <p className="mt-1 text-xs text-muted-foreground">{t("outstanding")}</p>
       </div>
       {term ? <Progress value={pct} /> : null}

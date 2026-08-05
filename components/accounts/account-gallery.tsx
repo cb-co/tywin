@@ -1,7 +1,8 @@
 "use client";
 
-import { Plus, Wallet } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { SpotIllustration } from "@/components/brand/spot-illustration";
 import { AccountCard } from "./account-card";
 import { CardGroupTile } from "./card-group-tile";
 import { AccountFormDialog } from "./account-form-dialog";
@@ -36,15 +37,18 @@ export function AccountGallery({
   cardGroups,
   banks,
   baseCurrency,
+  holder,
 }: {
   accounts: AccountWithStatus[];
   currencies: CurrencyRow[];
   cardGroups: CardGroupRow[];
   banks: BankRow[];
   baseCurrency: string;
+  /** Cardholder name for card faces — the profile name, as embossed. */
+  holder: string;
 }) {
   const t = useTranslations("Accounts");
-  const groupName = new Map(cardGroups.map((g) => [g.id, g.name]));
+  const groupById = new Map(cardGroups.map((g) => [g.id, g]));
   const groupLabels: Record<GroupKey, { title: string; blurb: string }> = {
     cash: { title: t("groupCashTitle"), blurb: t("groupCashBlurb") },
     assets: { title: t("groupAssetsTitle"), blurb: t("groupAssetsBlurb") },
@@ -55,7 +59,7 @@ export function AccountGallery({
   if (accounts.length === 0) {
     return (
       <EmptyState
-        icon={<Wallet className="size-6" />}
+        illustration={<SpotIllustration scene="wallet" className="size-28" />}
         title={t("emptyTitle")}
         description={t("emptyDescription")}
         action={
@@ -108,19 +112,30 @@ export function AccountGallery({
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {group.key === "cards"
-              ? clusterCards(group.items).map((cluster) =>
-                  cluster.items.length >= 2 ? (
+              ? clusterCards(group.items).map((cluster) => {
+                  // Whether a card belongs to a card_groups row — not how many
+                  // currency lines it currently has — decides whether the
+                  // group tile (and its one-per-card face) renders. A card
+                  // that is the sole member of a fresh group still belongs to
+                  // that group, and must still get a face; `cluster.key` is
+                  // only ever a real card_group_id when a group exists (solo
+                  // cards key off `solo:${id}`, which never matches).
+                  const cardGroup = groupById.get(cluster.key);
+                  return cardGroup ? (
                     <CardGroupTile
                       key={cluster.key}
-                      name={groupName.get(cluster.key) ?? t("cardGroupFallbackName")}
+                      name={cardGroup.name}
+                      brand={cardGroup.brand}
+                      artColor={cardGroup.art_color}
+                      holder={holder}
                       accounts={cluster.items}
                     />
                   ) : (
-                    <AccountCard key={cluster.key} account={cluster.items[0]} />
-                  ),
-                )
+                    <AccountCard key={cluster.key} account={cluster.items[0]} holder={holder} />
+                  );
+                })
               : group.items.map((account) => (
-                  <AccountCard key={account.id} account={account} />
+                  <AccountCard key={account.id} account={account} holder={holder} />
                 ))}
           </div>
         </section>

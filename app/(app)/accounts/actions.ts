@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { accountInput, type AccountInput } from "@/lib/accounts/schema";
+import { hasCardAccent } from "@/lib/accounts/card-art";
+import { inferCardArt } from "@/lib/accounts/llm/card-art";
 import { dbError } from "@/lib/errors";
 
 type Result = { error?: string; id?: string };
@@ -28,6 +30,7 @@ function toColumns(v: AccountInput) {
     statement_closing_day: nullIf(!card, v.statement_closing_day ?? null),
     current_balance: card ? v.current_balance : 0,
     card_group_id: nullIf(!card, orNull(v.card_group_id)),
+    last4: nullIf(!card, orNull(v.last4)),
     welcome_bonus_goal_amount: nullIf(!card, v.welcome_bonus_goal_amount ?? null),
     welcome_bonus_goal_currency: nullIf(!card, orNull(v.welcome_bonus_goal_currency)),
     welcome_bonus_due_date: nullIf(!card, orNull(v.welcome_bonus_due_date)),
@@ -42,6 +45,37 @@ function toColumns(v: AccountInput) {
     // shared by cards and loans
     payment_due_day: nullIf(!card && !loan, v.payment_due_day ?? null),
   };
+}
+
+/**
+ * Card art for an account being written, or nothing.
+ *
+ * The gate is deliberately "no accent stored yet", not "is being created". That
+ * one condition does all the work asked of it:
+ *
+ *   - editing a card that already has art costs nothing, so routine edits do
+ *     not each burn an inference call;
+ *   - a card created BEFORE this feature has no accent, so it resolves the
+ *     first time it is touched, with no backfill flag to carry around;
+ *   - a card the model could not place stays unresolved rather than being
+ *     written a wrong colour, and simply renders the default.
+ *
+ * Only credit cards get art — a chequing account has no physical face to match.
+ *
+ * Inference failure is silent and returns nothing at all: this runs inside a
+ * save the person asked for, and a card whose colour could not be guessed is
+ * not a reason to fail writing their account.
+ */
+async function resolveArtFor(
+  v: AccountInput,
+): Promise<{ color?: string; brand?: string } | undefined> {
+  if (v.type !== "credit_card") return undefined;
+  if (hasCardAccent(v.color)) return undefined;
+
+  const art = await inferCardArt(v.name);
+  if (!art) return undefined;
+
+  return { color: art.accent, ...(art.network ? { brand: art.network } : {}) };
 }
 
 async function requireUser() {
@@ -59,16 +93,18 @@ export async function createAccount(input: AccountInput): Promise<Result> {
   const { supabase, user } = await requireUser();
   if (!user) return { error: "You're not signed in." };
 
-  const { data, error } = await supabase
-    .from("accounts")
-    .insert({ ...toColumns(parsed.data), currency: parsed.data.currency, user_id: user.id })
-    .select("id")
-    .single();
+  const row = {
+    ...toColumns(parsed.data),
+    ...(await resolveArtFor(parsed.data)),
+    currency: parsed.data.currency,
+    user_id: user.id,
+  };
+  const res = await supabase.from("accounts").insert(row).select("id").single();
 
-  if (error) return { error: await dbError(error, "createAccount") };
+  if (res.error) return { error: await dbError(res.error, "createAccount") };
   revalidatePath("/accounts");
   revalidatePath("/");
-  return { id: data.id };
+  return { id: res.data.id };
 }
 
 export async function updateAccount(id: string, input: AccountInput): Promise<Result> {
@@ -79,7 +115,7 @@ export async function updateAccount(id: string, input: AccountInput): Promise<Re
   if (!user) return { error: "You're not signed in." };
 
   // currency is immutable — never included in the update payload.
-  const columns = toColumns(parsed.data);
+  const columns = { ...toColumns(parsed.data), ...(await resolveArtFor(parsed.data)) };
   const { error } = await supabase.from("accounts").update(columns).eq("id", id);
   if (error) return { error: await dbError(error, "updateAccount") };
 
@@ -104,6 +140,69 @@ export async function updateAccount(id: string, input: AccountInput): Promise<Re
   revalidatePath(`/accounts/${id}`);
   revalidatePath("/");
   return { id };
+}
+
+/**
+ * Fills in art for cards that predate the feature.
+ *
+ * Everything else resolves art on save, which covers new cards and any card the
+ * person edits. Cards created before card art existed would otherwise sit on
+ * the default colour forever, because nothing ever writes them again. This
+ * closes that gap without a one-off script: the accounts page calls it once
+ * when it notices unresolved cards, and after it succeeds there is nothing left
+ * to find, so it stops firing on its own.
+ *
+ * Standalone cards only — a card that belongs to a group is drawn by the
+ * group's face, and the group is handled in the same pass below.
+ *
+ * Failures are swallowed per row. One card whose name the model cannot place
+ * must not stop the rest from resolving, and none of this is worth an error in
+ * front of someone who only opened a page.
+ */
+export async function backfillCardArt(): Promise<{ filled: number }> {
+  const { supabase, user } = await requireUser();
+  if (!user) return { filled: 0 };
+
+  const [{ data: accounts }, { data: groups }] = await Promise.all([
+    supabase
+      .from("accounts")
+      .select("id, name, color, card_group_id")
+      .eq("type", "credit_card")
+      .is("card_group_id", null)
+      .is("color", null),
+    supabase.from("card_groups").select("id, name, art_color").is("art_color", null),
+  ]);
+
+  let filled = 0;
+
+  for (const account of accounts ?? []) {
+    const art = await inferCardArt(account.name);
+    if (!art) continue;
+    const { error } = await supabase
+      .from("accounts")
+      .update({ color: art.accent, ...(art.network ? { brand: art.network } : {}) })
+      .eq("id", account.id);
+    if (!error) filled++;
+  }
+
+  for (const group of groups ?? []) {
+    const art = await inferCardArt(group.name);
+    if (!art) continue;
+    const { error } = await supabase
+      .from("card_groups")
+      .update({
+        art_color: art.accent,
+        ...(art.network ? { brand: art.network } : {}),
+      })
+      .eq("id", group.id);
+    if (!error) filled++;
+  }
+
+  if (filled > 0) {
+    revalidatePath("/accounts");
+    revalidatePath("/");
+  }
+  return { filled };
 }
 
 export async function archiveAccount(id: string, archived: boolean): Promise<Result> {
@@ -159,9 +258,20 @@ export async function createCardGroup(name: string): Promise<Result> {
   if (!trimmed) return { error: "Group name is required." };
   const { supabase, user } = await requireUser();
   if (!user) return { error: "You're not signed in." };
+
+  // A group IS the physical card, so its face is the one that needs art. Same
+  // gate as an account: a new group has no accent, so this always runs once
+  // here and never again unless the accent is cleared.
+  const art = await inferCardArt(trimmed);
+
   const { data, error } = await supabase
     .from("card_groups")
-    .insert({ name: trimmed, user_id: user.id })
+    .insert({
+      name: trimmed,
+      user_id: user.id,
+      ...(art ? { art_color: art.accent } : {}),
+      ...(art?.network ? { brand: art.network } : {}),
+    })
     .select("id")
     .single();
   if (error) return { error: await dbError(error, "createCardGroup") };

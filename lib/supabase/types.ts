@@ -42,6 +42,7 @@ export type Database = {
       accounts: {
         Row: {
           bank_id: string | null
+          brand: string | null
           card_group_id: string | null
           color: string | null
           created_at: string
@@ -53,6 +54,7 @@ export type Database = {
           installment_amount: number | null
           interest_rate: number | null
           is_archived: boolean
+          last4: string | null
           logo_url: string | null
           name: string
           network_fee_amount: number
@@ -75,6 +77,7 @@ export type Database = {
         }
         Insert: {
           bank_id?: string | null
+          brand?: string | null
           card_group_id?: string | null
           color?: string | null
           created_at?: string
@@ -86,6 +89,7 @@ export type Database = {
           installment_amount?: number | null
           interest_rate?: number | null
           is_archived?: boolean
+          last4?: string | null
           logo_url?: string | null
           name: string
           network_fee_amount?: number
@@ -108,6 +112,7 @@ export type Database = {
         }
         Update: {
           bank_id?: string | null
+          brand?: string | null
           card_group_id?: string | null
           color?: string | null
           created_at?: string
@@ -119,6 +124,7 @@ export type Database = {
           installment_amount?: number | null
           interest_rate?: number | null
           is_archived?: boolean
+          last4?: string | null
           logo_url?: string | null
           name?: string
           network_fee_amount?: number
@@ -187,7 +193,6 @@ export type Database = {
           brand: string | null
           created_at: string
           id: string
-          last4: string | null
           name: string
           updated_at: string
           user_id: string
@@ -198,7 +203,6 @@ export type Database = {
           brand?: string | null
           created_at?: string
           id?: string
-          last4?: string | null
           name: string
           updated_at?: string
           user_id: string
@@ -209,7 +213,6 @@ export type Database = {
           brand?: string | null
           created_at?: string
           id?: string
-          last4?: string | null
           name?: string
           updated_at?: string
           user_id?: string

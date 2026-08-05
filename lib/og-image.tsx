@@ -3,8 +3,10 @@ import { ImageResponse } from "next/og";
 export const OG_IMAGE_SIZE = { width: 1200, height: 630 };
 
 /**
- * Renders the same brand mark as app/favicon.ico (ivory tile, graphite
- * Coins glyph — see components/brand/logo.tsx) at OG resolution.
+ * Renders the same brand mark as app/favicon.ico (the Coins glyph knocked out
+ * of the signature gradient — see components/brand/logo.tsx) at OG resolution.
+ * The gradient is repeated literally because an ImageResponse is rasterised
+ * with no stylesheet in scope; keep it in step with `--hero`.
  */
 export function renderBrandOgImage() {
   return new ImageResponse(
@@ -28,7 +30,7 @@ export function renderBrandOgImage() {
             borderRadius: 44,
             alignItems: "center",
             justifyContent: "center",
-            backgroundColor: "#ece5d6",
+            backgroundImage: "linear-gradient(135deg, #6C4EF5 0%, #4326C9 100%)",
             boxShadow: "0 1px 0 rgba(255,255,255,0.55) inset",
             marginBottom: 44,
           }}
@@ -38,7 +40,7 @@ export function renderBrandOgImage() {
             height="112"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#26221e"
+            stroke="#ffffff"
             strokeWidth={2}
             strokeLinecap="round"
             strokeLinejoin="round"

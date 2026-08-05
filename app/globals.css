@@ -49,12 +49,7 @@
   --color-gold: var(--gold);
   --color-gold-foreground: var(--gold-foreground);
 
-  /* The signed-out brand slab (login hero). It is deliberately NOT `primary`:
-     primary inverts between themes (ink on paper, paper on ink), and a
-     full-height ivory panel in dark mode would blow out the page. This stays
-     ink in both themes so the brand moment reads the same either way. */
-  --color-brand-panel: var(--brand-panel);
-  --color-brand-panel-foreground: var(--brand-panel-foreground);
+  --color-hero-foreground: var(--hero-foreground);
 
   /* The one chromatic accent. See the palette note below for where it may and
      may not go. */
@@ -85,94 +80,89 @@
 }
 
 /* ============================================================
-   Ink & paper
+   Identity colour
    ============================================================
-   One idea, inverted between the two themes: the app is a ledger, so it is
-   only ever ink on paper or paper on ink. There is no third brand hue.
+   This app is a consumer finance product, not a ledger. Colour carries
+   identity, not only meaning.
 
-   Light — white paper, graphite ink, ivory used sparingly. Both the canvas
-   (cards, tables, sheets) and the frame (sidebar, topbar) are white; the page
-   tint behind them is the only surface that isn't. Ivory is no longer a
-   structural fill, only a marker: hovers, chips, selected rows, hairlines.
-   Interactive weight is carried by the ink, because ivory-on-white cannot
-   carry contrast and a button you cannot read is not an accent, it is a bug.
+   The neutrals are cool and near-achromatic so that saturated colour has
+   somewhere quiet to sit. Violet is the brand: it owns the hero, primary
+   actions, active navigation and brand moments. It is not rationed to
+   "interactive state" — that restriction is what made the app read as a
+   dashboard.
 
-   Dark — the same relationship flipped: near-black paper, ivory ink. Here
-   ivory IS the accent, because on black it finally has the contrast to be one.
+   Category colour is a first-class system. Every category and account
+   carries a stored hex (see lib/palette.ts) and renders as a FILLED tile,
+   not a wash. Those values live in the database, so this file must never
+   assume a category's colour is one of the sixteen shipped swatches.
 
-   Every neutral sits on one warm hue (OKLCH h 70-85) so the greys never drift
-   cool against the ivory. Chroma stays under 0.022 on surfaces: enough for the
-   warmth to register next to white, not enough to read as a colour.
+   Semantic status keeps its own colours: green in, red out, amber for
+   attention. They are tuned to read app-bright rather than ledger-sober.
 
-   Colour is spent only where it means something: red for money out of place,
-   green for money in, brass for attention, and one blue for "you can act on
-   this". Nothing decorative is coloured.
-
-   About that blue. Ink and ivory alone left the app with no focal colour at
-   all, which read as unfinished rather than restrained — the only hues on a
-   dashboard were the income green and the over-budget red, and with nothing
-   else around them they looked like accidents. `--brand` is the single accent,
-   deliberately cool against the warm neutrals: that tension is what stops the
-   ivory reading as generic beige.
-
-   Where the blue goes: interactive and navigational state. Focus rings, the
-   active nav rail, links, selected states, and progress that is running
-   normally. Where it must not go: anything decorative, and anything already
-   owned by a status colour. One accent, whole app.
+   Contrast contract: every identity colour clears 3:1 against white and
+   against both card surfaces. That covers glyphs, icons and large text.
+   It does NOT cover small body text on a coloured fill.
    ============================================================ */
 
 /* --- Light -------------------------------------------------------------- */
 :root {
-  --background: #ffffff;
-  --foreground: #211d1a;
+  --background: #f5f6fb;
+  --foreground: #14141c;
   --card: #ffffff;
-  --card-foreground: #211d1a;
+  --card-foreground: #14141c;
   --popover: #ffffff;
-  --popover-foreground: #211d1a;
-  --primary: #26221e;
-  --primary-foreground: #faf6ee;
-  --secondary: #f2ece0;
-  --secondary-foreground: #36322e;
-  --muted: #f6f1e7;
-  --muted-foreground: #6d6862;
-  --accent: #efe8d8;
-  --accent-foreground: #312d28;
+  --popover-foreground: #14141c;
+  --primary: #1b1b26;
+  --primary-foreground: #f7f7fb;
+  --secondary: #eceef7;
+  --secondary-foreground: #2b2b38;
+  --muted: #f1f2f9;
+  --muted-foreground: #6b6b7b;
+  --accent: #e7e9f5;
+  --accent-foreground: #2b2b38;
 
-  --brand: #2f55ab;
-  --brand-foreground: #fdfaf3;
-  --brand-muted: #dce8ff;
-  --destructive: #ba362e;
-  --destructive-foreground: #fffdfa;
-  --success: #317e42;
-  --success-foreground: #fffdfa;
-  --warning: #966c1e;
-  --warning-foreground: #1d1406;
-  --gold: #966c1e;
-  --gold-foreground: #1d1406;
-  --border: #e4dfd5;
-  --input: #e4dfd5;
+  --brand: #6C4EF5;
+  --brand-foreground: #ffffff;
+  --brand-muted: #ebe6ff;
+  --destructive: #F04438;
+  --destructive-foreground: #ffffff;
+  --success: #12B76A;
+  --success-foreground: #ffffff;
+  --warning: #F79009;
+  --warning-foreground: #1c1200;
+  --gold: #F79009;
+  --gold-foreground: #1c1200;
+  --border: #e3e5ef;
+  --input: #dcdfec;
   /* Focus is the accent's job, not the ink's. A blue ring is unmistakably a
      focus ring; a near-black one just looks like a thicker border. */
-  --ring: #2f55ab;
+  --ring: #6C4EF5;
 
-  --brand-panel: #211d19;
-  --brand-panel-foreground: #f6f1e7;
+  /* The signature gradient. Identical in both themes: it is the one surface
+     that does not invert, so the brand moment reads the same either way. */
+  --hero: linear-gradient(135deg, #6C4EF5 0%, #4326C9 100%);
+  --hero-foreground: #ffffff;
 
   /* Categorical series. Fixed order, never cycled. Validated for the light
-     surface: lightness band, chroma floor, adjacent-pair separation under
-     deutan/protan/tritan simulation, and >= 3:1 against the surface. Slot 1 is
-     the lead data hue — it used to be the brand green, and with the brand now
-     neutral the charts finally own their own colour instead of borrowing it. */
-  --chart-1: #3e5fad;
-  --chart-2: #b6770b;
-  --chart-3: #008f7d;
-  --chart-4: #be563d;
-  --chart-5: #8949a3;
-  --chart-6: #7e903e;
-  --chart-7: #1b8abd;
-  --chart-8: #c4486d;
+     surface: lightness band (OKLab L 0.558..0.673), chroma floor (0.116),
+     adjacent-pair separation under deutan/protan/tritan simulation, and
+     >= 3:1 against the surface. Slot 1 is the lead data hue and is now the
+     brand violet itself: with charts appearing on hero-adjacent surfaces, a
+     lead series in a foreign blue read as a second, competing brand. The
+     tightest pair against white is amber and olive at 3.05:1 — enough for
+     marks, glyphs and large text, not for small text on a filled area.
+     lib/palette.test.ts parses these values out of this file and fails the
+     build if an edit drops one below 3:1. */
+  --chart-1: #6C4EF5;
+  --chart-2: #CE830A;
+  --chart-3: #00A08A;
+  --chart-4: #E85B3F;
+  --chart-5: #9B4FBC;
+  --chart-6: #899C39;
+  --chart-7: #1A96CE;
+  --chart-8: #DB4A76;
 
-  --radius: 0.8rem;
+  --radius: 1.25rem;
 
   /* Elevation. On a white-on-white page a hairline alone leaves cards flat, so
      surfaces get a warm-tinted shadow instead of a grey one — a grey shadow on
@@ -186,16 +176,14 @@
      lighter, so the depth has to come from underneath instead. Three layers: a
      contact line, a short shadow, and a wide ambient pool. */
   --shadow-card:
-    0 0 0 0.5px rgb(38 34 30 / 0.04), 0 1px 2px rgb(38 34 30 / 0.05),
-    0 4px 12px -6px rgb(38 34 30 / 0.10), 0 12px 32px -18px rgb(38 34 30 / 0.16);
+    0 1px 2px rgb(20 20 28 / 0.04), 0 8px 24px -12px rgb(20 20 28 / 0.10);
   --shadow-card-hover:
-    0 0 0 0.5px rgb(38 34 30 / 0.05), 0 2px 4px rgb(38 34 30 / 0.06),
-    0 8px 20px -8px rgb(38 34 30 / 0.14), 0 20px 44px -22px rgb(38 34 30 / 0.22);
+    0 2px 4px rgb(20 20 28 / 0.06), 0 16px 40px -16px rgb(20 20 28 / 0.16);
   /* Floating controls (the quick-add button) get a tighter, downward shadow
      rather than the cards' wide ambient pool. A 32px blur around a 56px circle
      lays a grey wash right up against the fill and the ink stops reading as
      ink; keeping the spread under the element leaves the edge clean. */
-  --shadow-float: 0 4px 10px -4px rgb(38 34 30 / 0.38);
+  --shadow-float: 0 8px 20px -6px rgb(108 78 245 / 0.45);
 
   /* White, like the cards — so the whole frame is paper and the page tint is
      the only thing that isn't. The rail no longer has a fill to separate it
@@ -203,13 +191,13 @@
      step darker than the usual hairline. Ivory stays as the accent inside it:
      nav hover and the active item are still tinted. */
   --sidebar: #ffffff;
-  --sidebar-foreground: #211d1a;
-  --sidebar-primary: #26221e;
-  --sidebar-primary-foreground: #faf6ee;
-  --sidebar-accent: #efe7d8;
-  --sidebar-accent-foreground: #312d28;
-  --sidebar-border: #e7e1d6;
-  --sidebar-ring: #2f55ab;
+  --sidebar-foreground: #14141c;
+  --sidebar-primary: #6C4EF5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eeebff;
+  --sidebar-accent-foreground: #3a2b7a;
+  --sidebar-border: #e6e8f2;
+  --sidebar-ring: #6C4EF5;
 }
 
 /* --- Dark --------------------------------------------------------------- */
@@ -230,52 +218,55 @@
      text floating on it. The page now goes down and the card comes up, so a
      card looks like an object resting on the page rather than a slightly
      different shade of it. */
-  --background: #090807;
-  --foreground: #dfdad1;
-  --card: #191714;
-  --card-foreground: #dfdad1;
-  --muted: #1f1d1a;
-  --muted-foreground: #96928b;
-  --popover: #272521;
-  --popover-foreground: #dfdad1;
-  --primary: #d4cfc4;
-  --primary-foreground: #13100d;
+  --background: #0a0a0f;
+  --foreground: #e8e8f0;
+  --card: #16161f;
+  --card-foreground: #e8e8f0;
+  --muted: #1e1e2a;
+  --muted-foreground: #9494a6;
+  --popover: #242433;
+  --popover-foreground: #e8e8f0;
+  --primary: #e8e8f0;
+  --primary-foreground: #12121a;
   /* `accent` is the hover/highlight fill, and it has to clear `popover` — it
      is what marks the focused row in a select or dropdown, and those render on
      a popover. It previously sat 1.04 off it, which is not a highlight. */
-  --accent: #34312d;
-  --accent-foreground: #d5d0c6;
-  --secondary: #393632;
-  --secondary-foreground: #c9c5bd;
+  --accent: #2f2f40;
+  --accent-foreground: #e0e0ea;
+  --secondary: #383850;
+  --secondary-foreground: #cdcdda;
 
-  --brand: #7ca3f3;
-  --brand-foreground: #0a0e17;
-  --brand-muted: #222d45;
-  --destructive: #e66f62;
-  --destructive-foreground: #1b0a08;
-  --success: #67bb75;
-  --success-foreground: #061308;
-  --warning: #dab060;
-  --warning-foreground: #1a1204;
-  --gold: #dab060;
-  --gold-foreground: #1a1204;
-  --border: #3d3a36;
-  --input: #46433d;
-  --ring: #7ca3f3;
-
-  --brand-panel: #141210;
-  --brand-panel-foreground: #dfdad1;
+  --brand: #8B72FF;
+  --brand-foreground: #12091f;
+  --brand-muted: #2a2450;
+  --destructive: #FF6B5E;
+  --destructive-foreground: #1f0705;
+  --success: #3DD68C;
+  --success-foreground: #04140b;
+  --warning: #FDB022;
+  --warning-foreground: #1a1000;
+  --gold: #FDB022;
+  --gold-foreground: #1a1000;
+  --border: #333346;
+  --input: #3d3d52;
+  --ring: #8B72FF;
 
   /* Same eight entities, re-stepped for the dark surface rather than flipped:
-     each hue is lifted into the dark lightness band and re-validated there. */
-  --chart-1: #6286d8;
-  --chart-2: #bf8532;
-  --chart-3: #24a592;
-  --chart-4: #ce6c54;
-  --chart-5: #a867c3;
-  --chart-6: #8a9c4a;
-  --chart-7: #329acd;
-  --chart-8: #d5587c;
+     each hue and chroma is carried over unchanged and only the lightness is
+     lifted into the dark band (OKLab L 0.646..0.703, spread 0.057), then
+     re-validated there. Carrying chroma across means a category keeps the
+     same identity in both themes and only its brightness moves. Slot 1 is the
+     dark-theme brand violet, the same value as --ring and --sidebar-primary,
+     so the lead series and the brand stay one colour on both themes. Tightest
+     against the dark card is the violet at 5.09:1. */
+  --chart-1: #8B72FF;
+  --chart-2: #D88C1F;
+  --chart-3: #2FB39D;
+  --chart-4: #F36549;
+  --chart-5: #BA6DDC;
+  --chart-6: #97AA48;
+  --chart-7: #35A8E1;
+  --chart-8: #ED5B85;
 
   /* Dark mode gets the same lit top edge, in white at low alpha. A cast shadow
      is nearly invisible against near-black, so on this theme the edge is doing
@@ -290,14 +281,14 @@
   /* A hair above the canvas, so the rail is the frame and the content area is
      the deepest point. Light mode does the same thing with ivory chrome around
      a white page — same role, opposite direction. */
-  --sidebar: #100e0c;
-  --sidebar-foreground: #dfdad1;
-  --sidebar-primary: #d4cfc4;
-  --sidebar-primary-foreground: #13100d;
-  --sidebar-accent: #23211d;
-  --sidebar-accent-foreground: #d5d0c6;
-  --sidebar-border: #22201d;
-  --sidebar-ring: #7ca3f3;
+  --sidebar: #101018;
+  --sidebar-foreground: #e8e8f0;
+  --sidebar-primary: #8B72FF;
+  --sidebar-primary-foreground: #12091f;
+  --sidebar-accent: #241f45;
+  --sidebar-accent-foreground: #c8bcff;
+  --sidebar-border: #22222f;
+  --sidebar-ring: #8B72FF;
 }
 
 @layer base {
@@ -309,6 +300,13 @@
   }
   html {
     @apply font-sans;
+    /* Jakarta's 400 sits lighter than most grotesques at the same nominal
+       weight, so body copy read thin against the heavy figures. 450 — a real
+       instance on the variable axis, not a synthesised one — lifts it just
+       enough to sit comfortably under the 700 the figures now use. Narrowing
+       the range from both ends is the point: the spread was the problem, not
+       either end on its own. */
+    font-weight: 450;
   }
 }
 
@@ -319,21 +317,32 @@
     font-family: var(--font-inter), var(--font-jakarta), sans-serif;
     font-variant-numeric: tabular-nums lining-nums;
     letter-spacing: -0.01em;
-    font-weight: 600;
+    font-weight: inherit;
   }
 }
 
 /* ============================================================
    Motion layer
 
-   MOTION_INTENSITY 5 of 10. This is a finance app: motion exists to
-   explain hierarchy, acknowledge input, and show state changes. It
-   never decorates. Only `transform` and `opacity` are animated so
-   everything stays on the compositor.
+   MOTION_INTENSITY 7 of 10. Motion still does the structural work —
+   explaining hierarchy, acknowledging input, showing state changes —
+   but it is now also allowed to carry delight, which is a change from
+   the earlier "it never decorates" rule. A figure counting up and a
+   goal bursting when it lands are decoration in the strict sense, and
+   they are the point: this is money the person actually saved, and
+   the app should say so rather than silently swapping a number.
+
+   The licence is bounded. Delight is reserved for moments the person
+   caused and would want marked; it never fires on passive render, on
+   navigation, or more than once for the same event. Only `transform`
+   and `opacity` are animated so everything stays on the compositor.
 
    Every animation below is gated behind `prefers-reduced-motion:
    no-preference`. Under `reduce`, elements render in their final
-   state instantly — nothing is hidden, nothing is lost.
+   state instantly — nothing is hidden, nothing is lost. Raising the
+   intensity raises the stakes on that block, not the exceptions to
+   it: every animation added here MUST get an explicit end-state
+   entry in the `reduce` block at the bottom of this layer.
    ============================================================ */
 @layer utilities {
   /* Shared easing. A gentle overshoot-free decelerate curve. */
@@ -426,9 +435,14 @@
     .lift:hover {
       transform: translate3d(0, -2px, 0);
     }
+    /* A real press, not a hint of one. The old 0.995 was below the
+       threshold where the eye registers a size change at all, so the
+       click had no tactile receipt; 0.96 is unmistakable. The duration
+       drops with it — a press that takes 80ms to arrive feels like lag,
+       whereas 60ms reads as the surface responding under the finger. */
     .lift:active {
-      transform: translate3d(0, 0, 0) scale(0.995);
-      transition-duration: 80ms;
+      transform: translate3d(0, 0, 0) scale(0.96);
+      transition-duration: 60ms;
     }
   }
 
@@ -526,6 +540,29 @@
     display: none;
   }
 
+  /* --- Celebration ----------------------------------------------------
+     A ring that swells out of a progress bar and fades, fired once when a
+     goal is actually reached. This is the clearest case of the raised
+     MOTION_INTENSITY: it marks a moment the person earned, so it is
+     allowed to be decorative — but only on the transition into
+     completion, never on render of an already-finished goal. The element
+     is mounted only for the duration of the burst, so a later arrival
+     restarts it from the top. */
+  .burst {
+    animation: burst 700ms var(--ease-out-soft) both;
+  }
+
+  @keyframes burst {
+    from {
+      opacity: 0.65;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(1.35);
+    }
+  }
+
   /* --- Reduced motion --------------------------------------------------
      Collapse every animation to its end state. `animation: none` with
      `fill-mode: both` would strand elements at `opacity: 0`, so each
@@ -553,6 +590,21 @@
        belt and braces in case the class lands late. */
     .splash {
       display: none;
+    }
+
+    /* The burst is the one animation whose end state IS invisible, so
+       unlike everything above it, resetting to `opacity: 0` is correct
+       rather than the stranding bug the note at the top warns about. It
+       carries no information — the completed bar and the "reached" copy
+       both remain — so removing it costs nothing. The success sound still
+       plays: `reduce` is a statement about motion, not about feedback.
+
+       The count-up has no entry here because it is not a CSS animation.
+       It reads the same media query in JavaScript and renders its final
+       value immediately — see components/ui/count-up.tsx. */
+    .burst {
+      animation: none;
+      opacity: 0;
     }
   }
 }

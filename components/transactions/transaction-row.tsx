@@ -4,6 +4,8 @@ import { formatMoney } from "@/lib/format";
 import type { TransactionWithRefs, QuickAddData } from "@/lib/transactions/queries";
 import { TransactionDialog } from "./transaction-dialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ColorTile } from "@/components/ui/color-tile";
 import { MaskedMoney } from "@/components/figure-mask/masked-money";
 import { cn } from "@/lib/utils";
 
@@ -83,44 +85,40 @@ export function TransactionRow({
 
   return (
     <div className="group flex items-center gap-3 py-3">
-      <span
-        className="flex size-9 shrink-0 items-center justify-center rounded-lg"
-        style={{
-          backgroundColor: category?.color
-            ? `color-mix(in oklab, ${category.color} 16%, transparent)`
-            : "var(--accent)",
-          color: category?.color ?? "var(--accent-foreground)",
-        }}
-      >
-        {category?.emoji ? <span className="text-sm">{category.emoji}</span> : <Icon className="size-[18px]" />}
-      </span>
+      <ColorTile
+        color={category?.color ?? null}
+        emoji={category?.emoji}
+        name={category?.name}
+        icon={Icon}
+        size="md"
+      />
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-foreground">
           {title}
           {txn.exclude_from_budget ? (
-            <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+            <Badge className="ml-2 bg-muted text-muted-foreground">
               {t("excludeFromBudgetBadge")}
-            </span>
+            </Badge>
           ) : null}
           {txn.statement_line_id ? (
-            <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+            <Badge className="ml-2 bg-muted uppercase tracking-wide text-muted-foreground">
               {t("statementBadge")}
-            </span>
+            </Badge>
           ) : null}
           {isStatementCredit ? (
-            <span className="ml-2 rounded bg-success/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-success">
+            <Badge className="ml-2 bg-success/10 uppercase tracking-wide text-success">
               {t("refundBadge")}
-            </span>
+            </Badge>
           ) : null}
           {txn.fx_fallback ? (
-            <span
-              className="ml-2 inline-flex items-center gap-0.5 rounded bg-warning/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-warning"
+            <Badge
+              className="ml-2 bg-warning/10 uppercase tracking-wide text-warning"
               title={t("fxFallbackWarning")}
             >
               <TriangleAlert className="size-3" />
               {t("fxFallbackBadge")}
-            </span>
+            </Badge>
           ) : null}
         </p>
         <p className="truncate text-xs text-muted-foreground">{subtitle}</p>

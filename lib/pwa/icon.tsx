@@ -1,12 +1,15 @@
 import { ImageResponse } from "next/og";
 
-const TILE_LIGHT = "#ece5d6";
-const GLYPH = "#26221e";
+// The literal form of `--hero` and `--hero-foreground`. An ImageResponse is
+// rasterised at build time with no stylesheet in scope, so the brand ramp has
+// to be repeated here — keep these in step with app/globals.css.
+const TILE = "linear-gradient(135deg, #6C4EF5 0%, #4326C9 100%)";
+const GLYPH = "#ffffff";
 
 /**
  * Same mark as components/brand/logo.tsx / lib/og-image.tsx: the Lucide
- * "Coins" glyph in graphite on an ivory tile. Kept in one place so every
- * icon size/purpose stays pixel-consistent with the favicon and OG image.
+ * "Coins" glyph knocked out of the signature gradient. Kept in one place so
+ * every icon size/purpose stays pixel-consistent with the favicon and OG image.
  */
 export function renderAppIcon({
   size,
@@ -27,7 +30,7 @@ export function renderAppIcon({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: TILE_LIGHT,
+          backgroundImage: TILE,
           borderRadius: tileRadius,
         }}
       >

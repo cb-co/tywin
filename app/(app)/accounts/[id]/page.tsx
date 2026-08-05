@@ -21,6 +21,7 @@ import { AccountDetailActions } from "@/components/accounts/account-detail-actio
 import { StatementsPanel } from "@/components/accounts/statements-panel";
 import { AmortizationTable } from "@/components/accounts/amortization-table";
 import { Card } from "@/components/ui/card";
+import { ColorTile } from "@/components/ui/color-tile";
 import { Progress } from "@/components/ui/progress";
 import { MaskedMoney } from "@/components/figure-mask/masked-money";
 
@@ -97,17 +98,7 @@ export default async function AccountDetailPage({
 
       <div className="flex flex-wrap items-start justify-between gap-4 border-b pb-5">
         <div className="flex items-center gap-3">
-          <span
-            className="flex size-11 items-center justify-center rounded-xl"
-            style={{
-              backgroundColor: account.color
-                ? `color-mix(in oklab, ${account.color} 16%, transparent)`
-                : "var(--accent)",
-              color: account.color ?? "var(--accent-foreground)",
-            }}
-          >
-            <Icon className="size-5" />
-          </span>
+          <ColorTile color={account.color} icon={Icon} size="md" />
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               {account.name}
@@ -135,7 +126,7 @@ export default async function AccountDetailPage({
         {isCardType ? (
           <>
             <p className="text-sm font-medium text-muted-foreground">{t("balanceOwed")}</p>
-            <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] leading-none text-foreground">
+            <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] font-semibold leading-none text-foreground">
               {formatMoney(owed, currency)}
             </p>
             {statements[0] ? (
@@ -177,7 +168,7 @@ export default async function AccountDetailPage({
         ) : isLoanType ? (
           <>
             <p className="text-sm font-medium text-muted-foreground">{t("outstandingBalance")}</p>
-            <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] leading-none text-foreground">
+            <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] font-semibold leading-none text-foreground">
               {formatMoney(outstanding, currency)}
             </p>
             {progressTerm ? (
@@ -198,7 +189,7 @@ export default async function AccountDetailPage({
             <p className="text-sm font-medium text-muted-foreground">
               {type === "asset" ? t("estimatedValue") : t("currentBalance")}
             </p>
-            <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] leading-none text-foreground">
+            <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] font-semibold leading-none text-foreground">
               <MaskedMoney amount={account.balance ?? account.starting_balance} currency={currency} />
             </p>
             <p className="mt-3 text-sm text-muted-foreground">

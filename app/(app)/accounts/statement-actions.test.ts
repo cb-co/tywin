@@ -12,7 +12,15 @@ vi.mock("@/lib/fx", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/fx")>()),
   getExchangeRates: vi.fn(async () => ({})),
 }));
-vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+// `unstable_cache` has to be here even though nothing in this file caches:
+// lib/fx.ts calls it at module scope, so leaving it off the mock made the whole
+// FILE fail to collect — which reads as one failing file rather than a failing
+// test and is easy to miss in a summary line. The stub returns the function
+// unchanged; fx's only network call is mocked separately just above.
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+  unstable_cache: <T,>(fn: T) => fn,
+}));
 vi.mock("next-intl/server", () => ({
   getTranslations: vi.fn(async () => (key: string) => key),
 }));
