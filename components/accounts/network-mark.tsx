@@ -20,9 +20,14 @@ import { cn } from "@/lib/utils";
  * is a filled landscape plate, and a filled shape reads heavier than an outline
  * at the same size. They are matched optically:
  *
- *   Visa       16px tall, ~50px wide
- *   Mastercard 20px tall, ~34px wide
- *   Amex       24px tall, ~38px wide
+ *   Visa       4.8% of card width  (16px at desktop size)
+ *   Mastercard 6.0%                (20px)
+ *   Amex       7.2%                (24px)
+ *
+ * Sized in `cqw` for the same reason everything else on the face is: the mark
+ * has to grow with the card or it strands itself in the corner of a phone-width
+ * tile. This therefore REQUIRES the `@container` on PaymentCard's root — used
+ * anywhere else, `cqw` would resolve against the viewport instead.
  *
  * When the network can't be inferred, nothing renders. A placeholder chip would
  * imply a network the card doesn't have.
@@ -50,14 +55,14 @@ export function NetworkMark({
     return (
       <VisaLogo
         tone={foreground === "#ffffff" ? "dark" : "light"}
-        className={cn("h-4 w-auto", className)}
+        className={cn("h-[4.8cqw] w-auto", className)}
       />
     );
   }
 
   if (network === "mastercard") {
-    return <MastercardLogo className={cn("h-5 w-auto", className)} />;
+    return <MastercardLogo className={cn("h-[6cqw] w-auto", className)} />;
   }
 
-  return <AmexLogo className={cn("h-6 w-auto", className)} />;
+  return <AmexLogo className={cn("h-[7.2cqw] w-auto", className)} />;
 }

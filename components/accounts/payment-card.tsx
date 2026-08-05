@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
  */
 function CornerDots() {
   return (
-    <svg viewBox="0 0 26 6" aria-hidden className="h-1.5 w-auto opacity-60">
+    <svg viewBox="0 0 26 6" aria-hidden className="h-[1.8cqw] w-auto opacity-60">
       <circle cx="3" cy="3" r="3" fill="currentColor" />
       <circle cx="13" cy="3" r="3" fill="currentColor" />
       <circle cx="23" cy="3" r="3" fill="currentColor" />
@@ -37,13 +37,13 @@ function CornerDots() {
  */
 function CardNumber({ last4 }: { last4: string | null }) {
   return (
-    <p className="flex items-center gap-[0.55em] font-mono text-sm">
+    <p className="flex items-center gap-[0.55em] font-mono text-[4.2cqw]">
       {[0, 1, 2].map((i) => (
         <span key={i} className="relative top-[0.16em] tracking-[0.22em]">
           ****
         </span>
       ))}
-      <span className="text-base tracking-[0.12em]">{last4 ?? "****"}</span>
+      <span className="text-[4.8cqw] tracking-[0.12em]">{last4 ?? "****"}</span>
     </p>
   );
 }
@@ -55,9 +55,20 @@ function CardNumber({ last4 }: { last4: string | null }) {
  * deliberate. A true ID-1 rectangle rendered at tile width reads as slightly
  * tall on screen — there is no thickness, no edge, and none of the hand cues
  * that make the real object look right — and the reference art this is built
- * from sits nearer 1.72 for exactly that reason. The corner radius is still the
- * real one, under 4% of the long edge, because that is what carries the card
- * silhouette; the extra width just stops it reading as a stubby rectangle.
+ * from sits nearer 1.72 for exactly that reason.
+ *
+ * EVERY dimension inside the face is a percentage of the face's own width
+ * (`cqw`, against the `@container` on the root) rather than a fixed pixel size.
+ * This is the difference between a card and a box with text in it. The tile is
+ * roughly 45% wider on a phone than in the desktop three-column grid, so fixed
+ * type left the contents marooned in the middle of a much larger rectangle —
+ * the card grew and nothing on it did. Sized this way the face is effectively a
+ * photograph: identical at any width, which is also how the real object behaves.
+ * The percentages are calibrated so the desktop rendering is unchanged.
+ *
+ * The corner radius scales for the same reason. It lands on the real card's
+ * 3.6% of the long edge, which happens to be the 12px it was already using at
+ * desktop width.
  *
  * The face carries identity only — holder, masked number, network, colour. It
  * deliberately shows NO balance. A real card does not print one, and the tile
@@ -95,18 +106,18 @@ export function PaymentCard({
   const body = (
     <div
       className={cn(
-        "relative flex aspect-[1.7] w-full flex-col justify-between overflow-hidden rounded-[0.75rem] p-5 shadow-(--shadow-card)",
+        "@container relative flex aspect-[1.7] w-full flex-col justify-between overflow-hidden rounded-[3.6cqw] p-[6cqw] shadow-(--shadow-card)",
         className,
       )}
       style={{ backgroundImage: gradientFrom(fill), color: fg }}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-[3.6cqw]">
         <CornerDots />
         <NetworkMark network={network} foreground={fg} className="shrink-0" />
       </div>
 
-      <div className="space-y-1.5">
-        <p className="truncate text-[0.95rem] leading-none">{holder}</p>
+      <div className="space-y-[1.8cqw]">
+        <p className="truncate text-[4.56cqw] leading-none">{holder}</p>
         <CardNumber last4={last4} />
       </div>
     </div>
