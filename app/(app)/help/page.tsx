@@ -334,7 +334,7 @@ export default async function HelpPage() {
               themeLabel={t("settingsMockTheme")}
               soundLabel={t("settingsMockSound")}
               installLabel={t("settingsMockInstall")}
-              system={t("settingsMockSystem")}
+              themeValue={t("settingsMockThemeValue")}
               on={t("settingsMockOn")}
               available={t("settingsMockAvailable")}
             />

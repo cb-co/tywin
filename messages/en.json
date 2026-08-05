@@ -45,10 +45,7 @@
     "title": "Quick add"
   },
   "Theme": {
-    "toggle": "Toggle theme",
-    "light": "Light",
-    "dark": "Dark",
-    "system": "System"
+    "toggle": "Toggle theme"
   },
   "Login": {
     "heroTitle": "Every account, card, and loan in one calm view.",
@@ -562,7 +559,7 @@
     "baseCurrencyTitle": "Base currency",
     "baseCurrencyDescription": "Dashboards and net worth convert into this currency.",
     "themeTitle": "Theme",
-    "themeDescription": "System, light, or dark.",
+    "themeDescription": "Light or dark.",
     "languageTitle": "Language",
     "languageDescription": "English or Spanish.",
     "soundEffectsTitle": "Sound effects",
@@ -825,7 +822,7 @@
     "settingsTitle": "Settings",
     "settingsIntro": "The essentials, in one place.",
     "settingsName": "Display name and base currency",
-    "settingsTheme": "Theme — light, dark, or system",
+    "settingsTheme": "Theme — light or dark",
     "settingsSound": "Sound on/off",
     "settingsInstall": "Install Cashly as an app (PWA)",
     "settingsAccount": "Sign out, or delete your account (with confirmation)",
@@ -833,7 +830,7 @@
     "settingsMockTheme": "Theme",
     "settingsMockSound": "Sound",
     "settingsMockInstall": "Install app",
-    "settingsMockSystem": "System",
+    "settingsMockThemeValue": "Dark",
     "settingsMockOn": "On",
     "settingsMockAvailable": "Available",
 

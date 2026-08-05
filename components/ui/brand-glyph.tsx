@@ -1,0 +1,31 @@
+/**
+ * One Simple Icons path, drawn.
+ *
+ * Takes the `path` string rather than a slug on purpose: resolving a slug means
+ * loading the whole icon set, which is server-only (see lib/brand/simple-icon),
+ * so the lookup happens upstream and only the ~500 bytes actually needed reach
+ * the browser. That keeps this usable from client components without dragging
+ * megabytes behind it.
+ *
+ * Every mark is monochrome and inherits `currentColor`, so the caller sets the
+ * colour the same way it sets any text colour — and the mark can never disagree
+ * with the lettering beside it about whether it is sitting on a light surface.
+ *
+ * `aria-hidden` because it never stands alone: the subscription's name is beside
+ * it and the card face already names the network. Announcing "Netflix" twice
+ * helps nobody.
+ */
+export function BrandGlyph({ path, className }: { path: string; className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      focusable="false"
+      className={className}
+    >
+      <path d={path} />
+    </svg>
+  );
+}

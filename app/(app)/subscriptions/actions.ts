@@ -7,7 +7,8 @@ import { subscriptionInput, type SubscriptionInput } from "@/lib/subscriptions/s
 import { baseRate, getExchangeRates } from "@/lib/fx";
 import { settledCharge } from "@/lib/subscriptions/charge";
 import { hasBrandColor } from "@/lib/subscriptions/brand-color";
-import { inferBrandColor } from "@/lib/subscriptions/llm/brand-color";
+import { inferBrand } from "@/lib/subscriptions/llm/brand";
+import { simpleIconSlug } from "@/lib/brand/logo-uri";
 import { dbError } from "@/lib/errors";
 
 type Result = { error?: string; id?: string };
@@ -62,7 +63,8 @@ export async function updateSubscription(id: string, input: unknown): Promise<Re
   if (!user) return { error: t("notSignedIn") };
 
   // `color` is deliberately absent from the payload: it is not a form field, and
-  // resolveSubscriptionColor is the only thing that writes it.
+  // resolveSubscriptionBrand is the only thing that writes it, along with
+  // `logo_url` beside it.
   const { error } = await supabase
     .from("subscriptions")
     .update({ ...toRow(parsed.data), currency: parsed.data.currency })
@@ -73,7 +75,7 @@ export async function updateSubscription(id: string, input: unknown): Promise<Re
 }
 
 /**
- * Resolve and store this subscription's brand colour.
+ * Resolve and store this subscription's brand colour and logo.
  *
  * Called by the form dialog AFTER a save has already returned, never during one.
  * That separation is the whole point. Inference used to run inside
@@ -85,17 +87,24 @@ export async function updateSubscription(id: string, input: unknown): Promise<Re
  * path there is no such trade: the save returns immediately and the colour can
  * take as long as it needs, arriving on the refresh that follows.
  *
- * The gate is "no usable colour stored yet", which does all the work asked of it:
+ * The gate is "nothing usable stored yet", which does all the work asked of it:
  *
- *   - a subscription that already has a colour costs nothing, so editing an
- *     amount does not each burn an inference call;
- *   - a subscription created BEFORE this feature has none, so it resolves the
+ *   - a subscription that already has both costs nothing, so editing an amount
+ *     does not each burn an inference call;
+ *   - a subscription created BEFORE this feature has neither, so it resolves the
  *     first time it is saved, with no backfill flag to carry around;
- *   - a value that is present but UNUSABLE — not a 6-digit hex — counts as
- *     empty and re-resolves, since nothing renders such a value and treating it
- *     as occupied would strand the row forever;
+ *   - a value that is present but UNUSABLE — a colour that is not a 6-digit hex,
+ *     a logo URI naming no icon we ship — counts as empty and re-resolves, since
+ *     nothing renders such a value and treating it as occupied would strand the
+ *     row forever;
  *   - a name the model cannot place stays unresolved and renders the theme's
- *     neutral accent, rather than being written a wrong colour.
+ *     neutral accent under the name's initial, rather than being written a wrong
+ *     brand.
+ *
+ * A row with a colour but no logo still re-resolves, and that is deliberate: it
+ * is exactly the state every subscription saved before logos existed is in, and
+ * the call that would fetch the logo returns the colour anyway. The gate asks for
+ * BOTH so that those rows heal on their next save instead of needing a migration.
  *
  * The name is read from the ROW rather than taken as an argument: this is a
  * server action reachable with any id, so it should decide what to judge from
@@ -105,27 +114,37 @@ export async function updateSubscription(id: string, input: unknown): Promise<Re
  *
  * Every failure is silent and returns `resolved: false`. Nothing here is worth
  * surfacing: the save the person actually asked for has already succeeded, and
- * an unresolved colour is a cosmetic gap the next save tries again on.
+ * an unresolved brand is a cosmetic gap the next save tries again on.
  */
-export async function resolveSubscriptionColor(id: string): Promise<{ resolved: boolean }> {
+export async function resolveSubscriptionBrand(id: string): Promise<{ resolved: boolean }> {
   const { supabase, user } = await requireUser();
   if (!user) return { resolved: false };
 
   const { data: existing, error: readError } = await supabase
     .from("subscriptions")
-    .select("name, color")
+    .select("name, color, logo_url")
     .eq("id", id)
     .maybeSingle();
 
-  // A failed read is not the same as an empty colour. Guessing over it would
-  // overwrite a good value we simply could not see.
+  // A failed read is not the same as an empty row. Guessing over it would
+  // overwrite good values we simply could not see.
   if (readError || !existing) return { resolved: false };
-  if (hasBrandColor(existing.color)) return { resolved: false };
+  if (hasBrandColor(existing.color) && simpleIconSlug(existing.logo_url)) {
+    return { resolved: false };
+  }
 
-  const color = await inferBrandColor(existing.name);
-  if (!color) return { resolved: false };
+  const { color, logoUri } = await inferBrand(existing.name);
+  if (!color && !logoUri) return { resolved: false };
 
-  const { error } = await supabase.from("subscriptions").update({ color }).eq("id", id);
+  /* Only what was actually resolved is written. A call that placed the logo but
+     not the colour must not blank a colour already on the row — the two fields
+     come back independently, and a null here means "no answer", never "clear
+     it". */
+  const patch: { color?: string; logo_url?: string } = {};
+  if (color) patch.color = color;
+  if (logoUri) patch.logo_url = logoUri;
+
+  const { error } = await supabase.from("subscriptions").update(patch).eq("id", id);
   if (error) return { resolved: false };
 
   revalidate();

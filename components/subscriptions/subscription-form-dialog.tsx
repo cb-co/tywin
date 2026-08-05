@@ -8,7 +8,7 @@ import { useTranslations } from "next-intl";
 import { BILLING_CYCLES, CYCLE_LABEL, type BillingCycle } from "@/lib/subscriptions/cycle";
 import {
   createSubscription,
-  resolveSubscriptionColor,
+  resolveSubscriptionBrand,
   updateSubscription,
 } from "@/app/(app)/subscriptions/actions";
 import type { QuickAddData } from "@/lib/transactions/queries";
@@ -132,7 +132,8 @@ export function SubscriptionFormDialog({
       setOpen(false);
       router.refresh();
 
-      /* The brand colour is resolved AFTER the save, deliberately not awaited.
+      /* The brand colour and logo are resolved AFTER the save, deliberately not
+         awaited.
          The model answers in ~600ms warm but can take over a minute cold, and
          nobody should sit in front of a spinner for a guess — so the dialog is
          already closed and the subscription already listed by the time this
@@ -143,7 +144,7 @@ export function SubscriptionFormDialog({
          transition would put the whole cold call back on the save's critical
          path, which is the bug this exists to avoid. */
       if (result.id)
-        void resolveSubscriptionColor(result.id).then(({ resolved }) => {
+        void resolveSubscriptionBrand(result.id).then(({ resolved }) => {
           if (resolved) router.refresh();
         });
     });

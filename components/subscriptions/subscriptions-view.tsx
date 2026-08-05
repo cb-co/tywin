@@ -23,6 +23,7 @@ import { SubscriptionFormDialog } from "./subscription-form-dialog";
 import { RecordChargeDialog } from "./record-charge-dialog";
 import { Button } from "@/components/ui/button";
 import { MoneyDisplay } from "@/components/ui/money-display";
+import { BrandGlyph } from "@/components/ui/brand-glyph";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/empty-state";
@@ -171,7 +172,7 @@ export function SubscriptionsView({
             <Card key={sub.id} className={cn("gap-0 p-5", !sub.is_active && "opacity-60")}>
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <BrandMark name={sub.name} color={sub.color} />
+                  <BrandMark name={sub.name} color={sub.color} logoPath={sub.logoPath} />
                   <div className="min-w-0">
                     <p className="truncate font-medium text-foreground">{sub.name}</p>
                     <p className="text-xs text-muted-foreground">
@@ -306,19 +307,34 @@ export function SubscriptionsView({
 }
 
 /**
- * The square mark that stands in for a service's logo: its initial, on its
- * brand colour.
+ * The service's mark: its logo where we have one, its initial where we do not,
+ * on its brand colour either way.
  *
- * The colour is inferred once from the subscription's name and stored on the row
- * (lib/subscriptions/llm/brand-color.ts). A subscription with no colour resolved
- * — one the model could not place, or one created before this existed — keeps
- * the theme's neutral accent TOKEN rather than some fixed hex, because that is
- * the only fallback that stays correct in both light and dark.
+ * Both the colour and the logo are inferred once from the subscription's name
+ * and stored on the row (lib/subscriptions/llm/brand.ts). A subscription with no
+ * colour resolved — one the model could not place, or one created before this
+ * existed — keeps the theme's neutral accent TOKEN rather than some fixed hex,
+ * because that is the only fallback that stays correct in both light and dark.
  *
- * The letter's colour is MEASURED from the fill, never assumed. Brand colours
- * span the whole lightness range in a way card accents do not: Spotify green and
- * a pale yellow both arrive through the same field, and white on the yellow one
- * is unreadable.
+ * The three states DEGRADE INDEPENDENTLY, which is why the fallbacks are written
+ * as two separate questions rather than one:
+ *
+ *   logo + colour    the Spotify mark on Spotify green — what we are aiming at
+ *   colour, no logo  the initial on the brand colour — most smaller services
+ *   neither          the initial on the theme's accent — a name nobody knows
+ *
+ * A logo with no usable colour is possible too and lands on the neutral accent,
+ * still showing the mark. Nothing here waits on the other half.
+ *
+ * The glyph's colour is MEASURED from the fill, never assumed, exactly as the
+ * letter's was. Brand colours span the whole lightness range in a way card
+ * accents do not: Spotify green and a pale yellow both arrive through the same
+ * field, and white on the yellow one is invisible.
+ *
+ * The glyph sits at 55% of the disc rather than filling it. Simple Icons draws
+ * every mark to the edges of its 24×24 box, so a mark scaled to the disc would
+ * touch the rim; the inset is the optical padding the artwork does not carry
+ * itself.
  *
  * `.tile-sheen` is what keeps it from reading as a flat chip, and it is the same
  * utility every ColorTile in the app uses, so the marks belong to one family
@@ -327,27 +343,40 @@ export function SubscriptionsView({
  * can be near-black on a pale brand colour, and a treatment that lightened the
  * middle would eat exactly that case.
  *
- * The RESOLVED and unresolved states carry the same sheen. Skipping it on the
- * fallback would make an unresolved subscription look like a different kind of
- * object rather than the same one awaiting a colour.
+ * Every state carries the same sheen. Skipping it on a fallback would make an
+ * unresolved subscription look like a different kind of object rather than the
+ * same one awaiting an answer.
  */
-function BrandMark({ name, color }: { name: string; color: string | null }) {
-  const initial = name[0]?.toUpperCase();
+function BrandMark({
+  name,
+  color,
+  logoPath,
+}: {
+  name: string;
+  color: string | null;
+  /** A Simple Icons path, resolved server-side in lib/subscriptions/queries. */
+  logoPath: string | null;
+}) {
   // `rounded-full`, like every other avatar. It previously said `rounded-lg` and
   // still drew a circle, because that token is 20px against a 40px box and the
   // browser clamps it — the shape was luck rather than intent.
   const shared =
     "tile-sheen flex size-10 items-center justify-center rounded-full text-sm font-semibold";
+  const mark = logoPath ? (
+    <BrandGlyph path={logoPath} className="size-[55%]" />
+  ) : (
+    name[0]?.toUpperCase()
+  );
 
   if (!hasBrandColor(color))
-    return <span className={cn(shared, "bg-accent text-accent-foreground")}>{initial}</span>;
+    return <span className={cn(shared, "bg-accent text-accent-foreground")}>{mark}</span>;
 
   return (
     <span
       className={shared}
       style={{ backgroundColor: color!, color: readableForeground(color!) }}
     >
-      {initial}
+      {mark}
     </span>
   );
 }

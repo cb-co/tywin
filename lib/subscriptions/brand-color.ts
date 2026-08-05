@@ -1,4 +1,4 @@
-import { HEX6 } from "@/lib/color";
+import { HEX6, relativeLuminance } from "@/lib/color";
 
 /**
  * A subscription's brand colour, when one has been resolved.
@@ -15,4 +15,26 @@ import { HEX6 } from "@/lib/color";
  */
 export function hasBrandColor(color: string | null | undefined): boolean {
   return !!color && HEX6.test(color);
+}
+
+/**
+ * The luminance of #E8E8E8, the lightest colour the brand mark can survive.
+ *
+ * The mark is a filled disc on a card surface. A near-white fill makes it vanish
+ * into that surface, so it reads as a failed render rather than as a brand — the
+ * reason the model is told never to answer with one (lib/subscriptions/llm/brand).
+ */
+const NEAR_WHITE = relativeLuminance("#e8e8e8");
+
+/**
+ * Whether a colour can be used as a brand fill.
+ *
+ * Applied to colours that arrive from Simple Icons, not to the model's. The
+ * model is already instructed away from near-white and its answer is the only
+ * one available when the icon set has no entry, so rejecting it here would trade
+ * a pale mark for no colour at all. An icon's official hex has an alternative —
+ * whatever the model said — so it can afford to be judged.
+ */
+export function usableBrandColor(hex: string): boolean {
+  return HEX6.test(hex) && relativeLuminance(hex) < NEAR_WHITE;
 }

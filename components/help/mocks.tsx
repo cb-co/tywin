@@ -319,7 +319,7 @@ export function SettingsMock({
   themeLabel,
   soundLabel,
   installLabel,
-  system,
+  themeValue,
   on,
   available,
 }: {
@@ -327,13 +327,13 @@ export function SettingsMock({
   themeLabel: string;
   soundLabel: string;
   installLabel: string;
-  system: string;
+  themeValue: string;
   on: string;
   available: string;
 }) {
   const rows = [
     { label: currencyLabel, value: "USD" },
-    { label: themeLabel, value: system },
+    { label: themeLabel, value: themeValue },
     { label: soundLabel, value: on },
     { label: installLabel, value: available },
   ];

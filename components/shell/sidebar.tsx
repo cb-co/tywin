@@ -3,6 +3,7 @@ import { useTranslations } from "next-intl";
 import { NAV_ITEMS } from "@/lib/nav";
 import { NavLink } from "./nav-link";
 import { FigureMaskToggle } from "@/components/figure-mask/figure-mask-toggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo, Wordmark } from "@/components/brand/logo";
 import { profileLabel, profileInitial } from "@/lib/profile";
 
@@ -41,8 +42,16 @@ export function Sidebar({
 
       {/* Account row. The whole block is one target into Settings, so the
           avatar and the name read as a single affordance rather than a
-          decorative bubble sitting next to a link. */}
-      <div className="flex items-center gap-2 border-t border-sidebar-border px-3 py-3">
+          decorative bubble sitting next to a link.
+
+          The two toggles beside it are the app's only always-reachable
+          controls, and they belong together: both change how the app LOOKS
+          right now, both are one tap, and neither is worth a trip to Settings.
+          The name yields space to them — it is already truncating, and a
+          shorter name is a smaller loss than a wrapped row. Settings keeps its
+          own theme row: this sidebar is desktop-only, so on mobile that row is
+          the only way to reach the theme at all. */}
+      <div className="flex items-center gap-1 border-t border-sidebar-border px-3 py-3">
         <Link
           href="/settings"
           title={email}
@@ -66,6 +75,7 @@ export function Sidebar({
           </span>
         </Link>
         <FigureMaskToggle />
+        <ThemeToggle />
       </div>
     </aside>
   );
