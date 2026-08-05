@@ -51,9 +51,13 @@ function CardNumber({ last4 }: { last4: string | null }) {
 /**
  * A credit card rendered as the physical object.
  *
- * Aspect ratio is ISO/IEC 7810 ID-1 (85.60 x 53.98 mm) and the corner radius is
- * the real one — under 4% of the long edge. Both matter: get either wrong and
- * the silhouette stops reading as a card no matter what is printed on it.
+ * The proportion is 1.7, not the 1.586 of a physical ID-1 card. That is
+ * deliberate. A true ID-1 rectangle rendered at tile width reads as slightly
+ * tall on screen — there is no thickness, no edge, and none of the hand cues
+ * that make the real object look right — and the reference art this is built
+ * from sits nearer 1.72 for exactly that reason. The corner radius is still the
+ * real one, under 4% of the long edge, because that is what carries the card
+ * silhouette; the extra width just stops it reading as a stubby rectangle.
  *
  * The face carries identity only — holder, masked number, network, colour. It
  * deliberately shows NO balance. A real card does not print one, and the tile
@@ -91,7 +95,7 @@ export function PaymentCard({
   const body = (
     <div
       className={cn(
-        "relative flex aspect-[1.586] w-full flex-col justify-between overflow-hidden rounded-[0.75rem] p-5 shadow-(--shadow-card)",
+        "relative flex aspect-[1.7] w-full flex-col justify-between overflow-hidden rounded-[0.75rem] p-5 shadow-(--shadow-card)",
         className,
       )}
       style={{ backgroundImage: gradientFrom(fill), color: fg }}
