@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 const TONES = {
   success: "bg-success/12 text-success",
   destructive: "bg-destructive/12 text-destructive",
+  warning: "bg-warning/12 text-warning",
   brand: "bg-brand/12 text-brand",
   neutral: "bg-muted text-muted-foreground",
 } as const;

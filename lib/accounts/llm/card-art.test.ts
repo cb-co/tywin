@@ -23,6 +23,16 @@ describe("inferCardArt", () => {
     });
   });
 
+  // Card art validates the same way and had the same silent failure: a model
+  // that answers `1B4B8F` was telling us the colour, and we threw it away.
+  it("accepts a bare accent the model returned without its #", async () => {
+    mockReturn({ accent: "1B4B8F", network: "visa" });
+    expect(await inferCardArt("BHD León Visa Infinite")).toEqual({
+      accent: "#1B4B8F",
+      network: "visa",
+    });
+  });
+
   it("keeps the accent when the network is unknown", async () => {
     mockReturn({ accent: "#2E3B4A", network: null });
     expect(await inferCardArt("Some Bank Card")).toEqual({
@@ -44,6 +54,25 @@ describe("inferCardArt", () => {
 
   it("returns null when the model call fails", async () => {
     (generateObject as unknown as Mock).mockRejectedValue(new Error("boom"));
+    expect(await inferCardArt("Card")).toBeNull();
+  });
+
+  /* Same bound as the subscription brand colour, for the same reason: this runs
+     inside a save, and the endpoint is occasionally tens of seconds slow. */
+  it("bounds the call with an abort signal", async () => {
+    mockReturn({ accent: "#1B4B8F", network: "visa" });
+    await inferCardArt("BHD León Visa Infinite");
+    const { abortSignal } = (generateObject as unknown as Mock).mock.calls[0][0];
+    expect(abortSignal).toBeInstanceOf(AbortSignal);
+  });
+
+  // An abort is not special-cased: a save must not fail because a guess was slow.
+  it("returns null when the call is aborted", async () => {
+    (generateObject as unknown as Mock).mockRejectedValue(
+      Object.assign(new Error("The operation was aborted due to timeout"), {
+        name: "TimeoutError",
+      }),
+    );
     expect(await inferCardArt("Card")).toBeNull();
   });
 

@@ -118,13 +118,51 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
     });
   }
 
+  /* One action, mounted in two places, with width deciding which of them is
+     visible — both are rendered, and the hidden one is inert. Called as a
+     plain function rather than declared as a component so the two stay one
+     definition. Below 450px the toolbar cannot hold
+     three controls without wrapping (in Spanish, "Copiar mes anterior" and
+     "Añadir categoría" together overrun a 375px screen on their own), so the
+     primary action moves up beside the section heading, where GoalGrid keeps
+     its own "add goal" button. Above 450px it stays in the toolbar. */
+  const addCategoryTrigger = (className: string) => (
+    <CategoryDialog
+      trigger={
+        <Button size="sm" className={className}>
+          <Plus className="size-4" />
+          {t("addCategory")}
+        </Button>
+      }
+    />
+  );
+
   return (
-    <div className="space-y-6">
-      {/* Month switcher + totals */}
-      <div className="flex flex-col gap-4 rounded-xl border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
+    <section className="space-y-4">
+      <div className="flex  items-center justify-between gap-4">
+        <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          {t("sectionTitle")}
+        </h2>
+        {addCategoryTrigger("min-[450px]:hidden")}
+      </div>
+
+      {/* Month switcher + totals.
+
+          The switcher is sized to match the one in the insights heading
+          (app/(app)/insights/page.tsx) — same 32px square controls, same
+          text-sm label over the same reserved width. It used to be a text-lg
+          label between two ghost buttons, which read as a page heading rather
+          than a control and, with the totals beside it, was what tipped this
+          row into overflowing just below the `sm` breakpoint.
+
+          Both this row and the totals wrap. Three money figures next to a
+          switcher is more than a phone's width holds however small the
+          switcher gets, and a row that wraps degrades where a row that only
+          shrinks eventually clips its last figure off the screen. */}
+      <div className="flex flex-col gap-4 rounded-xl border bg-card p-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="flex shrink-0 items-center gap-2">
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon-sm"
             aria-label={t("prevMonth")}
             onClick={() => go(-1)}
@@ -132,11 +170,11 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
           >
             <ChevronLeft className="size-4" />
           </Button>
-          <span className="min-w-40 text-center text-lg font-medium">
+          <span className="min-w-36 text-center text-sm font-medium text-foreground">
             {monthLabel(month, locale)}
           </span>
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon-sm"
             aria-label={t("nextMonth")}
             onClick={() => go(1)}
@@ -146,7 +184,7 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
           </Button>
         </div>
         {navPending ? (
-          <div className="flex gap-6">
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
             {[0, 1, 2].map((i) => (
               <div key={i} className="space-y-1.5">
                 <div className="skeleton h-3 w-14 rounded" />
@@ -155,7 +193,7 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
             ))}
           </div>
         ) : (
-          <div className="flex gap-6 text-sm">
+          <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
             <div>
               <p className="text-xs text-muted-foreground">{t("budgetLabel")}</p>
               <p className="figure tabular-nums">{maskedFormatMoney(totalBudget, baseCurrency)}</p>
@@ -174,7 +212,13 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
         )}
       </div>
 
-      <div className="flex items-center justify-between">
+      {/* Two controls below 450px, three above, which is what keeps this on
+          one line at every width. It still wraps rather than clips if a
+          translation is longer than any we ship. `ms-auto` holds the right
+          group against the right edge if that happens — `justify-between`
+          justifies each wrapped line on its own, and a line holding a single
+          item would otherwise send it left. */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -185,7 +229,7 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
           <CopyPlus className="size-4" />
           {t("copyLastMonth")}
         </Button>
-        <div className="flex items-center gap-2">
+        <div className="ms-auto flex items-center gap-2">
           <div className="flex rounded-lg bg-muted p-1">
             <button
               type="button"
@@ -210,14 +254,7 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
               <TableIcon className="size-4" />
             </button>
           </div>
-          <CategoryDialog
-            trigger={
-              <Button size="sm">
-                <Plus className="size-4" />
-                {t("addCategory")}
-              </Button>
-            }
-          />
+          {addCategoryTrigger("max-[450px]:hidden")}
         </div>
       </div>
 
@@ -399,6 +436,6 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }

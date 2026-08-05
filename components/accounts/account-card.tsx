@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ColorTile } from "@/components/ui/color-tile";
+import { MoneyDisplay } from "@/components/ui/money-display";
 import { PaymentCard } from "./payment-card";
 import { inferNetwork, inferLast4 } from "@/lib/accounts/network";
 import { formatMoney, formatPercent, formatDayOfMonth } from "@/lib/format";
@@ -84,8 +85,16 @@ export function AccountCard({
           />
         ) : (
           <div className="mt-5">
-            <p className="figure text-2xl font-semibold leading-none text-foreground">
-              <MaskedMoney amount={account.balance ?? account.starting_balance} currency={currency} />
+            {/* Same figure treatment as a card group's currency lines
+                (card-group-tile) — de-emphasised cents, at the tile's own
+                stat scale rather than their inline one, since here it is the
+                headline rather than one row of several. */}
+            <p className="leading-none">
+              <MoneyDisplay
+                amount={account.balance ?? account.starting_balance}
+                currency={currency}
+                size="stat"
+              />
             </p>
             {/* An asset's figure is an estimate you set by hand, not a balance
                 derived from transactions. Calling it a balance overstates how
@@ -128,7 +137,9 @@ function CardBody({
           owed amount appears on a card tile. */}
       <div className="flex items-end justify-between">
         <div>
-          <p className="figure text-2xl font-semibold leading-none text-foreground">{formatMoney(owed, currency)}</p>
+          <p className="leading-none">
+            <MoneyDisplay amount={owed} currency={currency} size="stat" />
+          </p>
           <p className="mt-1 text-xs text-muted-foreground">{t("owed")}</p>
         </div>
         {util !== null ? (
@@ -164,7 +175,9 @@ function LoanBody({
   return (
     <div className="mt-5 space-y-3">
       <div>
-        <p className="figure text-2xl font-semibold leading-none text-foreground">{formatMoney(outstanding, currency)}</p>
+        <p className="leading-none">
+          <MoneyDisplay amount={outstanding} currency={currency} size="stat" />
+        </p>
         <p className="mt-1 text-xs text-muted-foreground">{t("outstanding")}</p>
       </div>
       {term ? <Progress value={pct} /> : null}

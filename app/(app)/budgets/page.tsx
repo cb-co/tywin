@@ -28,13 +28,13 @@ export default async function BudgetsPage({
           to a month and goals are cumulative, so an unlabelled month picker at
           the top of the page would appear to scope both. Inside a labelled band
           it visibly belongs to budgets alone — the same fix /insights uses by
-          putting its picker in one section's heading. */}
-      <section className="space-y-4">
-        <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          {t("sectionTitle")}
-        </h2>
-        <BudgetGrid month={month} overview={overview} />
-      </section>
+          putting its picker in one section's heading.
+
+          Each band renders its own heading, the way GoalGrid always has: the
+          budgets heading doubles as an overflow slot for the "add category"
+          button on narrow screens, and that placement only makes sense next to
+          the toolbar it moves out of. */}
+      <BudgetGrid month={month} overview={overview} />
 
       <Separator />
 

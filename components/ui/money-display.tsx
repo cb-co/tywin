@@ -13,6 +13,10 @@ const SIZES = {
   // gradient slab — at 700 the weight was the third thing shouting, so it sits
   // at 600 and lets the scale do the work.
   hero: { head: "text-5xl sm:text-6xl font-semibold tracking-[-0.03em]", cents: "text-[0.6em]" },
+  // One step above `stat`, for a figure that leads a section but is not the
+  // page's subject — a summary bar's total sitting above cards that each use
+  // `stat`. It needs to out-rank them without reading as a hero.
+  feature: { head: "text-3xl sm:text-4xl font-bold tracking-[-0.025em]", cents: "text-[0.61em]" },
   stat: { head: "text-2xl font-bold tracking-[-0.02em]", cents: "text-[0.62em]" },
   inline: { head: "text-base font-semibold", cents: "text-[0.75em]" },
 } as const;

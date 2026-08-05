@@ -116,6 +116,14 @@
   --primary-foreground: #f7f7fb;
   --secondary: #eceef7;
   --secondary-foreground: #2b2b38;
+  /* Hand-picked rather than mixed from `secondary` and `foreground`, which is
+     what this used to be. Mixing two NEAR-NEUTRAL colours in oklch is the one
+     case that formula handles badly: chroma stays near zero, so the hue term is
+     numerically unstable, and where the result lands after the browser's gamut
+     mapping is not something the numbers predict — it came out with a visible
+     cast rather than the darker grey it was supposed to be. A palette step has
+     no interpolation in it to go wrong. */
+  --secondary-hover: #e0e2ee;
   --muted: #f1f2f9;
   --muted-foreground: #6b6b7b;
   --accent: #e7e9f5;
@@ -235,6 +243,11 @@
   --accent-foreground: #e0e0ea;
   --secondary: #383850;
   --secondary-foreground: #cdcdda;
+  /* Lighter than `secondary`, where the light theme's equivalent is darker.
+     Hover moves AWAY from the page, and which direction that is depends on the
+     theme — the old mix-with-foreground formula got this right by accident and
+     only because `foreground` flips too. Stated outright here instead. */
+  --secondary-hover: #43435e;
 
   --brand: #8B72FF;
   --brand-foreground: #12091f;
@@ -406,6 +419,52 @@
       opacity: 1;
       transform: none;
     }
+  }
+
+  /* --- Identity tiles -------------------------------------------------
+     `.tile-sheen` stops a filled colour tile — a category, an account, a
+     subscription's brand mark — reading as a flat chip. The fill stays the
+     stored colour; this only adds the falloff that makes it look lit.
+
+     It DARKENS toward the far corner rather than adding a highlight, and that
+     is a constraint rather than a preference. The tile fills are held to 3:1
+     behind a white glyph (lib/palette.test.ts), and several swatches sit at
+     3.05 — #899C39 and #CE830A clear the bar by 0.05. A white wash of even
+     0.02 over the glyph puts them under it, so there is no strength at which
+     an additive highlight is safe. Removing light is free in that direction:
+     it can only push contrast up.
+
+     The ramp is placed so the GLYPH sits in the clean part of it, and tuned for
+     a CIRCLE rather than a square. Avatars here are round, so the square's far
+     corner — where a naive ramp puts its peak — is clipped away and never
+     rendered: the darkest point that actually survives is where the inscribed
+     circle runs furthest from the gradient's origin, at 0.81 of the way out
+     rather than 0.98. An earlier version peaked at 0.16 in that dead corner and
+     showed only 0.11 on screen, which is why it read as no effect at all.
+
+     At the values below the glyph centre sits at 0.39 of the ramp and takes 4%
+     darkening, while the visible edge of the circle takes 22%. The 4% is safe
+     for both foreground policies: it can only help ColorTile's white glyph, and
+     a sweep of the colour cube puts the WORST case for a measured dark glyph at
+     3.97:1 — clear of the 3:1 bar — so lib/color's readableForeground stays
+     correct without having to know this exists.
+
+     Deliberately colour-AGNOSTIC. These fills are not always hex: callers pass
+     `var(--brand)`, `var(--success)`, and `var(--muted-foreground)` too, so
+     nothing here may depend on parsing the colour underneath.
+
+     The two inset edges are the same trick the card face uses: a bright top
+     and a dark bottom read as a moulded object with thickness. One pixel each,
+     nowhere near the glyph. */
+  .tile-sheen {
+    background-image: radial-gradient(
+      120% 120% at 22% 12%,
+      rgba(0, 0, 0, 0) 30%,
+      rgba(0, 0, 0, 0.3) 100%
+    );
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.26),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.14);
   }
 
   /* --- Interactive surfaces ------------------------------------------

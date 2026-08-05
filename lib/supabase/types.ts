@@ -874,6 +874,7 @@ export type Database = {
           billing_cycle: Database["public"]["Enums"]["billing_cycle"]
           brand: string | null
           category_id: string | null
+          color: string | null
           created_at: string
           currency: string
           id: string
@@ -890,6 +891,7 @@ export type Database = {
           billing_cycle?: Database["public"]["Enums"]["billing_cycle"]
           brand?: string | null
           category_id?: string | null
+          color?: string | null
           created_at?: string
           currency: string
           id?: string
@@ -906,6 +908,7 @@ export type Database = {
           billing_cycle?: Database["public"]["Enums"]["billing_cycle"]
           brand?: string | null
           category_id?: string | null
+          color?: string | null
           created_at?: string
           currency?: string
           id?: string

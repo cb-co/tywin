@@ -6,7 +6,11 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { BILLING_CYCLES, CYCLE_LABEL, type BillingCycle } from "@/lib/subscriptions/cycle";
-import { createSubscription, updateSubscription } from "@/app/(app)/subscriptions/actions";
+import {
+  createSubscription,
+  resolveSubscriptionColor,
+  updateSubscription,
+} from "@/app/(app)/subscriptions/actions";
 import type { QuickAddData } from "@/lib/transactions/queries";
 import type { SubscriptionWithRefs } from "@/lib/subscriptions/queries";
 import { useUiSound } from "@/components/sound/sound-provider";
@@ -127,6 +131,21 @@ export function SubscriptionFormDialog({
       playSuccess();
       setOpen(false);
       router.refresh();
+
+      /* The brand colour is resolved AFTER the save, deliberately not awaited.
+         The model answers in ~600ms warm but can take over a minute cold, and
+         nobody should sit in front of a spinner for a guess — so the dialog is
+         already closed and the subscription already listed by the time this
+         starts. It lands on its own and refreshes again; if the person navigates
+         away first, the request dies and the next save simply tries again.
+
+         `void` rather than `await` is load-bearing: awaiting it inside the
+         transition would put the whole cold call back on the save's critical
+         path, which is the bug this exists to avoid. */
+      if (result.id)
+        void resolveSubscriptionColor(result.id).then(({ resolved }) => {
+          if (resolved) router.refresh();
+        });
     });
   }
 

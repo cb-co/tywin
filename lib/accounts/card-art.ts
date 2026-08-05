@@ -1,3 +1,5 @@
+import { HEX6 } from "@/lib/color";
+
 /**
  * The fallback card accent: a deep, unsaturated finance blue.
  *
@@ -13,8 +15,11 @@
  */
 export const DEFAULT_CARD_ACCENT = "#1B4B8F";
 
-/** A 6-digit hex — the only shape the card-face colour maths parses correctly. */
-export const HEX6 = /^#[0-9a-f]{6}$/i;
+/* Re-exported from the colour module, which is where it moved once
+   subscriptions needed the same guard. Kept exported here so the card-art
+   callers can go on importing their validator from the module that owns their
+   colour. */
+export { HEX6 };
 
 /** True when a stored accent is present and usable as-is. */
 export function hasCardAccent(color: string | null | undefined): boolean {

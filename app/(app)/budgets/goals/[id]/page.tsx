@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { getGoalDetail } from "@/lib/goals/queries";
 import { formatMoney } from "@/lib/format";
-import { GoalBar, PaceLine } from "@/components/goals/goal-progress";
+import { GoalBar, PaceSummary } from "@/components/goals/goal-progress";
 import { GoalBalanceChart } from "@/components/goals/goal-balance-chart-lazy";
 import { ContributionsList } from "@/components/goals/contributions-list";
 import { Card } from "@/components/ui/card";
@@ -48,9 +48,7 @@ export default async function GoalDetailPage({
           </p>
         </div>
         <GoalBar goal={goal} />
-        <p className="text-sm text-muted-foreground">
-          <PaceLine pace={goal.pace} currency={baseCurrency} />
-        </p>
+        <PaceSummary pace={goal.pace} currency={baseCurrency} className="text-sm" />
       </div>
 
       <Card className="p-6">

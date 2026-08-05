@@ -54,13 +54,21 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
                   this calc too, so notched phones get the same buffer on
                   top of their inset.
 
+                  From md up the nav pill and the FAB are gone, so nothing has
+                  to be cleared — but 24px left the last card sitting on the
+                  window edge, which reads as content cut off rather than
+                  content ended. It steps up to 48px at md and 64px at lg,
+                  and keeps the safe-area inset in the calc for tablets in
+                  landscape, where the home indicator eats the bottom edge on
+                  a layout with no nav pill to absorb it.
+
                   Note for future edits: don't spell out either offset's
                   Tailwind arbitrary-value syntax verbatim in this comment —
                   Tailwind's content scanner matches class-like tokens
                   anywhere in the file text, including comments, and will
                   emit a dead CSS rule for whatever you write. Describe the
                   values in prose instead. */}
-              <main className="flex-1 p-4 pb-[calc(9.5rem+env(safe-area-inset-bottom))] md:p-6 md:pb-6">
+              <main className="flex-1 p-4 pb-[calc(9.5rem+env(safe-area-inset-bottom))] md:p-6 md:pb-[calc(3rem+env(safe-area-inset-bottom))] lg:pb-[calc(4rem+env(safe-area-inset-bottom))]">
                 {children}
               </main>
             </div>

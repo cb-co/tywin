@@ -340,7 +340,7 @@
     "deleting": "Eliminando…",
     "paceShortfall": "{amount} tomado de vuelta",
     "paceComplete": "Objetivo alcanzado",
-    "paceOverdue": "Pasó su fecha objetivo",
+    "paceOverdue": "Vencido",
     "paceNone": "Aún sin ritmo",
     "paceNeedVsActual": "Necesitas {required}/mes · ahorras {actual}/mes",
     "paceOnTrack": "Al día",

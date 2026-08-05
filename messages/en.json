@@ -340,7 +340,7 @@
     "deleting": "Deleting…",
     "paceShortfall": "{amount} borrowed back",
     "paceComplete": "Target reached",
-    "paceOverdue": "Past its target date",
+    "paceOverdue": "Overdue",
     "paceNone": "No pace yet",
     "paceNeedVsActual": "Need {required}/mo · saving {actual}/mo",
     "paceOnTrack": "On track",

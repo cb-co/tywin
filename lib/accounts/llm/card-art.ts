@@ -2,7 +2,8 @@ import { z } from "zod";
 import { generateObject } from "ai";
 import { google } from "@ai-sdk/google";
 import { CARD_NETWORKS, type CardNetwork } from "@/lib/accounts/network";
-import { HEX6 } from "@/lib/accounts/card-art";
+import { normalizeHex6 } from "@/lib/color";
+import { BLOCKING_INFERENCE_BUDGET_MS, inferenceSignal } from "@/lib/llm/budget";
 
 /**
  * Card art inferred from the name a person gave their card.
@@ -21,7 +22,7 @@ export const CardArtSchema = z.object({
   accent: z
     .string()
     .describe(
-      "The dominant colour of the physical card, as a 6-digit hex like #1B4B8F.",
+      "The dominant colour of the physical card as a 6-digit hex, including the leading #, like #1B4B8F.",
     ),
   network: z
     .enum(CARD_NETWORKS)
@@ -35,7 +36,7 @@ const SYSTEM_PROMPT = `You identify consumer credit and debit cards from the nam
 
 Return two things.
 
-1. accent — the dominant colour of the PHYSICAL card, as a 6-digit hex.
+1. accent — the dominant colour of the PHYSICAL card, as a 6-digit hex INCLUDING the leading # (for example #1B4B8F, never 1B4B8F).
    - If you recognise the specific card product, use that card's real colour. An Amex Platinum is silver-grey, an Amex Gold is warm gold, a Chase Sapphire Reserve is deep blue.
    - If you recognise only the issuing bank, use that bank's primary brand colour.
    - If you recognise neither, choose a plausible, sober card colour. Never invent a wildly bright or novelty colour for a card you do not recognise.
@@ -58,6 +59,11 @@ Judge only from the name. Do not ask questions, do not explain.`;
  * card has no accent yet (see the callers in accounts/actions.ts). A card whose
  * name the model cannot place stays unresolved and simply gets the default,
  * rather than being written a wrong colour that nothing would ever revisit.
+ *
+ * A call that overruns BLOCKING_INFERENCE_BUDGET_MS aborts and is treated
+ * exactly like a card the model could not place. This still runs INSIDE the
+ * account save, so the budget is set to protect the save rather than to win the
+ * answer — see lib/llm/budget for why no single number does both.
  */
 export async function inferCardArt(name: string): Promise<CardArt | null> {
   const trimmed = name.trim();
@@ -69,13 +75,16 @@ export async function inferCardArt(name: string): Promise<CardArt | null> {
       schema: CardArtSchema,
       system: SYSTEM_PROMPT,
       prompt: trimmed,
+      abortSignal: inferenceSignal(BLOCKING_INFERENCE_BUDGET_MS),
     });
 
-    // The schema constrains the shape, not the contents: `accent` is a string,
-    // and the model can still hand back "navy" or "#FFF". Anything that would
-    // not survive the colour maths is dropped rather than stored.
-    const accent = object.accent?.trim() ?? "";
-    if (!HEX6.test(accent)) return null;
+    /* The schema constrains the shape, not the contents: `accent` is a string,
+       and the model can still hand back "navy" or "#FFF". Normalised before it
+       is judged, because the one thing it gets wrong most often is the leading
+       `#` — see normalizeHex6. Anything that still would not survive the colour
+       maths is dropped rather than stored. */
+    const accent = normalizeHex6(object.accent);
+    if (!accent) return null;
 
     return { accent, network: object.network };
   } catch {

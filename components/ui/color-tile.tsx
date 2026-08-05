@@ -1,10 +1,20 @@
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+/**
+ * Avatars in this app are circles, and `rounded-full` says so.
+ *
+ * These read as circles today by ACCIDENT, not by intent: they asked for
+ * `rounded-xl`/`rounded-2xl`, which resolve to 27px and 34px against boxes of
+ * 36px and 44px, and the browser silently clamps a radius past half the box.
+ * The circle was a side effect of `--radius` being 1.25rem. Dropping that token
+ * — a plausible thing to do to a design system — would have turned every avatar
+ * in the app into a squircle with nothing in the code having changed.
+ */
 const SIZES = {
-  sm: { box: "size-9 rounded-xl", glyph: "text-sm", icon: "size-[18px]" },
-  md: { box: "size-11 rounded-2xl", glyph: "text-lg", icon: "size-5" },
-  lg: { box: "size-14 rounded-2xl", glyph: "text-2xl", icon: "size-6" },
+  sm: { box: "size-9 rounded-full", glyph: "text-sm", icon: "size-[18px]" },
+  md: { box: "size-11 rounded-full", glyph: "text-lg", icon: "size-5" },
+  lg: { box: "size-14 rounded-full", glyph: "text-2xl", icon: "size-6" },
 } as const;
 
 /**
@@ -17,6 +27,10 @@ const SIZES = {
  *
  * Fallback order is emoji, then supplied icon, then the first letter of the
  * name, then nothing. Glyphs are white: every shipped swatch clears 3:1 there.
+ *
+ * `.tile-sheen` gives the fill its depth. It only ever darkens, and only away
+ * from the centre, which is what keeps that 3:1 intact — see the utility in
+ * globals.css for why an additive highlight is not available here.
  */
 export function ColorTile({
   color,
@@ -38,7 +52,7 @@ export function ColorTile({
     <span
       aria-hidden
       className={cn(
-        "flex shrink-0 items-center justify-center font-semibold text-white",
+        "tile-sheen flex shrink-0 items-center justify-center font-semibold text-white",
         s.box,
         className,
       )}

@@ -12,7 +12,9 @@ import {
 } from "@/app/(app)/subscriptions/actions";
 import { CYCLE_LABEL, nextChargeDate, monthlyEquivalent, type BillingCycle } from "@/lib/subscriptions/cycle";
 import { chargeCrossesCurrency } from "@/lib/subscriptions/charge";
+import { hasBrandColor } from "@/lib/subscriptions/brand-color";
 import { convertToBase } from "@/lib/fx";
+import { readableForeground } from "@/lib/color";
 import { formatMoney } from "@/lib/format";
 import type { SubscriptionWithRefs } from "@/lib/subscriptions/queries";
 import type { QuickAddData } from "@/lib/transactions/queries";
@@ -20,6 +22,7 @@ import { useUiSound } from "@/components/sound/sound-provider";
 import { SubscriptionFormDialog } from "./subscription-form-dialog";
 import { RecordChargeDialog } from "./record-charge-dialog";
 import { Button } from "@/components/ui/button";
+import { MoneyDisplay } from "@/components/ui/money-display";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/empty-state";
@@ -123,8 +126,8 @@ export function SubscriptionsView({
       <div className="flex flex-col gap-4 rounded-xl border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs text-muted-foreground">{t("monthlyRecurring")}</p>
-          <p className="figure text-3xl leading-none text-foreground">
-            {formatMoney(monthlyTotal, data.baseCurrency)}
+          <p className="mt-1 leading-none text-foreground">
+            <MoneyDisplay amount={monthlyTotal} currency={data.baseCurrency} size="feature" />
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -168,9 +171,7 @@ export function SubscriptionsView({
             <Card key={sub.id} className={cn("gap-0 p-5", !sub.is_active && "opacity-60")}>
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="flex size-10 items-center justify-center rounded-lg bg-accent text-sm font-semibold text-accent-foreground">
-                    {sub.name[0]?.toUpperCase()}
-                  </span>
+                  <BrandMark name={sub.name} color={sub.color} />
                   <div className="min-w-0">
                     <p className="truncate font-medium text-foreground">{sub.name}</p>
                     <p className="text-xs text-muted-foreground">
@@ -184,8 +185,12 @@ export function SubscriptionsView({
                   aria-label={t("activeAria")}
                 />
               </div>
-              <p className="figure mt-4 text-2xl leading-none text-foreground">
-                {formatMoney(sub.amount, sub.currency)}
+              {/* Same treatment as a budget card's figure: MoneyDisplay's
+                  `stat` size, cents de-emphasised, and mask-aware — the raw
+                  formatMoney that used to sit here kept showing real digits
+                  while figure masking was on. */}
+              <p className="mt-4 leading-none">
+                <MoneyDisplay amount={sub.amount} currency={sub.currency} size="stat" />
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {t("nextPrefix", { date: nextLabel(sub.billing_cycle as BillingCycle, sub.anchor_day) })}
@@ -197,8 +202,12 @@ export function SubscriptionsView({
                   rates={data.rates}
                   pending={pending}
                   onCharge={onAddCharge}
+                  /* Deliberately not the primary variant: with one of these per
+                     card plus the active toggle, a grid of solid black CTAs
+                     drowned out the "add subscription" button that is meant to be
+                     the one high-contrast action on the page. */
                   trigger={
-                    <Button size="sm" disabled={pending} isLoading={pending}>
+                    <Button size="sm" variant="secondary" disabled={pending} isLoading={pending}>
                       <Receipt className="size-4" />
                       {t("addCharge")}
                     </Button>
@@ -258,7 +267,7 @@ export function SubscriptionsView({
                         pending={pending}
                         onCharge={onAddCharge}
                         trigger={
-                          <Button size="sm" variant="outline" disabled={pending} isLoading={pending}>
+                          <Button size="sm" variant="secondary" disabled={pending} isLoading={pending}>
                             {t("chargeShort")}
                           </Button>
                         }
@@ -293,6 +302,53 @@ export function SubscriptionsView({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * The square mark that stands in for a service's logo: its initial, on its
+ * brand colour.
+ *
+ * The colour is inferred once from the subscription's name and stored on the row
+ * (lib/subscriptions/llm/brand-color.ts). A subscription with no colour resolved
+ * — one the model could not place, or one created before this existed — keeps
+ * the theme's neutral accent TOKEN rather than some fixed hex, because that is
+ * the only fallback that stays correct in both light and dark.
+ *
+ * The letter's colour is MEASURED from the fill, never assumed. Brand colours
+ * span the whole lightness range in a way card accents do not: Spotify green and
+ * a pale yellow both arrive through the same field, and white on the yellow one
+ * is unreadable.
+ *
+ * `.tile-sheen` is what keeps it from reading as a flat chip, and it is the same
+ * utility every ColorTile in the app uses, so the marks belong to one family
+ * rather than each being lit their own way. It only darkens, and only away from
+ * the centre — which matters more here than on a ColorTile, because this glyph
+ * can be near-black on a pale brand colour, and a treatment that lightened the
+ * middle would eat exactly that case.
+ *
+ * The RESOLVED and unresolved states carry the same sheen. Skipping it on the
+ * fallback would make an unresolved subscription look like a different kind of
+ * object rather than the same one awaiting a colour.
+ */
+function BrandMark({ name, color }: { name: string; color: string | null }) {
+  const initial = name[0]?.toUpperCase();
+  // `rounded-full`, like every other avatar. It previously said `rounded-lg` and
+  // still drew a circle, because that token is 20px against a 40px box and the
+  // browser clamps it — the shape was luck rather than intent.
+  const shared =
+    "tile-sheen flex size-10 items-center justify-center rounded-full text-sm font-semibold";
+
+  if (!hasBrandColor(color))
+    return <span className={cn(shared, "bg-accent text-accent-foreground")}>{initial}</span>;
+
+  return (
+    <span
+      className={shared}
+      style={{ backgroundColor: color!, color: readableForeground(color!) }}
+    >
+      {initial}
+    </span>
   );
 }
 

@@ -9,6 +9,43 @@
 const INK = "#14141c";
 const PAPER = "#ffffff";
 
+/**
+ * A 6-digit hex — the only shape the maths below parses correctly.
+ *
+ * Lives here rather than beside any one feature because every caller that
+ * stores an inferred colour has to validate it before the colour reaches
+ * `channels()`: a 3-digit "#FFF" parses as rgb(0, 15, 255) instead of white,
+ * silently measuring contrast against a colour nothing will ever render.
+ */
+export const HEX6 = /^#[0-9a-f]{6}$/i;
+
+/**
+ * A model's idea of "a 6-digit hex", turned into one this file can parse — or
+ * null if it cannot be.
+ *
+ * The leading `#` is the whole reason this exists. Asked for "a 6-digit hex
+ * like #D97706", Gemini returns `#D97706` for some names and a bare `D97706`
+ * for others, and it is stable per name rather than random — so a card or
+ * subscription whose name drew the bare form was rejected by HEX6 and had its
+ * colour silently discarded on EVERY attempt, for good. That looked exactly
+ * like a model that could not place the name, which is what made it hard to
+ * see: the gate re-ran, got the same bare hex, and dropped it again.
+ *
+ * Tightening the prompt was not enough on its own. A prompt is a request, not a
+ * guarantee, and a colour is far too small a thing to lose to one character —
+ * so the value is normalised here and validated after, rather than being held
+ * to a shape the model was merely asked for.
+ *
+ * Everything else still has to pass HEX6 unchanged. `navy` is not a colour this
+ * can use, and `#FFF` is worse than useless: it parses as rgb(0, 15, 255)
+ * rather than white, so it would render and measure as a colour nobody chose.
+ */
+export function normalizeHex6(value: string | null | undefined): string | null {
+  const trimmed = value?.trim() ?? "";
+  const hashed = trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
+  return HEX6.test(hashed) ? hashed : null;
+}
+
 function channels(hex: string): [number, number, number] {
   const h = hex.replace("#", "");
   const n = parseInt(h, 16);

@@ -8,12 +8,14 @@ import { useTranslations } from "next-intl";
 import { useUiSound } from "@/components/sound/sound-provider";
 import { Plus, Trash2, Pencil, PiggyBank } from "lucide-react";
 import { deleteGoal } from "@/app/(app)/budgets/goal-actions";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatPercent } from "@/lib/format";
 import type { GoalCardRow, GoalsOverview } from "@/lib/goals/queries";
-import { GoalBar, PaceLine } from "./goal-progress";
+import { GoalBar, PaceSummary, goalProgressPct } from "./goal-progress";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ColorTile } from "@/components/ui/color-tile";
+import { MoneyDisplay } from "@/components/ui/money-display";
+import { StatPill } from "@/components/ui/stat-pill";
 import {
   Dialog,
   DialogContent,
@@ -131,11 +133,32 @@ export function GoalGrid({ overview }: { overview: GoalsOverview }) {
                 </div>
               </Link>
 
+              {/* The same body a budget card has: the figure, its share, then
+                  the bar — figure left, percentage right, one line that never
+                  wraps. The share stays neutral in tone, because being 3% of
+                  the way to a house is not itself good or bad news.
+
+                  The verdict rides below the bar instead. It is a phrase, not
+                  a percentage, so up here it would either overflow the row or
+                  wrap it, and down there it sits with the arithmetic that
+                  explains it. */}
+              <div className="mt-3 flex items-end justify-between gap-2">
+                <MoneyDisplay amount={goal.saved} currency={baseCurrency} size="stat" />
+                <StatPill className="shrink-0">{formatPercent(goalProgressPct(goal))}</StatPill>
+              </div>
+
               <GoalBar goal={goal} />
 
-              <p className="mt-2 min-h-8 text-xs text-muted-foreground">
-                <PaceLine pace={goal.pace} currency={baseCurrency} />
-              </p>
+              {/* The arithmetic and the verdict share this line — text taking
+                  whatever the chip leaves and wrapping inside it, chip pinned
+                  right. The min-height is what keeps the action rows level
+                  across a row of cards whose pace lines run to one line, two,
+                  or none at all. */}
+              <PaceSummary
+                pace={goal.pace}
+                currency={baseCurrency}
+                className="mt-2 min-h-8 text-xs"
+              />
 
               <div className="mt-3 flex items-center gap-1">
                 <ContributeDialog
