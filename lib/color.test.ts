@@ -68,6 +68,36 @@ describe("gradientFrom", () => {
     expect(g.toLowerCase()).toContain("#4361f0");
   });
 
+  /* The invariant that makes every contrast test below mean anything.
+   *
+   * `cardForeground` does not read the CSS — it measures against SHEEN_PEAK, a
+   * constant asserting how bright the two light layers get where they cross. So
+   * a gradient brighter than that constant claims is the one change that passes
+   * the whole suite and fails on a real card: the text would be checked against
+   * a face lighter than the one drawn. This ties the constant back to the alphas
+   * it is describing, so raising one without the other fails here. */
+  it("never composites brighter than the peak contrast is measured against", () => {
+    // Recovered from a black accent, where composite(#000000, 255, PEAK) is
+    // simply PEAK in each channel — no need to export the constant to read it.
+    const [, , sheenedNear] = cardSurfaces("#000000");
+    const peak = parseInt(sheenedNear.slice(1, 3), 16) / 255;
+
+    /* Per LAYER, not per stop. Stops inside one gradient do not stack — only
+       the two light layers stack on each other — so the worst case is the
+       brightest stop of the specular meeting the brightest of the ambient. */
+    const css = gradientFrom("#101018");
+    const ambientAt = css.indexOf("radial-gradient(");
+    const rampAt = css.indexOf("linear-gradient(135deg");
+    const peakOf = (layer: string) =>
+      Math.max(...[...layer.matchAll(/rgba\([^)]*?,\s*([\d.]+)\)/g)].map((m) => Number(m[1])));
+
+    const specular = peakOf(css.slice(0, ambientAt));
+    const ambient = peakOf(css.slice(ambientAt, rampAt));
+    const composited = 1 - (1 - specular) * (1 - ambient);
+
+    expect(composited).toBeLessThanOrEqual(peak + 0.001);
+  });
+
   // The highlight is measured against the fill, not assumed white — a white
   // sheen on a pale card is invisible.
   it("flips the sheen to a shadow on a pale fill", () => {

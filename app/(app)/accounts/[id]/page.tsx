@@ -150,8 +150,12 @@ export default async function AccountDetailPage({
 
       {/* Not wrapped in a Card: the face carries its own shadow and radius, and
           putting it on a panel reads as a picture OF a card rather than as the
-          card. It caps its own width, so it sits left rather than stretching. */}
-      {face ? <PaymentCard {...face} className="mx-0" /> : null}
+          card. It caps its own width, so it needs told where to sit in what is
+          left over — centred on a phone, where a 22rem card in a narrow column
+          otherwise hangs off-axis against centred content, and flush left from
+          `sm` up, where the page is wide enough that centring would strand it
+          in the middle of a mostly empty row. */}
+      {face ? <PaymentCard {...face} className="mx-auto sm:mx-0" /> : null}
 
       {/* Hero figure. The clamp() font-size is text-4xl on anything ≥ ~424px
           but scales down on narrow phones so 8-9 digit balances (large ARS
