@@ -30,17 +30,24 @@ import { cn } from "@/lib/utils";
  * which is a fine trade on a personal finance app and would not be on a checkout
  * page.
  *
- * SIZING stays per-network, and the reason changed. Simple Icons draws each mark
- * to fill its own 24×24 box, so one box size does NOT give one optical size:
- * Visa is a wide short wordmark filling about a third of its box's height,
- * Mastercard's circles about two thirds, and Amex is a solid plate edge to edge
- * — and a filled shape reads far heavier than an outline at the same size. The
- * boxes below are set so the ARTWORK inside them lands on the heights the
- * hand-cropped logos were tuned to by eye:
+ * Every viewBox is CROPPED to its own artwork, measured off the rendered paths
+ * rather than guessed. That is not a sizing nicety, it is what makes the mark
+ * line up with the contactless dots across the top of the card: Simple Icons
+ * centres each mark in a 24×24 grid, and Visa's wordmark only fills y 8.1–15.9
+ * of it. Rendered on the full grid the ELEMENT starts at the dots and the
+ * lettering starts 20px lower, which is exactly the "logo pushed down" it looked
+ * like. Cropped, the element IS the wordmark, and `items-start` aligns the thing
+ * you can actually see.
  *
- *   Visa       3.7rem  box → 18.4px of wordmark
- *   Mastercard 2.31rem box → 23.0px of circles
- *   Amex       1.75rem box → 27.7px of plate
+ * Cropping also makes these heights directly comparable — but they are still not
+ * EQUAL, because equal heights look wrong. Visa is a wide short wordmark;
+ * Mastercard a compact pair of circles; Amex a filled plate, and a filled shape
+ * reads heavier than an outline at the same size. Matched optically, at the
+ * values the hand-cropped vendor logos were tuned to by eye:
+ *
+ *   Visa       18.4px  (1.15rem)
+ *   Mastercard 23.0px  (1.44rem)
+ *   Amex       27.7px  (1.73rem)
  *
  * Fixed rather than relative to the card: PaymentCard caps its own width, so the
  * face is near enough the same size everywhere and a mark that tracked it would
@@ -49,10 +56,10 @@ import { cn } from "@/lib/utils";
  * When the network can't be inferred, nothing renders. A placeholder chip would
  * imply a network the card doesn't have.
  */
-const MARKS: Record<CardNetwork, { path: string; box: string }> = {
-  visa: { path: siVisa.path, box: "size-[3.7rem]" },
-  mastercard: { path: siMastercard.path, box: "size-[2.31rem]" },
-  amex: { path: siAmericanexpress.path, box: "size-[1.75rem]" },
+const MARKS: Record<CardNetwork, { path: string; viewBox: string; height: string }> = {
+  visa: { path: siVisa.path, viewBox: "0 8.125 24 7.75", height: "h-[1.15rem]" },
+  mastercard: { path: siMastercard.path, viewBox: "0 4.575 24 14.85", height: "h-[1.44rem]" },
+  amex: { path: siAmericanexpress.path, viewBox: "0 0 24 24", height: "h-[1.73rem]" },
 };
 
 export function NetworkMark({
@@ -70,7 +77,14 @@ export function NetworkMark({
   className?: string;
 }) {
   if (!network) return null;
-  const { path, box } = MARKS[network];
+  const { path, viewBox, height } = MARKS[network];
 
-  return <BrandGlyph path={path} className={cn(box, className)} style={{ color: foreground }} />;
+  return (
+    <BrandGlyph
+      path={path}
+      viewBox={viewBox}
+      className={cn(height, "w-auto", className)}
+      style={{ color: foreground }}
+    />
+  );
 }

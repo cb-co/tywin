@@ -19,15 +19,26 @@ export function BrandGlyph({
   path,
   className,
   style,
+  viewBox = "0 0 24 24",
 }: {
   path: string;
   className?: string;
   /** For callers that set the colour from a measured value rather than a class. */
   style?: React.CSSProperties;
+  /**
+   * Cropped to the artwork by callers that need the ELEMENT to be the mark.
+   *
+   * The default is Simple Icons' own 24×24 grid, which is right when the glyph
+   * is centred inside something — a subscription's disc — because the padding
+   * around a mark is what centres it. It is wrong when the mark has to line up
+   * with a neighbour: a wordmark like Visa fills a third of its box's height and
+   * floats in the middle of it, so aligning the box aligns nothing you can see.
+   */
+  viewBox?: string;
 }) {
   return (
     <svg
-      viewBox="0 0 24 24"
+      viewBox={viewBox}
       fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"

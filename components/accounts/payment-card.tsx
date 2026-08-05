@@ -134,7 +134,17 @@ export function PaymentCard({
       </div>
 
       <div className="relative space-y-1.5">
-        <p className="truncate text-[0.95rem] leading-none">{holder}</p>
+        {/* Uppercase and tracked out, because that is what embossing IS — the
+            machine that presses a name into a card has one case. A mixed-case
+            "Robert" reads as a text field that happened to land on a picture of
+            a card; the same name in caps reads as part of the object. The letter
+            spacing is small but load-bearing: real embossing is monospaced-ish
+            and set wide, and caps without it look shouted rather than pressed.
+
+            Done in CSS rather than by upper-casing the string, so the profile
+            name is untouched everywhere else and locale-aware casing is the
+            browser's problem, not ours. */}
+        <p className="truncate text-[0.95rem] uppercase leading-none tracking-[0.07em]">{holder}</p>
         <CardNumber last4={last4} />
       </div>
     </div>
