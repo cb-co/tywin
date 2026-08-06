@@ -145,6 +145,8 @@ export const scotiaAmex: StatementParser = {
         avgDailyBalancePriorCents: o?.footer.avgPrior ?? null,
         costOfCarryCents: o?.footer.carry ?? null,
         costOfCarryPriorCents: o?.footer.carryPrior ?? null,
+        // No cashback summary field in this layout — see popular-visa.
+        cashbackCents: null,
         lines: sectionLines,
       });
     }

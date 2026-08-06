@@ -190,6 +190,7 @@ export default async function HelpPage() {
                 <li>{t("accountPageFace")}</li>
                 <li>{t("accountPageBalance")}</li>
                 <li>{t("accountPageUtilization")}</li>
+                <li>{t("accountPageCashback")}</li>
                 <li>{t("accountPageAmortization")}</li>
                 <li>{t("accountPageActivity")}</li>
                 <li>{t("accountPageActions")}</li>
@@ -312,6 +313,7 @@ export default async function HelpPage() {
               <li>{t("insightsCashflow")}</li>
               <li>{t("insightsBudget")}</li>
               <li>{t("insightsCarry")}</li>
+              <li>{t("insightsCashback")}</li>
             </ul>
             <InsightsMock
               label={t("insightsMockLabel")}

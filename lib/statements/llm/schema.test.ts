@@ -25,6 +25,7 @@ const VALID = {
       costOfCarryPrior: "0.00",
       totalDebits: null,
       totalCredits: null,
+      totalCashback: "328.00",
       lines: [
         {
           madeOn: "2026-05-28",

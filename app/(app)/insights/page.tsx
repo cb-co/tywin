@@ -3,7 +3,12 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getTranslations, getLocale } from "next-intl/server";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
-import { getInsights, getCostOfCarry, getCardPayments } from "@/lib/insights/queries";
+import {
+  getInsights,
+  getCostOfCarry,
+  getCardPayments,
+  getCashbackByCard,
+} from "@/lib/insights/queries";
 import { getNetWorthHistory } from "@/lib/insights/net-worth-history";
 import { getGoalsOverview } from "@/lib/goals/queries";
 import { formatMoney, formatDate } from "@/lib/format";
@@ -81,16 +86,21 @@ function Section({
  * extra height opens up between them instead of leaving the card short. Reads
  * like a receipt, which is what it is.
  */
-function Tally({ rows, total }: { rows: React.ReactNode; total: React.ReactNode }) {
+function Tally({ rows, total }: { rows: React.ReactNode; total?: React.ReactNode }) {
   return (
     <div className="flex flex-1 flex-col">
       {/* `pb-4` rather than a margin on the total: `mt-auto` collapses to zero
           whenever the card has no spare height, and then the rule sits flush
           against the last row. The padding guarantees the gap either way. */}
       <div className="space-y-3 pb-4">{rows}</div>
-      <div className="mt-auto flex items-baseline justify-between border-t pt-3 text-sm font-medium">
-        {total}
-      </div>
+      {/* A tally can legitimately have nothing to close with: cashback is held
+          per currency and never converted, so there is no one figure to sum to.
+          Omitting the rule beats drawing an empty one. */}
+      {total ? (
+        <div className="mt-auto flex items-baseline justify-between border-t pt-3 text-sm font-medium">
+          {total}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -102,12 +112,13 @@ export default async function InsightsPage({
 }) {
   const { month: monthParam } = await searchParams;
   const month = normalizeMonth(monthParam);
-  const [insights, carry, cardPayments, netWorth, goals] = await Promise.all([
+  const [insights, carry, cardPayments, netWorth, goals, cashback] = await Promise.all([
     getInsights(month),
     getCostOfCarry(),
     getCardPayments(month),
     getNetWorthHistory(),
     getGoalsOverview(),
+    getCashbackByCard(),
   ]);
   const cur = insights.baseCurrency;
   const t = await getTranslations("Insights");
@@ -270,6 +281,32 @@ export default async function InsightsPage({
               />
             ) : (
               <p className="py-8 text-center text-sm text-muted-foreground">{t("costOfCarryEmpty")}</p>
+            )}
+          </ChartCard>
+
+          {/* The other side of the same ledger as cost of carry: what the card
+              charges you to carry a balance, and what it pays you back for
+              spending. Each row stays in its own card's currency — see
+              getCashbackByCard — so there is no closing total. */}
+          {/* String year — a numeric ICU argument goes through Intl.NumberFormat
+              and would render "2,026". */}
+          <ChartCard title={t("cashbackTitle", { year: String(cashback.year) })}>
+            {cashback.lines.length > 0 ? (
+              <Tally
+                rows={cashback.lines.map((l) => (
+                  <div key={l.accountId} className="flex items-baseline justify-between gap-3 text-sm">
+                    <div className="min-w-0">
+                      <p className="truncate text-foreground">{l.name}</p>
+                      <p className="text-xs text-muted-foreground">{l.currency}</p>
+                    </div>
+                    <span className="shrink-0 tabular-nums text-foreground">
+                      {formatMoney(l.total, l.currency)}
+                    </span>
+                  </div>
+                ))}
+              />
+            ) : (
+              <p className="py-8 text-center text-sm text-muted-foreground">{t("cashbackEmpty")}</p>
             )}
           </ChartCard>
         </Section>

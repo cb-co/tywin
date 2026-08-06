@@ -115,6 +115,10 @@ export const popularVisa: StatementParser = {
             /Inter[eé]s si Opta Por Financiar los Consumos del Mes\s+(-?[\d,]+\.\d{2})/, text),
           costOfCarryPriorCents: money(
             /Inter[eé]s por Financiamiento del Capital Pendiente de Meses Anteriores\s+(-?[\d,]+\.\d{2})/, text),
+          // This layout prints no cashback summary field, and telling a reward
+          // apart from a merchant refund among the credit lines is a judgement
+          // the LLM path is the one making. Left unreported rather than guessed.
+          cashbackCents: null,
           lines: parsedLines,
         },
       ],

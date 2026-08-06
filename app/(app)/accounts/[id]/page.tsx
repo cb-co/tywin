@@ -11,6 +11,7 @@ import {
   getCardGroupSiblings,
 } from "@/lib/accounts/queries";
 import { resolveEffectiveBonus, getWelcomeBonusSpend } from "@/lib/accounts/welcome-bonus";
+import { yearCashback, hasReportedCashback } from "@/lib/accounts/cashback";
 import { getAccountTransactions, getQuickAddData } from "@/lib/transactions/queries";
 import { AccountActivity } from "@/components/accounts/account-activity";
 import { BalanceChart } from "@/components/accounts/balance-chart-lazy";
@@ -100,6 +101,13 @@ export default async function AccountDetailPage({
     : 0;
   const bonusPct = showBonus ? (bonusSpent / effectiveBonus!.welcome_bonus_goal_amount!) * 100 : 0;
 
+  /* Cashback earned this calendar year, summed off the statements already
+   * loaded above — the anchor rows themselves, so no extra round trip and no
+   * second source of truth to disagree with the statements panel. */
+  const cashbackYear = new Date().getFullYear();
+  const cashbackTotal = isCardType ? yearCashback(statements, cashbackYear) : 0;
+  const cashbackReported = isCardType && hasReportedCashback(statements, cashbackYear);
+
   const owed = account.cardStatus?.owed ?? account.current_balance;
   const util = account.cardStatus?.utilization_pct ?? null;
   const outstanding = account.loanStatus?.outstanding_balance ?? account.principal ?? 0;
@@ -124,10 +132,14 @@ export default async function AccountDetailPage({
 
       <div className="flex flex-wrap items-start justify-between gap-4 border-b pb-5">
         <div className="flex items-center gap-3">
-          {/* The tile stands down where a face is drawn below — two portraits of
-              the same object, one of them generic, and the generic one wins the
-              eye by sitting first. Non-card accounts keep it. */}
-          {face ? null : <ColorTile color={account.color} icon={Icon} size="md" />}
+          {/* Every account is titled the same way: tile, then name. The tile
+              used to stand down on cards, to avoid competing with the face
+              drawn directly beneath it — but the face now lives inside the
+              hero card, a panel away, so the two no longer read as duplicate
+              portraits of the same object stacked on top of each other. The
+              tile is the account's identity in the header row (it is what the
+              accounts grid uses); the face is the physical card. */}
+          <ColorTile color={account.color} icon={Icon} size="md" />
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               {account.name}
@@ -148,95 +160,141 @@ export default async function AccountDetailPage({
         />
       </div>
 
-      {/* Not wrapped in a Card: the face carries its own shadow and radius, and
-          putting it on a panel reads as a picture OF a card rather than as the
-          card. It caps its own width, so it needs told where to sit in what is
-          left over: centred, at every width. The page is a centred 4xl column
-          and the face is the one object in it that doesn't fill the measure —
-          hanging it off the left edge made it read as stray content rather
-          than as the subject of the page. */}
-      {face ? <PaymentCard {...face} className="mx-auto" /> : null}
-
       {/* Hero figure. The clamp() font-size is text-4xl on anything ≥ ~424px
           but scales down on narrow phones so 8-9 digit balances (large ARS
-          statements) don't get clipped by the card's overflow-hidden. */}
+          statements) don't get clipped by the card's overflow-hidden.
+
+          Two columns, face then figures. The face used to sit alone above this
+          panel, which left it orphaned — a picture with nothing to do, while
+          the panel that carried every number about the card showed no sign of
+          which card it was. Pairing them makes one object: this card, these
+          balances.
+
+          NEITHER column shrinks. The face is pinned at its natural 22rem
+          (max-w-full only so a phone narrower than that clamps it instead of
+          overflowing), and the figures column holds a floor of the SAME 22rem
+          wherever a face is drawn — two equal halves, so the panel splits down
+          the middle instead of the figures crowding up against the card. With
+          no face there is no width to match, and the floor drops to 16rem.
+          When the two can no longer both fit, flex-wrap drops the figures
+          beneath the face rather than squeezing either — a squeezed face stops
+          reading as a card, and squeezed figures wrap mid-number.
+
+          The floor is min(22rem,100%), not a bare 22rem: min-width beats
+          max-width in the cascade, so a flat floor wider than a small phone's
+          viewport would push the panel into a horizontal scroll that nothing
+          downstream could clamp. */}
       <Card className="p-7">
-        {isCardType ? (
-          <>
-            <p className="text-sm font-medium text-muted-foreground">{t("balanceOwed")}</p>
-            <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] font-semibold leading-none text-foreground">
-              {formatMoney(owed, currency)}
-            </p>
-            {statements[0] ? (
-              <p className="mt-1 text-xs text-muted-foreground">
-                {t("anchoredToStatement", { date: formatDate(statements[0].period_end, locale) })}
-              </p>
-            ) : null}
-            {util !== null ? (
-              <div className="mt-4 max-w-sm space-y-2">
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{t("utilization")}</span>
-                  <span>{formatPercent(util)}</span>
-                </div>
-                <Progress value={Math.min(Math.max(util, 0), 100)} />
-              </div>
-            ) : null}
-            {showBonus ? (
-              <div className="mt-4 max-w-sm space-y-2">
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{t("welcomeBonusProgress")}</span>
-                  <span>{formatPercent(bonusPct)}</span>
-                </div>
-                <Progress value={Math.min(Math.max(bonusPct, 0), 100)} />
-                <p className="text-xs text-muted-foreground">
-                  {t("welcomeBonusDetail", {
-                    spent: formatMoney(bonusSpent, effectiveBonus!.welcome_bonus_goal_currency!),
-                    goal: formatMoney(effectiveBonus!.welcome_bonus_goal_amount!, effectiveBonus!.welcome_bonus_goal_currency!),
-                    date: formatDate(effectiveBonus!.welcome_bonus_due_date!, locale),
+        <div className="flex flex-wrap items-start gap-8">
+          {face ? <PaymentCard {...face} className="w-[22rem] max-w-full shrink-0" /> : null}
+          <div className={`flex-1 ${face ? "min-w-[min(22rem,100%)]" : "min-w-[16rem]"}`}>
+            {isCardType ? (
+              <>
+                <p className="text-sm font-medium text-muted-foreground">{t("balanceOwed")}</p>
+                <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] font-semibold leading-none text-foreground">
+                  {formatMoney(owed, currency)}
+                </p>
+                {statements[0] ? (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {t("anchoredToStatement", { date: formatDate(statements[0].period_end, locale) })}
+                  </p>
+                ) : null}
+                {/* No max-w-sm on the card's meters, unlike the loan's below.
+                    The cap was sized for a hero that ran the panel's full
+                    52rem, where a bar spanning the whole measure would have
+                    looked like a loading indicator. The column is ~28rem now
+                    that the face sits beside it, already close to that cap, so
+                    the only thing the cap still does is strand ~4rem at the
+                    right of every meter. */}
+                {util !== null ? (
+                  <div className="mt-4 space-y-2">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>{t("utilization")}</span>
+                      <span>{formatPercent(util)}</span>
+                    </div>
+                    <Progress value={Math.min(Math.max(util, 0), 100)} />
+                  </div>
+                ) : null}
+                {showBonus ? (
+                  <div className="mt-4 space-y-2">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>{t("welcomeBonusProgress")}</span>
+                      <span>{formatPercent(bonusPct)}</span>
+                    </div>
+                    <Progress value={Math.min(Math.max(bonusPct, 0), 100)} />
+                    <p className="text-xs text-muted-foreground">
+                      {t("welcomeBonusDetail", {
+                        spent: formatMoney(bonusSpent, effectiveBonus!.welcome_bonus_goal_currency!),
+                        goal: formatMoney(effectiveBonus!.welcome_bonus_goal_amount!, effectiveBonus!.welcome_bonus_goal_currency!),
+                        date: formatDate(effectiveBonus!.welcome_bonus_due_date!, locale),
+                      })}
+                    </p>
+                  </div>
+                ) : null}
+                {account.payment_due_day ? (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {t("paymentDueEachMonth", { day: formatDayOfMonth(account.payment_due_day) })}
+                  </p>
+                ) : null}
+                {/* Cashback earned this year. A line rather than a card of its own:
+                    it is one number, and it belongs to this card, so it reads best
+                    sitting with the card's other standing facts.
+
+                    Shown only once a statement has actually REPORTED a figure —
+                    statements imported before the field existed carry null, and a
+                    confident "RD$0.00 cashback" drawn from silence would be a
+                    claim the data can't support. */}
+                {cashbackReported ? (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {t.rich("cashbackThisYear", {
+                      // String, not the number: ICU formats a numeric argument
+                      // through Intl.NumberFormat, which would print "2,026".
+                      year: String(cashbackYear),
+                      amount: () => (
+                        <span className="figure font-medium text-foreground">
+                          {formatMoney(cashbackTotal, currency)}
+                        </span>
+                      ),
+                    })}
+                  </p>
+                ) : null}
+              </>
+            ) : isLoanType ? (
+              <>
+                <p className="text-sm font-medium text-muted-foreground">{t("outstandingBalance")}</p>
+                <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] font-semibold leading-none text-foreground">
+                  {formatMoney(outstanding, currency)}
+                </p>
+                {progressTerm ? (
+                  <div className="mt-4 max-w-sm space-y-2">
+                    <Progress value={Math.min(Math.max((progressPaid / progressTerm) * 100, 0), 100)} />
+                    <p className="text-sm text-muted-foreground">
+                      {t("installmentsPaidOfTerm", { paid: progressPaid, term: progressTerm })}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {t("installmentsPaidOnly", { paid: progressPaid })}
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-medium text-muted-foreground">
+                  {type === "asset" ? t("estimatedValue") : t("currentBalance")}
+                </p>
+                <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] font-semibold leading-none text-foreground">
+                  <MaskedMoney amount={account.balance ?? account.starting_balance} currency={currency} />
+                </p>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  {t.rich("derivedFromStarting", {
+                    amount: () => <MaskedMoney amount={account.starting_balance} currency={currency} />,
                   })}
                 </p>
-              </div>
-            ) : null}
-            {account.payment_due_day ? (
-              <p className="mt-3 text-sm text-muted-foreground">
-                {t("paymentDueEachMonth", { day: formatDayOfMonth(account.payment_due_day) })}
-              </p>
-            ) : null}
-          </>
-        ) : isLoanType ? (
-          <>
-            <p className="text-sm font-medium text-muted-foreground">{t("outstandingBalance")}</p>
-            <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] font-semibold leading-none text-foreground">
-              {formatMoney(outstanding, currency)}
-            </p>
-            {progressTerm ? (
-              <div className="mt-4 max-w-sm space-y-2">
-                <Progress value={Math.min(Math.max((progressPaid / progressTerm) * 100, 0), 100)} />
-                <p className="text-sm text-muted-foreground">
-                  {t("installmentsPaidOfTerm", { paid: progressPaid, term: progressTerm })}
-                </p>
-              </div>
-            ) : (
-              <p className="mt-3 text-sm text-muted-foreground">
-                {t("installmentsPaidOnly", { paid: progressPaid })}
-              </p>
+              </>
             )}
-          </>
-        ) : (
-          <>
-            <p className="text-sm font-medium text-muted-foreground">
-              {type === "asset" ? t("estimatedValue") : t("currentBalance")}
-            </p>
-            <p className="figure mt-2 text-[clamp(1.625rem,8.5vw,2.25rem)] font-semibold leading-none text-foreground">
-              <MaskedMoney amount={account.balance ?? account.starting_balance} currency={currency} />
-            </p>
-            <p className="mt-3 text-sm text-muted-foreground">
-              {t.rich("derivedFromStarting", {
-                amount: () => <MaskedMoney amount={account.starting_balance} currency={currency} />,
-              })}
-            </p>
-          </>
-        )}
+          </div>
+        </div>
       </Card>
 
       {!isCardType && !isLoanType ? (

@@ -93,6 +93,7 @@ const PARSED: ParsedStatement = {
       avgDailyBalancePriorCents: null,
       costOfCarryCents: 4000,
       costOfCarryPriorCents: null,
+      cashbackCents: 32800,
       lines: [
         {
           lineNo: 1,
@@ -131,5 +132,32 @@ describe("confirmStatementImport", () => {
     expect(result.error).toBeUndefined();
     expect(extractStatementText).not.toHaveBeenCalled();
     expect(extractWithLLM).not.toHaveBeenCalled();
+  });
+
+  it("sends the section's cashback to the import RPC as a decimal string", async () => {
+    const supabase = makeSupabaseStub();
+    (createClient as unknown as Mock).mockResolvedValue(supabase);
+    await confirmStatementImport(buildConfirmFormData());
+    const [fn, args] = supabase.rpc.mock.calls[0] as unknown as [string, { p: { sections: unknown[] } }];
+    expect(fn).toBe("import_card_statement");
+    expect(args.p.sections[0]).toMatchObject({ cashback_total: "328.00" });
+  });
+
+  it("sends an empty string when the statement reported no cashback", async () => {
+    // "" and not "0.00": the RPC nullifs it, which is what keeps "never
+    // reported" distinct from a statement that printed a zero.
+    const supabase = makeSupabaseStub();
+    (createClient as unknown as Mock).mockResolvedValue(supabase);
+    const fd = buildConfirmFormData();
+    fd.set(
+      "parsed_statement",
+      JSON.stringify({
+        ...PARSED,
+        sections: [{ ...PARSED.sections[0], cashbackCents: null }],
+      }),
+    );
+    await confirmStatementImport(fd);
+    const [, args] = supabase.rpc.mock.calls[0] as unknown as [string, { p: { sections: unknown[] } }];
+    expect(args.p.sections[0]).toMatchObject({ cashback_total: "" });
   });
 });

@@ -329,6 +329,7 @@ export type Database = {
           available_credit: number | null
           avg_daily_balance: number | null
           avg_daily_balance_prior: number | null
+          cashback_total: number | null
           cost_of_carry: number | null
           cost_of_carry_prior: number | null
           created_at: string
@@ -358,6 +359,7 @@ export type Database = {
           available_credit?: number | null
           avg_daily_balance?: number | null
           avg_daily_balance_prior?: number | null
+          cashback_total?: number | null
           cost_of_carry?: number | null
           cost_of_carry_prior?: number | null
           created_at?: string
@@ -387,6 +389,7 @@ export type Database = {
           available_credit?: number | null
           avg_daily_balance?: number | null
           avg_daily_balance_prior?: number | null
+          cashback_total?: number | null
           cost_of_carry?: number | null
           cost_of_carry_prior?: number | null
           created_at?: string

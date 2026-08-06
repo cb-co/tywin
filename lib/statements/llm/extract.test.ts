@@ -28,6 +28,7 @@ const WITH_LINES: LlmStatement = {
       costOfCarryPrior: "0.00",
       totalDebits: null,
       totalCredits: null,
+      totalCashback: "328.00",
       lines: [
         {
           madeOn: "2026-05-28", postedOn: "2026-05-26", reference: "REF1",
@@ -73,6 +74,7 @@ const LINE_LESS: LlmStatement = {
       costOfCarryPrior: null,
       totalDebits: "1,300.00",
       totalCredits: "500.00",
+      totalCashback: null,
       lines: [],
     },
   ],
@@ -114,6 +116,47 @@ describe("toParsedStatement", () => {
 
   it("passes checksums for a line-less section", () => {
     expect(validateChecksums(toParsedStatement(LINE_LESS))).toEqual([]);
+  });
+
+  describe("cashback", () => {
+    const withCashback = (totalCashback: string | null): LlmStatement => ({
+      ...LINE_LESS,
+      sections: [{ ...LINE_LESS.sections[0], totalCashback }],
+    });
+    const cents = (raw: string | null) =>
+      toParsedStatement(withCashback(raw)).sections[0].cashbackCents;
+
+    it("carries the reported figure through as cents", () => {
+      expect(cents("328.00")).toBe(32800);
+      expect(cents("1,240.50")).toBe(124050);
+    });
+
+    it("reports an unreported figure as null rather than zero", () => {
+      // Distinguishes "the statement said nothing" from "the statement said
+      // zero" — only the latter proves cashback was actually read.
+      expect(cents(null)).toBeNull();
+      expect(cents("")).toBeNull();
+      expect(cents("0.00")).toBe(0);
+    });
+
+    it("takes the magnitude when the model transcribes the source's minus sign", () => {
+      // The lines it is read off ARE negative; -328.00 is still 328.00 earned.
+      expect(cents("-328.00")).toBe(32800);
+    });
+
+    it("drops an unparseable figure instead of failing the whole statement", () => {
+      // Cashback feeds no checksum, so a bad value here must not take a
+      // statement's balances and transactions down with it.
+      expect(cents("N/A")).toBeNull();
+      expect(cents("RD$328")).toBeNull();
+    });
+
+    it("leaves the rest of the section intact when cashback is dropped", () => {
+      const parsed = toParsedStatement(withCashback("N/A"));
+      expect(parsed.sections[0].totalDebitsCents).toBe(130000);
+      expect(parsed.sections[0].closingBalanceCents).toBe(80000);
+      expect(validateChecksums(parsed)).toEqual([]);
+    });
   });
 });
 

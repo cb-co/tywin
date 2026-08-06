@@ -32,6 +32,7 @@ export const SectionSchema = z.object({
   costOfCarryPrior: z.string().nullable(),
   totalDebits: z.string().nullable(),
   totalCredits: z.string().nullable(),
+  totalCashback: z.string().nullable(),
   lines: z.array(LineSchema),
 });
 

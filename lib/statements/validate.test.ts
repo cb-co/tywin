@@ -24,6 +24,7 @@ function section(over: Partial<ParsedSection>): ParsedSection {
     avgDailyBalancePriorCents: null,
     costOfCarryCents: null,
     costOfCarryPriorCents: null,
+    cashbackCents: null,
     lines: [],
     ...over,
   };

@@ -55,6 +55,29 @@ function toLine(l: LlmLine, index: number): ParsedLine {
   };
 }
 
+/**
+ * Cashback, tolerantly.
+ *
+ * Every other money field on a section feeds the import checksum, so an
+ * unparseable value there SHOULD fail the import loudly. Cashback feeds
+ * nothing — it is a reported figure carried alongside the anchor — so a model
+ * that returns "N/A", an empty string, or a stray currency symbol must not
+ * take a whole statement's balances and transactions down with it. Drop the
+ * field and import the rest.
+ *
+ * The magnitude is forced positive: the prompt asks for the minus sign
+ * dropped, but the source lines ARE negative and a model that transcribes
+ * "-328.00" is reporting the same 328.00 of cashback, not a debt.
+ */
+function toCashbackCents(raw: string | null): number | null {
+  if (raw === null || raw.trim() === "") return null;
+  try {
+    return Math.abs(parseMoneyCents(raw));
+  } catch {
+    return null;
+  }
+}
+
 function toSection(s: LlmSection): ParsedSection {
   const lines = s.lines.map(toLine);
   const totalDebitsCents =
@@ -93,6 +116,7 @@ function toSection(s: LlmSection): ParsedSection {
       s.avgDailyBalancePrior !== null ? parseMoneyCents(s.avgDailyBalancePrior) : null,
     costOfCarryCents: s.costOfCarry !== null ? parseMoneyCents(s.costOfCarry) : null,
     costOfCarryPriorCents: s.costOfCarryPrior !== null ? parseMoneyCents(s.costOfCarryPrior) : null,
+    cashbackCents: toCashbackCents(s.totalCashback),
     lines,
   };
 }

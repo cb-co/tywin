@@ -334,6 +334,9 @@ export async function confirmStatementImport(formData: FormData): Promise<{ erro
           s.costOfCarryPriorCents === null ? "" : centsToDecimal(s.costOfCarryPriorCents),
         exchange_rate: String(rate),
         fx_fallback: fxFallback,
+        // "" (not "0.00") when the statement reported none — the RPC nullifs it,
+        // keeping "never reported" distinct from a reported zero.
+        cashback_total: s.cashbackCents === null ? "" : centsToDecimal(s.cashbackCents),
         lines: s.lines.map((l) => ({
           line_no: String(l.lineNo),
           made_on: l.madeOn,

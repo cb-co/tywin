@@ -275,3 +275,74 @@ export async function getCostOfCarry(): Promise<CostOfCarry> {
     totalBase: lines.reduce((s, l) => s + (l.costOfCarryBase ?? 0), 0),
   };
 }
+
+export type CashbackLine = {
+  accountId: string;
+  name: string;
+  currency: string;
+  total: number;
+};
+export type CashbackByCard = {
+  year: number;
+  lines: CashbackLine[];
+};
+
+/**
+ * Cashback earned per credit line, this calendar year.
+ *
+ * Summed over statements rather than accumulated onto the account, which is
+ * what makes a re-uploaded statement harmless: `card_statements` is unique on
+ * (account_id, period_end) and the import replaces the row it already has, so
+ * the same PDF twice overwrites instead of adding. See lib/accounts/cashback.ts.
+ *
+ * Totals stay in each card's OWN currency and are never converted. Cashback is
+ * money the issuer credited to that specific line — a DOP line's rebate is paid
+ * in pesos and a USD line's in dollars — so adding them through today's FX rate
+ * would invent a figure no statement ever printed. The card renders one row per
+ * line, each labelled with its own currency, and prints no grand total.
+ *
+ * Cards whose statements never reported a figure are omitted entirely: every
+ * statement imported before the column existed carries null, and a row reading
+ * "RD$0.00" would state a zero the data cannot vouch for.
+ */
+export async function getCashbackByCard(): Promise<CashbackByCard> {
+  const supabase = await createClient();
+  const year = new Date().getFullYear();
+
+  const [{ data: statements }, { data: accounts }, { data: groups }] = await Promise.all([
+    supabase
+      .from("card_statements")
+      .select("account_id,cashback_total")
+      .gte("period_end", `${year}-01-01`)
+      .lte("period_end", `${year}-12-31`)
+      .not("cashback_total", "is", null),
+    supabase
+      .from("accounts")
+      .select("id,name,currency,card_group_id")
+      .eq("type", "credit_card"),
+    supabase.from("card_groups").select("id,name"),
+  ]);
+
+  const groupName = new Map((groups ?? []).map((g) => [g.id, g.name]));
+  const totals = new Map<string, number>();
+  for (const s of statements ?? []) {
+    if (!s.account_id) continue;
+    totals.set(s.account_id, (totals.get(s.account_id) ?? 0) + Number(s.cashback_total ?? 0));
+  }
+
+  const lines: CashbackLine[] = (accounts ?? [])
+    .filter((a) => totals.has(a.id))
+    .map((a) => ({
+      accountId: a.id,
+      // Same label shape the cost-of-carry card uses, so a card group's two
+      // currency lines are told apart the same way on both.
+      name: a.card_group_id && groupName.has(a.card_group_id)
+        ? `${groupName.get(a.card_group_id)} — ${a.name}`
+        : a.name,
+      currency: a.currency,
+      total: totals.get(a.id) ?? 0,
+    }))
+    .sort((x, y) => y.total - x.total);
+
+  return { year, lines };
+}

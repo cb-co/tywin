@@ -34,6 +34,12 @@ export interface ParsedSection {
   avgDailyBalancePriorCents: number | null;
   costOfCarryCents: number | null;
   costOfCarryPriorCents: number | null;
+  /** Cashback/rewards the ISSUER credited for this period, as a positive
+   *  magnitude. Null when the statement reports none — distinct from 0, which
+   *  means the statement reported a zero. Never computed from the lines: it is
+   *  read off the statement, because "which credit is a reward" is a question
+   *  only the statement can answer (a merchant refund is also a credit). */
+  cashbackCents: number | null;
   lines: ParsedLine[];
 }
 
