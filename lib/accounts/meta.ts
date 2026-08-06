@@ -30,8 +30,8 @@ type Meta = { label: string; icon: LucideIcon; group: GroupKey; color: string };
    the same contrast bar as a category's or goal's. Distinct from `account.color`,
    which still wins whenever a row has one set. */
 export const ACCOUNT_TYPE_META: Record<AccountType, Meta> = {
-  checking: { label: "Checking", icon: Landmark, group: "cash", color: SWATCHES[0] },
-  savings: { label: "Savings", icon: PiggyBank, group: "cash", color: SWATCHES[2] },
+  checking: { label: "Checking", icon: Landmark, group: "cash", color: SWATCHES[2] },
+  savings: { label: "Savings", icon: PiggyBank, group: "cash", color: SWATCHES[0] },
   cash: { label: "Cash", icon: Wallet, group: "cash", color: SWATCHES[1] },
   investment: { label: "Investment", icon: TrendingUp, group: "cash", color: SWATCHES[11] },
   asset: { label: "Asset", icon: Home, group: "assets", color: SWATCHES[4] },

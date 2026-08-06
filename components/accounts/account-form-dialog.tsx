@@ -88,6 +88,16 @@ function blankToUndefined<T extends Record<string, unknown>>(values: T): T {
   ) as T;
 }
 
+/** `bank_id`/`card_group_id` default to the "none"/"new" sentinels these Selects use —
+ *  neither is a UUID nor "", so `accountInput`'s resolver rejects them before `onSubmit`
+ *  ever gets a chance to normalize them, failing validation silently on every submit
+ *  since neither field renders a FieldError. Mirrors `onSubmit`'s own normalizedBank/
+ *  normalizedGroup logic, run here so the resolver validates what onSubmit actually sends. */
+function cleanForValidation(values: FormValues): FormValues {
+  const clean = (v: string) => (v === "none" || v === "new" ? "" : v);
+  return { ...values, bank_id: clean(values.bank_id), card_group_id: clean(values.card_group_id) };
+}
+
 function defaultsFor(
   account: AccountWithStatus | undefined,
   baseCurrency: string,
@@ -185,7 +195,7 @@ export function AccountFormDialog({
     // `errors` — and leaves `onSubmit` operating on the real `FormValues` shape.
     resolver: ((values, context, options) =>
       zodResolver(accountInput, undefined, { raw: true })(
-        blankToUndefined(values) as FormValues,
+        blankToUndefined(cleanForValidation(values)) as FormValues,
         context,
         options as never,
       )) as Resolver<FormValues, unknown, FormValues>,
