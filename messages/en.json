@@ -1,7 +1,7 @@
 {
   "Nav": {
     "overview": "Overview",
-    "accounts": "Accounts",
+    "accounts": "Wallet",
     "transactions": "Transactions",
     "activity": "Activity",
     "budgets": "Budgets & Goals",
@@ -109,7 +109,7 @@
     "loan": "Loan"
   },
   "Accounts": {
-    "pageTitle": "Accounts",
+    "pageTitle": "Wallet",
     "cardholder": "Cardholder",
     "pageDescription": "Bank accounts, credit cards, loans, and assets.",
     "addAccount": "Add account",
@@ -727,7 +727,7 @@
     "overviewMockSpent": "Spent",
     "overviewMockBudgetUsed": "Budget used",
 
-    "accountsTitle": "Accounts",
+    "accountsTitle": "Wallet",
     "accountsIntro": "Everything you own or owe lives here, grouped into four sections: Accounts (checking, savings, cash, investment), Credit cards, Loans, and Property & assets.",
     "commonFieldsTitle": "Every account has",
     "fieldName": "Name",

@@ -1,7 +1,7 @@
 {
   "Nav": {
     "overview": "Resumen",
-    "accounts": "Cuentas",
+    "accounts": "Billetera",
     "transactions": "Transacciones",
     "activity": "Actividad",
     "budgets": "Presupuestos y metas",
@@ -109,7 +109,7 @@
     "loan": "Préstamo"
   },
   "Accounts": {
-    "pageTitle": "Cuentas",
+    "pageTitle": "Billetera",
     "cardholder": "Titular",
     "pageDescription": "Cuentas bancarias, tarjetas de crédito, préstamos y activos.",
     "addAccount": "Añadir cuenta",
@@ -727,7 +727,7 @@
     "overviewMockSpent": "Gastado",
     "overviewMockBudgetUsed": "Presupuesto usado",
 
-    "accountsTitle": "Cuentas",
+    "accountsTitle": "Billetera",
     "accountsIntro": "Todo lo que tienes o debes vive aquí, agrupado en cuatro secciones: Cuentas (corriente, ahorro, efectivo, inversión), Tarjetas de crédito, Préstamos y Propiedades y otros bienes.",
     "commonFieldsTitle": "Toda cuenta tiene",
     "fieldName": "Nombre",
