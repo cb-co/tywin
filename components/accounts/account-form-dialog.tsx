@@ -298,7 +298,7 @@ export function AccountFormDialog({
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-xl">
-            {mode === "create" ? t("addTitle") : t("editTitle")}
+            {mode === "create" ? t("addTitleForType", { type }) : t("editTitle")}
           </DialogTitle>
           <DialogDescription>
             {card

@@ -185,7 +185,7 @@
     "noActivityDescription": "Log an expense, income, or payment for this account to see it here."
   },
   "AccountForm": {
-    "addTitle": "Add an account",
+    "addTitleForType": "{type, select, checking {Add a checking account} savings {Add a savings account} cash {Add cash} investment {Add an investment} asset {Add an asset} credit_card {Add a credit card} loan {Add a loan} other {Add an account}}",
     "editTitle": "Edit account",
     "descriptionCard": "Credit-card balance is reconciled from statements and payments.",
     "descriptionLoan": "Loan payoff is tracked from payments into the loan.",

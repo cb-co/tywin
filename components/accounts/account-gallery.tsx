@@ -89,13 +89,18 @@ function AddAccountControl({
             // variant prefix), so twMerge keeps both — in dark mode the trigger's own
             // rule was winning and washing the button out. Repeating the primary colors
             // under `dark:` forces the same solid-pill look the old plain Button had.
-            "w-fit justify-start gap-2 border-0 bg-primary text-primary-foreground hover:bg-primary/80 dark:border-0 dark:bg-primary dark:hover:bg-primary/80 data-placeholder:text-primary-foreground",
+            // `h-10!` similarly forces past the trigger's own `data-[size=default]:h-8`,
+            // an attribute-selector rule twMerge doesn't recognize as conflicting with a
+            // plain height class. `[&_svg]` recolors both icons (Plus and the built-in
+            // chevron) to match the label text instead of the trigger's default
+            // muted-foreground chevron.
+            "h-10! w-fit justify-start gap-2 border-0 bg-primary text-primary-foreground hover:bg-primary/80 dark:border-0 dark:bg-primary dark:hover:bg-primary/80 data-placeholder:text-primary-foreground [&_svg]:text-primary-foreground",
           )}
         >
           <Plus className="size-4" />
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="p-1">
           {CREATABLE_TYPES.map((accType) => {
             const Icon = accountTypeMeta(accType).icon;
             return (

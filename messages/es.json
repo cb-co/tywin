@@ -185,7 +185,7 @@
     "noActivityDescription": "Registra un gasto, ingreso o pago de esta cuenta para verlo aquí."
   },
   "AccountForm": {
-    "addTitle": "Añadir una cuenta",
+    "addTitleForType": "{type, select, checking {Añadir una cuenta corriente} savings {Añadir una cuenta de ahorros} cash {Añadir efectivo} investment {Añadir una inversión} asset {Añadir un activo} credit_card {Añadir una tarjeta de crédito} loan {Añadir un préstamo} other {Añadir una cuenta}}",
     "editTitle": "Editar cuenta",
     "descriptionCard": "El saldo de la tarjeta de crédito se reconcilia con estados de cuenta y pagos.",
     "descriptionLoan": "El pago del préstamo se registra a partir de los abonos al préstamo.",
