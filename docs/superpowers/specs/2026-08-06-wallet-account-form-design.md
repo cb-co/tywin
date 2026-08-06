@@ -137,36 +137,48 @@ today nothing ever sets the attribute, so it's dead code coming alive, not new s
 - `brand`, `anchor_day`, `account_id`, `category_id` stay optional (all have `"none"`/empty
   sentinels today) — no asterisk.
 
-**`goals/contribute-dialog.tsx`**: no shared schema exists today — `contributionSchema` is
-declared inline and unexported inside `app/(app)/budgets/goal-actions.ts` (a `"use server"`
-file, which per Next.js can only export async functions, so it can't be imported by the
-client as-is). Extract it to a new `lib/goals/schema.ts`:
+**`goals/contribute-dialog.tsx`**: `goal-actions.ts` already has a `contributionSchema`, but
+it's declared inline and unexported (a `"use server"` file can only export async functions,
+so it can't be imported by the client as-is), and it validates `goal_id` — a value the form
+never edits (it comes from the `goal` prop), so a client-side resolver validating the exact
+`Values` object the form manages must not require it. The server's `contributionSchema`
+also has no custom messages today; the *client's* two checks (`pickAccount`, `amountRequired`,
+run today as ad hoc `onSubmit` toasts) are already localized via `next-intl`, unlike the
+account/transaction/subscription schemas' hardcoded-English messages — replacing them with a
+hardcoded-English shared schema would be a real regression for the Spanish locale, not a
+neutral refactor.
+
+So this form does not reuse `goalSchema`'s "extract to `lib/`" shape. Instead, mirroring the
+`goalSchema(nameRequired: string)` pattern that already lives in `goal-actions.ts` itself
+(a function parameterized with a translated message, not a bare exported constant), add a
+small **form-scoped** schema factory directly in `contribute-dialog.tsx`:
 
 ```ts
-import { z } from "zod";
-
-export const contributionInput = z.object({
-  goal_id: z.string().uuid(),
-  account_id: z.string().uuid("Pick an account"),
-  amount: z.coerce.number().refine((n) => n !== 0, "Enter an amount"),
-  exchange_rate: z.coerce.number().positive().default(1),
-  occurred_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date"),
-  note: z.string().trim().max(200).optional().or(z.literal("")),
-});
-
-export type ContributionInput = z.infer<typeof contributionInput>;
+function contributionFormSchema(messages: { pickAccount: string; amountRequired: string }) {
+  return z.object({
+    account_id: z.string().uuid(messages.pickAccount),
+    amount: z.coerce.number().refine((n) => n !== 0, messages.amountRequired),
+    exchange_rate: z.coerce.number().positive().default(1),
+    occurred_at: z.string().min(1),
+    note: z.string().trim().max(200).optional().or(z.literal("")),
+  });
+}
 ```
 
-`goal-actions.ts` imports `contributionInput` from there instead of declaring it inline (drop
-the local `contributionSchema` const and its now-unused `z` usage if nothing else in that
-file needs it directly). `contribute-dialog.tsx` switches its ad hoc `useState`-driven
-`account_id` and manual `onSubmit` toast checks (`pickAccount`, `amountRequired`) to
-`Controller` + `resolver: zodResolver(contributionInput)`, matching the other three forms.
-Required: `account_id`, `amount`, `occurred_at` (all always visible, get the `Label` `required`
-marker unconditionally). `exchange_rate` required only when `crossCurrency` — its field is
+built from the `t()` calls already available in the component (`t("pickAccount")`,
+`t("amountRequired")`), passed to `resolver: zodResolver(contributionFormSchema(...))`. This
+replaces the ad hoc `useState`-driven `account_id` (moves it into RHF via `Controller`, like
+the other three forms) and the manual `onSubmit` toast checks. `goal_id` is not part of this
+schema — it's appended to the payload at submit time, same as today, outside anything RHF
+validates. `goal-actions.ts`'s own `contributionSchema` is untouched: it stays as the
+server-side backstop, already correct, not part of this bug (its caller only reaches it after
+the client-side schema above already passed).
+
+Required, always visible: `account_id`, `amount`, `occurred_at` — get the `Label` `required`
+marker unconditionally. `exchange_rate` required only when `crossCurrency` — its field is
 already only rendered in that case, so it gets the marker too, enforced the same way as
 `transfer_rate` above (inline check + `FieldError`, since the required-ness is conditional on
-form state rather than expressible as an unconditional schema field).
+form state rather than expressible unconditionally in the schema).
 
 ### What stays unchanged
 
@@ -197,12 +209,13 @@ Add to `messages/en.json` and `messages/es.json`:
 
 ## 5. Out of scope
 
-- Localizing the error messages that live inside zod schemas (`accountInput`,
-  `transactionInput`, `subscriptionInput`, the new `contributionInput`) — they're plain
-  hardcoded English strings today and stay that way; only the new UI chrome (required
-  asterisks, the "* Required" caption, select placeholders) is localized via `next-intl` as
-  usual. Fixing this would mean threading a translation function into schema construction,
-  a bigger refactor than this pass warrants.
+- Localizing the error messages that live inside `accountInput`, `transactionInput`, and
+  `subscriptionInput` — they're plain hardcoded English strings today and stay that way
+  (the contribution form's small schema factory is the one exception, already localized
+  per §3, since it replaces two messages that were already localized). Only the new UI
+  chrome (required asterisks, the "* Required" caption, select placeholders) is localized
+  via `next-intl` as usual elsewhere. Threading translation through the three bigger schemas
+  would be a larger refactor than this pass warrants.
 - Changing the server action `Result` type to carry a field path for server-side errors.
 - Extending the required-indicator/validation pattern to `settings-panel.tsx` — its controls
   are single-field, apply-immediately (no multi-field submit with a required-but-empty
