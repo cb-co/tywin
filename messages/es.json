@@ -620,7 +620,8 @@
     "crossCurrencyRateRequired": "Un pago entre dos monedas necesita una tasa de conversión.",
     "accountNotFound": "Esa cuenta ya no existe.",
     "accountCurrencyImmutable": "Esta transacción está registrada en {currency} y solo puede moverse a una cuenta en {currency}. Elimínala y vuelve a crearla para cambiar de moneda.",
-    "statementRowLocked": "Esta transacción proviene de un estado de cuenta importado. Elimina el estado de cuenta para quitarla."
+    "statementRowLocked": "Esta transacción proviene de un estado de cuenta importado. Elimina el estado de cuenta para quitarla.",
+    "requiredFieldsHint": "* Obligatorio"
   },
   "Welcome": {
     "stepName": "Tu nombre",

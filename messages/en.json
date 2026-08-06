@@ -620,7 +620,8 @@
     "crossCurrencyRateRequired": "A payment between two currencies needs a conversion rate.",
     "accountNotFound": "That account no longer exists.",
     "accountCurrencyImmutable": "This transaction is recorded in {currency} and can only move to a {currency} account. Delete it and add it again to change currency.",
-    "statementRowLocked": "This transaction comes from an imported statement. Delete the statement to remove it."
+    "statementRowLocked": "This transaction comes from an imported statement. Delete the statement to remove it.",
+    "requiredFieldsHint": "* Required"
   },
   "Welcome": {
     "stepName": "Your name",
