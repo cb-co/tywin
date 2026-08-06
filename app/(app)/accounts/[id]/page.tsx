@@ -185,8 +185,8 @@ export default async function AccountDetailPage({
           viewport would push the panel into a horizontal scroll that nothing
           downstream could clamp. */}
       <Card className="p-7">
-        <div className="flex flex-wrap items-start gap-8">
-          {face ? <PaymentCard {...face} className="w-[22rem] max-w-full shrink-0" /> : null}
+        <div className="flex flex-wrap items-center gap-8">
+          {face ? <PaymentCard {...face} className="w-88 max-w-full shrink-0" /> : null}
           <div className={`flex-1 ${face ? "min-w-[min(22rem,100%)]" : "min-w-[16rem]"}`}>
             {isCardType ? (
               <>
