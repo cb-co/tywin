@@ -380,7 +380,8 @@
     "toastWithdrawn": "Withdrawal recorded",
     "noAccounts": "Add a checking, savings, cash or investment account first — a goal has to be backed by real money.",
     "pickAccount": "Pick an account to save from",
-    "amountRequired": "Enter an amount"
+    "amountRequired": "Enter an amount",
+    "pickDate": "Pick a date"
   },
   "GoalDetail": {
     "backLink": "Back to Budgets & Goals",

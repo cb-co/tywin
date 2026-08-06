@@ -380,7 +380,8 @@
     "toastWithdrawn": "Retiro registrado",
     "noAccounts": "Primero agrega una cuenta corriente, de ahorro, efectivo o inversión: una meta debe estar respaldada por dinero real.",
     "pickAccount": "Elige una cuenta desde la que ahorrar",
-    "amountRequired": "Ingresa un monto"
+    "amountRequired": "Ingresa un monto",
+    "pickDate": "Elige una fecha"
   },
   "GoalDetail": {
     "backLink": "Volver a Presupuestos y Metas",
