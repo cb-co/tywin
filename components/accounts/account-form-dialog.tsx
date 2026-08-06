@@ -323,39 +323,41 @@ export function AccountFormDialog({
               <FieldError message={errors.name?.message} />
             </div>
 
-            <div className="space-y-2 sm:col-span-2">
-              <Label>{t("bankLabel")}</Label>
-              <Controller
-                control={control}
-                name="bank_id"
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange} items={bankItems}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">{t("noBank")}</SelectItem>
-                      {banks.map((b) => (
-                        <SelectItem key={b.id} value={b.id}>
-                          {b.name}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="new">{t("newBank")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {bankSel === "new" ? (
-                <Input
-                  placeholder={t("bankNamePlaceholder")}
-                  value={newBankName}
-                  onChange={(e) => setNewBankName(e.target.value)}
+            {type !== "cash" ? (
+              <div className="space-y-2 sm:col-span-2">
+                <Label>{t("bankLabel")}</Label>
+                <Controller
+                  control={control}
+                  name="bank_id"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange} items={bankItems}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">{t("noBank")}</SelectItem>
+                        {banks.map((b) => (
+                          <SelectItem key={b.id} value={b.id}>
+                            {b.name}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="new">{t("newBank")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 />
-              ) : null}
-              <p className="text-xs text-muted-foreground">
-                {t("bankHint")}
-              </p>
-            </div>
+                {bankSel === "new" ? (
+                  <Input
+                    placeholder={t("bankNamePlaceholder")}
+                    value={newBankName}
+                    onChange={(e) => setNewBankName(e.target.value)}
+                  />
+                ) : null}
+                <p className="text-xs text-muted-foreground">
+                  {t("bankHint")}
+                </p>
+              </div>
+            ) : null}
 
             <div className="space-y-2">
               <Label required>{t("currencyLabel")}</Label>
