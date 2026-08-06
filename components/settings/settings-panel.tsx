@@ -208,13 +208,7 @@ export function SettingsPanel({
           />
         </Row>
 
-        <Row index={6} title={t("categoriesTitle")} description={t("categoriesDescription")}>
-          <Button variant="outline" size="sm" render={<a href="/budgets" />} nativeButton={false}>
-            {t("manageCategoriesButton")}
-          </Button>
-        </Row>
-
-        <Row index={7} title={t("sessionTitle")} description={t("sessionDescription")}>
+        <Row index={6} title={t("sessionTitle")} description={t("sessionDescription")}>
           <form action="/auth/signout" method="post">
             <Button type="submit" variant="outline" size="sm">
               <LogOut className="size-4" />
@@ -223,9 +217,9 @@ export function SettingsPanel({
           </form>
         </Row>
 
-        <InstallAppRow index={8} />
+        <InstallAppRow index={7} />
 
-        <Row index={9} title={t("helpTitle")} description={t("helpDescription")}>
+        <Row index={8} title={t("helpTitle")} description={t("helpDescription")}>
           <Button variant="outline" size="sm" render={<a href="/help" />} nativeButton={false}>
             <CircleHelp className="size-4" />
             {t("helpButton")}
