@@ -8,6 +8,7 @@ import {
   HandCoins,
   type LucideIcon,
 } from "lucide-react";
+import { SWATCHES } from "@/lib/palette";
 export const ACCOUNT_TYPE_VALUES = [
   "checking",
   "savings",
@@ -21,16 +22,21 @@ export const ACCOUNT_TYPE_VALUES = [
 export type AccountType = (typeof ACCOUNT_TYPE_VALUES)[number];
 export type GroupKey = "cash" | "assets" | "cards" | "loans";
 
-type Meta = { label: string; icon: LucideIcon; group: GroupKey };
+type Meta = { label: string; icon: LucideIcon; group: GroupKey; color: string };
 
+/* Per-type identity colour for the tile ColorTile draws when an account has
+   no colour of its own (the common case — accounts have no colour picker).
+   Picked from the shared SWATCHES palette so an account's tile always clears
+   the same contrast bar as a category's or goal's. Distinct from `account.color`,
+   which still wins whenever a row has one set. */
 export const ACCOUNT_TYPE_META: Record<AccountType, Meta> = {
-  checking: { label: "Checking", icon: Landmark, group: "cash" },
-  savings: { label: "Savings", icon: PiggyBank, group: "cash" },
-  cash: { label: "Cash", icon: Wallet, group: "cash" },
-  investment: { label: "Investment", icon: TrendingUp, group: "cash" },
-  asset: { label: "Asset", icon: Home, group: "assets" },
-  credit_card: { label: "Credit card", icon: CreditCard, group: "cards" },
-  loan: { label: "Loan", icon: HandCoins, group: "loans" },
+  checking: { label: "Checking", icon: Landmark, group: "cash", color: SWATCHES[0] },
+  savings: { label: "Savings", icon: PiggyBank, group: "cash", color: SWATCHES[2] },
+  cash: { label: "Cash", icon: Wallet, group: "cash", color: SWATCHES[1] },
+  investment: { label: "Investment", icon: TrendingUp, group: "cash", color: SWATCHES[11] },
+  asset: { label: "Asset", icon: Home, group: "assets", color: SWATCHES[4] },
+  credit_card: { label: "Credit card", icon: CreditCard, group: "cards", color: SWATCHES[7] },
+  loan: { label: "Loan", icon: HandCoins, group: "loans", color: SWATCHES[3] },
 };
 
 export const CREATABLE_TYPES: AccountType[] = [...ACCOUNT_TYPE_VALUES];

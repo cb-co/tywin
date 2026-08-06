@@ -139,7 +139,7 @@ export default async function AccountDetailPage({
               portraits of the same object stacked on top of each other. The
               tile is the account's identity in the header row (it is what the
               accounts grid uses); the face is the physical card. */}
-          <ColorTile color={account.color} icon={Icon} size="md" />
+          <ColorTile color={account.color ?? meta.color} icon={Icon} size="md" />
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               {account.name}

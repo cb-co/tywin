@@ -55,7 +55,7 @@ export function AccountCard({
         ) : (
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <ColorTile color={account.color} icon={Icon} size="sm" />
+              <ColorTile color={account.color ?? meta.color} icon={Icon} size="sm" />
               <div className="min-w-0">
                 <p className="truncate font-medium text-foreground">{account.name}</p>
                 <p className="text-xs text-muted-foreground">
