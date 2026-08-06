@@ -1,19 +1,34 @@
 "use client";
 
+import { useState } from "react";
 import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
 import { SpotIllustration } from "@/components/brand/spot-illustration";
 import { AccountCard } from "./account-card";
 import { CardGroupTile } from "./card-group-tile";
 import { AccountFormDialog } from "./account-form-dialog";
-import { ACCOUNT_GROUPS, accountTypeMeta, type GroupKey } from "@/lib/accounts/meta";
+import {
+  ACCOUNT_GROUPS,
+  CREATABLE_TYPES,
+  accountTypeMeta,
+  type AccountType,
+  type GroupKey,
+} from "@/lib/accounts/meta";
 import type {
   AccountWithStatus,
   CurrencyRow,
   CardGroupRow,
   BankRow,
 } from "@/lib/accounts/queries";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { EmptyState } from "@/components/empty-state";
 
 /** Cluster credit cards by card_group_id; solo cards keep a unique key. */
@@ -29,6 +44,78 @@ function clusterCards(items: AccountWithStatus[]) {
     map.get(key)!.push(a);
   }
   return order.map((key) => ({ key, items: map.get(key)! }));
+}
+
+/**
+ * The "Add account" entry point IS the type picker now: choosing a type both
+ * sets it and opens `AccountFormDialog`, which never asks for it again.
+ * Replaces what used to be a plain button opening a dialog with type as just
+ * another field inside it — see spec §2.
+ */
+function AddAccountControl({
+  currencies,
+  cardGroups,
+  banks,
+  baseCurrency,
+  placeholder,
+}: {
+  currencies: CurrencyRow[];
+  cardGroups: CardGroupRow[];
+  banks: BankRow[];
+  baseCurrency: string;
+  placeholder: string;
+}) {
+  const tType = useTranslations("AccountTypes");
+  const [pendingType, setPendingType] = useState<AccountType | null>(null);
+
+  /* Value→label map for the closed trigger — required by lib/select-items.test.ts for any
+     Select rendering a SelectValue. */
+  const typeItems: Record<string, string> = Object.fromEntries(
+    CREATABLE_TYPES.map((accType) => [accType, tType(accType)]),
+  );
+
+  return (
+    <>
+      <Select
+        value={pendingType ?? ""}
+        onValueChange={(v) => setPendingType(v as AccountType)}
+        items={typeItems}
+      >
+        <SelectTrigger
+          className={cn(
+            buttonVariants({ variant: "default" }),
+            "w-fit justify-start gap-2 border-0 text-primary-foreground data-placeholder:text-primary-foreground",
+          )}
+        >
+          <Plus className="size-4" />
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {CREATABLE_TYPES.map((accType) => {
+            const Icon = accountTypeMeta(accType).icon;
+            return (
+              <SelectItem key={accType} value={accType}>
+                <Icon className="size-4" />
+                {tType(accType)}
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
+      </Select>
+      <AccountFormDialog
+        mode="create"
+        currencies={currencies}
+        cardGroups={cardGroups}
+        banks={banks}
+        baseCurrency={baseCurrency}
+        initialType={pendingType ?? undefined}
+        open={pendingType !== null}
+        onOpenChange={(next) => {
+          if (!next) setPendingType(null);
+        }}
+      />
+    </>
+  );
 }
 
 export function AccountGallery({
@@ -63,18 +150,12 @@ export function AccountGallery({
         title={t("emptyTitle")}
         description={t("emptyDescription")}
         action={
-          <AccountFormDialog
-            mode="create"
+          <AddAccountControl
             currencies={currencies}
             cardGroups={cardGroups}
             banks={banks}
             baseCurrency={baseCurrency}
-            trigger={
-              <Button>
-                <Plus className="size-4" />
-                {t("addFirstAccount")}
-              </Button>
-            }
+            placeholder={t("addFirstAccount")}
           />
         }
       />
@@ -89,18 +170,12 @@ export function AccountGallery({
   return (
     <div className="space-y-10">
       <div className="flex justify-end">
-        <AccountFormDialog
-          mode="create"
+        <AddAccountControl
           currencies={currencies}
           cardGroups={cardGroups}
           banks={banks}
           baseCurrency={baseCurrency}
-          trigger={
-            <Button>
-              <Plus className="size-4" />
-              {t("addAccount")}
-            </Button>
-          }
+          placeholder={t("addAccount")}
         />
       </div>
 

@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useForm, useWatch, Controller } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useUiSound } from "@/components/sound/sound-provider";
 import {
-  CREATABLE_TYPES,
   isCard,
   isLoan,
   hasTransferFees,
@@ -80,6 +79,7 @@ function defaultsFor(
   account: AccountWithStatus | undefined,
   baseCurrency: string,
   effectiveBonus: CardGroupSibling | null | undefined,
+  initialType: AccountType | undefined,
 ): FormValues {
   const bonus =
     effectiveBonus ??
@@ -92,7 +92,7 @@ function defaultsFor(
       : null);
   return {
     name: account?.name ?? "",
-    type: (account?.type as AccountType) ?? "checking",
+    type: (account?.type as AccountType) ?? initialType ?? "checking",
     currency: account?.currency ?? baseCurrency,
     bank_id: account?.bank_id ?? "none",
     starting_balance: str(account?.starting_balance) || "0",
@@ -127,6 +127,9 @@ export function AccountFormDialog({
   baseCurrency = "USD",
   effectiveBonus,
   trigger,
+  initialType,
+  open: controlledOpen,
+  onOpenChange: onOpenChangeProp,
 }: {
   mode: "create" | "edit";
   account?: AccountWithStatus;
@@ -135,20 +138,27 @@ export function AccountFormDialog({
   banks: BankRow[];
   baseCurrency?: string;
   effectiveBonus?: CardGroupSibling | null;
-  trigger: React.ReactNode;
+  /** Omit to run in controlled mode via `open`/`onOpenChange` instead (the create flow's
+   *  type-picker select opens this dialog itself — see AccountGallery). */
+  trigger?: React.ReactNode;
+  /** Seeds `type` on create. Never user-editable inside the dialog — see spec §2. */
+  initialType?: AccountType;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = trigger ? internalOpen : (controlledOpen ?? false);
+  const setOpen = trigger ? setInternalOpen : (next: boolean) => onOpenChangeProp?.(next);
   const [pending, startTransition] = useTransition();
   const [newGroupName, setNewGroupName] = useState("");
   const [newBankName, setNewBankName] = useState("");
   const router = useRouter();
   const t = useTranslations("AccountForm");
-  const tType = useTranslations("AccountTypes");
   const tc = useTranslations("Common");
   const { playSuccess, playError } = useUiSound();
 
   const { register, handleSubmit, control, reset } = useForm<FormValues>({
-    defaultValues: defaultsFor(account, baseCurrency, effectiveBonus),
+    defaultValues: defaultsFor(account, baseCurrency, effectiveBonus, initialType),
   });
 
   const type = (useWatch({ control, name: "type" }) ?? "checking") as AccountType;
@@ -174,18 +184,20 @@ export function AccountFormDialog({
   const currencyItems: Record<string, string> = Object.fromEntries(
     currencies.map((c) => [c.code, `${c.code} · ${c.name}`]),
   );
-  const typeItems: Record<string, string> = Object.fromEntries(
-    CREATABLE_TYPES.map((accType) => [accType, tType(accType)]),
-  );
 
-  function onOpenChange(next: boolean) {
-    setOpen(next);
-    if (next) {
-      reset(defaultsFor(account, baseCurrency, effectiveBonus));
-      setNewGroupName("");
-      setNewBankName("");
-    }
-  }
+  // Runs on every open, however it happened — a trigger click (uncontrolled) or the parent
+  // flipping `open` itself (controlled create flow). Resetting only inside the old
+  // trigger-click handler missed the controlled path entirely.
+  useEffect(() => {
+    if (!open) return;
+    reset(defaultsFor(account, baseCurrency, effectiveBonus, initialType));
+    // Resetting local "new bank/group name" inputs alongside the form on every
+    // open, not a derived-state cascade.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setNewGroupName("");
+    setNewBankName("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   function onSubmit(values: FormValues) {
     startTransition(async () => {
@@ -250,8 +262,8 @@ export function AccountFormDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger render={trigger as React.ReactElement} />
+    <Dialog open={open} onOpenChange={setOpen}>
+      {trigger ? <DialogTrigger render={trigger as React.ReactElement} /> : null}
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-xl">
@@ -305,28 +317,6 @@ export function AccountFormDialog({
               <p className="text-xs text-muted-foreground">
                 {t("bankHint")}
               </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label>{t("typeLabel")}</Label>
-              <Controller
-                control={control}
-                name="type"
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange} items={typeItems}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CREATABLE_TYPES.map((accType) => (
-                        <SelectItem key={accType} value={accType}>
-                          {tType(accType)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
             </div>
 
             <div className="space-y-2">

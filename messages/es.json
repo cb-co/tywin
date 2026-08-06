@@ -197,7 +197,6 @@
     "newBank": "Banco nuevo…",
     "bankNamePlaceholder": "Nombre del banco (ej. Banco Popular)",
     "bankHint": "Las transferencias entre cuentas del mismo banco no pagan comisión de red.",
-    "typeLabel": "Tipo",
     "currencyLabel": "Moneda",
     "currencyLockedHint": "La moneda no se puede cambiar.",
     "startingBalanceLabel": "Saldo inicial",

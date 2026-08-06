@@ -197,7 +197,6 @@
     "newBank": "New bank…",
     "bankNamePlaceholder": "Bank name (e.g. Banco Popular)",
     "bankHint": "Transfers between accounts at the same bank skip the network fee.",
-    "typeLabel": "Type",
     "currencyLabel": "Currency",
     "currencyLockedHint": "Currency can't be changed.",
     "startingBalanceLabel": "Starting balance",
