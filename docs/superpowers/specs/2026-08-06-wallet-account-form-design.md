@@ -105,7 +105,13 @@ today nothing ever sets the attribute, so it's dead code coming alive, not new s
 `Controller`/`useController`.
 
 **`account-form-dialog.tsx`** (`lib/accounts/schema.ts` → `accountInput`):
-- Required, always: `name`.
+- Required, always: `name`, `currency` — asterisked even though the `Select` always carries
+  a `baseCurrency` default and can't structurally be submitted blank today: the marker
+  documents the schema's actual constraint (and, for edit mode, that it becomes locked after
+  creation), not just "fields you could leave blank by accident." The same reasoning applies
+  to `transaction-form.tsx`'s `account_id` and `subscription-form-dialog.tsx`'s `currency`/
+  `billing_cycle` below — required-in-schema gets the marker uniformly, whether or not
+  today's default already prevents a blank submission.
 - Required when `card` (credit card): `credit_limit`, `statement_closing_day`,
   `payment_due_day`.
 - Required when `loan`: `principal`, `term_months`, `installment_amount`.
