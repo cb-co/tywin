@@ -252,7 +252,13 @@ export function ContributeDialog({
 
             <div className="space-y-2">
               <Label htmlFor="contrib-note">{t("noteLabel")}</Label>
-              <Input id="contrib-note" placeholder={t("notePlaceholder")} {...register("note")} />
+              <Input
+                id="contrib-note"
+                placeholder={t("notePlaceholder")}
+                aria-invalid={!!errors.note}
+                {...register("note")}
+              />
+              <FieldError message={errors.note?.message} />
             </div>
 
             <DialogFooter>
