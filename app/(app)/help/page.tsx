@@ -79,7 +79,7 @@ export default async function HelpPage() {
                 <OnboardingMock
                   label={t("onboardingMockLabel")}
                   account={t("onboardingMockAccount")}
-                  noBank={t("onboardingMockNoBank")}
+                  subtitle={t("onboardingMockSubtitle")}
                 />
               </div>
             </div>
@@ -136,6 +136,8 @@ export default async function HelpPage() {
               incomeLabel={t("overviewMockIncome")}
               spentLabel={t("overviewMockSpent")}
               budgetUsedLabel={t("overviewMockBudgetUsed")}
+              upcomingItem={t("overviewMockUpcomingItem")}
+              upcomingSubtitle={t("overviewMockUpcomingSubtitle")}
             />
           </HelpChapter>
 
@@ -201,8 +203,9 @@ export default async function HelpPage() {
             </div>
             <AccountsMock
               checking={t("accountsMockChecking")}
-              checkingBank={t("accountsMockCheckingBank")}
-              card={t("accountsMockCard")}
+              checkingType={t("accountsMockCheckingType")}
+              owedLabel={t("accountsMockOwedLabel")}
+              cardLimit={t("accountsMockLimit")}
               cardDue={t("accountsMockCardDue")}
               holder={t("accountsMockHolder")}
             />
@@ -238,11 +241,12 @@ export default async function HelpPage() {
             <LedgerMock
               label={t("transactionsTitle")}
               groceries={t("ledgerMockGroceries")}
-              groceriesTag={t("ledgerMockGroceriesTag")}
+              groceriesAccount={t("ledgerMockGroceriesAccount")}
+              groceriesBadge={t("ledgerMockGroceriesBadge")}
               paycheck={t("ledgerMockPaycheck")}
-              paycheckTag={t("ledgerMockPaycheckTag")}
+              paycheckAccount={t("ledgerMockPaycheckAccount")}
               payment={t("ledgerMockPayment")}
-              paymentTag={t("ledgerMockPaymentTag")}
+              paymentAccounts={t("ledgerMockPaymentAccounts")}
             />
           </HelpChapter>
 
@@ -269,9 +273,6 @@ export default async function HelpPage() {
               food={t("budgetsMockFood")}
               transport={t("budgetsMockTransport")}
               entertainment={t("budgetsMockEntertainment")}
-              onTrack={t("budgetsMockOnTrack")}
-              approaching={t("budgetsMockApproaching")}
-              over={t("budgetsMockOver")}
             />
           </HelpChapter>
 
@@ -295,8 +296,11 @@ export default async function HelpPage() {
             <SubscriptionsMock
               streaming={t("subscriptionsMockStreaming")}
               streamingCycle={t("subscriptionsMockStreamingCycle")}
+              streamingNext={t("subscriptionsMockStreamingNext")}
               cloud={t("subscriptionsMockCloud")}
               cloudCycle={t("subscriptionsMockCloudCycle")}
+              cloudNext={t("subscriptionsMockCloudNext")}
+              addCharge={t("subAddCharge")}
             />
           </HelpChapter>
 
@@ -317,6 +321,7 @@ export default async function HelpPage() {
             </ul>
             <InsightsMock
               label={t("insightsMockLabel")}
+              thisMonth={t("insightsMockThisMonth")}
               essentials={t("legendEssentials")}
               discretionary={t("legendDiscretionary")}
               subscriptions={t("legendSubscriptions")}
@@ -340,12 +345,11 @@ export default async function HelpPage() {
             </ul>
             <SettingsMock
               currencyLabel={t("settingsMockCurrency")}
+              currencyValue={t("settingsMockCurrencyValue")}
               themeLabel={t("settingsMockTheme")}
               soundLabel={t("settingsMockSound")}
               installLabel={t("settingsMockInstall")}
-              themeValue={t("settingsMockThemeValue")}
-              on={t("settingsMockOn")}
-              available={t("settingsMockAvailable")}
+              installButton={t("settingsMockInstallButton")}
             />
           </HelpChapter>
 
