@@ -84,7 +84,12 @@ function AddAccountControl({
         <SelectTrigger
           className={cn(
             buttonVariants({ variant: "default" }),
-            "w-fit justify-start gap-2 border-0 text-primary-foreground data-placeholder:text-primary-foreground",
+            // The trigger's own `dark:bg-input/30`/`dark:hover:bg-input/50` share no
+            // conflict group with plain `bg-primary`/`hover:bg-primary/80` (different
+            // variant prefix), so twMerge keeps both — in dark mode the trigger's own
+            // rule was winning and washing the button out. Repeating the primary colors
+            // under `dark:` forces the same solid-pill look the old plain Button had.
+            "w-fit justify-start gap-2 border-0 bg-primary text-primary-foreground hover:bg-primary/80 dark:border-0 dark:bg-primary dark:hover:bg-primary/80 data-placeholder:text-primary-foreground",
           )}
         >
           <Plus className="size-4" />
@@ -94,7 +99,7 @@ function AddAccountControl({
           {CREATABLE_TYPES.map((accType) => {
             const Icon = accountTypeMeta(accType).icon;
             return (
-              <SelectItem key={accType} value={accType}>
+              <SelectItem key={accType} value={accType} className="gap-2 py-2.5">
                 <Icon className="size-4" />
                 {tType(accType)}
               </SelectItem>
