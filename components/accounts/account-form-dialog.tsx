@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { useForm, useWatch, Controller } from "react-hook-form";
+import { useForm, useWatch, Controller, type Resolver } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useUiSound } from "@/components/sound/sound-provider";
+import { accountInput } from "@/lib/accounts/schema";
 import {
   isCard,
   isLoan,
@@ -28,6 +30,7 @@ import type {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FieldError } from "@/components/ui/field-error";
 import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
@@ -74,6 +77,16 @@ type FormValues = {
 };
 
 const str = (v: number | null | undefined) => (v === null || v === undefined ? "" : String(v));
+
+/** Every "" becomes undefined — mirrors what `accountInput`'s superRefine checks for
+ *  conditionally-required numeric fields (see Task 4 note). Used both to validate on the
+ *  client (via the resolver below) and to build the actual submit payload, so the two never
+ *  disagree about what counts as "filled in". */
+function blankToUndefined<T extends Record<string, unknown>>(values: T): T {
+  return Object.fromEntries(
+    Object.entries(values).map(([k, v]) => [k, v === "" ? undefined : v]),
+  ) as T;
+}
 
 function defaultsFor(
   account: AccountWithStatus | undefined,
@@ -157,7 +170,25 @@ export function AccountFormDialog({
   const tc = useTranslations("Common");
   const { playSuccess, playError } = useUiSound();
 
-  const { register, handleSubmit, control, reset } = useForm<FormValues>({
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm<FormValues>({
+    // `{ raw: true }` matters here: without it, zodResolver hands `handleSubmit`'s valid
+    // callback the *parsed* schema output (coerced numbers, `has_welcome_bonus_goal` stripped
+    // since it isn't part of `accountInput`) instead of the form's own values, which would
+    // silently corrupt `onSubmit`'s welcome-bonus-toggle logic. `raw: true` keeps the resolver
+    // to its one job — running `accountInput` against the blank-cleaned values to populate
+    // `errors` — and leaves `onSubmit` operating on the real `FormValues` shape.
+    resolver: ((values, context, options) =>
+      zodResolver(accountInput, undefined, { raw: true })(
+        blankToUndefined(values) as FormValues,
+        context,
+        options as never,
+      )) as Resolver<FormValues, unknown, FormValues>,
     defaultValues: defaultsFor(account, baseCurrency, effectiveBonus, initialType),
   });
 
@@ -239,11 +270,11 @@ export function AccountFormDialog({
         ? values
         : { ...values, welcome_bonus_goal_amount: "", welcome_bonus_goal_currency: "", welcome_bonus_due_date: "" };
 
-      const clean = Object.fromEntries(
-        Object.entries({ ...bonusValues, card_group_id: normalizedGroup, bank_id: normalizedBank }).map(
-          ([k, v]) => [k, v === "" ? undefined : v],
-        ),
-      ) as Record<string, unknown>;
+      const clean = blankToUndefined({
+        ...bonusValues,
+        card_group_id: normalizedGroup,
+        bank_id: normalizedBank,
+      });
 
       const result =
         mode === "create"
@@ -281,8 +312,15 @@ export function AccountFormDialog({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="name">{t("nameLabel")}</Label>
-              <Input id="name" placeholder={t("namePlaceholder")} {...register("name")} required />
+              <Label htmlFor="name" required>{t("nameLabel")}</Label>
+              <Input
+                id="name"
+                placeholder={t("namePlaceholder")}
+                aria-invalid={!!errors.name}
+                {...register("name")}
+                required
+              />
+              <FieldError message={errors.name?.message} />
             </div>
 
             <div className="space-y-2 sm:col-span-2">
@@ -320,17 +358,17 @@ export function AccountFormDialog({
             </div>
 
             <div className="space-y-2">
-              <Label>{t("currencyLabel")}</Label>
+              <Label required>{t("currencyLabel")}</Label>
               <Controller
                 control={control}
                 name="currency"
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <Select
                     value={field.value}
                     onValueChange={field.onChange}
                     disabled={mode === "edit"}
                    items={currencyItems}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full" aria-invalid={!!fieldState.error}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -343,6 +381,7 @@ export function AccountFormDialog({
                   </Select>
                 )}
               />
+              <FieldError message={errors.currency?.message} />
               {mode === "edit" ? (
                 <p className="text-xs text-muted-foreground">{t("currencyLockedHint")}</p>
               ) : null}
@@ -362,8 +401,16 @@ export function AccountFormDialog({
                   <Input id="current_balance" type="number" step="0.01" min="0" {...register("current_balance")} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="credit_limit">{t("creditLimitLabel")}</Label>
-                  <Input id="credit_limit" type="number" step="0.01" min="0" {...register("credit_limit")} />
+                  <Label htmlFor="credit_limit" required>{t("creditLimitLabel")}</Label>
+                  <Input
+                    id="credit_limit"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    aria-invalid={!!errors.credit_limit}
+                    {...register("credit_limit")}
+                  />
+                  <FieldError message={errors.credit_limit?.message} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="last4">{t("last4Label")}</Label>
@@ -385,12 +432,28 @@ export function AccountFormDialog({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="statement_closing_day">{t("statementClosingDayLabel")}</Label>
-                  <Input id="statement_closing_day" type="number" min="1" max="31" {...register("statement_closing_day")} />
+                  <Label htmlFor="statement_closing_day" required>{t("statementClosingDayLabel")}</Label>
+                  <Input
+                    id="statement_closing_day"
+                    type="number"
+                    min="1"
+                    max="31"
+                    aria-invalid={!!errors.statement_closing_day}
+                    {...register("statement_closing_day")}
+                  />
+                  <FieldError message={errors.statement_closing_day?.message} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="payment_due_day">{t("paymentDueDayLabel")}</Label>
-                  <Input id="payment_due_day" type="number" min="1" max="31" {...register("payment_due_day")} />
+                  <Label htmlFor="payment_due_day" required>{t("paymentDueDayLabel")}</Label>
+                  <Input
+                    id="payment_due_day"
+                    type="number"
+                    min="1"
+                    max="31"
+                    aria-invalid={!!errors.payment_due_day}
+                    {...register("payment_due_day")}
+                  />
+                  <FieldError message={errors.payment_due_day?.message} />
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <Label>{t("cardGroupLabel")}</Label>
@@ -447,23 +510,25 @@ export function AccountFormDialog({
                   {hasBonusGoal ? (
                     <div className="mt-4 grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="welcome_bonus_goal_amount">{t("welcomeBonusGoalAmountLabel")}</Label>
+                        <Label htmlFor="welcome_bonus_goal_amount" required>{t("welcomeBonusGoalAmountLabel")}</Label>
                         <Input
                           id="welcome_bonus_goal_amount"
                           type="number"
                           step="0.01"
                           min="0"
+                          aria-invalid={!!errors.welcome_bonus_goal_amount}
                           {...register("welcome_bonus_goal_amount")}
                         />
+                        <FieldError message={errors.welcome_bonus_goal_amount?.message} />
                       </div>
                       <div className="space-y-2">
-                        <Label>{t("welcomeBonusGoalCurrencyLabel")}</Label>
+                        <Label required>{t("welcomeBonusGoalCurrencyLabel")}</Label>
                         <Controller
                           control={control}
                           name="welcome_bonus_goal_currency"
-                          render={({ field }) => (
+                          render={({ field, fieldState }) => (
                             <Select value={field.value} onValueChange={field.onChange} items={currencyItems}>
-                              <SelectTrigger className="w-full">
+                              <SelectTrigger className="w-full" aria-invalid={!!fieldState.error}>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -476,10 +541,17 @@ export function AccountFormDialog({
                             </Select>
                           )}
                         />
+                        <FieldError message={errors.welcome_bonus_goal_currency?.message} />
                       </div>
                       <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="welcome_bonus_due_date">{t("welcomeBonusDueDateLabel")}</Label>
-                        <Input id="welcome_bonus_due_date" type="date" {...register("welcome_bonus_due_date")} />
+                        <Label htmlFor="welcome_bonus_due_date" required>{t("welcomeBonusDueDateLabel")}</Label>
+                        <Input
+                          id="welcome_bonus_due_date"
+                          type="date"
+                          aria-invalid={!!errors.welcome_bonus_due_date}
+                          {...register("welcome_bonus_due_date")}
+                        />
+                        <FieldError message={errors.welcome_bonus_due_date?.message} />
                       </div>
                     </div>
                   ) : null}
@@ -496,16 +568,31 @@ export function AccountFormDialog({
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="principal">{t("principalLabel")}</Label>
-                  <Input id="principal" type="number" step="0.01" min="0" {...register("principal")} />
+                  <Label htmlFor="principal" required>{t("principalLabel")}</Label>
+                  <Input
+                    id="principal"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    aria-invalid={!!errors.principal}
+                    {...register("principal")}
+                  />
+                  <FieldError message={errors.principal?.message} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="interest_rate">{t("interestRateLabel")}</Label>
                   <Input id="interest_rate" type="number" step="0.0001" min="0" placeholder={t("interestRatePlaceholder")} {...register("interest_rate")} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="term_months">{t("termMonthsLabel")}</Label>
-                  <Input id="term_months" type="number" min="1" {...register("term_months")} />
+                  <Label htmlFor="term_months" required>{t("termMonthsLabel")}</Label>
+                  <Input
+                    id="term_months"
+                    type="number"
+                    min="1"
+                    aria-invalid={!!errors.term_months}
+                    {...register("term_months")}
+                  />
+                  <FieldError message={errors.term_months?.message} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="original_term_months">{t("originalTermMonthsLabel")}</Label>
@@ -518,8 +605,16 @@ export function AccountFormDialog({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="installment_amount">{t("installmentAmountLabel")}</Label>
-                  <Input id="installment_amount" type="number" step="0.01" min="0" {...register("installment_amount")} />
+                  <Label htmlFor="installment_amount" required>{t("installmentAmountLabel")}</Label>
+                  <Input
+                    id="installment_amount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    aria-invalid={!!errors.installment_amount}
+                    {...register("installment_amount")}
+                  />
+                  <FieldError message={errors.installment_amount?.message} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="payment_due_day">{t("paymentDueDayLabel")}</Label>
