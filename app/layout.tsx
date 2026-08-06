@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, Inter } from "next/font/google";
+import { Plus_Jakarta_Sans, Inter, Cormorant_Garamond } from "next/font/google";
 import { headers } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
@@ -20,6 +20,16 @@ const jakarta = Plus_Jakarta_Sans({
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
+});
+
+// Serif for the embossed cardholder name on PaymentCard only — the global
+// `font-serif` role stays mapped to the sans (see globals.css), so this gets
+// its own variable rather than reusing that role.
+const cormorant = Cormorant_Garamond({
+  variable: "--font-card-serif",
+  subsets: ["latin"],
+  weight: ["600"],
   display: "swap",
 });
 
@@ -94,7 +104,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`${jakarta.variable} ${inter.variable} h-full antialiased`}
+      className={`${jakarta.variable} ${inter.variable} ${cormorant.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">

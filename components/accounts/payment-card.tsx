@@ -144,7 +144,9 @@ export function PaymentCard({
             Done in CSS rather than by upper-casing the string, so the profile
             name is untouched everywhere else and locale-aware casing is the
             browser's problem, not ours. */}
-        <p className="truncate text-[0.95rem] uppercase leading-none tracking-[0.07em]">{holder}</p>
+        <p className="truncate text-[0.95rem] uppercase leading-none tracking-[0.07em] font-[family-name:var(--font-card-serif)]">
+          {holder}
+        </p>
         <CardNumber last4={last4} />
       </div>
     </div>
