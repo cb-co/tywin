@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, type Resolver } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { BILLING_CYCLES, CYCLE_LABEL, type BillingCycle } from "@/lib/subscriptions/cycle";
+import { subscriptionInput } from "@/lib/subscriptions/schema";
 import {
   createSubscription,
   resolveSubscriptionBrand,
@@ -18,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { FieldError } from "@/components/ui/field-error";
 import {
   Dialog,
   DialogContent,
@@ -63,6 +66,22 @@ function defaults(sub: SubscriptionWithRefs | undefined, baseCurrency: string): 
   };
 }
 
+/** `subscriptionInput` validates `account_id`/`category_id` as `z.string().uuid().optional().or(z.literal(""))`
+ *  — it never accepts the literal `"none"` that these `Select`s default to when nothing is
+ *  picked, and `anchor_day`'s `z.coerce.number().int().min(1)...optional()` coerces a blank `""`
+ *  to `0` (not `undefined`) before the `min(1)` check runs, so a never-touched anchor day fails
+ *  validation too. Both are legitimate default states the resolver would otherwise reject before
+ *  the user has done anything wrong. Clean them here, right before validation, so the resolver
+ *  only ever sees "none" and blank-anchor-day as what they mean: unset. */
+function cleanForValidation(values: Values): Values {
+  return {
+    ...values,
+    account_id: values.account_id === "none" ? "" : values.account_id,
+    category_id: values.category_id === "none" ? "" : values.category_id,
+    anchor_day: values.anchor_day === "" ? undefined : values.anchor_day,
+  } as Values;
+}
+
 export function SubscriptionFormDialog({
   mode,
   subscription,
@@ -101,7 +120,24 @@ export function SubscriptionFormDialog({
       categories.map((c) => [c.id, `${c.emoji ? `${c.emoji} ` : ""}${c.name}`]),
     ),
   };
-  const { register, handleSubmit, control, reset } = useForm<Values>({
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm<Values>({
+    // `subscriptionInput` coerces `amount` and `anchor_day` to numbers and cannot accept the
+    // "none" sentinel these Selects default to (see `cleanForValidation`) — so validation runs
+    // against cleaned values, and `{ raw: true }` hands `onSubmit` back the (cleaned) `Values`
+    // shape it already expects instead of the schema's parsed/coerced output. `errors` still
+    // populates from the same validation pass.
+    resolver: ((values, context, options) =>
+      zodResolver(subscriptionInput, undefined, { raw: true })(
+        cleanForValidation(values),
+        context,
+        options as never,
+      )) as Resolver<Values, unknown, Values>,
     defaultValues: defaults(subscription, baseCurrency),
   });
 
@@ -162,23 +198,39 @@ export function SubscriptionFormDialog({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="name">{t("nameLabel")}</Label>
-              <Input id="name" placeholder={t("namePlaceholder")} {...register("name")} required />
+              <Label htmlFor="name" required>{t("nameLabel")}</Label>
+              <Input
+                id="name"
+                placeholder={t("namePlaceholder")}
+                aria-invalid={!!errors.name}
+                {...register("name")}
+                required
+              />
+              <FieldError message={errors.name?.message} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="brand">{t("brandLabel")}</Label>
               <Input id="brand" placeholder={t("brandPlaceholder")} {...register("brand")} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="amount">{t("amountLabel")}</Label>
+              <Label htmlFor="amount" required>{t("amountLabel")}</Label>
               <div className="flex gap-2">
-                <Input id="amount" type="number" step="0.01" min="0" className="flex-1" {...register("amount")} required />
+                <Input
+                  id="amount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  className="flex-1"
+                  aria-invalid={!!errors.amount}
+                  {...register("amount")}
+                  required
+                />
                 <Controller
                   control={control}
                   name="currency"
-                  render={({ field }) => (
+                  render={({ field, fieldState }) => (
                     <Select value={field.value} onValueChange={field.onChange} items={currencyItems}>
-                      <SelectTrigger className="w-24">
+                      <SelectTrigger className="w-24" aria-invalid={!!fieldState.error}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -192,15 +244,16 @@ export function SubscriptionFormDialog({
                   )}
                 />
               </div>
+              <FieldError message={errors.amount?.message ?? errors.currency?.message} />
             </div>
             <div className="space-y-2">
-              <Label>{t("billingCycleLabel")}</Label>
+              <Label required>{t("billingCycleLabel")}</Label>
               <Controller
                 control={control}
                 name="billing_cycle"
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <Select value={field.value} onValueChange={field.onChange} items={cycleItems}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full" aria-invalid={!!fieldState.error}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -213,6 +266,7 @@ export function SubscriptionFormDialog({
                   </Select>
                 )}
               />
+              <FieldError message={errors.billing_cycle?.message} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="anchor_day">{t("chargeDayLabel")}</Label>
