@@ -214,6 +214,7 @@
     "welcomeBonusToggleLabel": "Track a welcome bonus goal",
     "welcomeBonusGoalAmountLabel": "Spend goal",
     "welcomeBonusGoalCurrencyLabel": "Goal currency",
+    "welcomeBonusGoalCurrencyPlaceholder": "Pick a currency",
     "welcomeBonusDueDateLabel": "Welcome bonus due date",
     "welcomeBonusHint": "Set once on any line of this card — spend across every currency line counts toward the goal, and the goal shows the same everywhere.",
     "loanHint": "Enter this loan as it stands today, not at origination: principal is what you currently owe, and term is how many installments are still left. Past rate changes or extra payments don't need to be re-entered — they're already reflected in today's balance. If you've already paid some installments before adding this loan, fill in the original term below so the progress bar gives you credit for them — it's display-only and doesn't affect the balance or schedule.",

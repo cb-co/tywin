@@ -53,19 +53,24 @@ export const accountInput = z
         if (v[f] === undefined)
           ctx.addIssue({ code: "custom", path: [f], message: "Required for credit cards" });
       }
-      const bonusFields = [
-        v.welcome_bonus_goal_amount,
-        v.welcome_bonus_goal_currency,
-        v.welcome_bonus_due_date,
-      ];
-      const anySet = bonusFields.some((f) => f !== undefined && f !== "");
-      const allSet = bonusFields.every((f) => f !== undefined && f !== "");
-      if (anySet && !allSet) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["welcome_bonus_goal_amount"],
-          message: "Set the goal amount, currency, and due date together, or leave all blank",
-        });
+      /* All three or none. Reported on each field that is actually empty rather than
+         collectively on the amount: the currency has no default and must be picked, so
+         pinning its absence to a different field leaves the user staring at an error on
+         a box they already filled. */
+      const bonusFields = {
+        welcome_bonus_goal_amount: v.welcome_bonus_goal_amount,
+        welcome_bonus_goal_currency: v.welcome_bonus_goal_currency,
+        welcome_bonus_due_date: v.welcome_bonus_due_date,
+      };
+      const entries = Object.entries(bonusFields);
+      const blank = ([, f]: [string, unknown]) => f === undefined || f === "";
+      if (!entries.every(blank)) {
+        for (const entry of entries.filter(blank))
+          ctx.addIssue({
+            code: "custom",
+            path: [entry[0]],
+            message: "Set the goal amount, currency, and due date together, or leave all blank",
+          });
       }
     }
     if (v.type === "loan") {

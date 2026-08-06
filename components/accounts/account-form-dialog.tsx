@@ -9,6 +9,11 @@ import { useTranslations } from "next-intl";
 import { useUiSound } from "@/components/sound/sound-provider";
 import { accountInput } from "@/lib/accounts/schema";
 import {
+  blankToUndefined,
+  normalizeFormValues,
+  type AccountFormValues,
+} from "@/lib/accounts/form-values";
+import {
   isCard,
   isLoan,
   hasTransferFees,
@@ -49,54 +54,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type FormValues = {
-  name: string;
-  type: AccountType;
-  currency: string;
-  bank_id: string;
-  starting_balance: string;
-  transfer_tax_rate: string;
-  network_fee_amount: string;
-  network_fee_optional: boolean;
-  credit_limit: string;
-  last4: string;
-  statement_closing_day: string;
-  payment_due_day: string;
-  current_balance: string;
-  card_group_id: string;
-  welcome_bonus_goal_amount: string;
-  welcome_bonus_goal_currency: string;
-  welcome_bonus_due_date: string;
-  has_welcome_bonus_goal: boolean;
-  principal: string;
-  interest_rate: string;
-  term_months: string;
-  original_term_months: string;
-  start_date: string;
-  installment_amount: string;
-};
+type FormValues = AccountFormValues;
 
 const str = (v: number | null | undefined) => (v === null || v === undefined ? "" : String(v));
-
-/** Every "" becomes undefined — mirrors what `accountInput`'s superRefine checks for
- *  conditionally-required numeric fields (see Task 4 note). Used both to validate on the
- *  client (via the resolver below) and to build the actual submit payload, so the two never
- *  disagree about what counts as "filled in". */
-function blankToUndefined<T extends Record<string, unknown>>(values: T): T {
-  return Object.fromEntries(
-    Object.entries(values).map(([k, v]) => [k, v === "" ? undefined : v]),
-  ) as T;
-}
-
-/** `bank_id`/`card_group_id` default to the "none"/"new" sentinels these Selects use —
- *  neither is a UUID nor "", so `accountInput`'s resolver rejects them before `onSubmit`
- *  ever gets a chance to normalize them, failing validation silently on every submit
- *  since neither field renders a FieldError. Mirrors `onSubmit`'s own normalizedBank/
- *  normalizedGroup logic, run here so the resolver validates what onSubmit actually sends. */
-function cleanForValidation(values: FormValues): FormValues {
-  const clean = (v: string) => (v === "none" || v === "new" ? "" : v);
-  return { ...values, bank_id: clean(values.bank_id), card_group_id: clean(values.card_group_id) };
-}
 
 function defaultsFor(
   account: AccountWithStatus | undefined,
@@ -129,7 +89,12 @@ function defaultsFor(
     current_balance: str(account?.current_balance) || "0",
     card_group_id: account?.card_group_id ?? "none",
     welcome_bonus_goal_amount: str(bonus?.welcome_bonus_goal_amount),
-    welcome_bonus_goal_currency: bonus?.welcome_bonus_goal_currency ?? baseCurrency,
+    /* Blank, not the base currency. A bonus offer is denominated in whatever the issuer
+       wrote it in, which is not reliably the card's currency and certainly not the
+       profile's — so there is no default worth guessing, and a pre-filled one is a wrong
+       answer the user has no reason to look at. Blank makes the Select show its
+       placeholder and the schema demand a real choice. */
+    welcome_bonus_goal_currency: bonus?.welcome_bonus_goal_currency ?? "",
     welcome_bonus_due_date: bonus?.welcome_bonus_due_date ?? "",
     has_welcome_bonus_goal: bonus?.welcome_bonus_goal_amount != null,
     principal: str(account?.principal),
@@ -195,7 +160,7 @@ export function AccountFormDialog({
     // `errors` — and leaves `onSubmit` operating on the real `FormValues` shape.
     resolver: ((values, context, options) =>
       zodResolver(accountInput, undefined, { raw: true })(
-        blankToUndefined(cleanForValidation(values)) as FormValues,
+        blankToUndefined(normalizeFormValues(values)) as FormValues,
         context,
         options as never,
       )) as Resolver<FormValues, unknown, FormValues>,
@@ -276,12 +241,10 @@ export function AccountFormDialog({
       }
       const normalizedBank = bankId === "none" || bankId === "new" ? "" : bankId;
 
-      const bonusValues = values.has_welcome_bonus_goal
-        ? values
-        : { ...values, welcome_bonus_goal_amount: "", welcome_bonus_goal_currency: "", welcome_bonus_due_date: "" };
-
+      // Same normalization the resolver validated, with the sentinels the two
+      // `createX` calls above just resolved into real ids written back over it.
       const clean = blankToUndefined({
-        ...bonusValues,
+        ...normalizeFormValues(values),
         card_group_id: normalizedGroup,
         bank_id: normalizedBank,
       });
@@ -541,7 +504,7 @@ export function AccountFormDialog({
                           render={({ field, fieldState }) => (
                             <Select value={field.value} onValueChange={field.onChange} items={currencyItems}>
                               <SelectTrigger className="w-full" aria-invalid={!!fieldState.error}>
-                                <SelectValue />
+                                <SelectValue placeholder={t("welcomeBonusGoalCurrencyPlaceholder")} />
                               </SelectTrigger>
                               <SelectContent>
                                 {currencies.map((c) => (

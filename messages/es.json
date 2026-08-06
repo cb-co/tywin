@@ -214,6 +214,7 @@
     "welcomeBonusToggleLabel": "Seguir una meta de bono de bienvenida",
     "welcomeBonusGoalAmountLabel": "Meta de gasto",
     "welcomeBonusGoalCurrencyLabel": "Moneda de la meta",
+    "welcomeBonusGoalCurrencyPlaceholder": "Elige una moneda",
     "welcomeBonusDueDateLabel": "Fecha límite del bono de bienvenida",
     "welcomeBonusHint": "Configúralo en cualquier línea de esta tarjeta: el gasto en todas las líneas de moneda cuenta para la meta, y la meta se muestra igual en todas partes.",
     "loanHint": "Ingresa este préstamo como está hoy, no como fue originado: el principal es lo que debes actualmente, y el plazo es cuántas cuotas quedan por pagar. No es necesario reingresar cambios de tasa pasados ni pagos extra: ya están reflejados en el saldo de hoy. Si ya pagaste algunas cuotas antes de agregar este préstamo, completa el plazo original más abajo para que la barra de progreso te dé crédito por ellas: es solo informativo y no afecta el saldo ni el calendario de pagos.",
