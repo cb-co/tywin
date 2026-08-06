@@ -1,18 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { useForm, useWatch, Controller } from "react-hook-form";
+import { useForm, useWatch, Controller, type Resolver } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import { TRANSACTION_TYPES, type TransactionType } from "@/lib/transactions/schema";
+import { TRANSACTION_TYPES, transactionInput, type TransactionType } from "@/lib/transactions/schema";
 import { createTransaction, updateTransaction } from "@/app/(app)/transactions/actions";
 import { saveMerchantRule } from "@/app/(app)/accounts/statement-actions";
 import type { QuickAddData, TransactionWithRefs } from "@/lib/transactions/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FieldError } from "@/components/ui/field-error";
 import { Switch } from "@/components/ui/switch";
 import {
   Select,
@@ -146,7 +148,28 @@ export function TransactionForm({
     accounts.find((a) => isBankAccount(a.type as AccountType)) ??
     accounts[0];
 
-  const { register, handleSubmit, control, setValue, getValues } = useForm<FormValues>({
+  const [transferRateError, setTransferRateError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    setValue,
+    getValues,
+    formState: { errors },
+  } = useForm<FormValues>({
+    // `transactionInput` doesn't own `transfer_rate` (UI-only, converted to
+    // `to_amount` before submit) and coerces `amount` to a number — so a
+    // non-raw zodResolver's parsed output would silently drop transfer_rate
+    // and change amount's type out from under onSubmit, which reads both
+    // directly off `values`. `raw: true` makes the resolver hand back the
+    // original (validated) FormValues on success instead, while `errors`
+    // still populates from the same validation pass.
+    resolver: zodResolver(transactionInput, undefined, { raw: true }) as unknown as Resolver<
+      FormValues,
+      unknown,
+      FormValues
+    >,
     defaultValues: transaction
       ? {
           type: transaction.type,
@@ -263,6 +286,13 @@ export function TransactionForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pairKey]);
 
+  useEffect(() => {
+    // Clearing a stale validation message as the user edits the rate, not a
+    // derived-state cascade.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTransferRateError(null);
+  }, [transferRateRaw]);
+
   function onSubmit(values: FormValues) {
     const isPayment = values.type === "payment";
     const transferRate = Number(values.transfer_rate);
@@ -270,6 +300,7 @@ export function TransactionForm({
     /* Required, with no default. The old default of 1 was the dangerous case:
        a 100 USD transfer into a DOP account silently landed 100 DOP. */
     if (isPayment && crossCurrency && !(transferRate > 0)) {
+      setTransferRateError(t("transferRateInvalid"));
       toast.error(t("transferRateInvalid"));
       playError();
       return;
@@ -343,7 +374,7 @@ export function TransactionForm({
 
       {/* Amount, in the account's currency — displayed, not selectable */}
       <div className="space-y-2">
-        <Label htmlFor="amount">{t("amountLabel")}</Label>
+        <Label htmlFor="amount" required>{t("amountLabel")}</Label>
         <div className="relative">
           <Input
             id="amount"
@@ -353,6 +384,7 @@ export function TransactionForm({
             placeholder={t("amountPlaceholder")}
             className="pr-16"
             aria-describedby="amount_currency"
+            aria-invalid={!!errors.amount}
             {...register("amount")}
             required
             disabled={fromStatement}
@@ -366,12 +398,13 @@ export function TransactionForm({
             {displayCurrency}
           </span>
         </div>
+        <FieldError message={errors.amount?.message} />
         {/* The one rate a person is asked for: a payment that genuinely crosses
             currencies, where only they know what the money actually became. */}
         {crossCurrency && src && dst ? (
           <div className="space-y-1 pt-1">
             <div className="flex items-center gap-2">
-              <Label htmlFor="transfer_rate" className="text-xs font-normal text-muted-foreground">
+              <Label htmlFor="transfer_rate" required className="text-xs font-normal text-muted-foreground">
                 {t("ratePrefix", { currency: src.currency })}
               </Label>
               <Input
@@ -381,11 +414,13 @@ export function TransactionForm({
                 min="0"
                 className="h-8 w-32"
                 placeholder={t("ratePlaceholder")}
+                aria-invalid={!!transferRateError}
                 required
                 {...register("transfer_rate")}
               />
               <span className="text-xs text-muted-foreground">{dst.currency}</span>
             </div>
+            <FieldError message={transferRateError ?? undefined} />
             {marketRate ? (
               <button
                 type="button"
@@ -416,31 +451,32 @@ export function TransactionForm({
 
       {/* Source account */}
       <div className="space-y-2">
-        <Label>{SOURCE_LABEL[type]}</Label>
+        <Label required>{SOURCE_LABEL[type]}</Label>
         <Controller
           control={control}
           name="account_id"
-          render={({ field }) => (
+          render={({ field, fieldState }) => (
             <Select value={field.value} onValueChange={field.onChange} disabled={fromStatement} items={accountItems}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full" aria-invalid={!!fieldState.error}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>{groupedAccountOptions(selectableAccounts)}</SelectContent>
             </Select>
           )}
         />
+        <FieldError message={errors.account_id?.message} />
       </div>
 
       {/* Destination (payment only) */}
       {type === "payment" ? (
         <div className="space-y-2">
-          <Label>{t("toLabel")}</Label>
+          <Label required>{t("toLabel")}</Label>
           <Controller
             control={control}
             name="to_account_id"
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <Select value={field.value} onValueChange={field.onChange} items={accountItems}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" aria-invalid={!!fieldState.error}>
                   <SelectValue placeholder={t("toPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -449,22 +485,23 @@ export function TransactionForm({
               </Select>
             )}
           />
+          <FieldError message={errors.to_account_id?.message} />
         </div>
       ) : null}
 
       {/* Category (expense + payment; income has none) */}
       {type !== "income" ? (
         <div className="space-y-2">
-          <Label>
+          <Label required={type === "expense"}>
             {t("categoryLabel")}
             {type === "payment" ? t("categoryOptionalSuffix") : ""}
           </Label>
           <Controller
             control={control}
             name="category_id"
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <Select value={field.value || "none"} onValueChange={field.onChange} items={categoryItems}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" aria-invalid={!!fieldState.error}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -479,6 +516,7 @@ export function TransactionForm({
               </Select>
             )}
           />
+          <FieldError message={errors.category_id?.message} />
         </div>
       ) : null}
 
@@ -537,8 +575,15 @@ export function TransactionForm({
       {/* Date + description */}
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="occurred_at">{t("dateLabel")}</Label>
-          <Input id="occurred_at" type="date" {...register("occurred_at")} disabled={fromStatement} />
+          <Label htmlFor="occurred_at" required>{t("dateLabel")}</Label>
+          <Input
+            id="occurred_at"
+            type="date"
+            aria-invalid={!!errors.occurred_at}
+            {...register("occurred_at")}
+            disabled={fromStatement}
+          />
+          <FieldError message={errors.occurred_at?.message} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="description">{t("descriptionLabel")}</Label>
