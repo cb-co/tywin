@@ -8,7 +8,7 @@ import { useTranslations } from "next-intl";
 import { useUiSound } from "@/components/sound/sound-provider";
 import { archiveAccount, deleteAccount } from "@/app/(app)/accounts/actions";
 import { AccountFormDialog } from "./account-form-dialog";
-import type { AccountWithStatus, CurrencyRow, CardGroupRow, BankRow, CardGroupSibling } from "@/lib/accounts/queries";
+import type { AccountWithStatus, CurrencyRow, BankRow, CardGroupSibling } from "@/lib/accounts/queries";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,17 +23,18 @@ import {
 export function AccountDetailActions({
   account,
   currencies,
-  cardGroups,
   banks,
   baseCurrency,
   effectiveBonus,
+  anchoredTo,
 }: {
   account: AccountWithStatus;
   currencies: CurrencyRow[];
-  cardGroups: CardGroupRow[];
   banks: BankRow[];
   baseCurrency: string;
   effectiveBonus?: CardGroupSibling | null;
+  /** `period_end` of the card's newest statement, or null. */
+  anchoredTo?: string | null;
 }) {
   const t = useTranslations("AccountDetail");
   const tc = useTranslations("Common");
@@ -78,10 +79,10 @@ export function AccountDetailActions({
         mode="edit"
         account={account}
         currencies={currencies}
-        cardGroups={cardGroups}
         banks={banks}
         baseCurrency={baseCurrency}
         effectiveBonus={effectiveBonus}
+        anchoredTo={anchoredTo}
         trigger={
           <Button variant="outline" size="sm">
             <Pencil className="size-4" />

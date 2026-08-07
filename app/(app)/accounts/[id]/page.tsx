@@ -153,10 +153,11 @@ export default async function AccountDetailPage({
         <AccountDetailActions
           account={account}
           currencies={currencies}
-          cardGroups={cardGroups}
           banks={banks}
           baseCurrency={baseCurrency}
           effectiveBonus={effectiveBonus}
+          // Newest first — the same row the hero's "As of the … statement" line reads.
+          anchoredTo={statements[0]?.period_end ?? null}
         />
       </div>
 

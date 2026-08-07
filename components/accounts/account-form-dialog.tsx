@@ -4,7 +4,8 @@ import { useEffect, useState, useTransition } from "react";
 import { useForm, useWatch, Controller } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { formatDate } from "@/lib/format";
 import { useUiSound } from "@/components/sound/sound-provider";
 import {
   accountResolver,
@@ -18,16 +19,16 @@ import {
   hasTransferFees,
   type AccountType,
 } from "@/lib/accounts/meta";
+import { cardLineName, cardLineSpecs } from "@/lib/accounts/card-lines";
 import {
   createAccount,
   updateAccount,
-  createCardGroup,
+  createCardWithLines,
   createBank,
 } from "@/app/(app)/accounts/actions";
 import type {
   AccountWithStatus,
   CurrencyRow,
-  CardGroupRow,
   BankRow,
   CardGroupSibling,
 } from "@/lib/accounts/queries";
@@ -62,6 +63,7 @@ function defaultsFor(
   baseCurrency: string,
   effectiveBonus: CardGroupSibling | null | undefined,
   initialType: AccountType | undefined,
+  anchored: boolean,
 ): FormValues {
   const bonus =
     effectiveBonus ??
@@ -86,7 +88,19 @@ function defaultsFor(
     statement_closing_day: str(account?.statement_closing_day),
     payment_due_day: str(account?.payment_due_day),
     current_balance: str(account?.current_balance) || "0",
-    card_group_id: account?.card_group_id ?? "none",
+    /* Carried, never shown. A card's group is decided once, by the toggles below, and
+       there is no longer a control for moving a card between groups — so this exists
+       only to keep an already-grouped card pointed at its group through an edit. */
+    card_group_id: account?.card_group_id ?? "",
+    /* Structure toggles are a create-time question. An existing card's lines already
+       exist as their own accounts; re-answering "is it multi-currency?" on an edit
+       could only mean splitting or merging rows, which is not what an edit does. */
+    is_multi_currency: false,
+    has_installments: false,
+    usd_credit_limit: "",
+    usd_current_balance: "0",
+    installments_credit_limit: "",
+    installments_current_balance: "0",
     welcome_bonus_goal_amount: str(bonus?.welcome_bonus_goal_amount),
     /* Blank, not the base currency. A bonus offer is denominated in whatever the issuer
        wrote it in, which is not reliably the card's currency and certainly not the
@@ -96,6 +110,7 @@ function defaultsFor(
     welcome_bonus_goal_currency: bonus?.welcome_bonus_goal_currency ?? "",
     welcome_bonus_due_date: bonus?.welcome_bonus_due_date ?? "",
     has_welcome_bonus_goal: bonus?.welcome_bonus_goal_amount != null,
+    balance_is_anchored: anchored,
     principal: str(account?.principal),
     interest_rate: str(account?.interest_rate),
     term_months: str(account?.term_months),
@@ -109,10 +124,10 @@ export function AccountFormDialog({
   mode,
   account,
   currencies,
-  cardGroups,
   banks,
   baseCurrency = "USD",
   effectiveBonus,
+  anchoredTo,
   trigger,
   initialType,
   open: controlledOpen,
@@ -121,10 +136,12 @@ export function AccountFormDialog({
   mode: "create" | "edit";
   account?: AccountWithStatus;
   currencies: CurrencyRow[];
-  cardGroups: CardGroupRow[];
   banks: BankRow[];
   baseCurrency?: string;
   effectiveBonus?: CardGroupSibling | null;
+  /** `period_end` of this card's newest statement, or null/undefined if it has none.
+   *  Its presence is what makes the card "anchored" — see the balance field below. */
+  anchoredTo?: string | null;
   /** Omit to run in controlled mode via `open`/`onOpenChange` instead (the create flow's
    *  type-picker select opens this dialog itself — see AccountGallery). */
   trigger?: React.ReactNode;
@@ -137,11 +154,19 @@ export function AccountFormDialog({
   const open = trigger ? internalOpen : (controlledOpen ?? false);
   const setOpen = trigger ? setInternalOpen : (next: boolean) => onOpenChangeProp?.(next);
   const [pending, startTransition] = useTransition();
-  const [newGroupName, setNewGroupName] = useState("");
   const [newBankName, setNewBankName] = useState("");
   const router = useRouter();
+  /* A card with a statement no longer has an editable balance: the database recomputes
+     it from that statement plus the payments since, so anything typed here would be
+     erased by the next import or payment without a word. Dropping the field is the
+     honest version of a box whose value never survived.
+
+     Read off `account`, not the watched `type`, because `defaultsFor` needs it before
+     the form exists — and the type is never editable in this dialog anyway. */
+  const anchored = mode === "edit" && !!anchoredTo && account?.type === "credit_card";
   const t = useTranslations("AccountForm");
   const tc = useTranslations("Common");
+  const locale = useLocale();
   const { playSuccess, playError } = useUiSound();
 
   const {
@@ -153,15 +178,27 @@ export function AccountFormDialog({
   } = useForm<FormValues>({
     // Validates the cleaned values, hands `onSubmit` back the raw ones — see accountResolver.
     resolver: accountResolver(),
-    defaultValues: defaultsFor(account, baseCurrency, effectiveBonus, initialType),
+    defaultValues: defaultsFor(account, baseCurrency, effectiveBonus, initialType, anchored),
   });
 
   const type = (useWatch({ control, name: "type" }) ?? "checking") as AccountType;
-  const groupSel = useWatch({ control, name: "card_group_id" }) ?? "none";
   const bankSel = useWatch({ control, name: "bank_id" }) ?? "none";
   const hasBonusGoal = useWatch({ control, name: "has_welcome_bonus_goal" }) ?? false;
+  const multiCurrency = useWatch({ control, name: "is_multi_currency" }) ?? false;
+  const installments = useWatch({ control, name: "has_installments" }) ?? false;
+  const currencySel = useWatch({ control, name: "currency" }) ?? baseCurrency;
+  const nameSel = useWatch({ control, name: "name" }) ?? "";
   const card = isCard(type);
   const loan = isLoan(type);
+
+  /* The lines this card will be saved as, or [] for an ordinary one-line card.
+     Empty is also the "no group" signal — a group exists exactly when a card has
+     lines to hold. Only on create: an edit works on one existing line. */
+  const lineSpecs =
+    card && mode === "create"
+      ? cardLineSpecs({ multiCurrency, installments, currency: currencySel })
+      : [];
+  const grouped = lineSpecs.length > 0;
 
   /* Value→label maps for the closed trigger. Base UI's `<Select.Value>`
      renders the raw value unless `items` is given on the root. Sentinel
@@ -170,11 +207,6 @@ export function AccountFormDialog({
     none: t("noBank"),
     new: t("newBank"),
     ...Object.fromEntries(banks.map((b) => [b.id, b.name])),
-  };
-  const groupItems: Record<string, string> = {
-    none: t("noGroup"),
-    new: t("newGroup"),
-    ...Object.fromEntries(cardGroups.map((g) => [g.id, g.name])),
   };
   const currencyItems: Record<string, string> = Object.fromEntries(
     currencies.map((c) => [c.code, `${c.code} · ${c.name}`]),
@@ -185,34 +217,16 @@ export function AccountFormDialog({
   // trigger-click handler missed the controlled path entirely.
   useEffect(() => {
     if (!open) return;
-    reset(defaultsFor(account, baseCurrency, effectiveBonus, initialType));
-    // Resetting local "new bank/group name" inputs alongside the form on every
+    reset(defaultsFor(account, baseCurrency, effectiveBonus, initialType, anchored));
+    // Resetting the local "new bank name" input alongside the form on every
     // open, not a derived-state cascade.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setNewGroupName("");
     setNewBankName("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   function onSubmit(values: FormValues) {
     startTransition(async () => {
-      let cardGroupId = values.card_group_id;
-      if (values.type === "credit_card" && cardGroupId === "new") {
-        if (!newGroupName.trim()) {
-          toast.error(t("toastNameGroupOrNone"));
-          playError();
-          return;
-        }
-        const created = await createCardGroup(newGroupName.trim());
-        if (created.error) {
-          toast.error(created.error);
-          playError();
-          return;
-        }
-        cardGroupId = created.id!;
-      }
-      const normalizedGroup = cardGroupId === "none" || cardGroupId === "new" ? "" : cardGroupId;
-
       let bankId = values.bank_id;
       if (bankId === "new") {
         if (!newBankName.trim()) {
@@ -230,13 +244,52 @@ export function AccountFormDialog({
       }
       const normalizedBank = bankId === "none" || bankId === "new" ? "" : bankId;
 
-      // Same normalization the resolver validated, with the sentinels the two
-      // `createX` calls above just resolved into real ids written back over it.
+      // Same normalization the resolver validated, with the sentinel the
+      // `createBank` call above just resolved into a real id written back over it.
       const clean = blankToUndefined({
         ...normalizeFormValues(values),
-        card_group_id: normalizedGroup,
         bank_id: normalizedBank,
       });
+      // The per-line limit/balance fields are addressed by name, which the typed
+      // record doesn't model — each spec names its own pair. See card-lines.ts.
+      const field = (name: keyof FormValues) => (clean as Record<string, unknown>)[name];
+
+      /* Recomputed here rather than read off the render-time `lineSpecs`: this runs
+         inside a transition, and the submitted values are the ones that must decide
+         what gets created. */
+      const specs =
+        mode === "create" && values.type === "credit_card"
+          ? cardLineSpecs({
+              multiCurrency: values.is_multi_currency,
+              installments: values.has_installments,
+              currency: values.currency,
+            })
+          : [];
+
+      if (specs.length > 0) {
+        const cardName = values.name.trim();
+        // Everything but the money is shared across lines — one bank, one set of
+        // dates, one welcome bonus, one set of digits. They are one physical card.
+        const lines = specs.map((spec) => ({
+          ...clean,
+          name: cardLineName(cardName, spec, t("lineInstallments")),
+          currency: spec.currency,
+          credit_limit: field(spec.limitField),
+          current_balance: field(spec.balanceField) ?? 0,
+          card_group_id: "",
+        }));
+        const created = await createCardWithLines(cardName, lines as never);
+        if (created.error) {
+          toast.error(created.error);
+          playError();
+          return;
+        }
+        toast.success(t("toastCardAdded"));
+        playSuccess();
+        setOpen(false);
+        router.refresh();
+        return;
+      }
 
       const result =
         mode === "create"
@@ -253,6 +306,43 @@ export function AccountFormDialog({
       router.refresh();
     });
   }
+
+  /* One field, two possible homes. Every other type wants the currency up with the
+     name and bank; a loan wants it beside the principal, because "10,000 what?" is the
+     question the principal box actually raises. Held as an element rather than
+     duplicated so the two placements cannot drift apart. */
+  const currencyField = (
+    <div className="space-y-2">
+      <Label required>{t("currencyLabel")}</Label>
+      <Controller
+        control={control}
+        name="currency"
+        render={({ field, fieldState }) => (
+          <Select
+            value={field.value}
+            onValueChange={field.onChange}
+            disabled={mode === "edit"}
+            items={currencyItems}
+          >
+            <SelectTrigger className="w-full" aria-invalid={!!fieldState.error}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {currencies.map((c) => (
+                <SelectItem key={c.code} value={c.code}>
+                  {c.code} · {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      />
+      <FieldError message={errors.currency?.message} />
+      {mode === "edit" ? (
+        <p className="text-xs text-muted-foreground">{t("currencyLockedHint")}</p>
+      ) : null}
+    </div>
+  );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -285,8 +375,12 @@ export function AccountFormDialog({
               <FieldError message={errors.name?.message} />
             </div>
 
+            {/* Half width on a card so the digits sit beside it: the card branch below
+                is an odd number of half-fields, which stranded a whole empty slot and
+                cost a row of dialog height. Full width everywhere else, where there is
+                nothing to pair it with. */}
             {type !== "cash" ? (
-              <div className="space-y-2 sm:col-span-2">
+              <div className={card ? "space-y-2" : "space-y-2 sm:col-span-2"}>
                 <Label>{t("bankLabel")}</Label>
                 <Controller
                   control={control}
@@ -321,35 +415,35 @@ export function AccountFormDialog({
               </div>
             ) : null}
 
-            <div className="space-y-2">
-              <Label required>{t("currencyLabel")}</Label>
-              <Controller
-                control={control}
-                name="currency"
-                render={({ field, fieldState }) => (
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    disabled={mode === "edit"}
-                   items={currencyItems}>
-                    <SelectTrigger className="w-full" aria-invalid={!!fieldState.error}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {currencies.map((c) => (
-                        <SelectItem key={c.code} value={c.code}>
-                          {c.code} · {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              <FieldError message={errors.currency?.message} />
-              {mode === "edit" ? (
-                <p className="text-xs text-muted-foreground">{t("currencyLockedHint")}</p>
-              ) : null}
-            </div>
+            {/* Lives here, next to the bank, rather than down in the card branch —
+                see the bank block's width above. */}
+            {card ? (
+              <div className="space-y-2">
+                <Label htmlFor="last4">{t("last4Label")}</Label>
+                {/* Optional. When empty the card face keeps inferring digits
+                    from the account name, which was the only source before
+                    this field existed. Not type="number": leading zeroes are
+                    significant here and a spinner makes no sense on digits
+                    that are an identifier rather than a quantity. */}
+                <Input
+                  id="last4"
+                  inputMode="numeric"
+                  maxLength={4}
+                  placeholder={t("last4Placeholder")}
+                  {...register("last4", {
+                    onChange: (e) => {
+                      e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4);
+                    },
+                  })}
+                />
+              </div>
+            ) : null}
+
+            {/* Rendered here for every type but a loan, which places it itself beside
+                the principal — see the loan branch. A multi-currency card renders it
+                nowhere: its lines are the fixed DOP + USD pair, so the control would
+                only collect an answer that is then discarded. */}
+            {loan || (grouped && multiCurrency) ? null : currencyField}
 
             {!card && !loan ? (
               <div className="space-y-2">
@@ -360,41 +454,40 @@ export function AccountFormDialog({
 
             {card ? (
               <>
-                <div className="space-y-2">
-                  <Label htmlFor="current_balance">{t("currentBalanceOwedLabel")}</Label>
-                  <Input id="current_balance" type="number" step="0.01" min="0" {...register("current_balance")} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="credit_limit" required>{t("creditLimitLabel")}</Label>
-                  <Input
-                    id="credit_limit"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    aria-invalid={!!errors.credit_limit}
-                    {...register("credit_limit")}
-                  />
-                  <FieldError message={errors.credit_limit?.message} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="last4">{t("last4Label")}</Label>
-                  {/* Optional. When empty the card face keeps inferring digits
-                      from the account name, which was the only source before
-                      this field existed. Not type="number": leading zeroes are
-                      significant here and a spinner makes no sense on digits
-                      that are an identifier rather than a quantity. */}
-                  <Input
-                    id="last4"
-                    inputMode="numeric"
-                    maxLength={4}
-                    placeholder={t("last4Placeholder")}
-                    {...register("last4", {
-                      onChange: (e) => {
-                        e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4);
-                      },
-                    })}
-                  />
-                </div>
+                {/* Limit and balance move into the lines section once the card has more
+                    than one line — each line carries its own, and a single pair here
+                    would be written onto every line, counting the same debt twice. */}
+                {grouped ? null : (
+                  <>
+                    {anchored ? (
+                      <div className="space-y-2">
+                        <Label>{t("currentBalanceOwedLabel")}</Label>
+                        <p className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
+                          {t("balanceAnchoredHint", {
+                            date: formatDate(anchoredTo!, locale),
+                          })}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Label htmlFor="current_balance">{t("currentBalanceOwedLabel")}</Label>
+                        <Input id="current_balance" type="number" step="0.01" min="0" {...register("current_balance")} />
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <Label htmlFor="credit_limit" required>{t("creditLimitLabel")}</Label>
+                      <Input
+                        id="credit_limit"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        aria-invalid={!!errors.credit_limit}
+                        {...register("credit_limit")}
+                      />
+                      <FieldError message={errors.credit_limit?.message} />
+                    </div>
+                  </>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="statement_closing_day" required>{t("statementClosingDayLabel")}</Label>
                   <Input
@@ -419,41 +512,117 @@ export function AccountFormDialog({
                   />
                   <FieldError message={errors.payment_due_day?.message} />
                 </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <Label>{t("cardGroupLabel")}</Label>
-                  <Controller
-                    control={control}
-                    name="card_group_id"
-                    render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange} items={groupItems}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">{t("noGroup")}</SelectItem>
-                          {cardGroups.map((g) => (
-                            <SelectItem key={g.id} value={g.id}>
-                              {g.name}
-                            </SelectItem>
-                          ))}
-                          <SelectItem value="new">{t("newGroup")}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  {/* No digits field here: a group takes its digits from its
-                      lines, each of which has its own. */}
-                  {groupSel === "new" ? (
-                    <Input
-                      placeholder={t("groupNamePlaceholder")}
-                      value={newGroupName}
-                      onChange={(e) => setNewGroupName(e.target.value)}
+                {/* What used to be a "Card group" select the person had to understand
+                    before they could use it. Two questions about the card in their hand
+                    replace it: answer either one and the group, its lines, and their
+                    currencies all follow — there is nothing left to assemble by hand,
+                    and nothing to get wrong. No group select on edit either: a card's
+                    lines are decided when it is created. */}
+                {mode === "create" ? (
+                  <div className="space-y-4 sm:col-span-2 rounded-lg border bg-muted/30 p-4">
+                    <Controller
+                      control={control}
+                      name="has_installments"
+                      render={({ field }) => (
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="has_installments" className="font-normal">
+                            {t("installmentsToggleLabel")}
+                          </Label>
+                          <Switch
+                            id="has_installments"
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </div>
+                      )}
                     />
-                  ) : null}
-                  <p className="text-xs text-muted-foreground">
-                    {t("groupHint")}
-                  </p>
-                </div>
+                    <Controller
+                      control={control}
+                      name="is_multi_currency"
+                      render={({ field }) => (
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="is_multi_currency" className="font-normal">
+                            {t("multiCurrencyToggleLabel")}
+                          </Label>
+                          <Switch
+                            id="is_multi_currency"
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </div>
+                      )}
+                    />
+
+                    {grouped ? (
+                      <div className="space-y-2 border-t pt-3">
+                        <p className="text-sm font-medium">{t("cardLinesHeading")}</p>
+                        {lineSpecs.map((spec) => {
+                          const suffix =
+                            spec.key === "installments" ? t("lineInstallments") : spec.currency;
+                          return (
+                            <div
+                              key={spec.key}
+                              className="space-y-2 rounded-md border bg-background p-3"
+                            >
+                              <div className="flex items-baseline justify-between gap-2">
+                                {/* The name this line will actually be saved under, live.
+                                    The old flow gave no hint of what it was about to
+                                    create until it had created it. */}
+                                <p className="truncate text-sm font-medium">
+                                  {nameSel.trim()
+                                    ? cardLineName(nameSel.trim(), spec, suffix)
+                                    : suffix}
+                                </p>
+                                {/* Only the installments line needs this: every other
+                                    line's title IS its currency, and printing "DOP" twice
+                                    on one row reads as a bug. */}
+                                {spec.key === "installments" ? (
+                                  <span className="shrink-0 text-xs font-medium text-muted-foreground">
+                                    {spec.currency}
+                                  </span>
+                                ) : null}
+                              </div>
+                              <div className="grid gap-3 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                  <Label htmlFor={`${spec.key}_credit_limit`} required>
+                                    {t("creditLimitLabel")}
+                                  </Label>
+                                  <Input
+                                    id={`${spec.key}_credit_limit`}
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    aria-invalid={!!errors[spec.limitField]}
+                                    {...register(spec.limitField)}
+                                  />
+                                  <FieldError message={errors[spec.limitField]?.message} />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor={`${spec.key}_current_balance`}>
+                                    {t("currentBalanceOwedLabel")}
+                                  </Label>
+                                  <Input
+                                    id={`${spec.key}_current_balance`}
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    aria-invalid={!!errors[spec.balanceField]}
+                                    {...register(spec.balanceField)}
+                                  />
+                                  <FieldError message={errors[spec.balanceField]?.message} />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+
+                    <p className="text-xs text-muted-foreground">
+                      {grouped ? t("cardStructureGroupedHint") : t("cardStructureHint")}
+                    </p>
+                  </div>
+                ) : null}
                 <div className="space-y-2 sm:col-span-2 rounded-lg border bg-muted/30 p-4">
                   <Controller
                     control={control}
@@ -531,6 +700,8 @@ export function AccountFormDialog({
                     {t("loanHint")}
                   </p>
                 </div>
+                {/* Beside the principal, where the amount raises the question. */}
+                {currencyField}
                 <div className="space-y-2">
                   <Label htmlFor="principal" required>{t("principalLabel")}</Label>
                   <Input

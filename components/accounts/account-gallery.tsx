@@ -54,13 +54,11 @@ function clusterCards(items: AccountWithStatus[]) {
  */
 function AddAccountControl({
   currencies,
-  cardGroups,
   banks,
   baseCurrency,
   placeholder,
 }: {
   currencies: CurrencyRow[];
-  cardGroups: CardGroupRow[];
   banks: BankRow[];
   baseCurrency: string;
   placeholder: string;
@@ -117,7 +115,6 @@ function AddAccountControl({
       <AccountFormDialog
         mode="create"
         currencies={currencies}
-        cardGroups={cardGroups}
         banks={banks}
         baseCurrency={baseCurrency}
         initialType={pendingType ?? undefined}
@@ -164,7 +161,6 @@ export function AccountGallery({
         action={
           <AddAccountControl
             currencies={currencies}
-            cardGroups={cardGroups}
             banks={banks}
             baseCurrency={baseCurrency}
             placeholder={t("addFirstAccount")}
@@ -184,7 +180,6 @@ export function AccountGallery({
       <div className="flex justify-end">
         <AddAccountControl
           currencies={currencies}
-          cardGroups={cardGroups}
           banks={banks}
           baseCurrency={baseCurrency}
           placeholder={t("addAccount")}

@@ -118,6 +118,28 @@ export async function updateAccount(id: string, input: AccountInput): Promise<Re
 
   // currency is immutable — never included in the update payload.
   const columns = { ...toColumns(parsed.data), ...(await resolveArtFor(parsed.data)) };
+
+  /* An anchored card's balance is not the form's to write.
+   *
+   * `recompute_card_balance` owns it — newest statement's total_balance minus the
+   * payments dated after that statement closed — and it re-runs on every statement
+   * import and every payment to the card. A number typed here would therefore
+   * survive only until the next of either, then vanish with no explanation. The
+   * dialog stops offering the field once a card is anchored, and this is what makes
+   * that true rather than merely apparent: it also closes the gap where a statement
+   * lands while the dialog is open, which would otherwise write a value that was
+   * already stale by the time it was submitted.
+   *
+   * Anchor-less cards keep the field and keep this path: with no statement to
+   * anchor to, the typed balance IS the source of truth. */
+  if (parsed.data.type === "credit_card") {
+    const { count } = await supabase
+      .from("card_statements")
+      .select("id", { count: "exact", head: true })
+      .eq("account_id", id);
+    if ((count ?? 0) > 0) delete (columns as Partial<typeof columns>).current_balance;
+  }
+
   const { error } = await supabase.from("accounts").update(columns).eq("id", id);
   if (error) return { error: await dbError(error, "updateAccount") };
 
@@ -255,18 +277,45 @@ export async function createBank(name: string): Promise<Result> {
   return { id: data.id };
 }
 
-export async function createCardGroup(name: string): Promise<Result> {
+/**
+ * Creates a card group and every currency line of it, in one call.
+ *
+ * This is the whole card-group flow now. It exists as one action rather than a
+ * `createCardGroup` the dialog then follows with N `createAccount` calls because
+ * the three things that made the old two-step wrong all live here:
+ *
+ * - Art is inferred ONCE, from the card's own name. Per-line inference would ask
+ *   the model about "Visa Signature · Cuotas" three times and could come back
+ *   with three different accents for one physical card. The group's accent is
+ *   then written onto every line, so a line opened on its own still wears the
+ *   card's colour.
+ * - The lines land in a single insert, so a card is never half-created.
+ * - A group whose lines fail to insert is deleted again rather than left behind
+ *   as an empty group with no UI to remove it.
+ */
+export async function createCardWithLines(name: string, lines: AccountInput[]): Promise<Result> {
   const trimmed = name.trim();
-  if (!trimmed) return { error: "Group name is required." };
+  if (!trimmed) return { error: "Name is required." };
+  if (lines.length === 0) return { error: "A card needs at least one line." };
+
+  const parsed: AccountInput[] = [];
+  for (const line of lines) {
+    const result = accountInput.safeParse(line);
+    if (!result.success) return { error: result.error.issues[0]?.message ?? "Invalid input" };
+    parsed.push(result.data);
+  }
+
   const { supabase, user } = await requireUser();
   if (!user) return { error: "You're not signed in." };
 
-  // A group IS the physical card, so its face is the one that needs art. Same
-  // gate as an account: a new group has no accent, so this always runs once
-  // here and never again unless the accent is cleared.
+  // A group IS the physical card, so its face is the one that needs art.
   const art = await inferCardArt(trimmed);
+  const face = {
+    ...(art ? { color: art.accent } : {}),
+    ...(art?.network ? { brand: art.network } : {}),
+  };
 
-  const { data, error } = await supabase
+  const { data: group, error: groupError } = await supabase
     .from("card_groups")
     .insert({
       name: trimmed,
@@ -276,8 +325,23 @@ export async function createCardGroup(name: string): Promise<Result> {
     })
     .select("id")
     .single();
-  if (error) return { error: await dbError(error, "createCardGroup") };
+  if (groupError) return { error: await dbError(groupError, "createCardWithLines") };
+
+  const rows = parsed.map((line) => ({
+    ...toColumns(line),
+    ...face,
+    currency: line.currency,
+    card_group_id: group.id,
+    user_id: user.id,
+  }));
+  const { error: linesError } = await supabase.from("accounts").insert(rows);
+  if (linesError) {
+    await supabase.from("card_groups").delete().eq("id", group.id);
+    return { error: await dbError(linesError, "createCardWithLines") };
+  }
+
   revalidatePath("/accounts");
-  return { id: data.id };
+  revalidatePath("/");
+  return { id: group.id };
 }
 
