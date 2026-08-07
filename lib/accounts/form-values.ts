@@ -1,3 +1,6 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import type { Resolver } from "react-hook-form";
+import { accountInput } from "./schema";
 import type { AccountType } from "./meta";
 
 /** The account dialog's own field shape: every input is a string because that is
@@ -67,4 +70,32 @@ export function normalizeFormValues(values: AccountFormValues): AccountFormValue
           welcome_bonus_due_date: "",
         }),
   };
+}
+
+/** The dialog's resolver. Validates `accountInput` against the cleaned values — the only
+ *  shape the schema accepts — while handing `handleSubmit`'s valid callback the form's OWN
+ *  values back.
+ *
+ *  That hand-back is the whole point and cannot be delegated to `zodResolver`'s `raw: true`,
+ *  which returns whatever values it was called with: here the cleaned copy, whose
+ *  "none"/"new" sentinels `normalizeFormValues` has already flattened to "". `onSubmit`
+ *  reads those sentinels to decide whether it must create a bank or card group before
+ *  saving, so the flattened copy turned "New bank…"/"New group…" into silent no-ops — the
+ *  typed name was dropped and the account saved unlinked. Parsed output is equally wrong:
+ *  it coerces numbers to their schema types and drops `has_welcome_bonus_goal`, which is
+ *  form-only state `onSubmit` still needs.
+ *
+ *  Lives here beside the two normalizers it composes so the round trip stays testable
+ *  without a DOM. */
+export function accountResolver(): Resolver<AccountFormValues, unknown, AccountFormValues> {
+  const validate = zodResolver(accountInput, undefined, { raw: true });
+  return (async (values: AccountFormValues, context, options) => {
+    const result = await validate(
+      blankToUndefined(normalizeFormValues(values)) as AccountFormValues,
+      context,
+      options as never,
+    );
+    if (Object.keys(result.errors).length > 0) return result;
+    return { values, errors: {} };
+  }) as Resolver<AccountFormValues, unknown, AccountFormValues>;
 }

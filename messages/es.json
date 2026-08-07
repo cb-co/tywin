@@ -191,7 +191,7 @@
     "descriptionLoan": "El pago del préstamo se registra a partir de los abonos al préstamo.",
     "descriptionOther": "El saldo se calcula a partir de tus transacciones.",
     "nameLabel": "Nombre",
-    "namePlaceholder": "ej. Cuenta corriente Banco Popular",
+    "namePlaceholderForType": "{type, select, checking {ej. Cuenta corriente Banco Popular} savings {ej. Fondo de emergencia} cash {ej. Cartera} investment {ej. Cuenta de inversión Fidelity} asset {ej. Toyota Corolla} credit_card {ej. Chase Sapphire Preferred} loan {ej. Préstamo del carro} other {ej. Cuenta corriente Banco Popular}}",
     "bankLabel": "Banco / institución",
     "noBank": "Sin banco",
     "newBank": "Banco nuevo…",

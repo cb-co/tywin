@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { useForm, useWatch, Controller, type Resolver } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useUiSound } from "@/components/sound/sound-provider";
-import { accountInput } from "@/lib/accounts/schema";
 import {
+  accountResolver,
   blankToUndefined,
   normalizeFormValues,
   type AccountFormValues,
@@ -152,18 +151,8 @@ export function AccountFormDialog({
     reset,
     formState: { errors },
   } = useForm<FormValues>({
-    // `{ raw: true }` matters here: without it, zodResolver hands `handleSubmit`'s valid
-    // callback the *parsed* schema output (coerced numbers, `has_welcome_bonus_goal` stripped
-    // since it isn't part of `accountInput`) instead of the form's own values, which would
-    // silently corrupt `onSubmit`'s welcome-bonus-toggle logic. `raw: true` keeps the resolver
-    // to its one job — running `accountInput` against the blank-cleaned values to populate
-    // `errors` — and leaves `onSubmit` operating on the real `FormValues` shape.
-    resolver: ((values, context, options) =>
-      zodResolver(accountInput, undefined, { raw: true })(
-        blankToUndefined(normalizeFormValues(values)) as FormValues,
-        context,
-        options as never,
-      )) as Resolver<FormValues, unknown, FormValues>,
+    // Validates the cleaned values, hands `onSubmit` back the raw ones — see accountResolver.
+    resolver: accountResolver(),
     defaultValues: defaultsFor(account, baseCurrency, effectiveBonus, initialType),
   });
 
@@ -288,7 +277,7 @@ export function AccountFormDialog({
               <Label htmlFor="name" required>{t("nameLabel")}</Label>
               <Input
                 id="name"
-                placeholder={t("namePlaceholder")}
+                placeholder={t("namePlaceholderForType", { type })}
                 aria-invalid={!!errors.name}
                 {...register("name")}
                 required

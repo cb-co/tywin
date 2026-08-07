@@ -100,11 +100,13 @@ function AddAccountControl({
           <Plus className="size-4" />
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
-        <SelectContent className="p-1">
+        {/* Gutter and row height now come from SelectContent/SelectItem themselves —
+            this picker's spacing became the default for every Select. */}
+        <SelectContent>
           {CREATABLE_TYPES.map((accType) => {
             const Icon = accountTypeMeta(accType).icon;
             return (
-              <SelectItem key={accType} value={accType} className="gap-2 py-2.5">
+              <SelectItem key={accType} value={accType}>
                 <Icon className="size-4" />
                 {tType(accType)}
               </SelectItem>

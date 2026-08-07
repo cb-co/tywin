@@ -191,7 +191,7 @@
     "descriptionLoan": "Loan payoff is tracked from payments into the loan.",
     "descriptionOther": "Balance is derived from your transactions.",
     "nameLabel": "Name",
-    "namePlaceholder": "e.g. Banco Popular checking",
+    "namePlaceholderForType": "{type, select, checking {e.g. Banco Popular checking} savings {e.g. Emergency fund} cash {e.g. Wallet} investment {e.g. Fidelity brokerage} asset {e.g. Toyota Corolla} credit_card {e.g. Chase Sapphire Preferred} loan {e.g. Car loan} other {e.g. Banco Popular checking}}",
     "bankLabel": "Bank / institution",
     "noBank": "No bank",
     "newBank": "New bank…",
