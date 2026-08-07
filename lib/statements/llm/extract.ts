@@ -3,6 +3,7 @@ import { google } from "@ai-sdk/google";
 import { StatementSchema, type LlmLine, type LlmSection, type LlmStatement } from "./schema";
 import { SYSTEM_PROMPT } from "./system-prompt";
 import { parseMoneyCents } from "../money";
+import { normalizeCurrency, normalizeSectionKey } from "../currency";
 import { monthBeforePlusDay } from "../dates";
 import type { ParsedLine, ParsedSection, ParsedStatement } from "../types";
 
@@ -79,6 +80,9 @@ function toCashbackCents(raw: string | null): number | null {
 }
 
 function toSection(s: LlmSection): ParsedSection {
+  // The schema can only require a string here; nothing about the JSON schema the
+  // model is constrained by can express "ISO 4217, not the symbol on the page".
+  const currency = normalizeCurrency(s.currency);
   const lines = s.lines.map(toLine);
   const totalDebitsCents =
     lines.length > 0
@@ -94,8 +98,8 @@ function toSection(s: LlmSection): ParsedSection {
         : 0;
 
   return {
-    sectionKey: s.sectionKey,
-    currency: s.currency,
+    sectionKey: normalizeSectionKey(s.sectionKey, s.currency, currency),
+    currency,
     periodStart: monthBeforePlusDay(s.periodEnd),
     periodEnd: s.periodEnd,
     dueDate: s.dueDate,
@@ -122,12 +126,15 @@ function toSection(s: LlmSection): ParsedSection {
 }
 
 export function toParsedStatement(statement: LlmStatement): ParsedStatement {
-  const currencies = [...new Set(statement.sections.map((s) => s.currency))].sort();
+  // Built from the converted sections, not the raw ones: parserId keys the saved
+  // section mappings, so it has to be as stable as the currencies it embeds.
+  const sections = statement.sections.map(toSection);
+  const currencies = [...new Set(sections.map((s) => s.currency))].sort();
   const parserId =
     `${statement.cardNetwork}_${statement.cardLast4 ?? "na"}_${currencies.join("")}`.toLowerCase();
   return {
     parserId,
     cardLast4: statement.cardLast4,
-    sections: statement.sections.map(toSection),
+    sections,
   };
 }

@@ -118,6 +118,48 @@ describe("toParsedStatement", () => {
     expect(validateChecksums(toParsedStatement(LINE_LESS))).toEqual([]);
   });
 
+  /* `ParsedSection.currency` is declared ISO 4217 and consumed as one — the preview
+     hands it to Intl.NumberFormat, confirm compares it against the account's currency,
+     and fx looks up a rate by it. A statement that prints only "RD$" and never "DOP"
+     got the symbol transcribed into it verbatim, and Intl threw RangeError on render. */
+  describe("currency", () => {
+    const withCurrency = (currency: string, sectionKey = currency): LlmStatement => ({
+      ...WITH_LINES,
+      sections: [{ ...WITH_LINES.sections[0], currency, sectionKey }],
+    });
+
+    it("normalizes a transcribed symbol to its ISO code", () => {
+      expect(toParsedStatement(withCurrency("RD$")).sections[0].currency).toBe("DOP");
+    });
+
+    it("normalizes the currency the parserId is built from", () => {
+      expect(toParsedStatement(withCurrency("RD$")).parserId).toBe("visa_1234_dop");
+    });
+
+    /* sectionKey is persisted in statement_section_mappings to make future imports
+       zero-touch, so a key built on the symbol would miss every saved mapping the
+       moment the model transcribes the ISO code instead. */
+    it("rewrites the sectionKey the symbol leaked into", () => {
+      expect(toParsedStatement(withCurrency("RD$")).sections[0].sectionKey).toBe("DOP");
+      expect(toParsedStatement(withCurrency("RD$", "RD$_CUOTAS")).sections[0].sectionKey).toBe(
+        "DOP_CUOTAS",
+      );
+    });
+
+    it("leaves a sectionKey that never held the raw currency alone", () => {
+      expect(toParsedStatement(withCurrency("RD$", "DOP_CUOTAS")).sections[0].sectionKey).toBe(
+        "DOP_CUOTAS",
+      );
+    });
+
+    /* Loud, not silent: extractAndParse catches this into a failed_detection row and
+       shows parseFailed, the same as an unparseable amount. Importing a statement
+       under a guessed currency would corrupt the balances it anchors. */
+    it("throws on a currency it cannot resolve", () => {
+      expect(() => toParsedStatement(withCurrency("$"))).toThrow(/currency/i);
+    });
+  });
+
   describe("cashback", () => {
     const withCashback = (totalCashback: string | null): LlmStatement => ({
       ...LINE_LESS,

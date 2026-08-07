@@ -19,6 +19,13 @@ describe("SYSTEM_PROMPT", () => {
     expect(SYSTEM_PROMPT).toMatch(/do not compute, round/i);
   });
 
+  /* Left unspecified, the model transcribes the symbol the statement prints
+     ("RD$") into a field every consumer reads as an ISO code. */
+  it("demands an ISO currency code rather than the printed symbol", () => {
+    expect(SYSTEM_PROMPT).toMatch(/ISO 4217/);
+    expect(SYSTEM_PROMPT).toContain("RD$");
+  });
+
   it("pins the sectionKey naming convention", () => {
     expect(SYSTEM_PROMPT).toContain("_CUOTAS");
   });
