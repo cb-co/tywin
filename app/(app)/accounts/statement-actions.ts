@@ -11,6 +11,7 @@ import { scrubPii } from "@/lib/statements/llm/scrub-pii";
 import { extractWithLLM, toParsedStatement } from "@/lib/statements/llm/extract";
 import { validateChecksums } from "@/lib/statements/validate";
 import { centsToDecimal } from "@/lib/statements/money";
+import { MAX_STATEMENT_BYTES } from "@/lib/statements/limits";
 import { suggestAccountId, type CardAccountOption } from "@/lib/statements/mapping";
 import { resolveCategoryId, type CategoryRuleRow } from "@/lib/statements/categorize";
 import { baseRate, getExchangeRates } from "@/lib/fx";
@@ -120,6 +121,12 @@ async function extractAndParse(formData: FormData) {
   const file = formData.get("file");
   const password = String(formData.get("password") ?? "") || undefined;
   if (!(file instanceof File)) return { error: t("invalidUpload") } as const;
+  // Checked before the bytes are read, not after: an oversize upload should
+  // cost nothing and leave no failed-import row for an attempt never made. The
+  // panel checks the same limit first, so reaching this is a forged request.
+  if (file.size > MAX_STATEMENT_BYTES) {
+    return { error: t("fileTooLarge", { limit: MAX_STATEMENT_BYTES / (1024 * 1024) }) } as const;
+  }
 
   const bytes = new Uint8Array(await file.arrayBuffer());
   const extracted = await extractStatementText(bytes, password);

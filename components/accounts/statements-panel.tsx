@@ -14,6 +14,7 @@ import {
   type StatementLineDetail,
 } from "@/app/(app)/accounts/statement-actions";
 import type { CardStatementRow } from "@/lib/accounts/queries";
+import { MAX_STATEMENT_BYTES } from "@/lib/statements/limits";
 import { formatMoney, formatDate } from "@/lib/format";
 import { useUiSound } from "@/components/sound/sound-provider";
 import { Button } from "@/components/ui/button";
@@ -194,6 +195,14 @@ export function StatementsPanel({
             const f = e.target.files?.[0] ?? null;
             e.target.value = "";
             if (!f) return;
+            // Stopped here rather than server-side because Next rejects an
+            // oversize server-action body while parsing it — the action never
+            // runs, so it has no way to turn that into a toast.
+            if (f.size > MAX_STATEMENT_BYTES) {
+              toast.error(t("fileTooLarge", { limit: MAX_STATEMENT_BYTES / (1024 * 1024) }));
+              playError();
+              return;
+            }
             setFile(f);
             setPassword("");
             setNeedsPassword(false);

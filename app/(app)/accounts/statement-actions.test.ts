@@ -28,7 +28,8 @@ vi.mock("next-intl/server", () => ({
 import { extractStatementText } from "@/lib/statements/extract";
 import { extractWithLLM } from "@/lib/statements/llm/extract";
 import { createClient } from "@/lib/supabase/server";
-import { confirmStatementImport } from "./statement-actions";
+import { confirmStatementImport, parseStatement } from "./statement-actions";
+import { MAX_STATEMENT_BYTES } from "@/lib/statements/limits";
 import type { ParsedStatement } from "@/lib/statements/types";
 
 /** Minimal fake Supabase query builder: chainable select/eq, terminal
@@ -159,5 +160,34 @@ describe("confirmStatementImport", () => {
     await confirmStatementImport(fd);
     const [, args] = supabase.rpc.mock.calls[0] as unknown as [string, { p: { sections: unknown[] } }];
     expect(args.p.sections[0]).toMatchObject({ cashback_total: "" });
+  });
+});
+
+describe("parseStatement", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (createClient as unknown as Mock).mockResolvedValue(makeSupabaseStub());
+  });
+
+  function buildUploadFormData(size: number) {
+    const fd = new FormData();
+    fd.set("account_id", "acc-1");
+    fd.set("file", new File([new Uint8Array(size)], "statement.pdf", { type: "application/pdf" }));
+    return fd;
+  }
+
+  it("rejects a file past the size limit without reading it", async () => {
+    const result = await parseStatement(buildUploadFormData(MAX_STATEMENT_BYTES + 1));
+    expect(result.error).toBe("fileTooLarge");
+    // The point of checking here rather than downstream: the bytes never reach
+    // pdfjs, and no failed-import row is written for something never attempted.
+    expect(extractStatementText).not.toHaveBeenCalled();
+  });
+
+  it("lets a file at the limit through to extraction", async () => {
+    (extractStatementText as unknown as Mock).mockResolvedValue({ ok: false, reason: "unreadable" });
+    const result = await parseStatement(buildUploadFormData(MAX_STATEMENT_BYTES));
+    expect(extractStatementText).toHaveBeenCalled();
+    expect(result.error).toBe("unreadablePdf");
   });
 });

@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { SERVER_ACTION_BODY_LIMIT } from "./lib/statements/limits";
 
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
@@ -45,6 +46,15 @@ const nextConfig: NextConfig = {
   // platform binary) into the serverless bundle. Without it, pdf.mjs throws
   // `DOMMatrix is not defined` at module load in production.
   serverExternalPackages: ["pdfjs-dist", "@napi-rs/canvas"],
+
+  experimental: {
+    // Statement import posts the PDF itself through a server action, and the
+    // 1MB default rejects a routine statement during body parsing — before the
+    // action runs, so it can't be reported as anything but a crash. Sits just
+    // above the file size the importer accepts — imported from the module that
+    // owns both numbers so the pair can't drift. See lib/statements/limits.ts.
+    serverActions: { bodySizeLimit: SERVER_ACTION_BODY_LIMIT },
+  },
 
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
