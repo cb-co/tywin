@@ -98,14 +98,21 @@ async function loadAccountContext(supabase: Supabase, accountId: string, parserI
 /** Local dev debugging aid only (see design spec §9 of the LLM extraction
  *  spec): dumps an extraction artifact so a developer can inspect exactly what
  *  pdfjs pulled from a real statement and exactly what the model made of it —
- *  the pair needed to reproduce a parse failure offline. Vercel's filesystem is
- *  read-only outside /tmp, so this throws there; both files are gitignored
- *  because they hold un-scrubbed statement data. */
+ *  the pair needed to reproduce a parse failure offline. Both files are
+ *  gitignored because they hold un-scrubbed statement data.
+ *
+ *  Compiled out of production rather than left to fail there. It only ever
+ *  threw on Vercel — the filesystem is read-only outside /tmp — but the
+ *  dynamic `path.join(process.cwd(), fileName)` made Turbopack give up on
+ *  tracing this module's real dependencies and pull the entire project into
+ *  the serverless bundle. NODE_ENV is inlined at build time, so the early
+ *  return takes the whole write path out of the production graph with it. */
 async function dumpForDebug(fileName: string, contents: string) {
+  if (process.env.NODE_ENV === "production") return;
   try {
     await writeFile(path.join(process.cwd(), fileName), contents, { mode: 0o600 });
   } catch {
-    // best-effort local debug aid; ignore in read-only environments (e.g. Vercel)
+    // best-effort local debug aid; ignore where the filesystem is read-only
   }
 }
 
