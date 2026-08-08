@@ -40,4 +40,29 @@ describe("SYSTEM_PROMPT", () => {
     expect(SYSTEM_PROMPT).toMatch(/JSON number, not a string/i);
     expect(SYSTEM_PROMPT).toMatch(/no currency symbol, no thousands separator/i);
   });
+
+  /* Statements that print debits and credits in two columns encode the sign by
+     position; flattened to text, an unsigned payment read as a charge moves the
+     computed balance by twice its value. */
+  it("explains that a credit-column amount is negative even when printed unsigned", () => {
+    expect(SYSTEM_PROMPT).toMatch(/further-right column is payments and credits/i);
+    expect(SYSTEM_PROMPT).toMatch(/MUST carry a negative sign/);
+  });
+
+  /* Some issuers draw the summary table as artwork, so the text layer keeps the
+     figures and loses every heading. Without this the model reports a previous
+     balance of 0 and the checksum rejects an otherwise perfect extraction. */
+  it("tells the model how to read a summary block whose labels are missing", () => {
+    expect(SYSTEM_PROMPT).toMatch(/UNLABELED SUMMARY BLOCKS/);
+    expect(SYSTEM_PROMPT).toMatch(/the one left over is the previous balance/i);
+    expect(SYSTEM_PROMPT).toMatch(/never invent or adjust a number to make it balance/i);
+  });
+
+  /* The worked example teaches the matching method. Its figures are synthetic
+     on purpose — reusing a real statement's numbers invites the model to
+     reproduce them as an answer instead of following the reasoning. */
+  it("keeps the worked example's figures self-consistent and clearly synthetic", () => {
+    expect(SYSTEM_PROMPT).toContain("1200.00 + 9875.40 - 350.00 = 10725.40");
+    expect(SYSTEM_PROMPT).toMatch(/never carry them into your output/i);
+  });
 });

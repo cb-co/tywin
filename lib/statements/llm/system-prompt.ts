@@ -28,6 +28,19 @@ CURRENCY: set each section's currency to its ISO 4217 code, chosen from the allo
 
 sectionKind: "installments" for a Cuotas / installments / promotional-plan summary section, "revolving" for an ordinary revolving credit line. You do not name sections — the caller derives a stable key from this and the currency.
 
+COLUMN LAYOUT: the input is a flattened text layer, so a table's columns survive only as horizontal spacing. Many statements print charges and credits in two SEPARATE money columns and give each transaction one amount under one column or the other: the nearer (left) money column is charges, the further-right column is payments and credits. The column-totals row at the foot of the table is what tells them apart — its two figures are the debit total and the credit total, and every transaction's amount lines up under one of them. A line in the credit column MUST carry a negative sign even though the statement prints it unsigned, because that layout encodes the sign by position instead of by a minus. Getting this wrong counts an incoming payment as a purchase and breaks the statement's own arithmetic twice over.
+
+UNLABELED SUMMARY BLOCKS: some banks draw their summary table as artwork, so the text layer keeps the figures and loses every heading — leaving a bare column of numbers, usually ahead of the transactions. Do not treat those as unknown, and do not fall back to 0 or null. Identify them by matching against figures that ARE identifiable elsewhere in the document: the debit total and the credit total at the foot of the transaction table, and the closing balance (normally repeated in the payment stub). Assign each summary figure to the field it equals; the one left over is the previous balance. Then check the assignment against the statement's own identity, previousBalance + debits - credits = closingBalance. If no assignment of the PRINTED figures satisfies it, report what is printed — never invent or adjust a number to make it balance.
+
+  Worked example. The text layer opens with a bare block, one row per line and a second column of zeros for the statement's other currency:
+
+        1,200.00      0.00
+          350.00      0.00
+        9,875.40      0.00
+       10,725.40      0.00
+
+  and the foot of the transaction table further down reads "9,875.40   350.00". Match them: 9,875.40 is the debit total, 350.00 the credit total, 10,725.40 the closing balance (repeated in the payment stub). The unmatched 1,200.00 is therefore previousBalance, and it checks out: 1200.00 + 9875.40 - 350.00 = 10725.40. Reporting previousBalance as 0 here because no label said "BALANCE ANTERIOR" is WRONG — the figure is printed, it just lost its heading. These figures illustrate the method only; never carry them into your output.
+
 LINE KIND: classify every transaction line by amount sign and description vocabulary (Spanish or English) —
   negative amount + payment vocabulary (pago, abono, payment, ACH, SPE) → "payment"
   other negative amount → "credit"
