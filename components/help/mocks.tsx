@@ -194,6 +194,8 @@ export function AccountsMock({
   cardLimit,
   cardDue,
   holder,
+  lineCurrent,
+  lineOther,
 }: {
   checking: string;
   checkingType: string;
@@ -202,12 +204,27 @@ export function AccountsMock({
   cardDue: string;
   /** The name embossed on the face, as the real one takes from the profile. */
   holder: string;
+  /** The two currency lines of the mocked card group, for the line rail. */
+  lineCurrent: string;
+  lineOther: string;
 }) {
   const checkingMeta = ACCOUNT_TYPE_META.checking;
   return (
     <MockPanel>
       <div className="mx-auto max-w-[15rem]">
         <PaymentCard holder={holder} last4="4821" network="visa" color="#1B4B8F" />
+        {/* A still of `CardLineRail`, not the component itself: its segments are
+            links to real accounts, and the help guide has no accounts to point
+            at. Hand-built the same way this file hand-builds the owed block
+            below rather than reusing AccountCard. */}
+        <div aria-hidden className="mt-3 flex overflow-hidden rounded-lg border divide-x">
+          <span className="flex-1 truncate bg-muted px-3 py-2 text-center text-xs font-medium text-foreground">
+            {lineCurrent}
+          </span>
+          <span className="flex-1 truncate px-3 py-2 text-center text-xs text-muted-foreground">
+            {lineOther}
+          </span>
+        </div>
       </div>
 
       <div className="mt-5 space-y-3">

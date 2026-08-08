@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import { getTranslations, getLocale } from "next-intl/server";
 import {
   getAccountById,
@@ -9,6 +9,7 @@ import {
   getBanks,
   getCardStatements,
   getCardGroupSiblings,
+  getCardGroupLines,
 } from "@/lib/accounts/queries";
 import { resolveEffectiveBonus, getWelcomeBonusSpend } from "@/lib/accounts/welcome-bonus";
 import { yearCashback, hasReportedCashback } from "@/lib/accounts/cashback";
@@ -24,6 +25,7 @@ import { AmortizationTable } from "@/components/accounts/amortization-table";
 import { Card } from "@/components/ui/card";
 import { ColorTile } from "@/components/ui/color-tile";
 import { PaymentCard } from "@/components/accounts/payment-card";
+import { CardLineRail } from "@/components/accounts/card-line-rail";
 import { inferNetwork, inferLast4 } from "@/lib/accounts/network";
 import { profileLabel } from "@/lib/profile";
 import { Progress } from "@/components/ui/progress";
@@ -39,17 +41,27 @@ export default async function AccountDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [account, currencies, cardGroups, banks, activity, quickAddData, statements, siblings] =
-    await Promise.all([
-      getAccountById(id),
-      getCurrencies(),
-      getCardGroups(),
-      getBanks(),
-      getAccountTransactions(id),
-      getQuickAddData(),
-      getCardStatements(id),
-      getCardGroupSiblings(id),
-    ]);
+  const [
+    account,
+    currencies,
+    cardGroups,
+    banks,
+    activity,
+    quickAddData,
+    statements,
+    siblings,
+    cardLines,
+  ] = await Promise.all([
+    getAccountById(id),
+    getCurrencies(),
+    getCardGroups(),
+    getBanks(),
+    getAccountTransactions(id),
+    getQuickAddData(),
+    getCardStatements(id),
+    getCardGroupSiblings(id),
+    getCardGroupLines(id),
+  ]);
   if (!account) notFound();
 
   const t = await getTranslations("AccountDetail");
@@ -122,13 +134,30 @@ export default async function AccountDetailPage({
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
-      <Link
-        href="/accounts"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" />
-        {t("backLink")}
-      </Link>
+      {/* The back row names the physical card when this account is one line of
+          one. A person arriving here from a notification or a link has no other
+          way to tell that the account they are reading shares plastic with
+          another — the face alone cannot say it, because a solo card draws a
+          face too.
+
+          The group is a static crumb, not a link: there is no card-group page
+          to send anyone to. Its lines are what you can navigate to, and the rail
+          in the hero below does that. */}
+      <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <Link
+          href="/accounts"
+          className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" />
+          {t("backLink")}
+        </Link>
+        {cardGroup ? (
+          <>
+            <ChevronRight aria-hidden className="size-3.5 text-muted-foreground/50" />
+            <span className="truncate text-foreground">{cardGroup.name}</span>
+          </>
+        ) : null}
+      </nav>
 
       <div className="flex flex-wrap items-start justify-between gap-4 border-b pb-5">
         <div className="flex items-center gap-3">
@@ -187,7 +216,16 @@ export default async function AccountDetailPage({
           downstream could clamp. */}
       <Card className="p-7">
         <div className="flex flex-wrap items-center gap-8">
-          {face ? <PaymentCard {...face} className="w-88 max-w-full shrink-0" /> : null}
+          {face ? (
+            /* The face and its rail move as one block. Wrapping them means the
+               rail inherits the face's exact width and wraps with it, instead
+               of being a third flex child that could end up beside the figures
+               when the panel reflows. */
+            <div className="w-88 max-w-full shrink-0">
+              <PaymentCard {...face} />
+              <CardLineRail lines={cardLines} />
+            </div>
+          ) : null}
           <div className={`flex-1 ${face ? "min-w-[min(22rem,100%)]" : "min-w-[16rem]"}`}>
             {isCardType ? (
               <>

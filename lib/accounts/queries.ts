@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
 import { getAccountFunding } from "@/lib/goals/queries";
+import { buildCardGroupLines, type CardGroupLine } from "./group-lines";
+
+export type { CardGroupLine } from "./group-lines";
 
 type AccountRow = Database["public"]["Tables"]["accounts"]["Row"];
 type CardRow = Database["public"]["Views"]["card_status"]["Row"];
@@ -143,4 +146,36 @@ export async function getCardGroupSiblings(accountId: string): Promise<CardGroup
     .eq("card_group_id", account.card_group_id)
     .eq("type", "credit_card");
   return siblings ?? [account];
+}
+
+/** The currency lines of `accountId`'s card group, for the detail page's rail.
+ *
+ *  Empty for a card that belongs to no group — there is nothing to navigate
+ *  between, and the rail renders nothing. The ordering matches the accounts
+ *  grid (`sort_order`, then `created_at`) so a card's lines appear in the same
+ *  sequence wherever you meet them. */
+export async function getCardGroupLines(accountId: string): Promise<CardGroupLine[]> {
+  const supabase = await createClient();
+  // The group's name comes along because every segment's label is derived by
+  // subtracting it from the line's own name — see `cardLineLabel`.
+  const { data: account } = await supabase
+    .from("accounts")
+    .select("card_group_id, card_groups(name)")
+    .eq("id", accountId)
+    .maybeSingle();
+  if (!account?.card_group_id) return [];
+
+  // Archived lines are filtered in `buildCardGroupLines`, not here: the rule keeps
+  // the current line whatever its state, and that is a projection decision the
+  // pure helper owns and tests.
+  const { data: rows } = await supabase
+    .from("accounts")
+    .select("id, name, currency, is_archived")
+    .eq("card_group_id", account.card_group_id)
+    .eq("type", "credit_card")
+    .order("sort_order")
+    .order("created_at");
+  if (!rows) return [];
+
+  return buildCardGroupLines(rows, account.card_groups?.name ?? "", accountId);
 }

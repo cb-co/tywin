@@ -190,6 +190,7 @@ export default async function HelpPage() {
               <h3 className="mt-5 text-sm font-semibold text-foreground">{t("accountPageTitle")}</h3>
               <ul className="mt-2 space-y-1.5 text-sm text-foreground">
                 <li>{t("accountPageFace")}</li>
+                <li>{t("accountPageLines")}</li>
                 <li>{t("accountPageBalance")}</li>
                 <li>{t("accountPageUtilization")}</li>
                 <li>{t("accountPageCashback")}</li>
@@ -208,6 +209,8 @@ export default async function HelpPage() {
               cardLimit={t("accountsMockLimit")}
               cardDue={t("accountsMockCardDue")}
               holder={t("accountsMockHolder")}
+              lineCurrent={t("accountsMockLineCurrent")}
+              lineOther={t("accountsMockLineOther")}
             />
           </HelpChapter>
 

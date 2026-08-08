@@ -140,6 +140,7 @@
   "AccountDetail": {
     "cardholder": "Titular",
     "backLink": "Cuentas",
+    "cardLinesLabel": "Líneas de esta tarjeta",
     "archived": "Archivada",
     "balanceOwed": "Saldo adeudado",
     "utilization": "Utilización",
@@ -766,6 +767,7 @@
     "cardFaceBody": "Las tarjetas de crédito se dibujan como el objeto físico. Cashly lee el nombre de la tarjeta para elegir su color y su marca de red — una Amex Platinum sale plateada, una Visa Infinite negra — y la cara aparece tanto en la lista como en la página de la propia tarjeta.",
     "cardFaceReroll": "¿No es el color que esperabas? Borra el campo de color y guarda: Cashly lo vuelve a deducir del nombre. Un color que escribas tú siempre se respeta tal cual.",
     "accountPageFace": "La cara de la tarjeta, junto al balance, para saber de un vistazo cuál estás viendo.",
+    "accountPageLines": "Si la tarjeta pertenece a un grupo, sus otras líneas de moneda aparecen en una tira justo debajo de la cara — un clic para cambiar de una a otra, y el nombre del grupo encabeza la página.",
     "subBrand": "Los logos y colores aparecen solos: Cashly reconoce el servicio por el nombre que le pusiste. Lo que no reconoce conserva su inicial, que es un resultado terminado, no algo que falte. Si renombras una suscripción, la vuelve a buscar.",
     "statementsBody": "Pulsa Importar y sube el PDF del estado de cuenta de tu tarjeta — se admiten archivos protegidos con contraseña, con reintento si te equivocas al escribirla. Cashly lo divide en secciones (una por cada línea de moneda de la tarjeta), tú confirmas a qué cuenta corresponde cada una y luego pulsas Importar para confirmar. Esto crea las transacciones correspondientes y alimenta la estimación de coste de financiación y las cifras de cashback en Análisis. El cashback se lee de cada estado de cuenta y se cuenta una sola vez por fecha de corte, así que reimportar el mismo PDF corrige la cifra en lugar de duplicarla.",
     "accountsMockChecking": "Cuenta corriente diaria",
@@ -773,6 +775,8 @@
     "accountsMockOwedLabel": "Adeudado",
     "accountsMockLimit": "Límite $3,000.00",
     "accountsMockHolder": "ANA GARCÍA",
+    "accountsMockLineCurrent": "USD",
+    "accountsMockLineOther": "DOP",
     "accountsMockCardDue": "Vence el 14",
 
     "transactionsTitle": "Transacciones",
