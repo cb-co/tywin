@@ -2,12 +2,16 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useForm, useWatch, Controller, type Resolver } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import { TRANSACTION_TYPES, transactionInput, type TransactionType } from "@/lib/transactions/schema";
+import { TRANSACTION_TYPES, type TransactionType } from "@/lib/transactions/schema";
+import {
+  normalizeFormValues,
+  transactionResolver,
+  type TransactionFormValues,
+} from "@/lib/transactions/form-values";
 import { createTransaction, updateTransaction } from "@/app/(app)/transactions/actions";
 import { saveMerchantRule } from "@/app/(app)/accounts/statement-actions";
 import type { QuickAddData, TransactionWithRefs } from "@/lib/transactions/queries";
@@ -37,28 +41,7 @@ import { crossRate } from "@/lib/fx";
 import { formatMoney } from "@/lib/format";
 import { useUiSound } from "@/components/sound/sound-provider";
 
-type FormValues = {
-  type: TransactionType;
-  account_id: string;
-  to_account_id: string;
-  category_id: string;
-  amount: string;
-  /* No currency field. A transaction is denominated in its account's currency —
-     the bank settles in what the account holds, whatever the merchant billed —
-     so the server reads it off the account and the form only displays it. */
-  /* The only rate a person is ever asked for, and only when a payment actually
-     crosses currencies. The rate that converts this row into the base currency
-     for budgets and net worth is derived server-side from the FX service — no
-     money changed hands at that rate, so it is not the user's to supply.
-
-     Destination-currency units per 1 source-currency unit. Becomes to_amount. */
-  transfer_rate: string;
-  include_tax: boolean;
-  include_commission: boolean;
-  exclude_from_budget: boolean;
-  occurred_at: string;
-  description: string;
-};
+type FormValues = TransactionFormValues;
 
 /* occurred_at carries no meaningful time-of-day: the server stores whatever
    calendar date the user picks as UTC midnight of that date (see actions.ts),
@@ -158,18 +141,14 @@ export function TransactionForm({
     getValues,
     formState: { errors },
   } = useForm<FormValues>({
-    // `transactionInput` doesn't own `transfer_rate` (UI-only, converted to
-    // `to_amount` before submit) and coerces `amount` to a number — so a
-    // non-raw zodResolver's parsed output would silently drop transfer_rate
-    // and change amount's type out from under onSubmit, which reads both
-    // directly off `values`. `raw: true` makes the resolver hand back the
-    // original (validated) FormValues on success instead, while `errors`
-    // still populates from the same validation pass.
-    resolver: zodResolver(transactionInput, undefined, { raw: true }) as unknown as Resolver<
-      FormValues,
-      unknown,
-      FormValues
-    >,
+    // Validates the cleaned values, hands `onSubmit` back the raw ones — see
+    // transactionResolver in lib/transactions/form-values.ts. Also why `raw`,
+    // not a plain parsed resolver: `transactionInput` doesn't own `transfer_rate`
+    // (UI-only, converted to `to_amount` before submit) and coerces `amount` to a
+    // number, so a parsed result would silently drop transfer_rate and change
+    // amount's type out from under onSubmit, which reads both directly off
+    // `values`.
+    resolver: transactionResolver() as unknown as Resolver<FormValues, unknown, FormValues>,
     defaultValues: transaction
       ? {
           type: transaction.type,
@@ -308,13 +287,12 @@ export function TransactionForm({
 
     startTransition(async () => {
       const payload = {
-        ...values,
+        ...normalizeFormValues(values),
         to_amount:
           isPayment && crossCurrency
             ? destinationAmount(Number(values.amount), transferRate)
             : undefined,
         to_account_id: isPayment ? values.to_account_id : "",
-        category_id: values.type === "income" || values.category_id === "none" ? "" : values.category_id,
       };
       const result =
         isEdit && transaction
