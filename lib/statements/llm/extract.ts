@@ -2,9 +2,7 @@ import { generateObject, APICallError, RetryError } from "ai";
 import { google } from "@ai-sdk/google";
 import { StatementSchema, type LlmLine, type LlmSection, type LlmStatement } from "./schema";
 import { SYSTEM_PROMPT } from "./system-prompt";
-import { parseMoneyCents } from "../money";
-import { normalizeCurrency, normalizeSectionKey } from "../currency";
-import { monthBeforePlusDay } from "../dates";
+import { ddmmyyyyToIso, monthBeforePlusDay } from "../dates";
 import type { ParsedLine, ParsedSection, ParsedStatement } from "../types";
 
 export type LlmExtractResult =
@@ -41,86 +39,122 @@ export async function extractWithLLM(text: string): Promise<LlmExtractResult> {
   }
 }
 
-function toLine(l: LlmLine, index: number): ParsedLine {
-  return {
-    lineNo: index + 1,
-    madeOn: l.madeOn,
-    postedOn: l.postedOn,
-    reference: l.reference,
-    description: l.description,
-    mcc: l.mcc,
-    authCode: l.authCode,
-    amountCents: parseMoneyCents(l.amount),
-    kind: l.kind,
-    suggestedCategory: l.suggestedCategory,
-  };
+/**
+ * Decimal money -> integer cents.
+ *
+ * There is no text to parse any more: the schema types every amount as a
+ * number, so the decoder cannot produce "RD$ 255.38" or "N/A" in the first
+ * place. All that remains is the float->cents conversion the ledger needs.
+ *
+ * float64 holds 1234.56 as 1234.5599999999999, so the multiply is followed by a
+ * round rather than a truncate — `Math.round(x * 100)` recovers the exact cent
+ * for every magnitude a statement can carry (error stays many orders of
+ * magnitude below half a cent until ~1e13).
+ */
+function cents(amount: number): number {
+  return Math.round(amount * 100);
 }
 
+function centsOrNull(amount: number | null): number | null {
+  return amount === null ? null : cents(amount);
+}
+
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 /**
- * Cashback, tolerantly.
- *
- * Every other money field on a section feeds the import checksum, so an
- * unparseable value there SHOULD fail the import loudly. Cashback feeds
- * nothing — it is a reported figure carried alongside the anchor — so a model
- * that returns "N/A", an empty string, or a stray currency symbol must not
- * take a whole statement's balances and transactions down with it. Drop the
- * field and import the rest.
- *
- * The magnitude is forced positive: the prompt asks for the minus sign
- * dropped, but the source lines ARE negative and a model that transcribes
- * "-328.00" is reporting the same 328.00 of cashback, not a debt.
+ * The one field the schema still cannot constrain: JSON has no date type, and
+ * the pattern keyword is advisory to the decoder. The prompt asks for ISO, and
+ * dd/mm/yyyy is the only other form these statements print — repair that, and
+ * fail loudly on anything else, because a date lands in the ledger.
  */
-function toCashbackCents(raw: string | null): number | null {
-  if (raw === null || raw.trim() === "") return null;
+function isoDate(raw: string): string {
+  return ISO_DATE_RE.test(raw) ? raw : ddmmyyyyToIso(raw);
+}
+
+/** For dates that feed nothing but the preview, where an unreadable value is
+ *  worth less than the import it would otherwise cancel. */
+function isoDateOrNull(raw: string | null): string | null {
+  if (raw === null) return null;
   try {
-    return Math.abs(parseMoneyCents(raw));
+    return isoDate(raw);
   } catch {
     return null;
   }
 }
 
+/**
+ * Derived, never transcribed.
+ *
+ * `sectionKey` is persisted in `statement_section_mappings` so that a future
+ * import of the same card maps itself with no user input — which only works if
+ * the key is byte-identical every time. It used to be a free string the model
+ * built to a spec in the prompt, with the caller rewriting it when the model
+ * put a currency symbol in; deriving it from two enum fields makes it
+ * structurally impossible to vary. Reproduces the keys already saved for
+ * existing cards ("DOP", "USD", "DOP_CUOTAS").
+ */
+function sectionKeyFor(s: LlmSection): string {
+  return s.sectionKind === "installments" ? `${s.currency}_CUOTAS` : s.currency;
+}
+
+function toLine(l: LlmLine, index: number): ParsedLine {
+  return {
+    lineNo: index + 1,
+    madeOn: isoDate(l.madeOn),
+    postedOn: isoDate(l.postedOn),
+    reference: l.reference,
+    description: l.description,
+    mcc: l.mcc,
+    authCode: l.authCode,
+    amountCents: cents(l.amount),
+    kind: l.kind,
+    suggestedCategory: l.suggestedCategory,
+  };
+}
+
 function toSection(s: LlmSection): ParsedSection {
-  // The schema can only require a string here; nothing about the JSON schema the
-  // model is constrained by can express "ISO 4217, not the symbol on the page".
-  const currency = normalizeCurrency(s.currency);
   const lines = s.lines.map(toLine);
+  const periodEnd = isoDate(s.periodEnd);
+  // Σ over the lines whenever there are lines: the checksum is the point, and a
+  // stated total the model mis-transcribed would defeat it. The stated figures
+  // are the fallback for a summary-only section, which has nothing to sum.
   const totalDebitsCents =
     lines.length > 0
       ? lines.filter((l) => l.amountCents > 0).reduce((sum, l) => sum + l.amountCents, 0)
-      : s.totalDebits !== null
-        ? parseMoneyCents(s.totalDebits)
-        : 0;
+      : centsOrNull(s.totalDebits) ?? 0;
   const totalCreditsCents =
     lines.length > 0
       ? lines.filter((l) => l.amountCents < 0).reduce((sum, l) => sum - l.amountCents, 0)
-      : s.totalCredits !== null
-        ? parseMoneyCents(s.totalCredits)
-        : 0;
+      : centsOrNull(s.totalCredits) ?? 0;
 
   return {
-    sectionKey: normalizeSectionKey(s.sectionKey, s.currency, currency),
-    currency,
-    periodStart: monthBeforePlusDay(s.periodEnd),
-    periodEnd: s.periodEnd,
-    dueDate: s.dueDate,
-    previousBalanceCents: parseMoneyCents(s.previousBalance),
+    sectionKey: sectionKeyFor(s),
+    currency: s.currency,
+    // Read off the statement when it printed a range; derived from the cutoff
+    // date when it printed only that.
+    periodStart: isoDateOrNull(s.periodStart) ?? monthBeforePlusDay(periodEnd),
+    periodEnd,
+    dueDate: isoDateOrNull(s.dueDate),
+    previousBalanceCents: cents(s.previousBalance),
     totalDebitsCents,
     totalCreditsCents,
-    closingBalanceCents: parseMoneyCents(s.closingBalance),
-    balanceToPayCents:
-      s.balanceToPay !== null ? parseMoneyCents(s.balanceToPay) : parseMoneyCents(s.closingBalance),
-    minimumPaymentCents: s.minimumPayment !== null ? parseMoneyCents(s.minimumPayment) : null,
-    overdueAmountCents: s.overdueAmount !== null ? parseMoneyCents(s.overdueAmount) : null,
+    closingBalanceCents: cents(s.closingBalance),
+    // Equals the closing balance when the statement prints no separate figure.
+    balanceToPayCents: centsOrNull(s.balanceToPay) ?? cents(s.closingBalance),
+    minimumPaymentCents: centsOrNull(s.minimumPayment),
+    overdueAmountCents: centsOrNull(s.overdueAmount),
     overdueInstallments: s.overdueInstallments,
-    creditLimitCents: s.creditLimit !== null ? parseMoneyCents(s.creditLimit) : null,
-    availableCreditCents: s.availableCredit !== null ? parseMoneyCents(s.availableCredit) : null,
+    creditLimitCents: centsOrNull(s.creditLimit),
+    availableCreditCents: centsOrNull(s.availableCredit),
     interestRateAnnual: s.interestRateAnnual,
-    avgDailyBalanceCents: s.avgDailyBalance !== null ? parseMoneyCents(s.avgDailyBalance) : null,
-    avgDailyBalancePriorCents:
-      s.avgDailyBalancePrior !== null ? parseMoneyCents(s.avgDailyBalancePrior) : null,
-    costOfCarryCents: s.costOfCarry !== null ? parseMoneyCents(s.costOfCarry) : null,
-    costOfCarryPriorCents: s.costOfCarryPrior !== null ? parseMoneyCents(s.costOfCarryPrior) : null,
-    cashbackCents: toCashbackCents(s.totalCashback),
+    avgDailyBalanceCents: centsOrNull(s.avgDailyBalance),
+    avgDailyBalancePriorCents: centsOrNull(s.avgDailyBalancePrior),
+    costOfCarryCents: centsOrNull(s.costOfCarry),
+    costOfCarryPriorCents: centsOrNull(s.costOfCarryPrior),
+    // The magnitude, not the sign: the prompt asks for the minus dropped, but
+    // the source lines ARE negative and a model that transcribes -328.00 is
+    // reporting the same 328.00 of cashback, not a debt.
+    cashbackCents: s.totalCashback === null ? null : Math.abs(cents(s.totalCashback)),
     lines,
   };
 }

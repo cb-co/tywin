@@ -94,6 +94,20 @@ async function loadAccountContext(supabase: Supabase, accountId: string, parserI
   return { account, options, saved } as const;
 }
 
+/** Local dev debugging aid only (see design spec §9 of the LLM extraction
+ *  spec): dumps an extraction artifact so a developer can inspect exactly what
+ *  pdfjs pulled from a real statement and exactly what the model made of it —
+ *  the pair needed to reproduce a parse failure offline. Vercel's filesystem is
+ *  read-only outside /tmp, so this throws there; both files are gitignored
+ *  because they hold un-scrubbed statement data. */
+async function dumpForDebug(fileName: string, contents: string) {
+  try {
+    await writeFile(path.join(process.cwd(), fileName), contents, { mode: 0o600 });
+  } catch {
+    // best-effort local debug aid; ignore in read-only environments (e.g. Vercel)
+  }
+}
+
 /** Expensive half of the old runPipeline: PDF extraction, PII scrub, and the
  *  Gemini call. Only ever run on parse — see design spec §1: this step used
  *  to be a cheap local regex (detectParser) and confirm re-ran it for free;
@@ -115,15 +129,7 @@ async function extractAndParse(formData: FormData) {
     return { needsPassword: true } as const;
   }
 
-  // Local dev debugging aid only (see design spec §9 of the LLM extraction
-  // spec): dumps the raw, pre-scrub extraction so a developer can inspect what
-  // pdfjs pulled from a real statement. Vercel's filesystem is read-only
-  // outside /tmp, so this throws there — caught and ignored.
-  try {
-    await writeFile(path.join(process.cwd(), "extracted-statement.txt"), extracted.text, { mode: 0o600 });
-  } catch {
-    // best-effort local debug aid; ignore in read-only environments (e.g. Vercel)
-  }
+  await dumpForDebug("extracted-statement.txt", extracted.text);
 
   const llmResult = await extractWithLLM(scrubPii(extracted.text));
   if (!llmResult.ok) {
@@ -137,10 +143,18 @@ async function extractAndParse(formData: FormData) {
     return { error: llmResult.reason === "rate_limited" ? t("llmRateLimited") : t("unsupportedBank") } as const;
   }
 
+  await dumpForDebug("extracted-statement.json", JSON.stringify(llmResult.statement, null, 2));
+
   let parsed: ParsedStatement;
   try {
     parsed = toParsedStatement(llmResult.statement);
   } catch (e) {
+    const detail = e instanceof Error ? e.message : String(e);
+    // The model's own output is the only thing that explains this failure, and
+    // it is different on every run — without it a report of "the statement
+    // couldn't be parsed" is unactionable. Server-side log; the JSON dump above
+    // has the same payload for local runs.
+    console.error("[statements] conversion failed:", detail, JSON.stringify(llmResult.statement));
     await supabase.from("statement_imports").insert({
       user_id: user.id,
       parser_id: "unknown",
@@ -148,7 +162,7 @@ async function extractAndParse(formData: FormData) {
       status: "failed_detection",
       error: String(e),
     });
-    return { error: t("parseFailed") } as const;
+    return { error: t("parseFailedDetail", { detail }) } as const;
   }
 
   const failures = validateChecksums(parsed);

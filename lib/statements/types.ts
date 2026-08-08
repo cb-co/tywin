@@ -48,9 +48,3 @@ export interface ParsedStatement {
   cardLast4: string | null;
   sections: ParsedSection[];
 }
-
-export interface StatementParser {
-  id: string;
-  detect(text: string): boolean;
-  parse(text: string): ParsedStatement;
-}

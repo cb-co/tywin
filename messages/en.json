@@ -254,6 +254,7 @@
     "unsupportedBank": "This bank's statement layout isn't supported yet.",
     "llmRateLimited": "Too many statements are being processed right now. Please try again in a minute.",
     "parseFailed": "The statement couldn't be parsed.",
+    "parseFailedDetail": "The statement couldn't be parsed ({detail}). Nothing was imported.",
     "passwordRequired": "The PDF password is required.",
     "checksumFailed": "The statement's own totals don't add up ({detail}). Nothing was imported.",
     "notACard": "Statements can only be imported on credit cards.",

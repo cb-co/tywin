@@ -26,7 +26,18 @@ describe("SYSTEM_PROMPT", () => {
     expect(SYSTEM_PROMPT).toContain("RD$");
   });
 
-  it("pins the sectionKey naming convention", () => {
-    expect(SYSTEM_PROMPT).toContain("_CUOTAS");
+  /* The section key is derived from sectionKind + currency now, so the prompt
+     no longer names keys — it only has to describe which kind a section is. */
+  it("describes the two section kinds instead of a key to construct", () => {
+    expect(SYSTEM_PROMPT).toContain("installments");
+    expect(SYSTEM_PROMPT).toContain("revolving");
+    expect(SYSTEM_PROMPT).not.toContain("_CUOTAS");
+  });
+
+  /* Amounts are typed as numbers in the schema; a prompt that still showed
+     quoted, comma-grouped examples would pull against the decoder. */
+  it("asks for money as unformatted JSON numbers", () => {
+    expect(SYSTEM_PROMPT).toMatch(/JSON number, not a string/i);
+    expect(SYSTEM_PROMPT).toMatch(/no currency symbol, no thousands separator/i);
   });
 });

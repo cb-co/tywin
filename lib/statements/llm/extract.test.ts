@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { APICallError, RetryError } from "ai";
 import { isRateLimitError, toParsedStatement } from "./extract";
+import { StatementSchema } from "./schema";
 import { validateChecksums } from "../validate";
 import type { LlmStatement } from "./schema";
 
@@ -9,41 +10,42 @@ const WITH_LINES: LlmStatement = {
   cardLast4: "1234",
   sections: [
     {
-      sectionKey: "DOP",
+      sectionKind: "revolving",
+      periodStart: null,
       currency: "DOP",
       periodEnd: "2026-06-25",
       dueDate: "2026-07-20",
-      previousBalance: "1,000.00",
-      closingBalance: "1,375.50",
-      balanceToPay: "1,375.50",
-      minimumPayment: "137.55",
-      overdueAmount: "0.00",
+      previousBalance: 1000.00,
+      closingBalance: 1375.50,
+      balanceToPay: 1375.50,
+      minimumPayment: 137.55,
+      overdueAmount: 0.00,
       overdueInstallments: 0,
-      creditLimit: "10,000.00",
-      availableCredit: "8,574.50",
+      creditLimit: 10000.00,
+      availableCredit: 8574.50,
       interestRateAnnual: 40,
-      avgDailyBalance: "1,200.00",
-      avgDailyBalancePrior: "0.00",
-      costOfCarry: "40.00",
-      costOfCarryPrior: "0.00",
+      avgDailyBalance: 1200.00,
+      avgDailyBalancePrior: 0.00,
+      costOfCarry: 40.00,
+      costOfCarryPrior: 0.00,
       totalDebits: null,
       totalCredits: null,
-      totalCashback: "328.00",
+      totalCashback: 328.00,
       lines: [
         {
           madeOn: "2026-05-28", postedOn: "2026-05-26", reference: "REF1",
           description: "MERCADO UNO", mcc: "5411", authCode: "045602",
-          amount: "500.00", kind: "purchase", suggestedCategory: "Groceries",
+          amount: 500.00, kind: "purchase", suggestedCategory: "Groceries",
         },
         {
           madeOn: "2026-06-05", postedOn: "2026-06-03", reference: "REF2",
           description: "Pago via SPE", mcc: null, authCode: null,
-          amount: "-200.00", kind: "payment", suggestedCategory: null,
+          amount: -200.00, kind: "payment", suggestedCategory: null,
         },
         {
           madeOn: "2026-06-10", postedOn: "2026-06-09", reference: "REF3",
           description: "RESTAURANTE TRES", mcc: "5812", authCode: "013148",
-          amount: "75.50", kind: "purchase", suggestedCategory: "Dining",
+          amount: 75.50, kind: "purchase", suggestedCategory: "Dining",
         },
       ],
     },
@@ -55,25 +57,26 @@ const LINE_LESS: LlmStatement = {
   cardLast4: "6760",
   sections: [
     {
-      sectionKey: "DOP_CUOTAS",
+      sectionKind: "installments",
+      periodStart: null,
       currency: "DOP",
       periodEnd: "2026-07-15",
       dueDate: "2026-08-10",
-      previousBalance: "0.00",
-      closingBalance: "800.00",
-      balanceToPay: "800.00",
-      minimumPayment: "80.00",
+      previousBalance: 0.00,
+      closingBalance: 800.00,
+      balanceToPay: 800.00,
+      minimumPayment: 80.00,
       overdueAmount: null,
       overdueInstallments: null,
-      creditLimit: "20,000.00",
+      creditLimit: 20000.00,
       availableCredit: null,
       interestRateAnnual: null,
-      avgDailyBalance: "650.00",
-      avgDailyBalancePrior: "0.00",
+      avgDailyBalance: 650.00,
+      avgDailyBalancePrior: 0.00,
       costOfCarry: null,
       costOfCarryPrior: null,
-      totalDebits: "1,300.00",
-      totalCredits: "500.00",
+      totalDebits: 1300.00,
+      totalCredits: 500.00,
       totalCashback: null,
       lines: [],
     },
@@ -121,80 +124,162 @@ describe("toParsedStatement", () => {
   /* `ParsedSection.currency` is declared ISO 4217 and consumed as one — the preview
      hands it to Intl.NumberFormat, confirm compares it against the account's currency,
      and fx looks up a rate by it. A statement that prints only "RD$" and never "DOP"
-     got the symbol transcribed into it verbatim, and Intl threw RangeError on render. */
-  describe("currency", () => {
-    const withCurrency = (currency: string, sectionKey = currency): LlmStatement => ({
+     used to get the symbol transcribed into it verbatim, and Intl threw RangeError on
+     render; the schema types the field as an enum of ISO codes now, so the decoder
+     cannot emit a symbol and there is no normalization step left to get wrong. */
+  describe("currency and sectionKey", () => {
+    const withSection = (patch: Partial<LlmStatement["sections"][number]>): LlmStatement => ({
       ...WITH_LINES,
-      sections: [{ ...WITH_LINES.sections[0], currency, sectionKey }],
+      sections: [{ ...WITH_LINES.sections[0], ...patch }],
     });
 
-    it("normalizes a transcribed symbol to its ISO code", () => {
-      expect(toParsedStatement(withCurrency("RD$")).sections[0].currency).toBe("DOP");
+    it("carries the enum value straight through", () => {
+      expect(toParsedStatement(withSection({ currency: "USD" })).sections[0].currency).toBe("USD");
     });
 
-    it("normalizes the currency the parserId is built from", () => {
-      expect(toParsedStatement(withCurrency("RD$")).parserId).toBe("visa_1234_dop");
+    it("builds the parserId from the section currencies", () => {
+      expect(toParsedStatement(withSection({ currency: "USD" })).parserId).toBe("visa_1234_usd");
     });
 
-    /* sectionKey is persisted in statement_section_mappings to make future imports
-       zero-touch, so a key built on the symbol would miss every saved mapping the
-       moment the model transcribes the ISO code instead. */
-    it("rewrites the sectionKey the symbol leaked into", () => {
-      expect(toParsedStatement(withCurrency("RD$")).sections[0].sectionKey).toBe("DOP");
-      expect(toParsedStatement(withCurrency("RD$", "RD$_CUOTAS")).sections[0].sectionKey).toBe(
-        "DOP_CUOTAS",
-      );
+    /* These are the exact keys already persisted in statement_section_mappings for
+       existing cards. Deriving them from two enum fields keeps every saved mapping
+       matching, and makes a key the model could vary structurally impossible. */
+    it("derives the section key from currency and kind", () => {
+      expect(toParsedStatement(withSection({ sectionKind: "revolving" })).sections[0].sectionKey)
+        .toBe("DOP");
+      expect(toParsedStatement(withSection({ sectionKind: "installments" })).sections[0].sectionKey)
+        .toBe("DOP_CUOTAS");
+      expect(
+        toParsedStatement(withSection({ currency: "USD", sectionKind: "revolving" })).sections[0]
+          .sectionKey,
+      ).toBe("USD");
+    });
+  });
+
+  /* The failure that motivated the numeric schema: a Qik statement prints "RD$" on
+     every transaction row, the model transcribed it into each amount, and three
+     imports of the same file died on `unparseable amount: "RD$ 255.38"` — while a
+     fourth run of the identical text stripped it unprompted. Typing the field as a
+     number moves the guarantee from prompt compliance to the decoder. */
+  describe("amounts", () => {
+    it("rejects a decorated amount at the schema, before any conversion runs", () => {
+      const base = WITH_LINES.sections[0];
+      const decorated = {
+        ...WITH_LINES,
+        sections: [{ ...base, lines: [{ ...base.lines[0], amount: "RD$ 255.38" }] }],
+      };
+      expect(StatementSchema.safeParse(decorated).success).toBe(false);
+      expect(StatementSchema.safeParse(WITH_LINES).success).toBe(true);
     });
 
-    it("leaves a sectionKey that never held the raw currency alone", () => {
-      expect(toParsedStatement(withCurrency("RD$", "DOP_CUOTAS")).sections[0].sectionKey).toBe(
-        "DOP_CUOTAS",
-      );
+    /* float64 cannot hold 1375.50 or 0.07 exactly; the conversion rounds rather than
+       truncates so every cent lands on the integer the statement printed. */
+    it("converts decimals to exact cents", () => {
+      const base = WITH_LINES.sections[0];
+      const amounts = [0.07, 1.1, 1375.5, 8574.5, 1e6 + 0.29, -200.2];
+      const s = toParsedStatement({
+        ...WITH_LINES,
+        sections: [
+          {
+            ...base,
+            lines: amounts.map((amount, i) => ({ ...base.lines[0], amount, reference: `R${i}` })),
+          },
+        ],
+      }).sections[0];
+      expect(s.lines.map((l) => l.amountCents)).toEqual([7, 110, 137550, 857450, 100000029, -20020]);
     });
 
-    /* Loud, not silent: extractAndParse catches this into a failed_detection row and
-       shows parseFailed, the same as an unparseable amount. Importing a statement
-       under a guessed currency would corrupt the balances it anchors. */
-    it("throws on a currency it cannot resolve", () => {
-      expect(() => toParsedStatement(withCurrency("$"))).toThrow(/currency/i);
+    it("keeps a display-only figure the statement omitted as null", () => {
+      const s = toParsedStatement({
+        ...WITH_LINES,
+        sections: [
+          {
+            ...WITH_LINES.sections[0],
+            creditLimit: null,
+            avgDailyBalance: null,
+            costOfCarry: null,
+            balanceToPay: null,
+          },
+        ],
+      }).sections[0];
+      expect(s.creditLimitCents).toBeNull();
+      expect(s.avgDailyBalanceCents).toBeNull();
+      expect(s.costOfCarryCents).toBeNull();
+      // Absent balanceToPay means "the same as the closing balance", not "unknown".
+      expect(s.balanceToPayCents).toBe(137550);
+    });
+  });
+
+  /* JSON has no date type and the schema's pattern keyword is advisory, so dates are
+     the one field still arriving as free text — the only place a repair step remains. */
+  describe("dates", () => {
+    const base = WITH_LINES.sections[0];
+    const withSection = (patch: Partial<typeof base>): LlmStatement => ({
+      ...WITH_LINES,
+      sections: [{ ...base, ...patch }],
+    });
+
+    it("derives periodStart from periodEnd when the statement printed only a cutoff", () => {
+      expect(toParsedStatement(withSection({ periodStart: null })).sections[0].periodStart)
+        .toBe("2026-05-26");
+    });
+
+    it("prefers the printed period range over the derived one", () => {
+      expect(toParsedStatement(withSection({ periodStart: "2026-05-28" })).sections[0].periodStart)
+        .toBe("2026-05-28");
+    });
+
+    it("repairs the one non-ISO form these statements print", () => {
+      const s = toParsedStatement(
+        withSection({ lines: [{ ...base.lines[0], madeOn: "28/05/2026", postedOn: "26/05/2026" }] }),
+      ).sections[0];
+      expect(s.lines[0].madeOn).toBe("2026-05-28");
+      expect(s.lines[0].postedOn).toBe("2026-05-26");
+    });
+
+    it("fails loudly on a ledger-bound date it cannot read", () => {
+      expect(() =>
+        toParsedStatement(withSection({ lines: [{ ...base.lines[0], madeOn: "May 28" }] })),
+      ).toThrow(/unparseable date/);
+      expect(() => toParsedStatement(withSection({ periodEnd: "N/A" }))).toThrow(/unparseable date/);
+    });
+
+    it("drops a display-only date it cannot read instead of failing the import", () => {
+      const s = toParsedStatement(withSection({ dueDate: "whenever", periodStart: "nonsense" }))
+        .sections[0];
+      expect(s.dueDate).toBeNull();
+      expect(s.periodStart).toBe("2026-05-26"); // falls back to the derived value
+      expect(s.lines).toHaveLength(3);
     });
   });
 
   describe("cashback", () => {
-    const withCashback = (totalCashback: string | null): LlmStatement => ({
+    const withCashback = (totalCashback: number | null): LlmStatement => ({
       ...LINE_LESS,
       sections: [{ ...LINE_LESS.sections[0], totalCashback }],
     });
-    const cents = (raw: string | null) =>
+    const cents = (raw: number | null) =>
       toParsedStatement(withCashback(raw)).sections[0].cashbackCents;
 
     it("carries the reported figure through as cents", () => {
-      expect(cents("328.00")).toBe(32800);
-      expect(cents("1,240.50")).toBe(124050);
+      expect(cents(328)).toBe(32800);
+      expect(cents(1240.5)).toBe(124050);
     });
 
     it("reports an unreported figure as null rather than zero", () => {
       // Distinguishes "the statement said nothing" from "the statement said
       // zero" — only the latter proves cashback was actually read.
       expect(cents(null)).toBeNull();
-      expect(cents("")).toBeNull();
-      expect(cents("0.00")).toBe(0);
+      expect(cents(0)).toBe(0);
     });
 
     it("takes the magnitude when the model transcribes the source's minus sign", () => {
       // The lines it is read off ARE negative; -328.00 is still 328.00 earned.
-      expect(cents("-328.00")).toBe(32800);
+      expect(cents(-328)).toBe(32800);
     });
 
-    it("drops an unparseable figure instead of failing the whole statement", () => {
-      // Cashback feeds no checksum, so a bad value here must not take a
-      // statement's balances and transactions down with it.
-      expect(cents("N/A")).toBeNull();
-      expect(cents("RD$328")).toBeNull();
-    });
-
-    it("leaves the rest of the section intact when cashback is dropped", () => {
-      const parsed = toParsedStatement(withCashback("N/A"));
+    it("leaves the rest of the section intact when the statement reports none", () => {
+      const parsed = toParsedStatement(withCashback(null));
       expect(parsed.sections[0].totalDebitsCents).toBe(130000);
       expect(parsed.sections[0].closingBalanceCents).toBe(80000);
       expect(validateChecksums(parsed)).toEqual([]);

@@ -254,6 +254,7 @@
     "unsupportedBank": "El formato de estado de cuenta de este banco aún no está soportado.",
     "llmRateLimited": "Se están procesando demasiados estados de cuenta en este momento. Intenta de nuevo en un minuto.",
     "parseFailed": "No se pudo procesar el estado de cuenta.",
+    "parseFailedDetail": "No se pudo procesar el estado de cuenta ({detail}). No se importó nada.",
     "passwordRequired": "Se requiere la contraseña del PDF.",
     "checksumFailed": "Los totales del propio estado de cuenta no cuadran ({detail}). No se importó nada.",
     "notACard": "Los estados de cuenta solo se pueden importar en tarjetas de crédito.",
