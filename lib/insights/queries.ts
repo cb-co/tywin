@@ -346,3 +346,19 @@ export async function getCashbackByCard(): Promise<CashbackByCard> {
 
   return { year, lines };
 }
+
+export function sumTransferCosts(
+  rows: { fee_amount: number | null; tax_amount: number | null; exchange_rate: number | null }[],
+): { totalFeesBase: number; totalTaxBase: number } {
+  let totalFeesBase = 0;
+  let totalTaxBase = 0;
+  for (const r of rows) {
+    const rate = Number(r.exchange_rate ?? 1);
+    totalFeesBase += Number(r.fee_amount ?? 0) * rate;
+    totalTaxBase += Number(r.tax_amount ?? 0) * rate;
+  }
+  return {
+    totalFeesBase: Math.round(totalFeesBase * 100) / 100,
+    totalTaxBase: Math.round(totalTaxBase * 100) / 100,
+  };
+}
