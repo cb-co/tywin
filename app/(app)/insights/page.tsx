@@ -97,9 +97,7 @@ function Tally({ rows, total }: { rows: React.ReactNode; total?: React.ReactNode
           per currency and never converted, so there is no one figure to sum to.
           Omitting the rule beats drawing an empty one. */}
       {total ? (
-        <div className="mt-auto flex items-baseline justify-between border-t pt-3 text-sm font-medium">
-          {total}
-        </div>
+        <div className="mt-auto space-y-1.5 border-t pt-3 text-sm font-medium">{total}</div>
       ) : null}
     </div>
   );
@@ -229,14 +227,14 @@ export default async function InsightsPage({
                   </div>
                 ))}
                 total={
-                  <>
+                  <div className="flex items-baseline justify-between">
                     <span className="text-foreground">
                       {t("cardPaymentsTotal", { currency: cardPayments.baseCurrency })}
                     </span>
                     <span className="tabular-nums text-foreground">
                       {formatMoney(cardPayments.totalBase, cardPayments.baseCurrency)}
                     </span>
-                  </>
+                  </div>
                 }
               />
             ) : (
@@ -269,14 +267,14 @@ export default async function InsightsPage({
                   </div>
                 ))}
                 total={
-                  <>
+                  <div className="flex items-baseline justify-between">
                     <span className="text-foreground">
                       {t("costOfCarryTotal", { currency: carry.baseCurrency })}
                     </span>
                     <span className="tabular-nums text-foreground">
                       {formatMoney(carry.totalBase, carry.baseCurrency)}
                     </span>
-                  </>
+                  </div>
                 }
               />
             ) : (
