@@ -559,6 +559,10 @@
     "costOfCarryAsOf": "as of {date}",
     "cashbackTitle": "Cashback in {year}",
     "cashbackEmpty": "Import a card statement to see the cashback your cards have earned.",
+    "cashbackTotal": "Total ({currency})",
+    "transferCostsTitle": "Transfer costs ({year} YTD)",
+    "transferFeesLabel": "Fees",
+    "transferTaxLabel": "Tax",
     "cardSavingsGoals": "Savings goals",
     "savingsGoalsTotal": "Total saved",
     "savingsGoalsEmpty": "No savings goals yet"

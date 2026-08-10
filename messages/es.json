@@ -559,6 +559,10 @@
     "costOfCarryAsOf": "al {date}",
     "cashbackTitle": "Cashback en {year}",
     "cashbackEmpty": "Importa un estado de cuenta para ver el cashback que han generado tus tarjetas.",
+    "cashbackTotal": "Total ({currency})",
+    "transferCostsTitle": "Costos de transferencia ({year} AAF)",
+    "transferFeesLabel": "Comisiones",
+    "transferTaxLabel": "Impuesto",
     "cardSavingsGoals": "Metas de ahorro",
     "savingsGoalsTotal": "Total ahorrado",
     "savingsGoalsEmpty": "Aún no hay metas de ahorro"
