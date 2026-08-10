@@ -1,5 +1,31 @@
 import { describe, expect, it } from "vitest";
-import { sumTransferCosts } from "./queries";
+import { sumCashbackByCurrency, sumTransferCosts } from "./queries";
+
+describe("sumCashbackByCurrency", () => {
+  it("groups multiple currencies and sums each one separately", () => {
+    const result = sumCashbackByCurrency([
+      { currency: "USD", total: 10 },
+      { currency: "DOP", total: 500 },
+      { currency: "USD", total: 5 },
+    ]);
+    expect(result).toEqual([
+      ["USD", 15],
+      ["DOP", 500],
+    ]);
+  });
+
+  it("returns a single entry when every line shares one currency", () => {
+    const result = sumCashbackByCurrency([
+      { currency: "USD", total: 10 },
+      { currency: "USD", total: 20 },
+    ]);
+    expect(result).toEqual([["USD", 30]]);
+  });
+
+  it("returns an empty array for no lines", () => {
+    expect(sumCashbackByCurrency([])).toEqual([]);
+  });
+});
 
 describe("sumTransferCosts", () => {
   it("sums fee and tax separately, each weighted by its own row's exchange rate", () => {

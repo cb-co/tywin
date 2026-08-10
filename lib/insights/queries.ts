@@ -347,6 +347,18 @@ export async function getCashbackByCard(): Promise<CashbackByCard> {
   return { year, lines };
 }
 
+/** Groups cashback lines by currency and sums each group's total — the pure
+ *  arithmetic behind the per-currency total rows the insights page renders
+ *  under the Cashback card's line list. */
+export function sumCashbackByCurrency(lines: { currency: string; total: number }[]): [string, number][] {
+  return Object.entries(
+    lines.reduce<Record<string, number>>((acc, l) => {
+      acc[l.currency] = (acc[l.currency] ?? 0) + l.total;
+      return acc;
+    }, {}),
+  );
+}
+
 export function sumTransferCosts(
   rows: { fee_amount: number | null; tax_amount: number | null; exchange_rate: number | null }[],
 ): { totalFeesBase: number; totalTaxBase: number } {
@@ -378,23 +390,54 @@ export type TransferCosts = {
  * currency using each transaction's own stored exchange_rate, not today's
  * live rate — the same rate base_amount was derived from, so this doesn't
  * restate history through a rate that didn't apply at the time.
+ *
+ * fee_amount/tax_amount are populated for `payment`-type transactions — see
+ * transactions_compute_amounts() — though other transaction types can carry
+ * a fee_amount too when include_commission is set; this card counts only
+ * transfers between your own accounts, so the type filter is deliberate,
+ * not redundant.
  */
 export async function getTransferCosts(): Promise<TransferCosts> {
   const supabase = await createClient();
   const year = new Date().getFullYear();
 
-  const [{ data: profile }, { data: rows }] = await Promise.all([
+  const [{ data: profile }, rows] = await Promise.all([
     supabase.from("profiles").select("base_currency").maybeSingle(),
-    supabase
+    fetchAllTransferRows(supabase, year),
+  ]);
+
+  const baseCurrency = profile?.base_currency ?? "USD";
+  const { totalFeesBase, totalTaxBase } = sumTransferCosts(rows);
+
+  return { year, baseCurrency, totalFeesBase, totalTaxBase };
+}
+
+/**
+ * PostgREST caps any single request at `max_rows` (1000, see
+ * supabase/config.toml) — silently, with no error, just a truncated result.
+ * A year with more than 1000 qualifying payments would otherwise under-report
+ * the fees/tax total without any signal that it happened, so this pages
+ * through with `.range()` until a page comes back short of PAGE_SIZE.
+ */
+async function fetchAllTransferRows(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  year: number,
+): Promise<Parameters<typeof sumTransferCosts>[0]> {
+  const PAGE_SIZE = 1000;
+  const rows: Parameters<typeof sumTransferCosts>[0] = [];
+  let offset = 0;
+  for (;;) {
+    const { data } = await supabase
       .from("transactions")
       .select("fee_amount,tax_amount,exchange_rate")
       .eq("type", "payment")
       .gte("occurred_at", `${year}-01-01`)
-      .lt("occurred_at", `${year + 1}-01-01`),
-  ]);
-
-  const baseCurrency = profile?.base_currency ?? "USD";
-  const { totalFeesBase, totalTaxBase } = sumTransferCosts(rows ?? []);
-
-  return { year, baseCurrency, totalFeesBase, totalTaxBase };
+      .lt("occurred_at", `${year + 1}-01-01`)
+      .range(offset, offset + PAGE_SIZE - 1);
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    offset += PAGE_SIZE;
+  }
+  return rows;
 }

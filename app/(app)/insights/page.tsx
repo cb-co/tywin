@@ -25,6 +25,7 @@ import {
   getCardPayments,
   getCashbackByCard,
   getTransferCosts,
+  sumCashbackByCurrency,
 } from "@/lib/insights/queries";
 import { getNetWorthHistory } from "@/lib/insights/net-worth-history";
 import { getGoalsOverview } from "@/lib/goals/queries";
@@ -147,12 +148,7 @@ export default async function InsightsPage({
   const carryLines = carry.lines.filter(
     (l): l is typeof l & { costOfCarry: number } => l.costOfCarry !== null,
   );
-  const cashbackTotalsByCurrency = Object.entries(
-    cashback.lines.reduce<Record<string, number>>((acc, l) => {
-      acc[l.currency] = (acc[l.currency] ?? 0) + l.total;
-      return acc;
-    }, {}),
-  );
+  const cashbackTotalsByCurrency = sumCashbackByCurrency(cashback.lines);
 
   const navLink =
     "flex size-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
@@ -273,8 +269,11 @@ export default async function InsightsPage({
 
           {/* Year-to-date, not month-scoped — the "YTD" in the title is what
               tells the reader this card ignores the month picker in this
-              section's heading, the same disambiguation the Cashback card
-              uses for its own year-scoped title. */}
+              section's heading. Cashback's title states its year for a
+              similar reason, but that's not quite the same disambiguation:
+              Cashback lives in the Debt section, which has no month picker
+              to disambiguate against. This card, unlike its section-mates,
+              sits right under a live one and silently doesn't respond to it. */}
           <ChartCard
             title={t("transferCostsTitle", { year: String(transferCosts.year) })}
             icon={Receipt}
@@ -366,18 +365,12 @@ export default async function InsightsPage({
                     </span>
                   </div>
                 ))}
-                total={
-                  <>
-                    {cashbackTotalsByCurrency.map(([currency, total]) => (
-                      <div key={currency} className="flex items-baseline justify-between">
-                        <span className="text-foreground">{t("cashbackTotal", { currency })}</span>
-                        <span className="tabular-nums text-foreground">
-                          {formatMoney(total, currency)}
-                        </span>
-                      </div>
-                    ))}
-                  </>
-                }
+                total={cashbackTotalsByCurrency.map(([currency, total]) => (
+                  <div key={currency} className="flex items-baseline justify-between">
+                    <span className="text-foreground">{t("cashbackTotal", { currency })}</span>
+                    <span className="tabular-nums text-foreground">{formatMoney(total, currency)}</span>
+                  </div>
+                ))}
               />
             ) : (
               <p className="py-8 text-center text-sm text-muted-foreground">{t("cashbackEmpty")}</p>
