@@ -1,7 +1,7 @@
 {
   "Nav": {
     "overview": "Resumen",
-    "accounts": "Billetera",
+    "accounts": "Cartera",
     "transactions": "Transacciones",
     "activity": "Actividad",
     "budgets": "Presupuestos y metas",
@@ -109,7 +109,7 @@
     "loan": "Préstamo"
   },
   "Accounts": {
-    "pageTitle": "Billetera",
+    "pageTitle": "Cartera",
     "cardholder": "Titular",
     "pageDescription": "Cuentas bancarias, tarjetas de crédito, préstamos y activos.",
     "addAccount": "Añadir cuenta",
@@ -560,7 +560,7 @@
     "cashbackTitle": "Cashback en {year}",
     "cashbackEmpty": "Importa un estado de cuenta para ver el cashback que han generado tus tarjetas.",
     "cashbackTotal": "Total ({currency})",
-    "transferCostsTitle": "Costos de transferencia ({year} AAF)",
+    "transferCostsTitle": "Costos de transferencia (en lo que va del {year})",
     "transferFeesLabel": "Comisiones",
     "transferTaxLabel": "Impuesto",
     "cardSavingsGoals": "Metas de ahorro",
@@ -737,7 +737,7 @@
     "overviewMockUpcomingItem": "Streamly",
     "overviewMockUpcomingSubtitle": "Suscripción · en 3 días",
 
-    "accountsTitle": "Billetera",
+    "accountsTitle": "Cartera",
     "accountsIntro": "Todo lo que tienes o debes vive aquí, agrupado en cuatro secciones: Cuentas (corriente, ahorro, efectivo, inversión), Tarjetas de crédito, Préstamos y Propiedades y otros bienes.",
     "commonFieldsTitle": "Toda cuenta tiene",
     "fieldName": "Nombre",
