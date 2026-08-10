@@ -362,3 +362,39 @@ export function sumTransferCosts(
     totalTaxBase: Math.round(totalTaxBase * 100) / 100,
   };
 }
+
+export type TransferCosts = {
+  year: number;
+  baseCurrency: string;
+  totalFeesBase: number;
+  totalTaxBase: number;
+};
+
+/**
+ * Fees and tax paid to move money between your own accounts this calendar
+ * year — the `payment`-type transactions' `fee_amount`/`tax_amount`
+ * (see transactions_compute_amounts() in
+ * supabase/migrations/20260717234227_transactions.sql). Converted to base
+ * currency using each transaction's own stored exchange_rate, not today's
+ * live rate — the same rate base_amount was derived from, so this doesn't
+ * restate history through a rate that didn't apply at the time.
+ */
+export async function getTransferCosts(): Promise<TransferCosts> {
+  const supabase = await createClient();
+  const year = new Date().getFullYear();
+
+  const [{ data: profile }, { data: rows }] = await Promise.all([
+    supabase.from("profiles").select("base_currency").maybeSingle(),
+    supabase
+      .from("transactions")
+      .select("fee_amount,tax_amount,exchange_rate")
+      .eq("type", "payment")
+      .gte("occurred_at", `${year}-01-01`)
+      .lt("occurred_at", `${year + 1}-01-01`),
+  ]);
+
+  const baseCurrency = profile?.base_currency ?? "USD";
+  const { totalFeesBase, totalTaxBase } = sumTransferCosts(rows ?? []);
+
+  return { year, baseCurrency, totalFeesBase, totalTaxBase };
+}
