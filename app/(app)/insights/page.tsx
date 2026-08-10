@@ -143,6 +143,12 @@ export default async function InsightsPage({
   const carryLines = carry.lines.filter(
     (l): l is typeof l & { costOfCarry: number } => l.costOfCarry !== null,
   );
+  const cashbackTotalsByCurrency = Object.entries(
+    cashback.lines.reduce<Record<string, number>>((acc, l) => {
+      acc[l.currency] = (acc[l.currency] ?? 0) + l.total;
+      return acc;
+    }, {}),
+  );
 
   const navLink =
     "flex size-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
@@ -321,6 +327,18 @@ export default async function InsightsPage({
                     </span>
                   </div>
                 ))}
+                total={
+                  <>
+                    {cashbackTotalsByCurrency.map(([currency, total]) => (
+                      <div key={currency} className="flex items-baseline justify-between">
+                        <span className="text-foreground">{t("cashbackTotal", { currency })}</span>
+                        <span className="tabular-nums text-foreground">
+                          {formatMoney(total, currency)}
+                        </span>
+                      </div>
+                    ))}
+                  </>
+                }
               />
             ) : (
               <p className="py-8 text-center text-sm text-muted-foreground">{t("cashbackEmpty")}</p>
