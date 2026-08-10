@@ -1,5 +1,19 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp,
+  ArrowLeftRight,
+  PiggyBank,
+  Gauge,
+  PieChart,
+  BarChart3,
+  CreditCard,
+  HeartPulse,
+  Landmark,
+  Gift,
+  type LucideIcon,
+} from "lucide-react";
 import { getTranslations, getLocale } from "next-intl/server";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
@@ -25,10 +39,12 @@ import { SavingsGoals } from "@/components/insights/savings-goals";
 
 function ChartCard({
   title,
+  icon: Icon,
   className,
   children,
 }: {
   title: string;
+  icon: LucideIcon;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -39,7 +55,10 @@ function ChartCard({
     // titles floated a full 2rem clear of their content.
     <Card className={`h-full gap-0 p-6 ${className ?? ""}`}>
       {/* h3, not h2: the section headings are this page's h2s. */}
-      <h3 className="mb-4 text-lg font-medium text-foreground">{title}</h3>
+      <h3 className="mb-4 flex items-center gap-2 text-lg font-medium text-foreground">
+        <Icon className="size-4 text-muted-foreground" />
+        {title}
+      </h3>
       <div className="flex flex-1 flex-col">{children}</div>
     </Card>
   );
@@ -181,15 +200,15 @@ export default async function InsightsPage({
           costs to carry. */}
       <div className="@container space-y-10">
         <Section title={t("sectionPosition")}>
-          <ChartCard title={t("cardNetWorth")} className="@[34rem]:col-span-2">
+          <ChartCard title={t("cardNetWorth")} icon={TrendingUp} className="@[34rem]:col-span-2">
             <NetWorthChart data={netWorth.points} currency={netWorth.baseCurrency} />
           </ChartCard>
 
-          <ChartCard title={t("cardCashFlow")} className="@[34rem]:col-span-2">
+          <ChartCard title={t("cardCashFlow")} icon={ArrowLeftRight} className="@[34rem]:col-span-2">
             <CashflowChart data={insights.trend} currency={cur} />
           </ChartCard>
 
-          <ChartCard title={t("cardSavingsGoals")} className="@[34rem]:col-span-2">
+          <ChartCard title={t("cardSavingsGoals")} icon={PiggyBank} className="@[34rem]:col-span-2">
             <SavingsGoals
               goals={goals.goals}
               totalSaved={goals.totalSaved}
@@ -200,19 +219,19 @@ export default async function InsightsPage({
         </Section>
 
         <Section title={t("sectionThisMonth")} actions={monthNav}>
-          <ChartCard title={t("cardSpendingPace")} className="@[34rem]:col-span-2">
+          <ChartCard title={t("cardSpendingPace")} icon={Gauge} className="@[34rem]:col-span-2">
             <SpendingPace data={insights.pace} currency={cur} />
           </ChartCard>
 
-          <ChartCard title={t("cardSpendDistribution")} className="@[34rem]:col-span-2">
+          <ChartCard title={t("cardSpendDistribution")} icon={PieChart} className="@[34rem]:col-span-2">
             <SpendDonut data={insights.distribution} total={insights.totalSpend} currency={cur} />
           </ChartCard>
 
-          <ChartCard title={t("cardExpensesVsBudget")}>
+          <ChartCard title={t("cardExpensesVsBudget")} icon={BarChart3}>
             <BudgetBars data={insights.budgetBars} currency={cur} />
           </ChartCard>
 
-          <ChartCard title={t("cardCardPayments")}>
+          <ChartCard title={t("cardCardPayments")} icon={CreditCard}>
             {cardPayments.lines.length > 0 ? (
               <Tally
                 rows={cardPayments.lines.map((l) => (
@@ -244,11 +263,11 @@ export default async function InsightsPage({
         </Section>
 
         <Section title={t("sectionDebt")}>
-          <ChartCard title={t("cardDebtHealth")}>
+          <ChartCard title={t("cardDebtHealth")} icon={HeartPulse}>
             <DebtHealth utilization={insights.utilization} loans={insights.loans} />
           </ChartCard>
 
-          <ChartCard title={t("costOfCarryTitle")}>
+          <ChartCard title={t("costOfCarryTitle")} icon={Landmark}>
             {carryLines.length > 0 ? (
               <Tally
                 rows={carryLines.map((l) => (
@@ -288,7 +307,7 @@ export default async function InsightsPage({
               getCashbackByCard — so there is no closing total. */}
           {/* String year — a numeric ICU argument goes through Intl.NumberFormat
               and would render "2,026". */}
-          <ChartCard title={t("cashbackTitle", { year: String(cashback.year) })}>
+          <ChartCard title={t("cashbackTitle", { year: String(cashback.year) })} icon={Gift}>
             {cashback.lines.length > 0 ? (
               <Tally
                 rows={cashback.lines.map((l) => (
