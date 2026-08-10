@@ -9,6 +9,7 @@ import {
   PieChart,
   BarChart3,
   CreditCard,
+  Receipt,
   HeartPulse,
   Landmark,
   Gift,
@@ -17,11 +18,13 @@ import {
 import { getTranslations, getLocale } from "next-intl/server";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
+import { MoneyDisplay } from "@/components/ui/money-display";
 import {
   getInsights,
   getCostOfCarry,
   getCardPayments,
   getCashbackByCard,
+  getTransferCosts,
 } from "@/lib/insights/queries";
 import { getNetWorthHistory } from "@/lib/insights/net-worth-history";
 import { getGoalsOverview } from "@/lib/goals/queries";
@@ -129,13 +132,14 @@ export default async function InsightsPage({
 }) {
   const { month: monthParam } = await searchParams;
   const month = normalizeMonth(monthParam);
-  const [insights, carry, cardPayments, netWorth, goals, cashback] = await Promise.all([
+  const [insights, carry, cardPayments, netWorth, goals, cashback, transferCosts] = await Promise.all([
     getInsights(month),
     getCostOfCarry(),
     getCardPayments(month),
     getNetWorthHistory(),
     getGoalsOverview(),
     getCashbackByCard(),
+    getTransferCosts(),
   ]);
   const cur = insights.baseCurrency;
   const t = await getTranslations("Insights");
@@ -265,6 +269,41 @@ export default async function InsightsPage({
             ) : (
               <p className="py-8 text-center text-sm text-muted-foreground">{t("cardPaymentsEmpty")}</p>
             )}
+          </ChartCard>
+
+          {/* Year-to-date, not month-scoped — the "YTD" in the title is what
+              tells the reader this card ignores the month picker in this
+              section's heading, the same disambiguation the Cashback card
+              uses for its own year-scoped title. */}
+          <ChartCard
+            title={t("transferCostsTitle", { year: String(transferCosts.year) })}
+            icon={Receipt}
+          >
+            <div className="flex flex-1 items-center justify-around gap-6">
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  {t("transferFeesLabel")}
+                </span>
+                <MoneyDisplay
+                  amount={transferCosts.totalFeesBase}
+                  currency={transferCosts.baseCurrency}
+                  size="stat"
+                  animate
+                />
+              </div>
+              <div className="h-10 w-px bg-border" />
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  {t("transferTaxLabel")}
+                </span>
+                <MoneyDisplay
+                  amount={transferCosts.totalTaxBase}
+                  currency={transferCosts.baseCurrency}
+                  size="stat"
+                  animate
+                />
+              </div>
+            </div>
           </ChartCard>
         </Section>
 
