@@ -592,6 +592,33 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_recommendations: {
+        Row: {
+          body: string
+          generated_at: string
+          headline: string
+          locale: string
+          tone: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          generated_at?: string
+          headline: string
+          locale: string
+          tone: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          generated_at?: string
+          headline?: string
+          locale?: string
+          tone?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       goal_contributions: {
         Row: {
           account_id: string
