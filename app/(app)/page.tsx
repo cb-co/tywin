@@ -10,8 +10,10 @@ import { MoneyDisplay } from "@/components/ui/money-display";
 import { ColorTile } from "@/components/ui/color-tile";
 import { StatPill } from "@/components/ui/stat-pill";
 import { MarketingHome } from "@/components/marketing/marketing-home";
+import { RecommendationCard } from "@/components/overview/recommendation-card";
 import { createClient } from "@/lib/supabase/server";
 import { getOverview } from "@/lib/overview/queries";
+import { getRecommendation } from "@/lib/overview/recommendation/queries";
 import { formatPercent } from "@/lib/format";
 import { greetingName } from "@/lib/profile";
 
@@ -92,6 +94,11 @@ export default async function OverviewPage() {
     );
   }
 
+  // Read after the empty-state return, not before it: a user with no accounts
+  // never renders the card, so the query would be pure waste on the one page
+  // view where speed matters most.
+  const { rec, stale } = await getRecommendation(locale);
+
   const budgetPct = o.totalBudget > 0 ? Math.min(Math.max((o.totalUsed / o.totalBudget) * 100, 0), 100) : 0;
 
   return (
@@ -146,8 +153,13 @@ export default async function OverviewPage() {
         </Card>
       </div>
 
+      {/* Coaching, after the figures it is about. */}
+      <div className="rise" style={{ "--i": 5 } as React.CSSProperties}>
+        <RecommendationCard rec={rec} stale={stale} />
+      </div>
+
       {/* Upcoming rail */}
-      <div className="rise space-y-3" style={{ "--i": 5 } as React.CSSProperties}>
+      <div className="rise space-y-3" style={{ "--i": 6 } as React.CSSProperties}>
         <h2 className="text-lg font-medium text-foreground">{t("upcoming")}</h2>
         {o.upcoming.length === 0 ? (
           <Card className="p-6 text-sm text-muted-foreground">{t("upcomingEmpty")}</Card>

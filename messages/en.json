@@ -84,6 +84,8 @@
     "incomeThisMonth": "Income this month",
     "spendingThisMonth": "Spending this month",
     "budgetUsed": "Budget used",
+    "recommendationTitle": "Today's take",
+    "recommendationLoading": "Preparing today's take",
     "upcoming": "Upcoming",
     "upcomingEmpty": "No card due dates, loan installments, or subscription charges scheduled.",
     "cardPaymentTitle": "{name} payment",

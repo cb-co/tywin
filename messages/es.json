@@ -84,6 +84,8 @@
     "incomeThisMonth": "Ingresos este mes",
     "spendingThisMonth": "Gastos este mes",
     "budgetUsed": "Presupuesto usado",
+    "recommendationTitle": "Para hoy",
+    "recommendationLoading": "Preparando lo de hoy",
     "upcoming": "Próximos",
     "upcomingEmpty": "No hay vencimientos de tarjetas, cuotas de préstamos ni cargos de suscripciones programados.",
     "cardPaymentTitle": "Pago de {name}",
