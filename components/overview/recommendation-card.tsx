@@ -32,18 +32,35 @@ export function RecommendationCard({
   /* React invokes effects twice in development. Without this the first visit
      spends two inference calls to write one row. */
   const started = useRef(false);
+  const mounted = useRef(true);
 
   useEffect(() => {
-    if (!stale || started.current) return;
-    started.current = true;
-    setPending(!rec);
+    /* Re-armed on every run, and deliberately ahead of the started-guard
+       below: React's development double-invoke runs the cleanup between the
+       two passes, so setting this anywhere after the early return would leave
+       it false for the life of the mount and swallow the refresh in dev only. */
+    mounted.current = true;
 
-    /* `void` rather than `await`: this must never join anything the page is
-       waiting on. Same reason it is voided in subscription-form-dialog.tsx. */
-    void refreshRecommendation().then(({ refreshed }) => {
-      setPending(false);
-      if (refreshed) router.refresh();
-    });
+    if (stale && !started.current) {
+      started.current = true;
+      setPending(!rec);
+
+      /* `void` rather than `await`: this must never join anything the page is
+         waiting on. Same reason it is voided in subscription-form-dialog.tsx. */
+      void refreshRecommendation().then(({ refreshed }) => {
+        /* Navigated away mid-generation. The row was still written — the
+           request is not aborted on unmount, which is what we want — but
+           there is no skeleton left to clear, and refreshing here would
+           re-fetch whichever page they are on now instead of this one. */
+        if (!mounted.current) return;
+        setPending(false);
+        if (refreshed) router.refresh();
+      });
+    }
+
+    return () => {
+      mounted.current = false;
+    };
   }, [stale, rec, router]);
 
   if (rec) {
