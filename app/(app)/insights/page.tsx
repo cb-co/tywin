@@ -14,6 +14,7 @@ import {
   Landmark,
   Gift,
   Percent,
+  ShieldAlert,
   type LucideIcon,
 } from "lucide-react";
 import { getTranslations, getLocale } from "next-intl/server";
@@ -27,6 +28,7 @@ import {
   getCashbackByCard,
   getTransferCosts,
   getLoanInterest,
+  getCardFees,
   sumCashbackByCurrency,
 } from "@/lib/insights/queries";
 import { getNetWorthHistory } from "@/lib/insights/net-worth-history";
@@ -135,17 +137,27 @@ export default async function InsightsPage({
 }) {
   const { month: monthParam } = await searchParams;
   const month = normalizeMonth(monthParam);
-  const [insights, carry, cardPayments, netWorth, goals, cashback, transferCosts, loanInterest] =
-    await Promise.all([
-      getInsights(month),
-      getCostOfCarry(),
-      getCardPayments(month),
-      getNetWorthHistory(),
-      getGoalsOverview(),
-      getCashbackByCard(),
-      getTransferCosts(),
-      getLoanInterest(),
-    ]);
+  const [
+    insights,
+    carry,
+    cardPayments,
+    netWorth,
+    goals,
+    cashback,
+    transferCosts,
+    loanInterest,
+    cardFees,
+  ] = await Promise.all([
+    getInsights(month),
+    getCostOfCarry(),
+    getCardPayments(month),
+    getNetWorthHistory(),
+    getGoalsOverview(),
+    getCashbackByCard(),
+    getTransferCosts(),
+    getLoanInterest(),
+    getCardFees(),
+  ]);
   const cur = insights.baseCurrency;
   const t = await getTranslations("Insights");
   const locale = await getLocale();
@@ -445,6 +457,68 @@ export default async function InsightsPage({
               />
             ) : (
               <p className="py-8 text-center text-sm text-muted-foreground">{t("cashbackEmpty")}</p>
+            )}
+          </ChartCard>
+
+          {/* The third column of the card ledger, and deliberately never netted
+              against the second. Lounge access, travel insurance and purchase
+              protection never reach a statement, so a cost-minus-benefit figure
+              would be built from the costs the app can see and a blank where the
+              benefits are — authoritative-looking and wrong in one direction.
+              Cost and return sit side by side; the reader nets them against the
+              benefits they know about and the app does not.
+
+              Rows carry the recurring figure, because that is the cost of
+              OWNING the card — a standing charge you decide about. Incidents
+              are things that happened and ride along in the subtitle, so a card
+              whose only charge was an overdraft still shows why it is listed.
+
+              "Charged in {year}", never an annualized run rate: statement
+              history is months old, and the charges are irregular enough that
+              any per-month figure times twelve would be fiction. Same honesty
+              as the loan interest card's "Recorded in". */}
+          <ChartCard title={t("cardFeesTitle", { year: String(cardFees.year) })} icon={ShieldAlert}>
+            {cardFees.lines.length > 0 ? (
+              <Tally
+                rows={cardFees.lines.map((l) => (
+                  <div key={l.accountId} className="flex items-baseline justify-between gap-3 text-sm">
+                    <div className="min-w-0">
+                      <p className="truncate text-foreground">{l.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {l.currency}
+                        {l.incidents !== 0
+                          ? ` · ${t("cardFeesIncidentsRow", { amount: formatMoney(l.incidents, l.currency) })}`
+                          : ""}
+                      </p>
+                    </div>
+                    <span className="shrink-0 tabular-nums text-foreground">
+                      {formatMoney(l.recurring, l.currency)}
+                    </span>
+                  </div>
+                ))}
+                total={
+                  <>
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-foreground">
+                        {t("cardFeesRecurring", { currency: cardFees.baseCurrency })}
+                      </span>
+                      <span className="tabular-nums text-foreground">
+                        {formatMoney(cardFees.recurringBase, cardFees.baseCurrency)}
+                      </span>
+                    </div>
+                    {cardFees.incidentsBase !== 0 ? (
+                      <div className="flex items-baseline justify-between text-muted-foreground">
+                        <span>{t("cardFeesIncidents", { currency: cardFees.baseCurrency })}</span>
+                        <span className="tabular-nums">
+                          {formatMoney(cardFees.incidentsBase, cardFees.baseCurrency)}
+                        </span>
+                      </div>
+                    ) : null}
+                  </>
+                }
+              />
+            ) : (
+              <p className="py-8 text-center text-sm text-muted-foreground">{t("cardFeesEmpty")}</p>
             )}
           </ChartCard>
         </Section>
