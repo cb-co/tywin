@@ -13,6 +13,7 @@ import {
   HeartPulse,
   Landmark,
   Gift,
+  Percent,
   type LucideIcon,
 } from "lucide-react";
 import { getTranslations, getLocale } from "next-intl/server";
@@ -25,6 +26,7 @@ import {
   getCardPayments,
   getCashbackByCard,
   getTransferCosts,
+  getLoanInterest,
   sumCashbackByCurrency,
 } from "@/lib/insights/queries";
 import { getNetWorthHistory } from "@/lib/insights/net-worth-history";
@@ -133,15 +135,17 @@ export default async function InsightsPage({
 }) {
   const { month: monthParam } = await searchParams;
   const month = normalizeMonth(monthParam);
-  const [insights, carry, cardPayments, netWorth, goals, cashback, transferCosts] = await Promise.all([
-    getInsights(month),
-    getCostOfCarry(),
-    getCardPayments(month),
-    getNetWorthHistory(),
-    getGoalsOverview(),
-    getCashbackByCard(),
-    getTransferCosts(),
-  ]);
+  const [insights, carry, cardPayments, netWorth, goals, cashback, transferCosts, loanInterest] =
+    await Promise.all([
+      getInsights(month),
+      getCostOfCarry(),
+      getCardPayments(month),
+      getNetWorthHistory(),
+      getGoalsOverview(),
+      getCashbackByCard(),
+      getTransferCosts(),
+      getLoanInterest(),
+    ]);
   const cur = insights.baseCurrency;
   const t = await getTranslations("Insights");
   const locale = await getLocale();
@@ -342,6 +346,73 @@ export default async function InsightsPage({
               />
             ) : (
               <p className="py-8 text-center text-sm text-muted-foreground">{t("costOfCarryEmpty")}</p>
+            )}
+          </ChartCard>
+
+          {/* The loan counterpart to cost of carry, and deliberately not folded
+              into it: that card's figure is what a card *would* charge you to
+              finance ("Interés si Opta Por Financiar" on the statement), while
+              every number here is interest already paid. One total cannot close
+              over a projection and a charge.
+
+              Sits under Debt health — the card whose loan bars these rows put a
+              price on — leaving Cost of carry and Cashback stacked in the other
+              column as the two halves of the card ledger.
+
+              Rows are per loan and monthly, so the run-rate total sums like
+              terms. The year figure is a grand total only: each loan has been
+              tracked for however long it has been in the app, so the per-loan
+              windows differ and comparing them would mislead in a way that
+              summing real payments into one figure does not. */}
+          <ChartCard title={t("loanInterestTitle")} icon={Percent}>
+            {loanInterest.lines.length > 0 ? (
+              <Tally
+                rows={loanInterest.lines.map((l) => (
+                  <div key={l.accountId} className="flex items-baseline justify-between gap-3 text-sm">
+                    <div className="min-w-0">
+                      <p className="truncate text-foreground">{l.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {l.currency} ·{" "}
+                        {l.apr !== null ? `${t("costOfCarryApr", { rate: l.apr })} · ` : ""}
+                        {t("costOfCarryAsOf", { date: formatDate(l.lastPaymentDate, locale) })}
+                      </p>
+                    </div>
+                    <span className="shrink-0 tabular-nums text-foreground">
+                      {formatMoney(l.lastInterest, l.currency)}
+                    </span>
+                  </div>
+                ))}
+                total={
+                  <>
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-foreground">
+                        {t("loanInterestMonthly", { currency: loanInterest.baseCurrency })}
+                      </span>
+                      <span className="tabular-nums text-foreground">
+                        {formatMoney(loanInterest.monthlyBase, loanInterest.baseCurrency)}
+                      </span>
+                    </div>
+                    {/* "Recorded in", not "Paid in": payments made before the
+                        loan was added to the app were never transactions, so
+                        this counts the tracked part of the year, not the year. */}
+                    <div className="flex items-baseline justify-between text-muted-foreground">
+                      <span>
+                        {t("loanInterestRecorded", {
+                          year: String(loanInterest.year),
+                          currency: loanInterest.baseCurrency,
+                        })}
+                      </span>
+                      <span className="tabular-nums">
+                        {formatMoney(loanInterest.yearBase, loanInterest.baseCurrency)}
+                      </span>
+                    </div>
+                  </>
+                }
+              />
+            ) : (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                {t("loanInterestEmpty")}
+              </p>
             )}
           </ChartCard>
 
