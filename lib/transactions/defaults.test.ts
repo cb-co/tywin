@@ -22,6 +22,8 @@ function account(over: Partial<QuickAddAccount> = {}): QuickAddAccount {
     type: "checking",
     network_fee_optional: true,
     bank_id: "bank-popular",
+    transfer_tax_rate: 0,
+    network_fee_amount: 0,
     ...over,
   };
 }

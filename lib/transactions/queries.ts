@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { CurrencyRow } from "@/lib/accounts/queries";
 import { getExchangeRates } from "@/lib/fx";
 import { baseCurrencyOf } from "@/lib/profile";
+import { rankCategoryIds, recentSourceAccountId, type RecentRow } from "./defaults";
 import { searchTerms } from "./search";
 
 type Client = Awaited<ReturnType<typeof createClient>>;
@@ -119,6 +120,10 @@ export type QuickAddAccount = {
   type: string;
   network_fee_optional: boolean;
   bank_id: string | null;
+  /* Both are needed client-side to preview what a row will cost before it is
+     saved; the stored figures still come from the insert trigger. */
+  transfer_tax_rate: number;
+  network_fee_amount: number;
 };
 export type QuickAddCategory = {
   id: string;
@@ -132,6 +137,11 @@ export type QuickAddData = {
   categories: QuickAddCategory[];
   currencies: CurrencyRow[];
   baseCurrency: string;
+  /** Source account of the most recent expense/payment, for pre-selecting it
+   *  on open. Null once there's no history to draw one from. */
+  recentAccountId: string | null;
+  /** Category ids, most-used first, for hoisting the chip rail. */
+  categoryOrder: string[];
   /**
    * Market rates as units-per-1-base. Used only to offer a suggested rate on a
    * cross-currency payment — the rate a transaction is stored with is derived
@@ -142,26 +152,47 @@ export type QuickAddData = {
 
 export async function getQuickAddData(): Promise<QuickAddData> {
   const supabase = await createClient();
-  const [{ data: accounts }, { data: categories }, { data: currencies }, { data: profile }] =
-    await Promise.all([
-      supabase
-        .from("accounts")
-        .select("id,name,currency,type,network_fee_optional,bank_id")
-        .eq("is_archived", false)
-        .order("sort_order")
-        .order("created_at"),
-      supabase.from("categories").select("id,name,emoji,color").order("sort_order"),
-      supabase.from("currencies").select("*").order("code"),
-      supabase.from("profiles").select("base_currency").maybeSingle(),
-    ]);
+  const [
+    { data: accounts },
+    { data: categories },
+    { data: currencies },
+    { data: profile },
+    { data: recent },
+  ] = await Promise.all([
+    supabase
+      .from("accounts")
+      .select(
+        "id,name,currency,type,network_fee_optional,bank_id,transfer_tax_rate,network_fee_amount",
+      )
+      .eq("is_archived", false)
+      .order("sort_order")
+      .order("created_at"),
+    supabase.from("categories").select("id,name,emoji,color").order("sort_order"),
+    supabase.from("currencies").select("*").order("code"),
+    supabase.from("profiles").select("base_currency").maybeSingle(),
+    /* Enough history to rank categories meaningfully without paying for a full
+       scan. Ordered by id as a tiebreak because occurred_at is date-only, so
+       several rows a day share a timestamp and the "most recent account" would
+       otherwise be arbitrary among them. */
+    supabase
+      .from("transactions")
+      .select("account_id,category_id,type")
+      .in("type", ["expense", "payment"])
+      .order("occurred_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(60),
+  ]);
 
   const baseCurrency = baseCurrencyOf(profile);
+  const recentRows = (recent ?? []) as RecentRow[];
 
   return {
     accounts: accounts ?? [],
     categories: categories ?? [],
     currencies: currencies ?? [],
     baseCurrency,
+    recentAccountId: recentSourceAccountId(recentRows),
+    categoryOrder: rankCategoryIds(recentRows),
     // Sequential on purpose — the base currency is the request. Cached for 12h
     // by lib/fx, so this is a network hop once a day, not once a modal.
     rates: await getExchangeRates(baseCurrency),
