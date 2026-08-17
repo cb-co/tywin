@@ -2,6 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { addMonths, monthStart, shortMonth } from "@/lib/budgets/month";
 import { getExchangeRates, convertToBase } from "@/lib/fx";
 import { CHART_FALLBACK } from "@/lib/chart-series";
+import { splitPayments } from "@/lib/accounts/amortization";
+import { loanPaymentAmounts } from "@/lib/insights/net-worth-history";
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
 
 function daysInMonth(monthIso: string): number {
   const [y, m] = monthIso.split("-").map(Number);
@@ -264,6 +268,182 @@ export async function getCostOfCarry(): Promise<CostOfCarry> {
     lines,
     totalBase: lines.reduce((s, l) => s + (l.costOfCarryBase ?? 0), 0),
   };
+}
+
+export type LoanInterestLine = {
+  accountId: string;
+  name: string;
+  currency: string;
+  apr: number | null; // percent, e.g. 12 — matches CostOfCarryLine.apr
+  lastPaymentDate: string;
+  lastInterest: number; // native (loan currency)
+  yearInterest: number; // native
+};
+
+export type LoanInterest = {
+  year: number;
+  baseCurrency: string;
+  lines: LoanInterestLine[];
+  monthlyBase: number; // Σ lastInterest, in base
+  yearBase: number; // Σ yearInterest, in base
+};
+
+export type LoanInterestInput = {
+  year: number;
+  baseCurrency: string;
+  rates: Record<string, number>;
+  loans: {
+    id: string;
+    name: string;
+    currency: string;
+    principal: number;
+    interest_rate: number | null;
+    term_months: number | null;
+  }[];
+  /** Every payment into every loan, ever, ordered (occurred_at, created_at, id). */
+  payments: { to_account_id: string | null; amount: number; to_amount: number | null; occurred_at: string }[];
+};
+
+/**
+ * Pure core of getLoanInterest: what each active loan's interest costs, from
+ * the payments actually logged against it.
+ *
+ * Two figures per loan, because they answer different questions. `lastInterest`
+ * is the interest inside that loan's most recent payment — one month of carry,
+ * which is why summing it across loans gives a monthly run-rate rather than a
+ * period total (the same shape getCostOfCarry builds from each card's newest
+ * statement). `yearInterest` is a period total: every payment dated in `year`.
+ *
+ * The split always runs from the loan's first payment, not from the start of
+ * the year, because each payment's interest depends on the balance the earlier
+ * ones left. Filtering the payments first would charge January's payment
+ * interest on the full principal.
+ *
+ * A loan only appears once it has a payment to report and while it still owes
+ * something. A paid-off loan costs nothing to carry, and a loan with no logged
+ * payment has no interest this app can vouch for — the same reason
+ * getCashbackByCard omits cards whose statements never reported a figure.
+ *
+ * Caveat this cannot fix: payments made before the loan was added to the app
+ * are not transactions, so `yearInterest` covers the tracked part of the year
+ * only. The card labels it as such rather than implying a full year.
+ */
+export function buildLoanInterest(input: LoanInterestInput): LoanInterest {
+  const { year, baseCurrency, rates } = input;
+  const toBase = (amount: number, currency: string) =>
+    convertToBase(amount, currency || baseCurrency, baseCurrency, rates);
+
+  const lines: LoanInterestLine[] = [];
+  for (const loan of input.loans) {
+    const split = splitPayments({
+      principal: Number(loan.principal ?? 0),
+      annualRate: loan.interest_rate,
+      termMonths: loan.term_months,
+      payments: loanPaymentAmounts(input.payments.filter((p) => p.to_account_id === loan.id)),
+    });
+    const last = split.at(-1);
+    if (!last || last.balance <= 0) continue;
+
+    lines.push({
+      accountId: loan.id,
+      name: loan.name,
+      currency: loan.currency || baseCurrency,
+      apr: loan.interest_rate === null ? null : round2(Number(loan.interest_rate) * 100),
+      lastPaymentDate: last.date,
+      lastInterest: last.interest,
+      yearInterest: round2(
+        split
+          .filter((s) => s.date.startsWith(`${year}-`))
+          .reduce((sum, s) => sum + s.interest, 0),
+      ),
+    });
+  }
+
+  lines.sort((a, b) => toBase(b.lastInterest, b.currency) - toBase(a.lastInterest, a.currency));
+
+  return {
+    year,
+    baseCurrency,
+    lines,
+    monthlyBase: round2(lines.reduce((s, l) => s + toBase(l.lastInterest, l.currency), 0)),
+    yearBase: round2(lines.reduce((s, l) => s + toBase(l.yearInterest, l.currency), 0)),
+  };
+}
+
+/** What each active loan's interest costs — see buildLoanInterest for the rules. */
+export async function getLoanInterest(): Promise<LoanInterest> {
+  const supabase = await createClient();
+  const year = new Date().getFullYear();
+
+  const [{ data: profile }, { data: loans }] = await Promise.all([
+    supabase.from("profiles").select("base_currency").maybeSingle(),
+    supabase
+      .from("accounts")
+      .select("id,name,currency,principal,interest_rate,term_months")
+      .eq("type", "loan")
+      .eq("is_archived", false),
+  ]);
+
+  const baseCurrency = profile?.base_currency ?? "USD";
+  const loanIds = (loans ?? []).map((l) => l.id);
+  if (loanIds.length === 0) {
+    return { year, baseCurrency, lines: [], monthlyBase: 0, yearBase: 0 };
+  }
+
+  const [rates, payments] = await Promise.all([
+    getExchangeRates(baseCurrency),
+    fetchAllLoanPayments(supabase, loanIds),
+  ]);
+
+  return buildLoanInterest({
+    year,
+    baseCurrency,
+    rates,
+    loans: (loans ?? []).map((l) => ({
+      id: l.id,
+      name: l.name,
+      currency: l.currency,
+      principal: Number(l.principal ?? 0),
+      interest_rate: l.interest_rate === null ? null : Number(l.interest_rate),
+      term_months: l.term_months,
+    })),
+    payments,
+  });
+}
+
+/**
+ * Every payment into these loans, oldest first, ordered the way `loan_status`
+ * orders them so the interest split lands on the same balances that view does.
+ *
+ * Paged rather than fetched in one request, and for a stronger reason than the
+ * transfer-costs total: that one merely under-reports when PostgREST silently
+ * truncates at `max_rows`. Here a missing early payment shifts the balance
+ * every later payment is charged on, so a truncated fetch would report wrong
+ * interest for the payments it *did* read.
+ */
+async function fetchAllLoanPayments(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  loanIds: string[],
+): Promise<LoanInterestInput["payments"]> {
+  const PAGE_SIZE = 1000;
+  const rows: LoanInterestInput["payments"] = [];
+  let offset = 0;
+  for (;;) {
+    const { data } = await supabase
+      .from("transactions")
+      .select("to_account_id,amount,to_amount,occurred_at")
+      .eq("type", "payment")
+      .in("to_account_id", loanIds)
+      .order("occurred_at")
+      .order("created_at")
+      .order("id")
+      .range(offset, offset + PAGE_SIZE - 1);
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    offset += PAGE_SIZE;
+  }
+  return rows;
 }
 
 export type CashbackLine = {
