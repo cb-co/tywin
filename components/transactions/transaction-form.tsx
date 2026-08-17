@@ -16,9 +16,10 @@ import {
 import { createTransaction, updateTransaction } from "@/app/(app)/transactions/actions";
 import { saveMerchantRule } from "@/app/(app)/accounts/statement-actions";
 import type { QuickAddData, TransactionWithRefs } from "@/lib/transactions/queries";
-import { defaultAccount, orderCategories, resolveFeeDefaults } from "@/lib/transactions/defaults";
+import { defaultAccount, feeParts, orderCategories, resolveFeeDefaults } from "@/lib/transactions/defaults";
 import { AccountDateLine } from "@/components/transactions/account-date-line";
 import { CategoryRail } from "@/components/transactions/category-rail";
+import { FeeSummaryLine } from "@/components/transactions/fee-summary-line";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -236,6 +237,18 @@ export function TransactionForm({
   // wire/ACH — meaningless from a card, cash, loan, or investment origin.
   const srcIsBankAccount = src?.type === "checking" || src?.type === "savings";
 
+  /* Watched, not read once, so the compact fee line updates live as the
+     amount is typed or the (hidden, in compact mode) toggles change. */
+  const includeTax = useWatch({ control, name: "include_tax" }) ?? false;
+  const includeCommission = useWatch({ control, name: "include_commission" }) ?? false;
+  const preview = feeParts({
+    amount: Number(amountRaw) || 0,
+    src,
+    dst,
+    include_tax: includeTax,
+    include_commission: includeCommission,
+  });
+
   /* A starting point for the required rate, one tap away. Offered rather than
      prefilled: the market rate is a good guess, but the user's actual rate is
      the fact we want, and a filled field stops people from checking it. */
@@ -400,6 +413,17 @@ export function TransactionForm({
           </span>
         </div>
         <FieldError message={errors.amount?.message} />
+        {/* Compact only: the full form asks about tax/fee as peer fields below,
+            so stating them again here would be redundant rather than helpful. */}
+        {compact && !expanded ? (
+          <FeeSummaryLine
+            tax={preview.tax}
+            fee={preview.fee}
+            currency={displayCurrency}
+            sameBank={sameBankPayment}
+            onEdit={() => setExpanded(true)}
+          />
+        ) : null}
         {/* The one rate a person is asked for: a payment that genuinely crosses
             currencies, where only they know what the money actually became. */}
         {crossCurrency && src && dst ? (

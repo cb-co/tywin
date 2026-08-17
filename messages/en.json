@@ -484,7 +484,11 @@
     "lessDetails": "Fewer details",
     "today": "today",
     "noDestination": "choose destination",
-    "summaryAria": "Account, destination and date — opens the full fields"
+    "summaryAria": "Account, destination and date — opens the full fields",
+    "feeLineTax": "+{amount} tax",
+    "feeLineFee": "+{amount} fee",
+    "feeLineNoFeeSameBank": "no fee, same bank",
+    "feeLineEdit": "edit"
   },
   "Subscriptions": {
     "pageTitle": "Subscriptions",

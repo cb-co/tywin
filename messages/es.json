@@ -484,7 +484,11 @@
     "lessDetails": "Menos detalles",
     "today": "hoy",
     "noDestination": "elegir destino",
-    "summaryAria": "Cuenta, destino y fecha — abre los campos completos"
+    "summaryAria": "Cuenta, destino y fecha — abre los campos completos",
+    "feeLineTax": "+{amount} impuesto",
+    "feeLineFee": "+{amount} comisión",
+    "feeLineNoFeeSameBank": "sin comisión, mismo banco",
+    "feeLineEdit": "editar"
   },
   "Subscriptions": {
     "pageTitle": "Suscripciones",
