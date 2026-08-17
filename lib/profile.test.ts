@@ -1,5 +1,23 @@
 import { expect, test } from "vitest";
-import { profileLabel, profileInitial, greetingName } from "./profile";
+import {
+  DEFAULT_BASE_CURRENCY,
+  baseCurrencyOf,
+  profileLabel,
+  profileInitial,
+  greetingName,
+} from "./profile";
+
+test("a profile without a base currency is worth pesos, not dollars", () => {
+  expect(DEFAULT_BASE_CURRENCY).toBe("DOP");
+  expect(baseCurrencyOf(null)).toBe("DOP");
+  expect(baseCurrencyOf(undefined)).toBe("DOP");
+  expect(baseCurrencyOf({ base_currency: null })).toBe("DOP");
+});
+
+test("a stored base currency is used as-is", () => {
+  expect(baseCurrencyOf({ base_currency: "USD" })).toBe("USD");
+  expect(baseCurrencyOf({ base_currency: "EUR" })).toBe("EUR");
+});
 
 test("display name wins over email", () => {
   expect(profileLabel("Ana Lucía Ferrer", "aferrer@corre.io")).toBe("Ana Lucía Ferrer");

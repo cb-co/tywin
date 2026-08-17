@@ -15,6 +15,7 @@ function form(overrides: Partial<TransactionFormValues> = {}): TransactionFormVa
     exclude_from_budget: false,
     occurred_at: "2026-07-28",
     description: "",
+    notes: "",
     ...overrides,
   };
 }
@@ -38,6 +39,11 @@ describe("normalizeFormValues", () => {
   test("clears category_id for income regardless of what's in it", () => {
     const id = "33333333-3333-4333-8333-333333333333";
     expect(normalizeFormValues(form({ type: "income", category_id: id })).category_id).toBe("");
+  });
+
+  test("passes notes through untouched", () => {
+    const note = "Peaje Autopista Duarte";
+    expect(normalizeFormValues(form({ notes: note })).notes).toBe(note);
   });
 });
 

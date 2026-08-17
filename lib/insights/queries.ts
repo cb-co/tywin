@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { baseCurrencyOf } from "@/lib/profile";
 import { addMonths, monthStart, shortMonth } from "@/lib/budgets/month";
 import { getExchangeRates, convertToBase } from "@/lib/fx";
 import { CHART_FALLBACK } from "@/lib/chart-series";
@@ -121,7 +122,7 @@ export async function getInsights(month: string): Promise<Insights> {
     net: Number(c.net ?? 0),
   }));
 
-  const baseCurrency = profile?.base_currency ?? "USD";
+  const baseCurrency = baseCurrencyOf(profile);
 
   const utilization = (cards ?? [])
     .filter((c) => c.utilization_pct != null)
@@ -187,7 +188,7 @@ export async function getCardPayments(month: string): Promise<CardPayments> {
     supabase.from("accounts").select("id,name,currency").eq("type", "credit_card"),
   ]);
 
-  const baseCurrency = profile?.base_currency ?? "USD";
+  const baseCurrency = baseCurrencyOf(profile);
   const cardIds = (cards ?? []).map((c) => c.id);
 
   const { data: rows } = cardIds.length
@@ -258,7 +259,7 @@ export async function getCostOfCarry(): Promise<CostOfCarry> {
         "account_id,name,currency,group_name,period_end,interest_rate_annual,avg_daily_balance,cost_of_carry",
       ),
   ]);
-  const baseCurrency = profile?.base_currency ?? "USD";
+  const baseCurrency = baseCurrencyOf(profile);
   const rates = await getExchangeRates(baseCurrency);
 
   const lines: CostOfCarryLine[] = (rows ?? []).map((r) => {
@@ -396,7 +397,7 @@ export async function getLoanInterest(): Promise<LoanInterest> {
       .eq("is_archived", false),
   ]);
 
-  const baseCurrency = profile?.base_currency ?? "USD";
+  const baseCurrency = baseCurrencyOf(profile);
   const loanIds = (loans ?? []).map((l) => l.id);
   if (loanIds.length === 0) {
     return { year, baseCurrency, lines: [], monthlyBase: 0, yearBase: 0 };
@@ -586,7 +587,7 @@ export async function getTransferCosts(): Promise<TransferCosts> {
     fetchAllTransferRows(supabase, year),
   ]);
 
-  const baseCurrency = profile?.base_currency ?? "USD";
+  const baseCurrency = baseCurrencyOf(profile);
   const { totalFeesBase, totalTaxBase } = sumTransferCosts(rows);
 
   return { year, baseCurrency, totalFeesBase, totalTaxBase };
@@ -697,7 +698,7 @@ export async function getCardFees(): Promise<CardFees> {
       supabase.from("card_groups").select("id,name"),
     ]);
 
-  const baseCurrency = profile?.base_currency ?? "USD";
+  const baseCurrency = baseCurrencyOf(profile);
   const rates = await getExchangeRates(baseCurrency);
   const groupName = new Map((groups ?? []).map((g) => [g.id, g.name]));
 

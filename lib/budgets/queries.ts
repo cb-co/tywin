@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { baseCurrencyOf } from "@/lib/profile";
 
 export type BudgetStatus = "within" | "approaching" | "over";
 
@@ -48,6 +49,6 @@ export async function getBudgetOverview(month: string): Promise<BudgetOverview> 
     rows,
     totalBudget: rows.reduce((s, r) => s + r.budget, 0),
     totalUsed: rows.reduce((s, r) => s + r.used, 0),
-    baseCurrency: profile?.base_currency ?? "USD",
+    baseCurrency: baseCurrencyOf(profile),
   };
 }

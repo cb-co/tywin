@@ -9,6 +9,7 @@ import { settledCharge } from "@/lib/subscriptions/charge";
 import { hasBrandColor } from "@/lib/subscriptions/brand-color";
 import { inferBrand } from "@/lib/subscriptions/llm/brand";
 import { dbError } from "@/lib/errors";
+import { baseCurrencyOf } from "@/lib/profile";
 
 type Result = { error?: string; id?: string };
 
@@ -232,7 +233,7 @@ export async function addCharge(id: string, settledAmount?: number): Promise<Res
     .from("profiles")
     .select("base_currency")
     .maybeSingle();
-  const baseCurrency = profile?.base_currency ?? "USD";
+  const baseCurrency = baseCurrencyOf(profile);
   const rates = accountCurrency === baseCurrency ? {} : await getExchangeRates(baseCurrency);
 
   const { error } = await supabase.from("transactions").insert({

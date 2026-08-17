@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { baseCurrencyOf } from "@/lib/profile";
 import { getCurrencies } from "@/lib/accounts/queries";
 import { WelcomeFlow } from "@/components/onboarding/welcome-flow";
 import { Logo, Wordmark } from "@/components/brand/logo";
@@ -36,7 +37,7 @@ export default async function WelcomePage() {
         <WelcomeFlow
           currencies={currencies}
           initialName={profile?.display_name ?? ""}
-          initialCurrency={profile?.base_currency ?? "USD"}
+          initialCurrency={baseCurrencyOf(profile)}
           email={user.email ?? ""}
           stepLabels={[t("stepName"), t("stepCurrency"), t("stepAccount")]}
         />

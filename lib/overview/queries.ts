@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { baseCurrencyOf } from "@/lib/profile";
 import { monthStart } from "@/lib/budgets/month";
 import { nextChargeDate, monthlyEquivalent, type BillingCycle } from "@/lib/subscriptions/cycle";
 import { getExchangeRates, convertToBase } from "@/lib/fx";
@@ -114,7 +115,7 @@ export async function getOverview(): Promise<Overview> {
       .eq("is_active", true),
   ]);
 
-  const baseCurrency = profile?.base_currency ?? "USD";
+  const baseCurrency = baseCurrencyOf(profile);
   const [rates, cardPaid] = await Promise.all([
     getExchangeRates(baseCurrency),
     statementPaymentsByCard(supabase, cards ?? []),

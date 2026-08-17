@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { baseCurrencyOf } from "@/lib/profile";
 import { computeFunding, type ContributionRow } from "./funding";
 import { computePace, type Pace } from "./pace";
 import { buildGoalHistory, type GoalPoint } from "./history";
@@ -106,7 +107,7 @@ export async function getGoalsOverview(): Promise<GoalsOverview> {
     totalTarget: cards.reduce((s, g) => s + g.target_amount, 0),
     totalBacked: cards.reduce((s, g) => s + g.backed, 0),
     totalShortfall: cards.reduce((s, g) => s + g.shortfall, 0),
-    baseCurrency: profile?.base_currency ?? "USD",
+    baseCurrency: baseCurrencyOf(profile),
     accounts: accounts ?? [],
   };
 }
@@ -242,7 +243,7 @@ export async function getGoalDetail(id: string): Promise<GoalDetail | null> {
     goal: goalCard,
     contributions: contributionDetails,
     history: buildGoalHistory(own),
-    baseCurrency: profile?.base_currency ?? "USD",
+    baseCurrency: baseCurrencyOf(profile),
     accounts: contributableAccounts,
   };
 }

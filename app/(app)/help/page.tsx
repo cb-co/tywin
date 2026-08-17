@@ -239,6 +239,9 @@ export default async function HelpPage() {
               <h3 className="mt-4 text-sm font-semibold text-foreground">{t("addingTitle")}</h3>
               <p className="mt-2 text-sm text-muted-foreground">{t("addingBody")}</p>
 
+              <h3 className="mt-4 text-sm font-semibold text-foreground">{t("findingTitle")}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">{t("findingBody")}</p>
+
               <HelpCallout icon={Tags} title={t("merchantCalloutTitle")}>
                 {t("merchantCalloutBody")}
               </HelpCallout>

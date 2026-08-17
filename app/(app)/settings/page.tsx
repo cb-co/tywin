@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/page-header";
 import { SettingsPanel } from "@/components/settings/settings-panel";
 import { getCurrencies } from "@/lib/accounts/queries";
 import { createClient } from "@/lib/supabase/server";
+import { baseCurrencyOf } from "@/lib/profile";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -23,7 +24,7 @@ export default async function SettingsPage() {
       <SettingsPanel
         email={user?.email ?? ""}
         displayName={profile?.display_name ?? ""}
-        baseCurrency={profile?.base_currency ?? "USD"}
+        baseCurrency={baseCurrencyOf(profile)}
         currencies={currencies}
       />
     </div>

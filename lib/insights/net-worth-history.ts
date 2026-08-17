@@ -36,6 +36,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
+import { baseCurrencyOf } from "@/lib/profile";
 import { addMonths, monthStart, monthEnd, shortMonth } from "@/lib/budgets/month";
 import { getExchangeRates, convertToBase } from "@/lib/fx";
 import { splitPayments, type LoanPayment } from "@/lib/accounts/amortization";
@@ -254,7 +255,7 @@ export async function getNetWorthHistory(): Promise<NetWorthHistory> {
         .lte("period_end", monthEnd(months[MONTHS - 1])),
     ]);
 
-  const baseCurrency = profile?.base_currency ?? "USD";
+  const baseCurrency = baseCurrencyOf(profile);
   const cardIds = (cards ?? []).map((c) => c.account_id).filter((id): id is string => !!id);
   const loanIds = (loanAccounts ?? []).map((l) => l.id);
 

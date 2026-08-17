@@ -20,6 +20,11 @@ export type TransactionFormValues = {
   exclude_from_budget: boolean;
   occurred_at: string;
   description: string;
+  /* Free text the user adds themselves. Its reason for existing is the
+     statement importer: an imported row's description is the issuer's own
+     descriptor and is locked, so this is the only place to record what
+     "CARDNET PEAJES-RS" actually was. */
+  notes: string;
 };
 
 /** Bridges the gap between what the *control* holds and what `transactionInput`

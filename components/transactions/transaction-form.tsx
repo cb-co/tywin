@@ -17,6 +17,7 @@ import { saveMerchantRule } from "@/app/(app)/accounts/statement-actions";
 import type { QuickAddData, TransactionWithRefs } from "@/lib/transactions/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { FieldError } from "@/components/ui/field-error";
 import { Switch } from "@/components/ui/switch";
@@ -166,6 +167,7 @@ export function TransactionForm({
           exclude_from_budget: transaction.exclude_from_budget,
           occurred_at: toDateOnly(transaction.occurred_at),
           description: transaction.description ?? "",
+          notes: transaction.notes ?? "",
         }
       : {
           type: "expense",
@@ -179,6 +181,7 @@ export function TransactionForm({
           exclude_from_budget: false,
           occurred_at: todayLocal(),
           description: "",
+          notes: "",
         },
   });
 
@@ -572,6 +575,21 @@ export function TransactionForm({
             disabled={fromStatement}
           />
         </div>
+      </div>
+
+      {/* Notes. Deliberately never disabled by `fromStatement`: on an imported
+          row the description belongs to the issuer and is locked, which makes
+          this the only place to write down what the charge actually was. */}
+      <div className="space-y-2">
+        <Label htmlFor="notes">{t("notesLabel")}</Label>
+        <Textarea
+          id="notes"
+          rows={2}
+          placeholder={t("notesPlaceholder")}
+          aria-invalid={!!errors.notes}
+          {...register("notes")}
+        />
+        <FieldError message={errors.notes?.message} />
       </div>
 
       {fromStatement ? (

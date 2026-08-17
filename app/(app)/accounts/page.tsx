@@ -9,7 +9,7 @@ import {
   getBanks,
 } from "@/lib/accounts/queries";
 import { hasCardAccent } from "@/lib/accounts/card-art";
-import { profileLabel } from "@/lib/profile";
+import { baseCurrencyOf, profileLabel } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AccountsPage() {
@@ -26,7 +26,7 @@ export default async function AccountsPage() {
     supabase.from("profiles").select("base_currency, display_name").maybeSingle(),
     supabase.auth.getUser(),
   ]);
-  const baseCurrency = profile?.base_currency ?? "USD";
+  const baseCurrency = baseCurrencyOf(profile);
 
   // The name embossed on every card face. Falls back through the same chain the
   // rest of the shell uses, then to a neutral label — a card face with an empty

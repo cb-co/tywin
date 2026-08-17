@@ -4,9 +4,15 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { transactionInput, type TransactionInput } from "@/lib/transactions/schema";
+import {
+  transactionInput,
+  TRANSACTION_TYPES,
+  type TransactionInput,
+} from "@/lib/transactions/schema";
 import { resolveBaseRate } from "@/lib/transactions/money";
+import { getTransactions, type TransactionPage } from "@/lib/transactions/queries";
 import { getExchangeRates } from "@/lib/fx";
+import { baseCurrencyOf } from "@/lib/profile";
 import { dbError } from "@/lib/errors";
 
 // Statement-sourced rows are editable only in category and notes — the
@@ -102,7 +108,7 @@ async function currencyContext(
   ]);
   const byId = new Map((rows ?? []).map((r) => [r.id, r.currency]));
   return {
-    baseCurrency: profile?.base_currency ?? "USD",
+    baseCurrency: baseCurrencyOf(profile),
     srcCurrency: byId.get(v.account_id) ?? null,
     dstCurrency: v.type === "payment" && v.to_account_id ? byId.get(v.to_account_id) ?? null : null,
   };
@@ -126,6 +132,45 @@ function crossCurrencyLegMissing(
     srcCurrency !== dstCurrency &&
     !(v.to_amount && v.to_amount > 0)
   );
+}
+
+/* Ledger paging ------------------------------------------------------------
+ *
+ * The filters below reach Postgres, not a client-side pass over rows already
+ * fetched, so they arrive as untrusted input. RLS confines them to the caller's
+ * own rows either way, but the account id is interpolated into a PostgREST
+ * `or=` expression, so its shape is checked rather than assumed. */
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+const txnFilters = z
+  .object({
+    type: z.enum(TRANSACTION_TYPES).optional(),
+    accountId: z.string().uuid().optional(),
+    categoryId: z.string().uuid().optional(),
+    search: z.string().max(200).optional(),
+    from: z.string().regex(ISO_DAY).optional(),
+    to: z.string().regex(ISO_DAY).optional(),
+  })
+  .default({});
+
+const txnCursor = z
+  .object({ occurredAt: z.string().datetime({ offset: true }), id: z.string().uuid() })
+  .nullish();
+
+/**
+ * The next page of the ledger under the filters currently on screen.
+ *
+ * Returns an empty page rather than an error on bad input: this runs on scroll,
+ * and a toast for a malformed cursor would be noise the user cannot act on.
+ */
+export async function loadTransactions(
+  rawFilters: unknown,
+  rawCursor?: unknown,
+): Promise<TransactionPage> {
+  const filters = txnFilters.safeParse(rawFilters ?? {});
+  const cursor = txnCursor.safeParse(rawCursor ?? null);
+  if (!filters.success || !cursor.success) return { rows: [], nextCursor: null };
+  return getTransactions(filters.data, cursor.data ?? null);
 }
 
 export async function createTransaction(input: unknown): Promise<Result> {

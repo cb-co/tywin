@@ -4,6 +4,24 @@
  *  chain rather than each one inventing its own. Order: the name the user
  *  chose, then the local part of their email, then a neutral placeholder. */
 
+/**
+ * The currency a profile is worth in when it hasn't said otherwise.
+ *
+ * This is a Dominican-first product: a new profile's first net-worth figure
+ * should read `RD$` before anyone visits Settings. It has to agree with the
+ * `profiles.base_currency` column default — the column is what a row is
+ * actually created with, and this is what every read falls back to when the
+ * profile row hasn't loaded (or predates the column).
+ */
+export const DEFAULT_BASE_CURRENCY = "DOP";
+
+/** The base currency of a loaded profile row, defaulted in one place. */
+export function baseCurrencyOf(
+  profile: { base_currency?: string | null } | null | undefined,
+): string {
+  return profile?.base_currency ?? DEFAULT_BASE_CURRENCY;
+}
+
 /** The label shown in the sidebar and anywhere the user is identified. */
 export function profileLabel(
   displayName: string | null | undefined,

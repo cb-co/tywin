@@ -23,6 +23,7 @@ import { getAccountTransactions, getQuickAddData } from "@/lib/transactions/quer
 import { AccountActivity } from "@/components/accounts/account-activity";
 import { BalanceChart } from "@/components/accounts/balance-chart-lazy";
 import { createClient } from "@/lib/supabase/server";
+import { baseCurrencyOf } from "@/lib/profile";
 import { accountTypeMeta, hasTransferFees, type AccountType } from "@/lib/accounts/meta";
 import { formatMoney, formatPercent, formatDayOfMonth, formatDate } from "@/lib/format";
 import { AccountDetailActions } from "@/components/accounts/account-detail-actions";
@@ -79,7 +80,7 @@ export default async function AccountDetailPage({
     supabase.from("profiles").select("base_currency, display_name").maybeSingle(),
     supabase.auth.getUser(),
   ]);
-  const baseCurrency = profile?.base_currency ?? "USD";
+  const baseCurrency = baseCurrencyOf(profile);
 
   const type = account.type as AccountType;
   const meta = accountTypeMeta(type);

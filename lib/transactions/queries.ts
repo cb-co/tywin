@@ -1,43 +1,111 @@
 import { createClient } from "@/lib/supabase/server";
 import type { CurrencyRow } from "@/lib/accounts/queries";
 import { getExchangeRates } from "@/lib/fx";
+import { baseCurrencyOf } from "@/lib/profile";
+import { searchTerms } from "./search";
+
+type Client = Awaited<ReturnType<typeof createClient>>;
+
+const TXN_SELECT =
+  "*, account:accounts!transactions_account_id_fkey(id,name,currency,type), to_account:accounts!transactions_to_account_id_fkey(id,name,currency), category:categories!transactions_category_id_fkey(id,name,emoji,color)";
+
+function selectTransactions(supabase: Client) {
+  return supabase.from("transactions").select(TXN_SELECT);
+}
+
+export type TransactionWithRefs = NonNullable<
+  Awaited<ReturnType<typeof selectTransactions>>["data"]
+>[number];
+
+/** Rows per page. Big enough that a statement import doesn't need three
+ *  scrolls, small enough that the first paint isn't a month of rows. */
+export const TRANSACTIONS_PAGE_SIZE = 50;
 
 export type TxnFilters = {
   type?: string;
   accountId?: string;
   categoryId?: string;
   search?: string;
+  /** Inclusive `YYYY-MM-DD` bounds on `occurred_at`. */
+  from?: string;
+  to?: string;
 };
 
-export async function getTransactions(filters: TxnFilters = {}) {
-  const supabase = await createClient();
-  let q = supabase
-    .from("transactions")
-    .select(
-      "*, account:accounts!transactions_account_id_fkey(id,name,currency,type), to_account:accounts!transactions_to_account_id_fkey(id,name,currency), category:categories!transactions_category_id_fkey(id,name,emoji,color)",
-    )
-    .order("occurred_at", { ascending: false })
-    .limit(200);
+/** Keyset position: the last row of the page just handed out. */
+export type TxnCursor = { occurredAt: string; id: string };
 
-  if (filters.type) q = q.eq("type", filters.type as "expense" | "income" | "payment");
-  if (filters.accountId) q = q.eq("account_id", filters.accountId);
-  if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
-  if (filters.search) q = q.ilike("description", `%${filters.search}%`);
+export type TransactionPage = {
+  rows: TransactionWithRefs[];
+  /** Null once the ledger has been read to its end. */
+  nextCursor: TxnCursor | null;
+};
 
-  const { data } = await q;
-  return data ?? [];
+type TxnQuery = ReturnType<typeof selectTransactions>;
+
+function applyTxnFilters(q: TxnQuery, f: TxnFilters): TxnQuery {
+  if (f.type) q = q.eq("type", f.type as "expense" | "income" | "payment");
+  // A payment shows up on both of its accounts, so filtering by account has
+  // to match either leg — the same rule the ledger applied client-side.
+  if (f.accountId) q = q.or(`account_id.eq.${f.accountId},to_account_id.eq.${f.accountId}`);
+  if (f.categoryId) q = q.eq("category_id", f.categoryId);
+
+  const terms = searchTerms(f.search ?? "");
+  if (terms.length > 0) q = q.or(terms.join(","));
+
+  // occurred_at is a calendar date stored at UTC midnight, so the bounds a
+  // native date input produces are compared in UTC too — anything local would
+  // drop the first or last day of the range for users off UTC.
+  if (f.from) q = q.gte("occurred_at", `${f.from}T00:00:00.000Z`);
+  if (f.to) q = q.lte("occurred_at", `${f.to}T23:59:59.999Z`);
+
+  return q;
 }
 
-export type TransactionWithRefs = Awaited<ReturnType<typeof getTransactions>>[number];
+/**
+ * One page of the ledger, newest first.
+ *
+ * Keyset rather than offset: the ledger is read newest-first while new rows
+ * are inserted at that same end, and an offset would show a row twice or skip
+ * one every time that happens mid-scroll.
+ */
+export async function getTransactions(
+  filters: TxnFilters = {},
+  cursor?: TxnCursor | null,
+  pageSize: number = TRANSACTIONS_PAGE_SIZE,
+): Promise<TransactionPage> {
+  const supabase = await createClient();
+  let q = applyTxnFilters(selectTransactions(supabase), filters)
+    .order("occurred_at", { ascending: false })
+    // occurred_at alone is not a total order — it has no time-of-day component,
+    // so a single day holds many rows and the cursor would stall on it forever.
+    .order("id", { ascending: false })
+    // Reading one extra row is the only honest "is there more?" signal: a page
+    // that comes back exactly full is otherwise indistinguishable from the last.
+    .limit(pageSize + 1);
+
+  if (cursor) {
+    const at = new Date(cursor.occurredAt).toISOString();
+    q = q.or(`occurred_at.lt.${at},and(occurred_at.eq.${at},id.lt.${cursor.id})`);
+  }
+
+  const { data } = await q;
+  const rows = data ?? [];
+  const hasMore = rows.length > pageSize;
+  const page = hasMore ? rows.slice(0, pageSize) : rows;
+  const last = page.at(-1);
+
+  return {
+    rows: page,
+    nextCursor: hasMore && last ? { occurredAt: last.occurred_at, id: last.id } : null,
+  };
+}
 
 /** Transactions touching an account as either source or destination. */
 export async function getAccountTransactions(accountId: string) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("transactions")
-    .select(
-      "*, account:accounts!transactions_account_id_fkey(id,name,currency,type), to_account:accounts!transactions_to_account_id_fkey(id,name,currency), category:categories!transactions_category_id_fkey(id,name,emoji,color)",
-    )
+    .select(TXN_SELECT)
     .or(`account_id.eq.${accountId},to_account_id.eq.${accountId}`)
     .order("occurred_at", { ascending: false })
     .limit(100);
@@ -87,7 +155,7 @@ export async function getQuickAddData(): Promise<QuickAddData> {
       supabase.from("profiles").select("base_currency").maybeSingle(),
     ]);
 
-  const baseCurrency = profile?.base_currency ?? "USD";
+  const baseCurrency = baseCurrencyOf(profile);
 
   return {
     accounts: accounts ?? [],

@@ -15,6 +15,7 @@ import { MAX_STATEMENT_BYTES } from "@/lib/statements/limits";
 import { suggestAccountId, type CardAccountOption } from "@/lib/statements/mapping";
 import { resolveCategoryId, type CategoryRuleRow } from "@/lib/statements/categorize";
 import { baseRate, getExchangeRates } from "@/lib/fx";
+import { baseCurrencyOf } from "@/lib/profile";
 import type { ParsedStatement } from "@/lib/statements/types";
 
 export interface SectionPreview {
@@ -325,7 +326,7 @@ export async function confirmStatementImport(formData: FormData): Promise<{ erro
   const otherId = categoryIdByName.get("Other") ?? cats?.[0]?.id;
   if (!otherId) return { error: t("noCategories") };
   const rules = (ruleRows ?? []) as CategoryRuleRow[];
-  const baseCurrency = profile?.base_currency ?? "USD";
+  const baseCurrency = baseCurrencyOf(profile);
   const rates = await getExchangeRates(baseCurrency);
 
   const payload = {
