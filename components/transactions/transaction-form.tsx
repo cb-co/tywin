@@ -15,6 +15,7 @@ import {
 import { createTransaction, updateTransaction } from "@/app/(app)/transactions/actions";
 import { saveMerchantRule } from "@/app/(app)/accounts/statement-actions";
 import type { QuickAddData, TransactionWithRefs } from "@/lib/transactions/queries";
+import { defaultAccount, resolveFeeDefaults } from "@/lib/transactions/defaults";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,7 +35,6 @@ import {
   ACCOUNT_GROUPS,
   accountOptionLabel,
   accountTypeMeta,
-  isBankAccount,
   type AccountType,
 } from "@/lib/accounts/meta";
 import { destinationAmount } from "@/lib/transactions/money";
@@ -124,15 +124,16 @@ export function TransactionForm({
     ),
   };
 
-  // Falling back to accounts[0] would pick whatever the query happened to
-  // return first — a card or loan is a bad default source for a new expense.
-  // A checking/savings account is the one people actually pay out of.
-  const firstAccount =
-    accounts.find((a) => a.id === defaultAccountId) ??
-    accounts.find((a) => isBankAccount(a.type as AccountType)) ??
-    accounts[0];
+  const firstAccount = defaultAccount(accounts, {
+    preferredId: defaultAccountId,
+    recentAccountId: data.recentAccountId,
+  });
 
   const [transferRateError, setTransferRateError] = useState<string | null>(null);
+
+  /* Seeded here as well as in the effect below so a freshly opened form paints
+     with the right toggles rather than flipping them a frame later. */
+  const initialFees = resolveFeeDefaults({ type: "expense", src: firstAccount });
 
   const {
     register,
@@ -176,8 +177,8 @@ export function TransactionForm({
           category_id: categories[0]?.id ?? "",
           amount: "",
           transfer_rate: "",
-          include_tax: false,
-          include_commission: !(firstAccount?.network_fee_optional ?? true),
+          include_tax: initialFees.include_tax,
+          include_commission: initialFees.include_commission,
           exclude_from_budget: false,
           occurred_at: todayLocal(),
           description: "",
@@ -234,12 +235,14 @@ export function TransactionForm({
       ? destinationAmount(Number(amountRaw), Number(transferRateRaw))
       : null;
 
-  // Smart defaults: tax on for a payment into a loan; network fee on only for a
-  // cross-bank obligatory transfer (same-bank transfers are free).
+  // Smart defaults, re-derived whenever the accounts or the type change.
+  // exclude_from_budget is unrelated to fees: a card expense is excluded
+  // because the budget counts the statement payment instead.
   useEffect(() => {
     if (isEdit || !src) return;
-    setValue("include_tax", type === "payment" && dst?.type === "loan");
-    setValue("include_commission", !sameBankPayment && !src.network_fee_optional);
+    const fees = resolveFeeDefaults({ type, src, dst });
+    setValue("include_tax", fees.include_tax);
+    setValue("include_commission", fees.include_commission);
     setValue("exclude_from_budget", type === "expense" && src.type === "credit_card");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, toAccountId, accountId]);
