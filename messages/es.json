@@ -478,7 +478,12 @@
     "toastSaved": "Transacción guardada",
     "toastUpdated": "Transacción actualizada",
     "fromStatementHint": "Importado de un estado de cuenta — solo la categoría, las notas y la exclusión del presupuesto pueden cambiar.",
-    "alwaysCategorizeMerchant": "Usar siempre esta categoría para \"{merchant}\""
+    "alwaysCategorizeMerchant": "Usar siempre esta categoría para \"{merchant}\"",
+    "moreDetails": "Más detalles",
+    "lessDetails": "Menos detalles",
+    "today": "hoy",
+    "noDestination": "elegir destino",
+    "summaryAria": "Cuenta, destino y fecha — abre los campos completos"
   },
   "Subscriptions": {
     "pageTitle": "Suscripciones",

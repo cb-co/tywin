@@ -5,6 +5,7 @@ import { useForm, useWatch, Controller, type Resolver } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { ChevronDownIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TRANSACTION_TYPES, type TransactionType } from "@/lib/transactions/schema";
 import {
@@ -16,6 +17,7 @@ import { createTransaction, updateTransaction } from "@/app/(app)/transactions/a
 import { saveMerchantRule } from "@/app/(app)/accounts/statement-actions";
 import type { QuickAddData, TransactionWithRefs } from "@/lib/transactions/queries";
 import { defaultAccount, resolveFeeDefaults } from "@/lib/transactions/defaults";
+import { AccountDateLine } from "@/components/transactions/account-date-line";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -87,12 +89,14 @@ export function TransactionForm({
   transaction,
   defaultAccountId,
   onSuccess,
+  compact = false,
 }: {
   data: QuickAddData;
   mode?: "create" | "edit";
   transaction?: TransactionWithRefs;
   defaultAccountId?: string;
   onSuccess?: () => void;
+  compact?: boolean;
 }) {
   const { accounts, categories, baseCurrency, rates } = data;
   const router = useRouter();
@@ -104,6 +108,12 @@ export function TransactionForm({
   const { playSuccess, playError } = useUiSound();
   const fromStatement = isEdit && !!transaction?.statement_line_id;
   const [alwaysRule, setAlwaysRule] = useState(false);
+
+  /* Compact is a starting state, not a reduced feature set: expanding reveals
+     the very same fields /transactions renders, so nothing is unreachable from
+     Quick Add. Statement-imported rows never start collapsed — their whole
+     point is reviewing what the issuer sent. */
+  const [expanded, setExpanded] = useState(!compact || fromStatement);
 
   const SOURCE_LABEL: Record<TransactionType, string> = {
     expense: t("sourceLabelExpense"),
@@ -328,7 +338,10 @@ export function TransactionForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form
+      onSubmit={handleSubmit(onSubmit, () => setExpanded(true))}
+      className="space-y-4"
+    >
       {/* Type segmented control */}
       <Controller
         control={control}
@@ -434,25 +447,27 @@ export function TransactionForm({
       </div>
 
       {/* Source account */}
-      <div className="space-y-2">
-        <Label required>{SOURCE_LABEL[type]}</Label>
-        <Controller
-          control={control}
-          name="account_id"
-          render={({ field, fieldState }) => (
-            <Select value={field.value} onValueChange={field.onChange} disabled={fromStatement} items={accountItems}>
-              <SelectTrigger className="w-full" aria-invalid={!!fieldState.error}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>{groupedAccountOptions(selectableAccounts)}</SelectContent>
-            </Select>
-          )}
-        />
-        <FieldError message={errors.account_id?.message} />
-      </div>
+      {expanded ? (
+        <div className="space-y-2">
+          <Label required>{SOURCE_LABEL[type]}</Label>
+          <Controller
+            control={control}
+            name="account_id"
+            render={({ field, fieldState }) => (
+              <Select value={field.value} onValueChange={field.onChange} disabled={fromStatement} items={accountItems}>
+                <SelectTrigger className="w-full" aria-invalid={!!fieldState.error}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>{groupedAccountOptions(selectableAccounts)}</SelectContent>
+              </Select>
+            )}
+          />
+          <FieldError message={errors.account_id?.message} />
+        </div>
+      ) : null}
 
       {/* Destination (payment only) */}
-      {type === "payment" ? (
+      {expanded && type === "payment" ? (
         <div className="space-y-2">
           <Label required>{t("toLabel")}</Label>
           <Controller
@@ -473,127 +488,131 @@ export function TransactionForm({
         </div>
       ) : null}
 
-      {/* Category (expense + payment; income has none) */}
-      {type !== "income" ? (
-        <div className="space-y-2">
-          <Label required={type === "expense"}>
-            {t("categoryLabel")}
-            {type === "payment" ? t("categoryOptionalSuffix") : ""}
-          </Label>
-          <Controller
-            control={control}
-            name="category_id"
-            render={({ field, fieldState }) => (
-              <Select value={field.value || "none"} onValueChange={field.onChange} items={categoryItems}>
-                <SelectTrigger className="w-full" aria-invalid={!!fieldState.error}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {type === "payment" ? <SelectItem value="none">{t("noCategory")}</SelectItem> : null}
-                  {categories.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.emoji ? `${c.emoji} ` : ""}
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          />
-          <FieldError message={errors.category_id?.message} />
-        </div>
-      ) : null}
-
-      {/* Fee toggles */}
-      {type !== "income" && (srcIsBankAccount || type === "expense") ? (
-        <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
-          {srcIsBankAccount ? (
-            <>
+      {expanded ? (
+        <>
+          {/* Category (expense + payment; income has none) */}
+          {type !== "income" ? (
+            <div className="space-y-2">
+              <Label required={type === "expense"}>
+                {t("categoryLabel")}
+                {type === "payment" ? t("categoryOptionalSuffix") : ""}
+              </Label>
               <Controller
                 control={control}
-                name="include_tax"
-                render={({ field }) => (
-                  <ToggleRow
-                    id="include_tax"
-                    label={t("applyTaxLabel")}
-                    checked={field.value}
-                    onChange={field.onChange}
-                    disabled={fromStatement}
-                  />
+                name="category_id"
+                render={({ field, fieldState }) => (
+                  <Select value={field.value || "none"} onValueChange={field.onChange} items={categoryItems}>
+                    <SelectTrigger className="w-full" aria-invalid={!!fieldState.error}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {type === "payment" ? <SelectItem value="none">{t("noCategory")}</SelectItem> : null}
+                      {categories.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.emoji ? `${c.emoji} ` : ""}
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 )}
               />
-              <Controller
-                control={control}
-                name="include_commission"
-                render={({ field }) => (
-                  <ToggleRow
-                    id="include_commission"
-                    label={t("applyFeeLabel")}
-                    hint={sameBankPayment ? t("freeSameBankHint") : undefined}
-                    checked={field.value && !sameBankPayment}
-                    onChange={field.onChange}
-                    disabled={sameBankPayment || fromStatement}
-                  />
-                )}
-              />
-            </>
+              <FieldError message={errors.category_id?.message} />
+            </div>
           ) : null}
-          {type === "expense" ? (
-            <Controller
-              control={control}
-              name="exclude_from_budget"
-              render={({ field }) => (
-                <ToggleRow
-                  id="exclude_from_budget"
-                  label={t("excludeFromBudgetLabel")}
-                  hint={t("excludeFromBudgetHint")}
-                  checked={field.value}
-                  onChange={field.onChange}
+
+          {/* Fee toggles */}
+          {type !== "income" && (srcIsBankAccount || type === "expense") ? (
+            <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
+              {srcIsBankAccount ? (
+                <>
+                  <Controller
+                    control={control}
+                    name="include_tax"
+                    render={({ field }) => (
+                      <ToggleRow
+                        id="include_tax"
+                        label={t("applyTaxLabel")}
+                        checked={field.value}
+                        onChange={field.onChange}
+                        disabled={fromStatement}
+                      />
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="include_commission"
+                    render={({ field }) => (
+                      <ToggleRow
+                        id="include_commission"
+                        label={t("applyFeeLabel")}
+                        hint={sameBankPayment ? t("freeSameBankHint") : undefined}
+                        checked={field.value && !sameBankPayment}
+                        onChange={field.onChange}
+                        disabled={sameBankPayment || fromStatement}
+                      />
+                    )}
+                  />
+                </>
+              ) : null}
+              {type === "expense" ? (
+                <Controller
+                  control={control}
+                  name="exclude_from_budget"
+                  render={({ field }) => (
+                    <ToggleRow
+                      id="exclude_from_budget"
+                      label={t("excludeFromBudgetLabel")}
+                      hint={t("excludeFromBudgetHint")}
+                      checked={field.value}
+                      onChange={field.onChange}
+                    />
+                  )}
                 />
-              )}
-            />
+              ) : null}
+            </div>
           ) : null}
-        </div>
+
+          {/* Date + description */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="occurred_at" required>{t("dateLabel")}</Label>
+              <Input
+                id="occurred_at"
+                type="date"
+                aria-invalid={!!errors.occurred_at}
+                {...register("occurred_at")}
+                disabled={fromStatement}
+              />
+              <FieldError message={errors.occurred_at?.message} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">{t("descriptionLabel")}</Label>
+              <Input
+                id="description"
+                placeholder={t("descriptionPlaceholder")}
+                {...register("description")}
+                disabled={fromStatement}
+              />
+            </div>
+          </div>
+
+          {/* Notes. Deliberately never disabled by `fromStatement`: on an imported
+              row the description belongs to the issuer and is locked, which makes
+              this the only place to write down what the charge actually was. */}
+          <div className="space-y-2">
+            <Label htmlFor="notes">{t("notesLabel")}</Label>
+            <Textarea
+              id="notes"
+              rows={2}
+              placeholder={t("notesPlaceholder")}
+              aria-invalid={!!errors.notes}
+              {...register("notes")}
+            />
+            <FieldError message={errors.notes?.message} />
+          </div>
+        </>
       ) : null}
-
-      {/* Date + description */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="occurred_at" required>{t("dateLabel")}</Label>
-          <Input
-            id="occurred_at"
-            type="date"
-            aria-invalid={!!errors.occurred_at}
-            {...register("occurred_at")}
-            disabled={fromStatement}
-          />
-          <FieldError message={errors.occurred_at?.message} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="description">{t("descriptionLabel")}</Label>
-          <Input
-            id="description"
-            placeholder={t("descriptionPlaceholder")}
-            {...register("description")}
-            disabled={fromStatement}
-          />
-        </div>
-      </div>
-
-      {/* Notes. Deliberately never disabled by `fromStatement`: on an imported
-          row the description belongs to the issuer and is locked, which makes
-          this the only place to write down what the charge actually was. */}
-      <div className="space-y-2">
-        <Label htmlFor="notes">{t("notesLabel")}</Label>
-        <Textarea
-          id="notes"
-          rows={2}
-          placeholder={t("notesPlaceholder")}
-          aria-invalid={!!errors.notes}
-          {...register("notes")}
-        />
-        <FieldError message={errors.notes?.message} />
-      </div>
 
       {fromStatement ? (
         <>
@@ -604,6 +623,36 @@ export function TransactionForm({
             checked={alwaysRule}
             onChange={setAlwaysRule}
           />
+        </>
+      ) : null}
+
+      {compact ? (
+        <>
+          {expanded ? null : (
+            <AccountDateLine
+              accountLabel={src ? accountOptionLabel(src) : ""}
+              destinationLabel={
+                type === "payment" ? (dst ? accountOptionLabel(dst) : t("noDestination")) : undefined
+              }
+              dateLabel={
+                getValues("occurred_at") === todayLocal()
+                  ? t("today")
+                  : getValues("occurred_at")
+              }
+              onEdit={() => setExpanded(true)}
+            />
+          )}
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
+            className="flex items-center gap-1 self-start text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          >
+            <ChevronDownIcon
+              className={cn("size-4 transition-transform", expanded && "rotate-180")}
+            />
+            {expanded ? t("lessDetails") : t("moreDetails")}
+          </button>
         </>
       ) : null}
 

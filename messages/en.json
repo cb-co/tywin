@@ -478,7 +478,12 @@
     "toastSaved": "Transaction saved",
     "toastUpdated": "Transaction updated",
     "fromStatementHint": "Imported from a statement — only the category, notes, and budget exclusion can change.",
-    "alwaysCategorizeMerchant": "Always use this category for \"{merchant}\""
+    "alwaysCategorizeMerchant": "Always use this category for \"{merchant}\"",
+    "moreDetails": "More details",
+    "lessDetails": "Fewer details",
+    "today": "today",
+    "noDestination": "choose destination",
+    "summaryAria": "Account, destination and date — opens the full fields"
   },
   "Subscriptions": {
     "pageTitle": "Subscriptions",
