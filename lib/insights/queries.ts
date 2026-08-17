@@ -8,6 +8,17 @@ import { summarizeCardFees, type FeeLineRow } from "@/lib/accounts/card-fees";
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
+/** The `"{group} — {name}"` label convention shared by every per-card insights
+ *  list, so a card group's multiple currency lines are told apart consistently
+ *  across cost-of-carry, cashback and card fees. Takes an already-resolved group
+ *  name (or null/undefined for an ungrouped card) rather than a group id: getCostOfCarry
+ *  reads its group name off a view column, while getCashbackByCard and getCardFees
+ *  resolve it from a lookup map — a resolved-name shape is the one signature both
+ *  fit without contortion. */
+function cardLabel(groupName: string | null | undefined, accountName: string): string {
+  return groupName ? `${groupName} — ${accountName}` : accountName;
+}
+
 function daysInMonth(monthIso: string): number {
   const [y, m] = monthIso.split("-").map(Number);
   return new Date(y, m, 0).getDate();
@@ -255,7 +266,7 @@ export async function getCostOfCarry(): Promise<CostOfCarry> {
     const currency = r.currency ?? baseCurrency;
     return {
       accountId: r.account_id ?? "",
-      name: r.group_name ? `${r.group_name} — ${r.name ?? "Card"}` : (r.name ?? "Card"),
+      name: cardLabel(r.group_name, r.name ?? "Card"),
       currency,
       periodEnd: r.period_end ?? "",
       apr: r.interest_rate_annual === null ? null : Number(r.interest_rate_annual),
@@ -507,9 +518,7 @@ export async function getCashbackByCard(): Promise<CashbackByCard> {
       accountId: a.id,
       // Same label shape the cost-of-carry card uses, so a card group's two
       // currency lines are told apart the same way on both.
-      name: a.card_group_id && groupName.has(a.card_group_id)
-        ? `${groupName.get(a.card_group_id)} — ${a.name}`
-        : a.name,
+      name: cardLabel(a.card_group_id ? groupName.get(a.card_group_id) : undefined, a.name),
       currency: a.currency,
       total: totals.get(a.id) ?? 0,
     }))
@@ -646,10 +655,7 @@ export function buildCardFeeLines(
       accountId: a.id,
       // Same label shape as the cost-of-carry and cashback cards, so a card
       // group's two currency lines are told apart the same way on all three.
-      name:
-        a.card_group_id && groupName.has(a.card_group_id)
-          ? `${groupName.get(a.card_group_id)} — ${a.name}`
-          : a.name,
+      name: cardLabel(a.card_group_id ? groupName.get(a.card_group_id) : undefined, a.name),
       currency: a.currency,
       recurring: totals.recurring,
       incidents: totals.incidents,
