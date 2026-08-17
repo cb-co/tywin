@@ -473,10 +473,10 @@ export default async function InsightsPage({
               are things that happened and ride along in the subtitle, so a card
               whose only charge was an overdraft still shows why it is listed.
 
-              "Charged in {year}", never an annualized run rate: statement
-              history is months old, and the charges are irregular enough that
-              any per-month figure times twelve would be fiction. Same honesty
-              as the loan interest card's "Recorded in". */}
+              "Cost of ownership in {year}", never an annualized run rate:
+              statement history is months old, and the charges are irregular
+              enough that any per-month figure times twelve would be fiction.
+              Same honesty as the loan interest card's "Recorded in". */}
           <ChartCard title={t("cardFeesTitle", { year: String(cardFees.year) })} icon={ShieldAlert}>
             {cardFees.lines.length > 0 ? (
               <Tally
@@ -484,15 +484,27 @@ export default async function InsightsPage({
                   <div key={l.accountId} className="flex items-baseline justify-between gap-3 text-sm">
                     <div className="min-w-0">
                       <p className="truncate text-foreground">{l.name}</p>
+                      {/* Negative recurring/incidents figures are reversals of a
+                          PRIOR year's charge, netted in by summarizeCardFees — see
+                          getCardFees. `formatMoney` would otherwise print a bare
+                          minus sign, which reads backwards under a cost heading, so
+                          the sign is reworded as "refunded" here in the subtitle
+                          rather than in the tabular-nums value slot to its right:
+                          words there would break that column's alignment across
+                          rows. The value slot always shows the magnitude; this line
+                          is what tells the reader which direction it points. */}
                       <p className="text-xs text-muted-foreground">
                         {l.currency}
+                        {l.recurring < 0
+                          ? ` · ${t("cardFeesRefundedRow", { amount: formatMoney(Math.abs(l.recurring), l.currency) })}`
+                          : ""}
                         {l.incidents !== 0
-                          ? ` · ${t("cardFeesIncidentsRow", { amount: formatMoney(l.incidents, l.currency) })}`
+                          ? ` · ${t(l.incidents > 0 ? "cardFeesIncidentsRow" : "cardFeesRefundedRow", { amount: formatMoney(Math.abs(l.incidents), l.currency) })}`
                           : ""}
                       </p>
                     </div>
                     <span className="shrink-0 tabular-nums text-foreground">
-                      {formatMoney(l.recurring, l.currency)}
+                      {formatMoney(Math.abs(l.recurring), l.currency)}
                     </span>
                   </div>
                 ))}
@@ -500,17 +512,29 @@ export default async function InsightsPage({
                   <>
                     <div className="flex items-baseline justify-between">
                       <span className="text-foreground">
-                        {t("cardFeesRecurring", { currency: cardFees.baseCurrency })}
+                        {t(
+                          cardFees.recurringBase < 0
+                            ? "cardFeesRecurringRefunded"
+                            : "cardFeesRecurring",
+                          { currency: cardFees.baseCurrency },
+                        )}
                       </span>
                       <span className="tabular-nums text-foreground">
-                        {formatMoney(cardFees.recurringBase, cardFees.baseCurrency)}
+                        {formatMoney(Math.abs(cardFees.recurringBase), cardFees.baseCurrency)}
                       </span>
                     </div>
                     {cardFees.incidentsBase !== 0 ? (
                       <div className="flex items-baseline justify-between text-muted-foreground">
-                        <span>{t("cardFeesIncidents", { currency: cardFees.baseCurrency })}</span>
+                        <span>
+                          {t(
+                            cardFees.incidentsBase < 0
+                              ? "cardFeesIncidentsRefunded"
+                              : "cardFeesIncidents",
+                            { currency: cardFees.baseCurrency },
+                          )}
+                        </span>
                         <span className="tabular-nums">
-                          {formatMoney(cardFees.incidentsBase, cardFees.baseCurrency)}
+                          {formatMoney(Math.abs(cardFees.incidentsBase), cardFees.baseCurrency)}
                         </span>
                       </div>
                     ) : null}
