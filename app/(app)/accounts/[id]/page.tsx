@@ -11,12 +11,14 @@ import {
   getCardGroupSiblings,
   getCardGroupLines,
   getCardSpendByCategory,
+  getAccountFeeLines,
 } from "@/lib/accounts/queries";
 import { spendTotal } from "@/lib/accounts/card-spend";
 import { monthStart, monthLabel } from "@/lib/budgets/month";
 import { SpendDonut } from "@/components/insights/lazy-charts";
 import { resolveEffectiveBonus, getWelcomeBonusSpend } from "@/lib/accounts/welcome-bonus";
 import { yearCashback, hasReportedCashback } from "@/lib/accounts/cashback";
+import { summarizeCardFees } from "@/lib/accounts/card-fees";
 import { getAccountTransactions, getQuickAddData } from "@/lib/transactions/queries";
 import { AccountActivity } from "@/components/accounts/account-activity";
 import { BalanceChart } from "@/components/accounts/balance-chart-lazy";
@@ -139,6 +141,19 @@ export default async function AccountDetailPage({
     ? await getCardSpendByCategory(id, spendMonth, t("uncategorized"))
     : [];
   const spendMonthTotal = spendTotal(spendSlices);
+
+  /* What this card charges you to hold it, this calendar year. A second round
+   * trip for the same reason getCardSpendByCategory is one: the fee lines live
+   * in card_statement_lines, which this page does not otherwise load, and the
+   * query is only worth issuing once `type` says this account is a card.
+   *
+   * Costs only — never netted against the cashback line above it. Most of a
+   * card's benefits never appear on a statement, so a net figure would be
+   * built from the costs the app can see and a blank where the benefits are. */
+  const feeYear = new Date().getFullYear();
+  const cardFees = isCardType
+    ? summarizeCardFees(await getAccountFeeLines(id, feeYear), feeYear)
+    : { recurring: 0, incidents: 0, counted: 0 };
 
   const owed = account.cardStatus?.owed ?? account.current_balance;
   const util = account.cardStatus?.utilization_pct ?? null;
@@ -315,6 +330,57 @@ export default async function AccountDetailPage({
                         </span>
                       ),
                     })}
+                  </p>
+                ) : null}
+                {/* Standing facts about the card, in the same register as the
+                    cashback line above: one number each, sitting with the
+                    card's other facts rather than in a card of their own.
+
+                    Each line appears only when its own subtotal is non-zero. A
+                    card with no fee lines shows neither — silence rather than a
+                    confident "RD$0.00 in fees", which would be a claim drawn
+                    from the absence of data rather than from data.
+
+                    A subtotal can go negative: summarizeCardFees nets reversals
+                    in with plain addition, so a card whose only counted row
+                    this year is a reversal of a PRIOR year's charge yields a
+                    negative bucket. `formatMoney` would print a bare minus sign
+                    under a "charged" heading, which reads backwards — so the
+                    sign picks the label ("refunded") instead, and the number
+                    always shows the magnitude. Same convention as the Insights
+                    cost-of-ownership card (app/(app)/insights/page.tsx). */}
+                {cardFees.recurring !== 0 ? (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {t.rich(
+                      cardFees.recurring < 0
+                        ? "costOfOwnershipRefundedThisYear"
+                        : "costOfOwnershipThisYear",
+                      {
+                        year: String(feeYear),
+                        amount: () => (
+                          <span className="figure font-medium text-foreground">
+                            {formatMoney(Math.abs(cardFees.recurring), currency)}
+                          </span>
+                        ),
+                      },
+                    )}
+                  </p>
+                ) : null}
+                {cardFees.incidents !== 0 ? (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {t.rich(
+                      cardFees.incidents < 0
+                        ? "incidentFeesRefundedThisYear"
+                        : "incidentFeesThisYear",
+                      {
+                        year: String(feeYear),
+                        amount: () => (
+                          <span className="figure font-medium text-foreground">
+                            {formatMoney(Math.abs(cardFees.incidents), currency)}
+                          </span>
+                        ),
+                      },
+                    )}
                   </p>
                 ) : null}
               </>

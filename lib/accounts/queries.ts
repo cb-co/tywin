@@ -4,6 +4,7 @@ import { getAccountFunding } from "@/lib/goals/queries";
 import { addMonths } from "@/lib/budgets/month";
 import { buildCardGroupLines, type CardGroupLine } from "./group-lines";
 import { cardSpendDistribution, type SpendSlice } from "./card-spend";
+import type { FeeLineRow } from "./card-fees";
 
 export type { CardGroupLine } from "./group-lines";
 export type { SpendSlice } from "./card-spend";
@@ -115,6 +116,36 @@ export async function getCardStatements(accountId: string): Promise<CardStatemen
     .eq("account_id", accountId)
     .order("period_end", { ascending: false });
   return data ?? [];
+}
+
+/**
+ * One card's fee lines for one calendar year, ready for summarizeCardFees.
+ *
+ * A separate fetch from getCardFees rather than a filter over it: this one is
+ * scoped to a single account and needs no FX at all, since the detail page
+ * speaks that card's own currency throughout. The classification both share
+ * lives in card-fees.ts, which is the part worth keeping DRY.
+ *
+ * Credits come along only to catch reversals — see reversalTarget.
+ */
+export async function getAccountFeeLines(
+  accountId: string,
+  year: number,
+): Promise<FeeLineRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("card_statement_lines")
+    .select("description,amount,kind,posted_on")
+    .eq("account_id", accountId)
+    .in("kind", ["fee", "credit"])
+    .gte("posted_on", `${year}-01-01`)
+    .lte("posted_on", `${year}-12-31`);
+  return (data ?? []).map((r) => ({
+    description: r.description ?? "",
+    amount: Number(r.amount ?? 0),
+    kind: r.kind as "fee" | "credit",
+    posted_on: r.posted_on ?? "",
+  }));
 }
 
 /**
