@@ -96,10 +96,22 @@ feeParts({ amount, src, dst, flags, sameBank })// → { tax, fee }, for the prev
 inserted: explicit `defaultAccountId` prop → most recent source account → first bank account →
 `accounts[0]`.
 
-> **Risk — duplicated arithmetic.** `feeParts` mirrors the trigger's math in TypeScript so the
-> preview line can show a figure before saving. These can drift. Mitigation: both are driven from
-> one shared fixture table in `defaults.test.ts`, and the preview is labelled as a preview — the
-> stored value is always the trigger's.
+> **Accepted risk — duplicated arithmetic.** `feeParts` mirrors the trigger's math in TypeScript
+> because the preview line must show a figure before the row exists, and only the trigger computes
+> the real one. The two can diverge in two ways, both accepted rather than engineered against:
+>
+> - **Rounding.** Postgres rounds `numeric` half away from zero; JavaScript works in binary floats.
+>   A sub-cent disagreement on an exact half is possible. It does not matter: `feeParts` feeds a
+>   preview, never a stored value. `tax_amount`, `fee_amount` and `total_amount` are always the
+>   trigger's, and those are what every balance, budget and insight reads.
+> - **A future trigger change.** Migrations are immutable once applied, so changing this arithmetic
+>   means writing a *new* migration — a deliberate act, done with this document in hand. Whoever
+>   does it updates `feeParts` in the same change.
+>
+> There is no local Postgres in this repo (no `supabase start`, no seed, and `vitest run` is pure
+> Node), so no automated test can compare the two sides. Do not write one that appears to.
+> `lib/transactions/defaults.ts` carries a comment naming the trigger and the migration it lives
+> in; the pointer goes one way only, since the migration cannot be edited.
 
 ## 3 · Data — one more query in `getQuickAddData`
 
@@ -176,7 +188,8 @@ reliably raise a numeric keypad. Keeps the currency suffix and its `aria-describ
 - `rankCategories` — frequency order, tie-breaking, unseen categories, empty history.
 - `defaultAccount` — the full fallback chain including archived/missing accounts.
 - `resolveFeeDefaults` — every row of the table in §1.
-- `feeParts` — shared fixtures with the trigger's math, including the same-bank waiver.
+- `feeParts` — its own expectations, including the same-bank waiver. These assert what the preview
+  shows, not that Postgres agrees; see the accepted risk in §2.
 
 No component tests; the repo has none and no jsdom is configured.
 
