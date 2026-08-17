@@ -14,8 +14,8 @@
 
 - **Interest is excluded by construction.** `interes` / `interest` / `financiamiento` never contribute to either subtotal. This is the cardholder's explicit requirement, not a refinement.
 - **Costs are never netted against benefits.** No task may produce a combined cost-minus-cashback figure on any surface.
-- **No annualization or projection.** Every user-facing figure is a period total labelled "charged in {year}".
-- **Silence, not zeros.** A card with no counted fee rows is omitted from the Insights list entirely and shows no line on its detail page. Never render a confident `0.00`.
+- **No annualization or projection.** Every user-facing figure is a period total, never a run rate. The Insights card carries the window in its title ("Cost of ownership in {year}", following the Cashback card); the account detail lines say "charged in {year}" outright.
+- **Silence, not zeros.** A card with **no counted fee rows** is omitted from the Insights list entirely and shows no line on its detail page — a zero drawn from the *absence* of data is a claim the data cannot support. This does not forbid a real, data-backed zero: a card that had fee rows but no recurring ones legitimately shows `0.00` in its Insights row, with its incident figure in the subtitle explaining why it is listed.
 - **Both locales, always.** Every new key lands in `messages/en.json` *and* `messages/es.json` in the same commit.
 - **Year as a string in ICU.** `t("...", { year: String(year) })` — a numeric argument routes through `Intl.NumberFormat` and renders `2,026`.
 - **No migration, no schema change, no prompt change.** `lib/statements/llm/system-prompt.ts` is not touched.
