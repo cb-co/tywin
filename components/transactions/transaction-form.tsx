@@ -400,10 +400,12 @@ export function TransactionForm({
           <Input
             id="amount"
             type="number"
+            inputMode="decimal"
             step="0.01"
             min="0"
             placeholder={t("amountPlaceholder")}
-            className="pr-16"
+            className={cn("pr-16", compact && "h-12 text-2xl font-semibold tabular-nums")}
+            autoFocus={compact && !isEdit}
             aria-describedby="amount_currency"
             aria-invalid={!!errors.amount}
             {...register("amount")}

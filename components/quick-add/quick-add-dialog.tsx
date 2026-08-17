@@ -15,7 +15,7 @@ export function QuickAddDialog({ data }: { data: QuickAddData }) {
         <DialogHeader>
           <DialogTitle className="text-xl">{t("title")}</DialogTitle>
         </DialogHeader>
-        <TransactionForm data={data} onSuccess={() => setOpen(false)} />
+        <TransactionForm data={data} compact onSuccess={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   );
