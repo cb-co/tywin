@@ -155,8 +155,10 @@ refunds, which is exactly why a naive `sum(kind = 'fee')` gets it wrong.
 
 ## No annualization
 
-Both subtotals read **"Charged in {year}"** — a period total, never a projected
-annual run rate.
+Every figure is a period total, never a projected annual run rate. The Insights
+card states the window in its title — "Cost of ownership in {year}", following
+the Cashback card's "Cashback in {year}" rather than repeating the year on each
+subtotal row — and the account detail lines say "charged in {year}" outright.
 
 Two reasons. Four months of history cannot support a run rate. And the charges
 are irregular in a way that defeats extrapolation — two `SEGURO FRAUDE` hits
@@ -258,9 +260,12 @@ as the Insights surface.
 New keys in `messages/en.json` and `messages/es.json`:
 
 - `Insights.cardFeesTitle` (takes `year`), `cardFeesRecurring`, `cardFeesIncidents`
-  (both take `currency`), `cardFeesEmpty`
-- `Accounts.costOfOwnershipThisYear`, `Accounts.cardIncidentFeesThisYear`
+  (both take `currency`), `cardFeesIncidentsRow` (takes `amount`), `cardFeesEmpty`
+- `AccountDetail.costOfOwnershipThisYear`, `AccountDetail.incidentFeesThisYear`
 - `Help.accountPageCostOfOwnership`, `Help.insightsCostOfOwnership`
+
+The account detail page reads from the `AccountDetail` namespace, not `Accounts`
+(`app/(app)/accounts/[id]/page.tsx:71`).
 
 ## Help guide
 
@@ -269,8 +274,12 @@ Per the standing rule that the in-app guide moves with every feature:
 - `app/(app)/help/page.tsx` — add `accountPageCostOfOwnership` to the account
   page list (after `accountPageCashback`, line 196) and `insightsCostOfOwnership`
   to the insights list (after `insightsCashback`, line 324)
-- `components/help/mocks.tsx` — reflect the new card in `InsightsMock`
 - Both locales
+
+`components/help/mocks.tsx` needs **no** change. `InsightsMock` draws only the
+spend donut and its legend — it has never depicted the tally cards, so Cost of
+carry, Cashback and Loan interest are absent from it too. Adding this one card to
+a mock that shows none of its siblings would be inconsistent, not thorough.
 
 **Adjacent gap, fixed while here:** the insights list in the help guide has no
 entry for the Loan interest card, which shipped in `462d444` without one. Adding
@@ -294,8 +303,9 @@ already edits.
 - a card with no fee lines produces no line at all, not a zero line
 
 The live four-row dataset above is a fixture worth encoding directly: it exercises
-recurring, incident, and reversal netting in one case, with a known-correct
-answer of 350 recurring and 500 incidents.
+recurring, incident, and reversal netting in one case. With `SEGURO FRAUDE`
+modelled as its two actual 350.00 charges, the known-correct answer is
+**1,650.00 recurring** (350 + 350 + 1,300 − 350) and **500.00 incidents**.
 
 ## Out of scope
 
