@@ -16,8 +16,9 @@ import {
 import { createTransaction, updateTransaction } from "@/app/(app)/transactions/actions";
 import { saveMerchantRule } from "@/app/(app)/accounts/statement-actions";
 import type { QuickAddData, TransactionWithRefs } from "@/lib/transactions/queries";
-import { defaultAccount, resolveFeeDefaults } from "@/lib/transactions/defaults";
+import { defaultAccount, orderCategories, resolveFeeDefaults } from "@/lib/transactions/defaults";
 import { AccountDateLine } from "@/components/transactions/account-date-line";
+import { CategoryRail } from "@/components/transactions/category-rail";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -133,6 +134,9 @@ export function TransactionForm({
       categories.map((c) => [c.id, `${c.emoji ? `${c.emoji} ` : ""}${c.name}`]),
     ),
   };
+
+  // Most-used first, for the compact rail; the full Select below keeps sort_order.
+  const railCategories = orderCategories(categories, data.categoryOrder);
 
   const firstAccount = defaultAccount(accounts, {
     preferredId: defaultAccountId,
@@ -486,6 +490,25 @@ export function TransactionForm({
           />
           <FieldError message={errors.to_account_id?.message} />
         </div>
+      ) : null}
+
+      {/* Category rail: replaces the Select below while collapsed, so it sits
+          outside the `expanded` gate rather than inside the block it stands in
+          for. Payment's category is optional and income has none, so the rail
+          only takes over for expense. */}
+      {compact && !expanded && type === "expense" ? (
+        <Controller
+          control={control}
+          name="category_id"
+          render={({ field }) => (
+            <CategoryRail
+              categories={railCategories}
+              value={field.value}
+              onChange={field.onChange}
+              onMore={() => setExpanded(true)}
+            />
+          )}
+        />
       ) : null}
 
       {expanded ? (

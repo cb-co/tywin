@@ -462,6 +462,7 @@
     "categoryLabel": "Categoría",
     "categoryOptionalSuffix": " (opcional)",
     "noCategory": "Sin categoría",
+    "moreCategories": "Todas las categorías",
     "applyTaxLabel": "Aplicar impuesto de transferencia",
     "applyFeeLabel": "Aplicar comisión de red",
     "freeSameBankHint": "Gratis dentro del mismo banco",

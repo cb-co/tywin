@@ -462,6 +462,7 @@
     "categoryLabel": "Category",
     "categoryOptionalSuffix": " (optional)",
     "noCategory": "No category",
+    "moreCategories": "All categories",
     "applyTaxLabel": "Apply transfer tax",
     "applyFeeLabel": "Apply network fee",
     "freeSameBankHint": "Free within the same bank",
