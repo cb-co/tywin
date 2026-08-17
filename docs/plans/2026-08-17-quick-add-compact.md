@@ -806,7 +806,7 @@ The structural half of the feature. After this task Quick Add is already usable 
 
 **Interfaces:**
 - Consumes: everything from Tasks 1-4.
-- Produces: `TransactionForm` accepts `compact?: boolean`; `<AccountDateLine>` with props `{ accountLabel: string; dateLabel: string; onEditAccount: () => void; onEditDate: () => void }`.
+- Produces: `TransactionForm` accepts `compact?: boolean`; `<AccountDateLine>` with props `{ accountLabel: string; destinationLabel?: string; dateLabel: string; onEdit: () => void }`.
 
 - [ ] **Step 1: Add the i18n keys**
 
@@ -816,8 +816,8 @@ In `messages/en.json` under `TransactionForm`:
     "moreDetails": "More details",
     "lessDetails": "Fewer details",
     "today": "today",
-    "changeAccountAria": "Change account",
-    "changeDateAria": "Change date",
+    "noDestination": "choose destination",
+    "summaryAria": "Account, destination and date — opens the full fields",
 ```
 
 In `messages/es.json` under `TransactionForm`:
@@ -826,8 +826,8 @@ In `messages/es.json` under `TransactionForm`:
     "moreDetails": "Más detalles",
     "lessDetails": "Menos detalles",
     "today": "hoy",
-    "changeAccountAria": "Cambiar cuenta",
-    "changeDateAria": "Cambiar fecha",
+    "noDestination": "elegir destino",
+    "summaryAria": "Cuenta, destino y fecha — abre los campos completos",
 ```
 
 - [ ] **Step 2: Build the summary line**
@@ -839,44 +839,41 @@ Create `components/transactions/account-date-line.tsx`:
 
 import { useTranslations } from "next-intl";
 
-/** The one-line stand-in for the account and date fields in compact mode.
+/** The one-line stand-in for the account, destination and date fields.
  *
- *  Two separate buttons rather than one row that expands everything: the date
- *  is nearly always today and the account nearly always the last one used, so
- *  the common case is reading this line and moving on, and the rare case is
- *  correcting exactly one of the two. */
+ *  One button rather than three: all three land in the same place — the
+ *  expanded field set — so splitting them would promise a precision the
+ *  disclosure does not have. The line's job is to state what the form already
+ *  decided, so the common case is reading it and moving on. */
 export function AccountDateLine({
   accountLabel,
+  destinationLabel,
   dateLabel,
-  onEditAccount,
-  onEditDate,
+  onEdit,
 }: {
   accountLabel: string;
+  destinationLabel?: string;
   dateLabel: string;
-  onEditAccount: () => void;
-  onEditDate: () => void;
+  onEdit: () => void;
 }) {
   const t = useTranslations("TransactionForm");
   return (
-    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-      <button
-        type="button"
-        onClick={onEditAccount}
-        aria-label={t("changeAccountAria")}
-        className="rounded-md px-1.5 py-1 underline-offset-2 hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-      >
-        {accountLabel}
-      </button>
+    <button
+      type="button"
+      onClick={onEdit}
+      aria-label={t("summaryAria")}
+      className="flex items-center gap-1.5 self-start rounded-md px-1.5 py-1 text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+    >
+      <span>{accountLabel}</span>
+      {destinationLabel ? (
+        <>
+          <span aria-hidden>→</span>
+          <span>{destinationLabel}</span>
+        </>
+      ) : null}
       <span aria-hidden>·</span>
-      <button
-        type="button"
-        onClick={onEditDate}
-        aria-label={t("changeDateAria")}
-        className="rounded-md px-1.5 py-1 underline-offset-2 hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-      >
-        {dateLabel}
-      </button>
-    </div>
+      <span>{dateLabel}</span>
+    </button>
   );
 }
 ```
@@ -899,7 +896,7 @@ Place this after the `fromStatement` declaration at `:105`.
 
 Wrap these existing blocks in `{expanded ? ( ... ) : null}`, leaving their contents untouched:
 - the source account field (`:433-449`)
-- the destination field (`:451-471`) — **only for non-payment**; a payment's destination stays visible always, since a payment cannot be completed without it
+- the destination field (`:451-471`) — its own `type === "payment"` condition stays; the `expanded` gate goes outside it
 - the category `Select` block (`:473-502`)
 - the fee toggles block (`:504-554`)
 - the date + description grid (`:556-578`)
@@ -913,13 +910,15 @@ Then add the disclosure and, when collapsed, the summary line, immediately befor
           {expanded ? null : (
             <AccountDateLine
               accountLabel={src ? accountOptionLabel(src) : ""}
+              destinationLabel={
+                type === "payment" ? (dst ? accountOptionLabel(dst) : t("noDestination")) : undefined
+              }
               dateLabel={
                 getValues("occurred_at") === todayLocal()
                   ? t("today")
                   : getValues("occurred_at")
               }
-              onEditAccount={() => setExpanded(true)}
-              onEditDate={() => setExpanded(true)}
+              onEdit={() => setExpanded(true)}
             />
           )}
           <button
@@ -941,15 +940,30 @@ Import `ChevronDownIcon` from `lucide-react` and `AccountDateLine`.
 
 **Do not reset `expanded` when the type changes.** Flipping Gasto→Pago after opening the details must not collapse them.
 
-- [ ] **Step 5: Typecheck, test, lint**
+- [ ] **Step 5: Never fail validation on a field the user cannot see**
+
+A payment with no destination fails zod on `to_account_id`, which is collapsed — the user would get a rejected submit with no visible cause. `handleSubmit` takes a second callback for exactly this:
+
+```tsx
+    <form
+      onSubmit={handleSubmit(onSubmit, () => setExpanded(true))}
+      className="space-y-4"
+    >
+```
+
+This is general rather than specific to the destination: any field that fails while collapsed becomes visible, with its `FieldError` already rendered by the existing markup.
+
+Verify it: in compact mode switch to Pago without choosing a destination and submit. The form must expand and show the error on *To*, not fail silently.
+
+- [ ] **Step 6: Typecheck, test, lint**
 
 Run: `npx tsc --noEmit && npm test && npm run lint`
 
-- [ ] **Step 6: Verify in the app**
+- [ ] **Step 8: Verify in the app**
 
 Temporarily pass `compact` in `components/quick-add/quick-add-dialog.tsx:18` to see it (Task 8 makes this permanent). Confirm: the sheet is short, `Más detalles` reveals every field, typed values survive expanding and collapsing, and `/transactions` is unchanged.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add components/transactions/transaction-form.tsx components/transactions/account-date-line.tsx messages/en.json messages/es.json
