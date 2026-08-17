@@ -194,6 +194,7 @@ export default async function HelpPage() {
                 <li>{t("accountPageBalance")}</li>
                 <li>{t("accountPageUtilization")}</li>
                 <li>{t("accountPageCashback")}</li>
+                <li>{t("accountPageSpend")}</li>
                 <li>{t("accountPageAmortization")}</li>
                 <li>{t("accountPageActivity")}</li>
                 <li>{t("accountPageActions")}</li>

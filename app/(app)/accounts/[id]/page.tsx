@@ -10,7 +10,11 @@ import {
   getCardStatements,
   getCardGroupSiblings,
   getCardGroupLines,
+  getCardSpendByCategory,
 } from "@/lib/accounts/queries";
+import { spendTotal } from "@/lib/accounts/card-spend";
+import { monthStart, monthLabel } from "@/lib/budgets/month";
+import { SpendDonut } from "@/components/insights/lazy-charts";
 import { resolveEffectiveBonus, getWelcomeBonusSpend } from "@/lib/accounts/welcome-bonus";
 import { yearCashback, hasReportedCashback } from "@/lib/accounts/cashback";
 import { getAccountTransactions, getQuickAddData } from "@/lib/transactions/queries";
@@ -119,6 +123,22 @@ export default async function AccountDetailPage({
   const cashbackYear = new Date().getFullYear();
   const cashbackTotal = isCardType ? yearCashback(statements, cashbackYear) : 0;
   const cashbackReported = isCardType && hasReportedCashback(statements, cashbackYear);
+
+  /* Where this month's charges went, by category. A second round trip rather
+   * than a member of the Promise.all above, because it is only worth issuing
+   * once `type` says this account is a card — and `type` comes out of that very
+   * batch. The same shape the Insights donut is fed, so the ring below is
+   * literally that component rather than a near-copy of it.
+   *
+   * Calendar month, not the statement period: it is the window every other
+   * spending figure in the app is framed by (the donut, the budget bars, the
+   * pace chart), and a card whose statement closes mid-month would otherwise
+   * report a category total that agreed with nothing else on screen. */
+  const spendMonth = monthStart();
+  const spendSlices = isCardType
+    ? await getCardSpendByCategory(id, spendMonth, t("uncategorized"))
+    : [];
+  const spendMonthTotal = spendTotal(spendSlices);
 
   const owed = account.cardStatus?.owed ?? account.current_balance;
   const util = account.cardStatus?.utilization_pct ?? null;
@@ -345,6 +365,26 @@ export default async function AccountDetailPage({
             currency={currency}
             transactions={activity}
           />
+        </Card>
+      ) : null}
+
+      {/* Spend by category, this month. Sits between the hero and the
+          statements panel because that is the order the page reads in: what the
+          card is worth now, what it was used for lately, then the statement
+          record, then the individual charges.
+
+          Rendered even with nothing to show — the donut draws its own empty
+          line — so a card that has simply not been used yet still says so,
+          rather than the section silently vanishing and leaving the reader to
+          wonder whether the page failed to load it. */}
+      {isCardType ? (
+        <Card className="p-6">
+          <h2 className="mb-4 text-lg font-medium text-foreground">
+            {t("spendByCategory", { month: monthLabel(spendMonth, locale) })}
+          </h2>
+          {/* Native currency, never converted: every charge here posted to this
+              one account. See lib/accounts/card-spend.ts. */}
+          <SpendDonut data={spendSlices} total={spendMonthTotal} currency={currency} />
         </Card>
       ) : null}
 

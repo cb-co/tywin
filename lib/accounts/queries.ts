@@ -1,9 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
 import { getAccountFunding } from "@/lib/goals/queries";
+import { addMonths } from "@/lib/budgets/month";
 import { buildCardGroupLines, type CardGroupLine } from "./group-lines";
+import { cardSpendDistribution, type SpendSlice } from "./card-spend";
 
 export type { CardGroupLine } from "./group-lines";
+export type { SpendSlice } from "./card-spend";
 
 type AccountRow = Database["public"]["Tables"]["accounts"]["Row"];
 type CardRow = Database["public"]["Views"]["card_status"]["Row"];
@@ -112,6 +115,33 @@ export async function getCardStatements(accountId: string): Promise<CardStatemen
     .eq("account_id", accountId)
     .order("period_end", { ascending: false });
   return data ?? [];
+}
+
+/**
+ * What a card was charged for in `month`, grouped by category, in the card's
+ * own currency.
+ *
+ * Scoped by `account_id`, so a payment made *to* the card never lands here:
+ * settling a balance is not spending. See lib/accounts/card-spend.ts for the
+ * inclusion rules the grouping applies on top of this window.
+ */
+export async function getCardSpendByCategory(
+  accountId: string,
+  month: string,
+  uncategorizedLabel: string,
+): Promise<SpendSlice[]> {
+  const supabase = await createClient();
+  const [{ data: rows }, { data: categories }] = await Promise.all([
+    supabase
+      .from("transactions")
+      .select("category_id,total_amount")
+      .eq("account_id", accountId)
+      .eq("type", "expense")
+      .gte("occurred_at", month)
+      .lt("occurred_at", addMonths(month, 1)),
+    supabase.from("categories").select("id,name,color"),
+  ]);
+  return cardSpendDistribution(rows ?? [], categories ?? [], uncategorizedLabel);
 }
 
 export type CardGroupSibling = {

@@ -1,22 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { addMonths, monthStart, shortMonth } from "@/lib/budgets/month";
 import { getExchangeRates, convertToBase } from "@/lib/fx";
+import { CHART_FALLBACK } from "@/lib/chart-series";
 
 function daysInMonth(monthIso: string): number {
   const [y, m] = monthIso.split("-").map(Number);
   return new Date(y, m, 0).getDate();
 }
-
-const CHART_FALLBACK = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
-  "var(--chart-6)",
-  "var(--chart-7)",
-  "var(--chart-8)",
-];
 
 export type Insights = {
   baseCurrency: string;
