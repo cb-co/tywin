@@ -4,6 +4,7 @@ import { getExchangeRates, convertToBase } from "@/lib/fx";
 import { CHART_FALLBACK } from "@/lib/chart-series";
 import { splitPayments } from "@/lib/accounts/amortization";
 import { loanPaymentAmounts } from "@/lib/insights/net-worth-history";
+import { summarizeCardFees, type FeeLineRow } from "@/lib/accounts/card-fees";
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -610,4 +611,116 @@ async function fetchAllTransferRows(
     offset += PAGE_SIZE;
   }
   return rows;
+}
+
+export type CardFeeLine = {
+  accountId: string;
+  name: string;
+  currency: string;
+  recurring: number; // native (card currency)
+  incidents: number; // native
+};
+
+export type CardFees = {
+  year: number;
+  baseCurrency: string;
+  lines: CardFeeLine[];
+  recurringBase: number;
+  incidentsBase: number;
+};
+
+/** The grouping and omission rules, split out from the fetch so they can be
+ *  tested without a database. Cards with no counted rows are dropped entirely
+ *  rather than rendered at zero — see CardFeeTotals.counted. */
+export function buildCardFeeLines(
+  rowsByAccount: Map<string, FeeLineRow[]>,
+  accounts: { id: string; name: string; currency: string; card_group_id: string | null }[],
+  groupName: Map<string, string>,
+  year: number,
+): CardFeeLine[] {
+  const lines: CardFeeLine[] = [];
+  for (const a of accounts) {
+    const totals = summarizeCardFees(rowsByAccount.get(a.id) ?? [], year);
+    if (totals.counted === 0) continue;
+    lines.push({
+      accountId: a.id,
+      // Same label shape as the cost-of-carry and cashback cards, so a card
+      // group's two currency lines are told apart the same way on all three.
+      name:
+        a.card_group_id && groupName.has(a.card_group_id)
+          ? `${groupName.get(a.card_group_id)} — ${a.name}`
+          : a.name,
+      currency: a.currency,
+      recurring: totals.recurring,
+      incidents: totals.incidents,
+    });
+  }
+  return lines.sort((x, y) => y.recurring - x.recurring);
+}
+
+/**
+ * What every card charged you to hold it this calendar year.
+ *
+ * `kind` is queried as ('fee','credit') rather than 'fee' alone, and the credits
+ * are there for ONE reason: issuers post a fee reversal as a credit, not as a
+ * negative fee. Almost every credit row is cashback or a merchant refund and is
+ * discarded by the guard in reversalTarget. The subtotals are still built from
+ * fee rows; the credits only ever subtract.
+ *
+ * Totals convert to base currency, unlike the cashback card which deliberately
+ * prints none. The difference is justified: a rebate is credited in the line's
+ * own currency and summing those through today's rate would invent a figure no
+ * statement printed, whereas "what do my cards cost me a year" is a question
+ * whose answer is a single number. Cost of carry and loan interest convert for
+ * the same reason.
+ */
+export async function getCardFees(): Promise<CardFees> {
+  const supabase = await createClient();
+  const year = new Date().getFullYear();
+
+  const [{ data: profile }, { data: rows }, { data: accounts }, { data: groups }] =
+    await Promise.all([
+      supabase.from("profiles").select("base_currency").maybeSingle(),
+      supabase
+        .from("card_statement_lines")
+        .select("account_id,description,amount,kind,posted_on")
+        .in("kind", ["fee", "credit"])
+        .gte("posted_on", `${year}-01-01`)
+        .lte("posted_on", `${year}-12-31`),
+      supabase.from("accounts").select("id,name,currency,card_group_id").eq("type", "credit_card"),
+      supabase.from("card_groups").select("id,name"),
+    ]);
+
+  const baseCurrency = profile?.base_currency ?? "USD";
+  const rates = await getExchangeRates(baseCurrency);
+  const groupName = new Map((groups ?? []).map((g) => [g.id, g.name]));
+
+  const rowsByAccount = new Map<string, FeeLineRow[]>();
+  for (const r of rows ?? []) {
+    if (!r.account_id) continue;
+    const list = rowsByAccount.get(r.account_id) ?? [];
+    list.push({
+      description: r.description ?? "",
+      amount: Number(r.amount ?? 0),
+      kind: r.kind as "fee" | "credit",
+      posted_on: r.posted_on ?? "",
+    });
+    rowsByAccount.set(r.account_id, list);
+  }
+
+  const lines = buildCardFeeLines(rowsByAccount, accounts ?? [], groupName, year);
+
+  return {
+    year,
+    baseCurrency,
+    lines,
+    recurringBase: lines.reduce(
+      (s, l) => s + convertToBase(l.recurring, l.currency, baseCurrency, rates),
+      0,
+    ),
+    incidentsBase: lines.reduce(
+      (s, l) => s + convertToBase(l.incidents, l.currency, baseCurrency, rates),
+      0,
+    ),
+  };
 }

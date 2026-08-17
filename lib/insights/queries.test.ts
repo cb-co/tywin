@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildLoanInterest, sumCashbackByCurrency, sumTransferCosts } from "./queries";
+import { buildCardFeeLines, buildLoanInterest, sumCashbackByCurrency, sumTransferCosts } from "./queries";
+import type { FeeLineRow } from "@/lib/accounts/card-fees";
 
 describe("sumCashbackByCurrency", () => {
   it("groups multiple currencies and sums each one separately", () => {
@@ -150,5 +151,47 @@ describe("buildLoanInterest", () => {
   it("ignores payments made into a different loan", () => {
     const result = build({ payments: [pay("other", 1000, "2026-03-05")] });
     expect(result.lines).toEqual([]);
+  });
+});
+
+describe("buildCardFeeLines", () => {
+  const accounts = [
+    { id: "a1", name: "Visa Infinite", currency: "DOP", card_group_id: null },
+    { id: "a2", name: "USD", currency: "USD", card_group_id: "g1" },
+    { id: "a3", name: "Clean Card", currency: "DOP", card_group_id: null },
+  ];
+  const groupName = new Map([["g1", "Platinum"]]);
+
+  const rows = new Map<string, FeeLineRow[]>([
+    ["a1", [
+      { description: "CARGO SEGURO FRAUDE", amount: 350, kind: "fee", posted_on: "2026-06-26" },
+      { description: "CARGO SOBREGIRO", amount: 500, kind: "fee", posted_on: "2026-06-25" },
+    ]],
+    ["a2", [
+      { description: "ANNUAL FEE", amount: 99, kind: "fee", posted_on: "2026-03-01" },
+    ]],
+  ]);
+
+  it("builds one line per card that was charged something", () => {
+    const lines = buildCardFeeLines(rows, accounts, groupName, 2026);
+    expect(lines).toEqual([
+      { accountId: "a1", name: "Visa Infinite", currency: "DOP", recurring: 350, incidents: 500 },
+      { accountId: "a2", name: "Platinum — USD", currency: "USD", recurring: 99, incidents: 0 },
+    ]);
+  });
+
+  // Silence, not zeros: a3 has no fee rows and must not appear at all.
+  it("omits a card with no fee lines rather than showing it at zero", () => {
+    const lines = buildCardFeeLines(rows, accounts, groupName, 2026);
+    expect(lines.map((l) => l.accountId)).not.toContain("a3");
+  });
+
+  it("sorts by recurring cost, heaviest first", () => {
+    const lines = buildCardFeeLines(rows, accounts, groupName, 2026);
+    expect(lines.map((l) => l.recurring)).toEqual([350, 99]);
+  });
+
+  it("is empty for a year with no charges", () => {
+    expect(buildCardFeeLines(rows, accounts, groupName, 2025)).toEqual([]);
   });
 });
