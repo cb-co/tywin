@@ -65,3 +65,76 @@ export function orderCategories(
   const rankedIds = new Set(ranked.map((c) => c.id));
   return [...ranked, ...categories.filter((c) => !rankedIds.has(c.id))];
 }
+
+export type FeeFlags = { include_tax: boolean; include_commission: boolean };
+
+/** What `feeParts` needs off the source account to price a row. */
+export type FeeAccount = {
+  bank_id: string | null;
+  transfer_tax_rate: number;
+  network_fee_amount: number;
+};
+
+const NO_FEES: FeeFlags = { include_tax: false, include_commission: false };
+
+/** Destinations that are the user's own money moving rather than a debt being
+ *  settled. Paying a card or a loan is money leaving; moving it to your own
+ *  cash or bank account is not. */
+const OWN_MONEY: AccountType[] = ["cash", "checking", "savings"];
+
+/** Which fees a new transaction should start with.
+ *
+ *  The transfer tax is an "impuesto por débito a cuenta": it follows the debit,
+ *  so the SOURCE decides whether it applies at all, and a cash purchase or a
+ *  card swipe is never taxed. The network fee is a flat per-transfer
+ *  commission that some transfers carry and others do not, so it is never
+ *  assumed — the user adds it when their bank actually charged one.
+ *
+ *  Both remain overridable; this is only where the form starts. */
+export function resolveFeeDefaults({
+  type,
+  src,
+  dst,
+}: {
+  type: TransactionType;
+  src?: { type: string } | null;
+  dst?: { type: string } | null;
+}): FeeFlags {
+  if (type === "income") return NO_FEES;
+  if (!src || !isBankAccount(src.type as AccountType)) return NO_FEES;
+  if (type === "payment" && (!dst || OWN_MONEY.includes(dst.type as AccountType))) return NO_FEES;
+  return { include_tax: true, include_commission: false };
+}
+
+/** 4dp, matching numeric(18,4). Not `toFixed`: this is arithmetic, not display. */
+const round4 = (n: number) => Math.round(n * 1e4) / 1e4;
+
+/** A PREVIEW of what the row will cost, for display before it is saved.
+ *
+ *  Mirrors the BEFORE INSERT trigger in
+ *  supabase/migrations/20260719031353_banks_normalize.sql — the trigger is
+ *  authoritative and is what `tax_amount`/`fee_amount` actually end up as.
+ *  Sub-cent divergence between Postgres numeric rounding and JavaScript floats
+ *  is accepted here because nothing stored reads this. If the trigger's
+ *  arithmetic ever changes, in a NEW migration, change this with it.
+ *  See docs/specs/2026-08-17-quick-add-compact-design.md §2. */
+export function feeParts({
+  amount,
+  src,
+  dst,
+  include_tax,
+  include_commission,
+}: {
+  amount: number;
+  src?: FeeAccount | null;
+  dst?: { bank_id: string | null } | null;
+} & FeeFlags): { tax: number; fee: number } {
+  if (!src) return { tax: 0, fee: 0 };
+  // Two unknown banks are not the same bank — matching on null would waive a
+  // commission that was charged.
+  const sameBank = !!src.bank_id && !!dst?.bank_id && src.bank_id === dst.bank_id;
+  return {
+    tax: include_tax ? round4(amount * (src.transfer_tax_rate ?? 0)) : 0,
+    fee: include_commission && !sameBank ? (src.network_fee_amount ?? 0) : 0,
+  };
+}

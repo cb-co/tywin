@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   defaultAccount,
+  feeParts,
   orderCategories,
   rankCategoryIds,
   recentSourceAccountId,
+  resolveFeeDefaults,
   type RecentRow,
 } from "./defaults";
 import type { QuickAddAccount, QuickAddCategory } from "./queries";
@@ -137,5 +139,137 @@ describe("orderCategories", () => {
       "food",
       "transport",
     ]);
+  });
+});
+
+const bank = { type: "checking" };
+const savings = { type: "savings" };
+const cash = { type: "cash" };
+const card = { type: "credit_card" };
+const loan = { type: "loan" };
+
+describe("resolveFeeDefaults", () => {
+  // The transfer tax is an "impuesto por débito a cuenta" — it follows the
+  // bank debit, so what the money came OUT of decides it.
+  it("taxes an expense paid from a bank account", () => {
+    expect(resolveFeeDefaults({ type: "expense", src: bank })).toEqual({
+      include_tax: true,
+      include_commission: false,
+    });
+  });
+
+  it("does not tax an expense paid in cash or on a card — no account was debited", () => {
+    expect(resolveFeeDefaults({ type: "expense", src: cash }).include_tax).toBe(false);
+    expect(resolveFeeDefaults({ type: "expense", src: card }).include_tax).toBe(false);
+  });
+
+  it("taxes a payment into a card or a loan", () => {
+    expect(resolveFeeDefaults({ type: "payment", src: bank, dst: card }).include_tax).toBe(true);
+    expect(resolveFeeDefaults({ type: "payment", src: bank, dst: loan }).include_tax).toBe(true);
+  });
+
+  it("does not tax money moved between the user's own accounts", () => {
+    expect(resolveFeeDefaults({ type: "payment", src: bank, dst: cash }).include_tax).toBe(false);
+    expect(resolveFeeDefaults({ type: "payment", src: bank, dst: bank }).include_tax).toBe(false);
+    expect(resolveFeeDefaults({ type: "payment", src: bank, dst: savings }).include_tax).toBe(false);
+  });
+
+  it("does not tax a payment that did not come from a bank account", () => {
+    expect(resolveFeeDefaults({ type: "payment", src: cash, dst: card }).include_tax).toBe(false);
+    expect(resolveFeeDefaults({ type: "payment", src: card, dst: loan }).include_tax).toBe(false);
+  });
+
+  it("never taxes income", () => {
+    expect(resolveFeeDefaults({ type: "income", src: bank }).include_tax).toBe(false);
+  });
+
+  it("holds off until a destination is chosen", () => {
+    // Showing a tax line for a payment with no destination would announce a
+    // charge the user has not yet described.
+    expect(resolveFeeDefaults({ type: "payment", src: bank, dst: null }).include_tax).toBe(false);
+  });
+
+  it("never turns the network fee on by default", () => {
+    // A flat per-transfer commission is charged by some transfers and not
+    // others; it is added deliberately, not assumed.
+    for (const args of [
+      { type: "expense", src: bank },
+      { type: "payment", src: bank, dst: card },
+      { type: "payment", src: bank, dst: loan },
+    ] as const) {
+      expect(resolveFeeDefaults(args).include_commission).toBe(false);
+    }
+  });
+
+  it("handles a missing source without throwing", () => {
+    expect(resolveFeeDefaults({ type: "expense", src: null })).toEqual({
+      include_tax: false,
+      include_commission: false,
+    });
+  });
+});
+
+describe("feeParts", () => {
+  const src = { bank_id: "bank-popular", transfer_tax_rate: 0.002, network_fee_amount: 25 };
+
+  it("previews the tax as a share of the amount", () => {
+    expect(feeParts({ amount: 250, src, include_tax: true, include_commission: false })).toEqual({
+      tax: 0.5,
+      fee: 0,
+    });
+  });
+
+  it("previews nothing when the flag is off", () => {
+    expect(feeParts({ amount: 250, src, include_tax: false, include_commission: false })).toEqual({
+      tax: 0,
+      fee: 0,
+    });
+  });
+
+  it("rounds the tax to the 4dp the column stores", () => {
+    expect(feeParts({ amount: 333.33, src, include_tax: true, include_commission: false }).tax)
+      .toBe(0.6667);
+  });
+
+  it("previews the network fee as a flat amount, not a rate", () => {
+    expect(
+      feeParts({
+        amount: 1000,
+        src,
+        dst: { bank_id: "bank-bhd" },
+        include_tax: false,
+        include_commission: true,
+      }).fee,
+    ).toBe(25);
+  });
+
+  it("waives the fee within the same bank", () => {
+    expect(
+      feeParts({
+        amount: 1000,
+        src,
+        dst: { bank_id: "bank-popular" },
+        include_tax: false,
+        include_commission: true,
+      }).fee,
+    ).toBe(0);
+  });
+
+  it("does not treat two unknown banks as the same bank", () => {
+    // Two nulls are not a match — that would waive a fee that was charged.
+    expect(
+      feeParts({
+        amount: 1000,
+        src: { ...src, bank_id: null },
+        dst: { bank_id: null },
+        include_tax: false,
+        include_commission: true,
+      }).fee,
+    ).toBe(25);
+  });
+
+  it("treats a missing source as costing nothing", () => {
+    expect(feeParts({ amount: 250, src: null, include_tax: true, include_commission: true }))
+      .toEqual({ tax: 0, fee: 0 });
   });
 });
