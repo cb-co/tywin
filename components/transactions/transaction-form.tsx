@@ -282,6 +282,13 @@ export function TransactionForm({
     else if (type === "expense" && !getValues("category_id"))
       setValue("category_id", categories[0]?.id ?? "");
     else if (type === "payment" && !isEdit) setValue("category_id", "none");
+    // A destination only means anything for a payment. Left standing after
+    // switching away, it would still look like a real account to `feeParts`
+    // — computing a same-bank match (and so waiving a fee) for a destination
+    // the row will never actually carry. Guarded by the condition itself:
+    // this never fires while type is "payment", so mounting into an existing
+    // payment edit leaves its destination untouched.
+    if (type !== "payment") setValue("to_account_id", "");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type]);
 
