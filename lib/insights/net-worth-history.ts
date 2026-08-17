@@ -38,6 +38,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { addMonths, monthStart, monthEnd, shortMonth } from "@/lib/budgets/month";
 import { getExchangeRates, convertToBase } from "@/lib/fx";
+import { splitPayments, type LoanPayment } from "@/lib/accounts/amortization";
 
 export const MONTHS = 6;
 
@@ -148,38 +149,35 @@ export function cardOwedAt(
   return owedNow + paid(asOf, null);
 }
 
+/** A loan's payments as splitPayments wants them: own-currency amount (the
+ *  destination leg, so a cross-currency payment is worth what landed on the
+ *  loan) against a plain calendar date. */
+export function loanPaymentAmounts(payments: PaymentRow[]): LoanPayment[] {
+  return payments.map((p) => ({
+    amount: Number(p.to_amount ?? p.amount),
+    date: dateOf(p.occurred_at),
+  }));
+}
+
 /**
  * Outstanding balance after each payment into a loan, oldest first, so a
- * balance can be read off as of any date.
+ * balance can be read off as of any date. The interest-first split itself is
+ * splitPayments(); this only discards the interest half of it, which the
+ * loan-interest card in lib/insights/queries.ts keeps.
  *
- * The arithmetic is the recursive CTE in `loan_status`
- * (20260727120000_loan_outstanding_amortized.sql), which is in turn
- * buildSchedule()'s: interest first, then whatever's left pays down principal.
- * `payments` must already be ordered the way the view orders them
+ * `payments` must already be ordered the way `loan_status` orders them
  * (occurred_at, created_at, id) — the split depends on the sequence.
  */
 export function loanBalanceTimeline(
   loan: NetWorthInput["loans"][number],
   payments: PaymentRow[],
 ): { date: string; balance: number }[] {
-  const monthlyRate = Number(loan.interest_rate ?? 0) / 12;
-  let balance = Number(loan.principal ?? 0);
-  return payments.map((p, i) => {
-    const seq = i + 1;
-    if (loan.term_months !== null && seq >= loan.term_months) {
-      // The last scheduled installment clears the loan; anything past the term
-      // leaves it at zero.
-      balance = 0;
-    } else {
-      const interest = round2(balance * monthlyRate);
-      const principalPaid = Math.min(
-        Math.max(Number(p.to_amount ?? p.amount) - interest, 0),
-        balance,
-      );
-      balance = balance - principalPaid;
-    }
-    return { date: dateOf(p.occurred_at), balance };
-  });
+  return splitPayments({
+    principal: Number(loan.principal ?? 0),
+    annualRate: loan.interest_rate,
+    termMonths: loan.term_months,
+    payments: loanPaymentAmounts(payments),
+  }).map(({ date, balance }) => ({ date, balance }));
 }
 
 /** The six month-starts ending at `through` (inclusive), ascending. */
