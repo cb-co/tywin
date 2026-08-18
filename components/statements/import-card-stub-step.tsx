@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { createCardStub } from "@/app/(app)/accounts/actions";
 import { listStubCurrencies } from "@/app/(app)/accounts/statement-actions";
+import { DEFAULT_BASE_CURRENCY } from "@/lib/profile";
 import { useUiSound } from "@/components/sound/sound-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,17 +55,27 @@ export function ImportCardStubStep({
   const [currency, setCurrency] = useState(defaultCurrency);
   const [last4, setLast4] = useState("");
   const [currencies, setCurrencies] = useState<{ code: string; name: string }[]>([]);
+  const [currenciesFailed, setCurrenciesFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    void listStubCurrencies().then((result) => {
-      if (cancelled) return;
-      setCurrencies(result.currencies);
-      // Only fills a blank: a caller that named a currency has a reason to
-      // (onboarding asks for it a step earlier), and the answer must survive
-      // this list arriving late.
-      setCurrency((c) => c || result.baseCurrency);
-    });
+    void listStubCurrencies()
+      .then((result) => {
+        if (cancelled) return;
+        setCurrencies(result.currencies);
+        // Only fills a blank: a caller that named a currency has a reason to
+        // (onboarding asks for it a step earlier), and the answer must survive
+        // this list arriving late.
+        setCurrency((c) => c || result.baseCurrency);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        // Degraded, not stuck. Without a currency the submit button is disabled
+        // forever, so the app-wide default stands in and the form still works —
+        // for a card in some other currency, the full account form is the way.
+        setCurrenciesFailed(true);
+        setCurrency((c) => c || DEFAULT_BASE_CURRENCY);
+      });
     return () => {
       cancelled = true;
     };
@@ -146,6 +157,9 @@ export function ImportCardStubStep({
             ))}
           </SelectContent>
         </Select>
+        {currenciesFailed ? (
+          <p className="text-xs text-destructive">{t("currenciesFailed")}</p>
+        ) : null}
       </div>
 
       <div className="space-y-2">

@@ -1,8 +1,13 @@
 import { z } from "zod";
 import { ACCOUNT_TYPE_VALUES } from "./meta";
 
+/** How long a card or account name may be. Shared so anything that *composes*
+ *  a name — the statement import suggesting a line name, say — can trim to fit
+ *  instead of discovering the cap as a zod error in the wrong language. */
+export const NAME_MAX_LENGTH = 80;
+
 const accountBase = z.object({
-  name: z.string().trim().min(1, "Name is required").max(80),
+  name: z.string().trim().min(1, "Name is required").max(NAME_MAX_LENGTH),
   type: z.enum(ACCOUNT_TYPE_VALUES),
   currency: z.string().trim().length(3, "Use a 3-letter code").toUpperCase(),
   starting_balance: z.coerce.number().finite().default(0),
@@ -106,7 +111,7 @@ export type AccountInput = z.infer<typeof accountInput>;
  * dividing by a null limit.
  */
 export const cardStubInput = z.object({
-  name: z.string().trim().min(1, "Name is required").max(80),
+  name: z.string().trim().min(1, "Name is required").max(NAME_MAX_LENGTH),
   currency: z.string().trim().length(3, "Use a 3-letter code").toUpperCase(),
   last4: z
     .string()

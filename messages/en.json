@@ -303,10 +303,13 @@
     "stubSubmit": "Add and continue",
     "pickCardHeading": "Which card is this for?",
     "pickCardHint": "Pick the card this statement came from.",
-    "unmatchedSection": "None of your lines is in {currency}. Add one to import this section.",
+    "unmatchedSection": "No {currency} line is free for this section. Add one so it can be imported.",
     "addLineButton": "Add a {currency} line",
     "lineNameSuggestion": "{card} · {currency}",
-    "lineAdded": "Line added."
+    "lineAdded": "Line added.",
+    "targetsFailed": "We couldn't load your cards.",
+    "retryLoadButton": "Try again",
+    "currenciesFailed": "We couldn't load the currency list; only the default is available."
   },
   "Budgets": {
     "pageTitle": "Budgets & Goals",

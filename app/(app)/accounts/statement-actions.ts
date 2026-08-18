@@ -18,6 +18,7 @@ import { resolveCategoryId, type CategoryRuleRow } from "@/lib/statements/catego
 import { baseRate, getExchangeRates } from "@/lib/fx";
 import { baseCurrencyOf, DEFAULT_BASE_CURRENCY } from "@/lib/profile";
 import type { ParsedStatement } from "@/lib/statements/types";
+import type { ImportTarget } from "@/lib/statements/import-targets";
 
 export interface SectionPreview {
   sectionKey: string;
@@ -62,26 +63,43 @@ async function requireUser() {
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
-export type ImportTarget = { id: string; name: string; currency: string; last4: string | null };
+export type { ImportTarget } from "@/lib/statements/import-targets";
 
 /**
- * The cards a statement could be imported onto.
+ * The cards a statement could be imported onto — one row per card *account*,
+ * carrying the card group it belongs to so the caller can collapse a multi-line
+ * card back into the one physical card it is (`collapseImportTargets`).
  *
  * An action rather than a prop threaded through every page that offers the
  * import: the dialog asks for this itself when it opens, so Overview, Wallet,
  * Insights and onboarding can each mount it without fetching anything of their
  * own. Archived cards are left out — they are not a place new spending lands.
+ *
+ * The group names are read separately rather than embedded: `card_groups` holds
+ * a handful of rows, and a second tiny select is cheaper to read and to stub
+ * than a PostgREST join whose shape leaks into this function's return type.
  */
 export async function listImportTargets(): Promise<ImportTarget[]> {
   const { supabase, user } = await requireUser();
   if (!user) return [];
-  const { data } = await supabase
-    .from("accounts")
-    .select("id,name,currency,last4")
-    .eq("type", "credit_card")
-    .eq("is_archived", false)
-    .order("sort_order");
-  return data ?? [];
+  const [{ data: accounts }, { data: groups }] = await Promise.all([
+    supabase
+      .from("accounts")
+      .select("id,name,currency,last4,card_group_id")
+      .eq("type", "credit_card")
+      .eq("is_archived", false)
+      .order("sort_order"),
+    supabase.from("card_groups").select("id,name"),
+  ]);
+  const nameByGroup = new Map((groups ?? []).map((g) => [g.id, g.name]));
+  return (accounts ?? []).map((a) => ({
+    id: a.id,
+    name: a.name,
+    currency: a.currency,
+    last4: a.last4,
+    cardGroupId: a.card_group_id,
+    groupName: a.card_group_id ? (nameByGroup.get(a.card_group_id) ?? null) : null,
+  }));
 }
 
 export type StubCurrencyOptions = {

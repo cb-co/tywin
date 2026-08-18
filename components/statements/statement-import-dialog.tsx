@@ -13,6 +13,8 @@ import {
 } from "@/app/(app)/accounts/statement-actions";
 import { addCardLine } from "@/app/(app)/accounts/actions";
 import { ImportCardStubStep } from "@/components/statements/import-card-stub-step";
+import { collapseImportTargets } from "@/lib/statements/import-targets";
+import { NAME_MAX_LENGTH } from "@/lib/accounts/schema";
 import { MAX_STATEMENT_BYTES } from "@/lib/statements/limits";
 import { formatMoney, formatDate } from "@/lib/format";
 import { useUiSound } from "@/components/sound/sound-provider";
@@ -72,23 +74,35 @@ export function StatementImportDialog({
      those choices are made from — null until it has been fetched. */
   const [targetId, setTargetId] = useState<string | null>(accountId ?? null);
   const [targets, setTargets] = useState<ImportTarget[] | null>(null);
+  const [targetsFailed, setTargetsFailed] = useState(false);
+  const [addLinePending, startAddLine] = useTransition();
+  /** Which section's "add a line" button is the one actually working. */
+  const [addingKey, setAddingKey] = useState<string | null>(null);
 
   // Fetched by the dialog rather than handed down, so an entry point can mount
   // it knowing nothing about the user's accounts. Only when no card is pinned:
   // the card page already knows its answer.
   useEffect(() => {
-    if (!open || accountId || targets !== null) return;
+    if (!open || accountId || targets !== null || targetsFailed) return;
     let cancelled = false;
-    void listImportTargets().then((list) => {
-      if (cancelled) return;
-      setTargets(list);
-      // One card is not a choice worth asking about.
-      if (list.length === 1) setTargetId(list[0].id);
-    });
+    void listImportTargets()
+      .then((list) => {
+        if (cancelled) return;
+        setTargets(list);
+        // One physical card is not a choice worth asking about — and a card
+        // group's three lines are one card, not three.
+        const rows = collapseImportTargets(list);
+        if (rows.length === 1) setTargetId(rows[0].accountId);
+      })
+      .catch(() => {
+        // A rejected action would otherwise leave `targets` null forever: a
+        // header over an empty modal with no way forward but closing it.
+        if (!cancelled) setTargetsFailed(true);
+      });
     return () => {
       cancelled = true;
     };
-  }, [open, accountId, targets]);
+  }, [open, accountId, targets, targetsFailed]);
 
   // The dialog is only ever useful with a file in hand, so it reaches for the
   // OS picker the moment it opens empty — the latch keeps it from reopening
@@ -128,6 +142,8 @@ export function StatementImportDialog({
     // dropped with it: a card created during this run belongs in the next list.
     setTargetId(accountId ?? null);
     setTargets(null);
+    setTargetsFailed(false);
+    setAddingKey(null);
   }
 
   function buildFormData(f: File) {
@@ -192,19 +208,45 @@ export function StatementImportDialog({
 
   const allMapped = preview?.sections.every((s) => mappings[s.sectionKey]) ?? false;
 
-  /* What to call a line added from here. The trailing " · USD" a grouped card's
-     lines already carry is stripped first, so a second line is named
-     "Visa Infinite · USD" and never "Visa Infinite · DOP · USD". */
+  /**
+   * The options a section can actually be imported into: same currency, and not
+   * already claimed by a different section.
+   *
+   * One definition, used both to render the select and to decide whether the
+   * section is stuck. They used to be written out separately, and drifted: the
+   * select excluded a line another section had already taken while "stuck" only
+   * looked at currency, so a `CUOTAS_DOP` section on a card whose single DOP
+   * line was claimed by the `DOP` section got an empty select AND no way to add
+   * a line — Confirm disabled forever, on the most ordinary local statement
+   * there is. Deriving both from this makes that disagreement unrepresentable.
+   */
+  function availableOptions(sectionKey: string, currency: string) {
+    return (preview?.accountOptions ?? []).filter(
+      (a) =>
+        a.currency === currency &&
+        (mappings[sectionKey] === a.id ||
+          !Object.entries(mappings).some(([key, v]) => key !== sectionKey && v === a.id)),
+    );
+  }
+
+  /* What to call a line added from here. A grouped card's own name is the
+     group's; failing that (an accountId pinned by the card page, so no target
+     list) the trailing " · USD" a line's name carries is stripped, so a second
+     line is "Visa Infinite · USD" and never "Visa Infinite · DOP · USD". */
+  const target = targets?.find((c) => c.id === targetId);
   const cardName = (
-    targets?.find((c) => c.id === targetId)?.name ??
+    target?.groupName ??
+    target?.name ??
     preview?.accountOptions[0]?.name ??
     ""
   ).replace(/\s·\s[A-Z]{3}$/, "");
 
   /**
-   * The way out of a section no card of this user's can receive: `suggestAccountId`
-   * matches by currency, so a DOP-only card faced with a USD section leaves that
-   * section unmappable and Confirm permanently disabled.
+   * The way out of a section no line of this card can receive — either because
+   * none is in its currency (a DOP-only card faced with a USD section) or because
+   * the only one that is has already been claimed by another section (the DOP and
+   * CUOTAS_DOP pair every local statement carries). Both leave the section
+   * unmappable and Confirm permanently disabled; see `availableOptions`.
    *
    * The new option is appended to the preview locally. Re-running `parseStatement`
    * to have the server rebuild `accountOptions` would re-extract the PDF and
@@ -218,22 +260,38 @@ export function StatementImportDialog({
    */
   function onAddLine(sectionKey: string, currency: string) {
     if (!targetId) return;
-    const lineName = t("lineNameSuggestion", { card: cardName, currency });
-    startTransition(async () => {
-      const result = await addCardLine(targetId, { name: lineName, currency });
-      const newId = result.id;
-      if (!newId) {
-        if (result.error) toast.error(result.error);
-        playError();
-        return;
+    const lineName = suggestedLineName(currency);
+    setAddingKey(sectionKey);
+    startAddLine(async () => {
+      try {
+        const result = await addCardLine(targetId, { name: lineName, currency });
+        const newId = result.id;
+        if (!newId) {
+          if (result.error) toast.error(result.error);
+          playError();
+          return;
+        }
+        setPreview((p) =>
+          p ? { ...p, accountOptions: [...p.accountOptions, { id: newId, name: lineName, currency }] } : p,
+        );
+        setMappings((m) => ({ ...m, [sectionKey]: newId }));
+        toast.success(t("lineAdded"));
+        playSuccess();
+      } finally {
+        setAddingKey(null);
       }
-      setPreview((p) =>
-        p ? { ...p, accountOptions: [...p.accountOptions, { id: newId, name: lineName, currency }] } : p,
-      );
-      setMappings((m) => ({ ...m, [sectionKey]: newId }));
-      toast.success(t("lineAdded"));
-      playSuccess();
     });
+  }
+
+  /* `cardStubInput` caps a name at NAME_MAX_LENGTH, and a long card name plus
+     " · USD" can cross it — which surfaced as a raw English zod message to a
+     Spanish reader. The card is trimmed rather than the composed string: cutting
+     the tail would drop the currency that makes the line identifiable at all. */
+  function suggestedLineName(currency: string) {
+    const compose = (card: string) => t("lineNameSuggestion", { card, currency });
+    const full = compose(cardName);
+    if (full.length <= NAME_MAX_LENGTH) return full;
+    return compose(cardName.slice(0, Math.max(1, cardName.length - (full.length - NAME_MAX_LENGTH))).trim());
   }
 
   return (
@@ -291,9 +349,21 @@ export function StatementImportDialog({
               whitespace-nowrap, so without this their min-content width would set
               the modal's width instead of being clamped by it. */}
           <div className="min-w-0 space-y-4">
+            {/* The list never arrived. Surfaced in the modal rather than as a
+                toast, because the modal is otherwise empty and the retry has to
+                live somewhere the reader is already looking. */}
+            {!targetId && targetsFailed ? (
+              <div className="space-y-2">
+                <p className="text-sm text-destructive">{t("targetsFailed")}</p>
+                <Button variant="outline" onClick={() => setTargetsFailed(false)}>
+                  {t("retryLoadButton")}
+                </Button>
+              </div>
+            ) : null}
+
             {/* Which card first, file second. Nothing is rendered while the list
                 is still in flight — a spinner for one small query would flash. */}
-            {!targetId && targets !== null ? (
+            {!targetId && !targetsFailed && targets !== null ? (
               targets.length === 0 ? (
                 <ImportCardStubStep
                   onCreated={setTargetId}
@@ -308,17 +378,20 @@ export function StatementImportDialog({
                     <p className="text-sm font-medium">{t("pickCardHeading")}</p>
                     <p className="text-xs text-muted-foreground">{t("pickCardHint")}</p>
                   </div>
+                  {/* One row per physical card. A grouped card's lines are not
+                      separate cards and must not read as three of them. */}
                   <ul className="min-w-0 space-y-2">
-                    {targets.map((c) => (
-                      <li key={c.id} className="min-w-0">
+                    {collapseImportTargets(targets).map((c) => (
+                      <li key={c.accountId} className="min-w-0">
                         <button
                           type="button"
                           className="flex w-full min-w-0 items-center justify-between gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-muted/50"
-                          onClick={() => setTargetId(c.id)}
+                          onClick={() => setTargetId(c.accountId)}
                         >
-                          <span className="min-w-0 truncate text-sm font-medium">{c.name}</span>
+                          <span className="min-w-0 truncate text-sm font-medium">{c.label}</span>
                           <span className="shrink-0 text-xs text-muted-foreground">
-                            {c.last4 ? `•••• ${c.last4} · ` : ""}
+                            {c.last4 ? `•••• ${c.last4}` : ""}
+                            {c.last4 && c.currency ? " · " : ""}
                             {c.currency}
                           </span>
                         </button>
@@ -366,9 +439,12 @@ export function StatementImportDialog({
             {preview ? (
               <div className="min-w-0 space-y-4">
                 {preview.sections.map((s) => {
-                  /* No card of this user's is in the section's currency, so the
-                     select below has nothing but "not assigned" to offer. */
-                  const unmatched = !preview.accountOptions.some((a) => a.currency === s.currency);
+                  const available = availableOptions(s.sectionKey, s.currency);
+                  /* Nothing this section can take — either no line in its
+                     currency, or the only one is already claimed by another
+                     section. The very list the select renders, so the two
+                     cannot disagree about whether the section is stuck. */
+                  const unmatched = available.length === 0;
                   return (
                     <div key={s.sectionKey} className="min-w-0 rounded-lg border p-3 space-y-2">
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -404,23 +480,14 @@ export function StatementImportDialog({
                             {/* Clearing frees this section's claim so accounts can be
                                 swapped between sections without a deadlock. */}
                             <SelectItem value="none">{t("mapSectionNone")}</SelectItem>
-                            {preview.accountOptions
-                              .filter(
-                                (a) =>
-                                  a.currency === s.currency &&
-                                  (mappings[s.sectionKey] === a.id ||
-                                    !Object.entries(mappings).some(
-                                      ([key, v]) => key !== s.sectionKey && v === a.id,
-                                    )),
-                              )
-                              .map((a) => (
-                                <SelectItem key={a.id} value={a.id}>
-                                  <span className="flex flex-col">
-                                    <span>{a.name}</span>
-                                    <span className="text-xs text-muted-foreground">{a.currency}</span>
-                                  </span>
-                                </SelectItem>
-                              ))}
+                            {available.map((a) => (
+                              <SelectItem key={a.id} value={a.id}>
+                                <span className="flex flex-col">
+                                  <span>{a.name}</span>
+                                  <span className="text-xs text-muted-foreground">{a.currency}</span>
+                                </span>
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -431,8 +498,10 @@ export function StatementImportDialog({
                           </p>
                           <Button
                             variant="outline"
-                            disabled={pending}
-                            isLoading={pending}
+                            disabled={pending || addLinePending}
+                            /* Its own transition: sharing `pending` with parse
+                               and confirm made it spin on unrelated work. */
+                            isLoading={addLinePending && addingKey === s.sectionKey}
                             onClick={() => onAddLine(s.sectionKey, s.currency)}
                           >
                             {t("addLineButton", { currency: s.currency })}
@@ -454,7 +523,11 @@ export function StatementImportDialog({
                   />
                 </div>
                 <div className="flex gap-2">
-                  <Button disabled={pending || !allMapped} isLoading={pending} onClick={onConfirm}>
+                  <Button
+                    disabled={pending || addLinePending || !allMapped}
+                    isLoading={pending}
+                    onClick={onConfirm}
+                  >
                     {t("confirmButton")}
                   </Button>
                   <Button

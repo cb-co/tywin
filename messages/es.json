@@ -303,10 +303,13 @@
     "stubSubmit": "Agregar y continuar",
     "pickCardHeading": "¿A cuál tarjeta pertenece?",
     "pickCardHint": "Elige la tarjeta que emitió este estado de cuenta.",
-    "unmatchedSection": "Ninguna de tus líneas está en {currency}. Agrega una para importar esta sección.",
+    "unmatchedSection": "No hay ninguna línea en {currency} libre para esta sección. Agrega una para poder importarla.",
     "addLineButton": "Agregar una línea en {currency}",
     "lineNameSuggestion": "{card} · {currency}",
-    "lineAdded": "Línea agregada."
+    "lineAdded": "Línea agregada.",
+    "targetsFailed": "No pudimos cargar tus tarjetas.",
+    "retryLoadButton": "Reintentar",
+    "currenciesFailed": "No pudimos cargar la lista de monedas; solo está disponible la predeterminada."
   },
   "Budgets": {
     "pageTitle": "Presupuestos y metas",

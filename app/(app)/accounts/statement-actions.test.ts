@@ -30,6 +30,7 @@ import { extractWithLLM } from "@/lib/statements/llm/extract";
 import { createClient } from "@/lib/supabase/server";
 import { confirmStatementImport, listImportTargets, parseStatement } from "./statement-actions";
 import { MAX_STATEMENT_BYTES } from "@/lib/statements/limits";
+import { collapseImportTargets } from "@/lib/statements/import-targets";
 import type { ParsedStatement } from "@/lib/statements/types";
 
 /** Minimal fake Supabase query builder: chainable select/eq/order, terminal
@@ -237,19 +238,26 @@ describe("parseStatement", () => {
 });
 
 describe("listImportTargets", () => {
-  const rows = [
-    { id: "acc-1", name: "Visa Infinite", currency: "DOP", last4: "1234" },
-    { id: "acc-2", name: "Visa Infinite · USD", currency: "USD", last4: null },
+  const accounts = [
+    { id: "acc-1", name: "Visa Infinite · DOP", currency: "DOP", last4: "1234", card_group_id: "grp-1" },
+    { id: "acc-2", name: "Visa Infinite · USD", currency: "USD", last4: null, card_group_id: "grp-1" },
+    { id: "acc-3", name: "Amex Gold", currency: "DOP", last4: "9876", card_group_id: null },
   ];
+  const groups = [{ id: "grp-1", name: "Visa Infinite" }];
 
-  /** Every `from()` returns the same builder, so the assertions below can read
-   *  the filters the action applied without guessing which table it asked for. */
-  function stubWithCards(data: unknown, user: { id: string } | null = { id: "user-1" }) {
-    const table = chainable({ data }) as Record<string, Mock>;
+  function stubWithCards(
+    accountData: unknown,
+    user: { id: string } | null = { id: "user-1" },
+    groupData: unknown = groups,
+  ) {
+    const tables: Record<string, Record<string, Mock>> = {
+      accounts: chainable({ data: accountData }) as Record<string, Mock>,
+      card_groups: chainable({ data: groupData }) as Record<string, Mock>,
+    };
     return {
       auth: { getUser: vi.fn(async () => ({ data: { user } })) },
-      from: vi.fn(() => table),
-      table,
+      from: vi.fn((table: string) => tables[table] ?? chainable({ data: null })),
+      tables,
     };
   }
 
@@ -257,19 +265,66 @@ describe("listImportTargets", () => {
     vi.clearAllMocks();
   });
 
-  it("returns the user's unarchived credit cards in sort order", async () => {
-    const stub = stubWithCards(rows);
+  it("returns the user's unarchived credit cards in sort order, with their group", async () => {
+    const stub = stubWithCards(accounts);
     (createClient as unknown as Mock).mockResolvedValue(stub);
 
-    await expect(listImportTargets()).resolves.toEqual(rows);
+    await expect(listImportTargets()).resolves.toEqual([
+      {
+        id: "acc-1",
+        name: "Visa Infinite · DOP",
+        currency: "DOP",
+        last4: "1234",
+        cardGroupId: "grp-1",
+        groupName: "Visa Infinite",
+      },
+      {
+        id: "acc-2",
+        name: "Visa Infinite · USD",
+        currency: "USD",
+        last4: null,
+        cardGroupId: "grp-1",
+        groupName: "Visa Infinite",
+      },
+      {
+        id: "acc-3",
+        name: "Amex Gold",
+        currency: "DOP",
+        last4: "9876",
+        cardGroupId: null,
+        groupName: null,
+      },
+    ]);
 
     expect(stub.from).toHaveBeenCalledWith("accounts");
-    expect(stub.table.select).toHaveBeenCalledWith("id,name,currency,last4");
+    expect(stub.tables.accounts.select).toHaveBeenCalledWith(
+      "id,name,currency,last4,card_group_id",
+    );
     // Checking-account rows and archived cards would both render as targets the
     // import can't actually land on.
-    expect(stub.table.eq).toHaveBeenCalledWith("type", "credit_card");
-    expect(stub.table.eq).toHaveBeenCalledWith("is_archived", false);
-    expect(stub.table.order).toHaveBeenCalledWith("sort_order");
+    expect(stub.tables.accounts.eq).toHaveBeenCalledWith("type", "credit_card");
+    expect(stub.tables.accounts.eq).toHaveBeenCalledWith("is_archived", false);
+    expect(stub.tables.accounts.order).toHaveBeenCalledWith("sort_order");
+  });
+
+  it("collapses a card group's lines into one pickable card", async () => {
+    (createClient as unknown as Mock).mockResolvedValue(stubWithCards(accounts));
+
+    const rows = collapseImportTargets(await listImportTargets());
+
+    // Two lines of one physical Visa plus a standalone Amex: two cards, not three.
+    expect(rows).toEqual([
+      { accountId: "acc-1", label: "Visa Infinite", currency: null, last4: "1234" },
+      { accountId: "acc-3", label: "Amex Gold", currency: "DOP", last4: "9876" },
+    ]);
+  });
+
+  it("leaves a grouped card's name null when the group row is missing", async () => {
+    (createClient as unknown as Mock).mockResolvedValue(stubWithCards(accounts, { id: "user-1" }, []));
+    const targets = await listImportTargets();
+    expect(targets[0].groupName).toBeNull();
+    // Still one row: the grouping is the card_group_id, not the name.
+    expect(collapseImportTargets(targets)).toHaveLength(2);
   });
 
   it("returns an empty list, not null, when the query comes back with nothing", async () => {
@@ -278,7 +333,7 @@ describe("listImportTargets", () => {
   });
 
   it("never touches the accounts table when nobody is signed in", async () => {
-    const stub = stubWithCards(rows, null);
+    const stub = stubWithCards(accounts, null);
     (createClient as unknown as Mock).mockResolvedValue(stub);
 
     await expect(listImportTargets()).resolves.toEqual([]);
