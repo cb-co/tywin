@@ -1,22 +1,19 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
 import { Upload, Trash2, FileText, ChevronDown, ChevronRight } from "lucide-react";
 import {
-  parseStatement,
-  confirmStatementImport,
   deleteCardStatement,
   getStatementLineDetail,
-  type StatementPreviewResult,
   type StatementLineDetail,
 } from "@/app/(app)/accounts/statement-actions";
 import type { CardStatementRow } from "@/lib/accounts/queries";
-import { MAX_STATEMENT_BYTES } from "@/lib/statements/limits";
 import { formatMoney, formatDate } from "@/lib/format";
 import { useUiSound } from "@/components/sound/sound-provider";
+import { StatementImportDialog } from "@/components/statements/statement-import-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -27,20 +24,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-
-type Preview = NonNullable<StatementPreviewResult["preview"]>;
 
 export function StatementsPanel({
   accountId,
@@ -58,82 +43,11 @@ export function StatementsPanel({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const { playSuccess, playError } = useUiSound();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [password, setPassword] = useState("");
-  const [needsPassword, setNeedsPassword] = useState(false);
-  const [passwordIncorrect, setPasswordIncorrect] = useState(false);
-  const [preview, setPreview] = useState<Preview | null>(null);
-  const [mappings, setMappings] = useState<Record<string, string>>({});
-  const [excludeFromBudget, setExcludeFromBudget] = useState(true);
-  const [parsedStatement, setParsedStatement] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [lines, setLines] = useState<Record<string, StatementLineDetail[]>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
-
-  function buildFormData(f: File) {
-    const fd = new FormData();
-    fd.set("file", f);
-    fd.set("account_id", accountId);
-    if (password) fd.set("password", password);
-    return fd;
-  }
-
-  function onParse(f: File) {
-    setParsedStatement(null);
-    startTransition(async () => {
-      const result = await parseStatement(buildFormData(f));
-      if (result.needsPassword) {
-        setNeedsPassword(true);
-        setPasswordIncorrect(!!result.passwordIncorrect);
-        if (result.passwordIncorrect) setPassword("");
-        return;
-      }
-      if (result.error || !result.preview) {
-        toast.error(result.error ?? t("parseFailed"));
-        playError();
-        return;
-      }
-      setNeedsPassword(false);
-      setPasswordIncorrect(false);
-      setPreview(result.preview);
-      setParsedStatement(result.parsedStatement ?? null);
-      setMappings(
-        Object.fromEntries(
-          result.preview.sections
-            .map((s) => [s.sectionKey, s.mappedAccountId ?? s.suggestedAccountId ?? ""])
-            .filter(([, v]) => v),
-        ),
-      );
-    });
-  }
-
-  function onConfirm() {
-    if (!preview || !parsedStatement) return;
-    const fd = new FormData();
-    fd.set("account_id", accountId);
-    fd.set("file_name", preview.fileName);
-    fd.set("parsed_statement", parsedStatement);
-    fd.set("mappings", JSON.stringify(mappings));
-    fd.set("exclude_from_budget", String(excludeFromBudget));
-    startTransition(async () => {
-      const result = await confirmStatementImport(fd);
-      if (result.error) {
-        toast.error(result.error);
-        playError();
-        return;
-      }
-      toast.success(t("imported"));
-      playSuccess();
-      setPreview(null);
-      setFile(null);
-      setPassword("");
-      setParsedStatement(null);
-      setExcludeFromBudget(true);
-      router.refresh();
-    });
-  }
 
   function onToggleLines(id: string) {
     if (expanded === id) {
@@ -173,7 +87,6 @@ export function StatementsPanel({
   }
 
   const latest = statements[0];
-  const allMapped = preview?.sections.every((s) => mappings[s.sectionKey]) ?? false;
 
   return (
     <Card className="p-6">
@@ -182,148 +95,16 @@ export function StatementsPanel({
           <h2 className="text-lg font-medium">{t("title")}</h2>
           <p className="text-sm text-muted-foreground">{t("description")}</p>
         </div>
-        <Button variant="outline" disabled={pending} isLoading={pending} onClick={() => fileRef.current?.click()}>
+        <Button
+          variant="outline"
+          disabled={pending}
+          isLoading={pending}
+          onClick={() => setImportOpen(true)}
+        >
           <Upload className="mr-1.5 size-4" />
           {t("importButton")}
         </Button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="application/pdf"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0] ?? null;
-            e.target.value = "";
-            if (!f) return;
-            // Stopped here rather than server-side because Next rejects an
-            // oversize server-action body while parsing it — the action never
-            // runs, so it has no way to turn that into a toast.
-            if (f.size > MAX_STATEMENT_BYTES) {
-              toast.error(t("fileTooLarge", { limit: MAX_STATEMENT_BYTES / (1024 * 1024) }));
-              playError();
-              return;
-            }
-            setFile(f);
-            setPassword("");
-            setNeedsPassword(false);
-            setPasswordIncorrect(false);
-            setPreview(null);
-            setParsedStatement(null);
-            onParse(f);
-          }}
-        />
       </div>
-
-      {needsPassword && file ? (
-        <div className="mt-5 space-y-2">
-          <Label htmlFor="stmt-password">{t("passwordLabel")}</Label>
-          <p className={cn("text-xs", passwordIncorrect ? "text-destructive" : "text-muted-foreground")}>
-            {passwordIncorrect ? t("passwordIncorrect") : t("passwordHint")}
-          </p>
-          <div className="flex gap-2">
-            <Input
-              id="stmt-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <Button variant="outline" disabled={pending || !password} isLoading={pending} onClick={() => onParse(file)}>
-              {t("retryButton")}
-            </Button>
-          </div>
-        </div>
-      ) : null}
-
-      {preview ? (
-        <div className="mt-5 space-y-4">
-          {preview.sections.map((s) => (
-            <div key={s.sectionKey} className="rounded-lg border p-3 space-y-2">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <p className="text-sm font-medium">
-                  {s.sectionKey} · {s.currency} · {formatDate(s.periodStart, locale)} →{" "}
-                  {formatDate(s.periodEnd, locale)}
-                </p>
-                <p className="figure text-sm">
-                  {formatMoney(Number(s.closingBalance), s.currency)}
-                </p>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t("sectionSummary", { lines: s.lineCount, payments: s.paymentCount })}
-              </p>
-              <div className="space-y-1.5">
-                <Label className="text-xs">{t("mapSectionLabel", { section: s.sectionKey })}</Label>
-                <Select
-                  value={mappings[s.sectionKey] || "none"}
-                  onValueChange={(v) =>
-                    setMappings((m) => ({ ...m, [s.sectionKey]: v === "none" ? "" : (v ?? "") }))
-                  }
-                  items={{
-                    none: t("mapSectionNone"),
-                    ...Object.fromEntries(
-                      preview.accountOptions.map((a) => [a.id, `${a.name} · ${a.currency}`]),
-                    ),
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {/* Clearing frees this section's claim so accounts can be
-                        swapped between sections without a deadlock. */}
-                    <SelectItem value="none">{t("mapSectionNone")}</SelectItem>
-                    {preview.accountOptions
-                      .filter(
-                        (a) =>
-                          a.currency === s.currency &&
-                          (mappings[s.sectionKey] === a.id ||
-                            !Object.entries(mappings).some(
-                              ([key, v]) => key !== s.sectionKey && v === a.id,
-                            )),
-                      )
-                      .map((a) => (
-                        <SelectItem key={a.id} value={a.id}>
-                          <span className="flex flex-col">
-                            <span>{a.name}</span>
-                            <span className="text-xs text-muted-foreground">{a.currency}</span>
-                          </span>
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          ))}
-          <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3">
-            <Label htmlFor="exclude_from_budget" className="font-normal text-muted-foreground">
-              {t("excludeFromBudgetLabel")}
-              <span className="ml-1.5 block text-xs">{t("excludeFromBudgetHint")}</span>
-            </Label>
-            <Switch
-              id="exclude_from_budget"
-              checked={excludeFromBudget}
-              onCheckedChange={setExcludeFromBudget}
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button disabled={pending || !allMapped} isLoading={pending} onClick={onConfirm}>
-              {t("confirmButton")}
-            </Button>
-            <Button
-              variant="ghost"
-              disabled={pending}
-              onClick={() => {
-                setPreview(null);
-                setFile(null);
-                setPassword("");
-                setParsedStatement(null);
-                setExcludeFromBudget(true);
-              }}
-            >
-              {t("cancelButton")}
-            </Button>
-          </div>
-        </div>
-      ) : null}
 
       <Separator className="my-6" />
 
@@ -427,6 +208,13 @@ export function StatementsPanel({
           ))}
         </ul>
       )}
+
+      <StatementImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        accountId={accountId}
+        onImported={() => router.refresh()}
+      />
 
       {/* Same confirmation pattern as account deletion (account-detail-actions). */}
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
