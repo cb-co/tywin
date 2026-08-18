@@ -13,6 +13,7 @@ import { validateChecksums } from "@/lib/statements/validate";
 import { centsToDecimal } from "@/lib/statements/money";
 import { MAX_STATEMENT_BYTES } from "@/lib/statements/limits";
 import { suggestAccountId, type CardAccountOption } from "@/lib/statements/mapping";
+import { cardBackfillFromSection } from "@/lib/statements/backfill";
 import { resolveCategoryId, type CategoryRuleRow } from "@/lib/statements/categorize";
 import { baseRate, getExchangeRates } from "@/lib/fx";
 import { baseCurrencyOf } from "@/lib/profile";
@@ -68,18 +69,25 @@ async function loadAccountContext(supabase: Supabase, accountId: string, parserI
   const t = await getTranslations("Statements");
   const { data: account } = await supabase
     .from("accounts")
-    .select("id,name,currency,credit_limit,card_group_id,type")
+    .select("id,name,currency,credit_limit,statement_closing_day,payment_due_day,card_group_id,type")
     .eq("id", accountId)
     .single();
   if (!account || account.type !== "credit_card") return { error: t("notACard") } as const;
 
   let options: CardAccountOption[] = [
-    { id: account.id, name: account.name, currency: account.currency, credit_limit: account.credit_limit },
+    {
+      id: account.id,
+      name: account.name,
+      currency: account.currency,
+      credit_limit: account.credit_limit,
+      statement_closing_day: account.statement_closing_day,
+      payment_due_day: account.payment_due_day,
+    },
   ];
   if (account.card_group_id) {
     const { data: group } = await supabase
       .from("accounts")
-      .select("id,name,currency,credit_limit")
+      .select("id,name,currency,credit_limit,statement_closing_day,payment_due_day")
       .eq("card_group_id", account.card_group_id)
       .eq("type", "credit_card")
       .eq("is_archived", false);
@@ -385,6 +393,26 @@ export async function confirmStatementImport(formData: FormData): Promise<{ erro
 
   const { error } = await supabase.rpc("import_card_statement", { p: payload });
   if (error) return { error: await dbError(error, "importCardStatement") };
+
+  /* What the issuer printed, written back onto the card. A stub created during
+     import arrives with no closing day, due day or limit — this is where it stops
+     being a stub. Each mapped account is filled from its own section: on a grouped
+     card the DOP line may be a sibling, and each line carries its own limit.
+     Fills nulls only; see lib/statements/backfill.ts. */
+  for (const s of parsed.sections) {
+    const target = optionById.get(mappings[s.sectionKey]);
+    if (!target) continue;
+    const patch = cardBackfillFromSection(
+      {
+        statement_closing_day: target.statement_closing_day ?? null,
+        payment_due_day: target.payment_due_day ?? null,
+        credit_limit: target.credit_limit,
+      },
+      { periodEnd: s.periodEnd, dueDate: s.dueDate, creditLimitCents: s.creditLimitCents },
+    );
+    if (Object.keys(patch).length === 0) continue;
+    await supabase.from("accounts").update(patch).eq("id", target.id);
+  }
 
   // Remember confirmed mappings for zero-touch future imports.
   if (account.card_group_id) {

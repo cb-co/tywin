@@ -50,12 +50,15 @@ function makeSupabaseStub() {
     id: "acc-1",
     name: "Test Card",
     currency: "DOP",
-    credit_limit: 10000,
+    credit_limit: null,
+    statement_closing_day: null,
+    payment_due_day: null,
     card_group_id: null,
     type: "credit_card",
   };
+  const accountUpdate = vi.fn(() => chainable({ error: null }));
   const byTable: Record<string, () => unknown> = {
-    accounts: () => chainable({ data: account }),
+    accounts: () => chainable({ data: account }, { update: accountUpdate }),
     statement_section_mappings: () =>
       chainable({ data: [] }, { upsert: vi.fn(() => Promise.resolve({ error: null })) }),
     categories: () => chainable({ data: [{ id: "cat-other", name: "Other" }] }),
@@ -66,6 +69,7 @@ function makeSupabaseStub() {
     auth: { getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })) },
     from: vi.fn((table: string) => (byTable[table] ?? (() => chainable({ data: null })))()),
     rpc: vi.fn(async () => ({ error: null })),
+    accountUpdate,
   };
 }
 
@@ -160,6 +164,48 @@ describe("confirmStatementImport", () => {
     await confirmStatementImport(fd);
     const [, args] = supabase.rpc.mock.calls[0] as unknown as [string, { p: { sections: unknown[] } }];
     expect(args.p.sections[0]).toMatchObject({ cashback_total: "" });
+  });
+
+  it("backfills closing day, due day and limit from the statement", async () => {
+    const stub = makeSupabaseStub();
+    (createClient as Mock).mockResolvedValue(stub);
+
+    await confirmStatementImport(buildConfirmFormData());
+
+    expect(stub.accountUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statement_closing_day: expect.any(Number),
+        payment_due_day: expect.any(Number),
+      }),
+    );
+  });
+
+  it("does not touch a card whose columns are already set", async () => {
+    const stub = makeSupabaseStub();
+    stub.from = vi.fn((table: string) =>
+      table === "accounts"
+        ? chainable(
+            {
+              data: {
+                id: "acc-1",
+                name: "Test Card",
+                currency: "DOP",
+                credit_limit: 100000,
+                statement_closing_day: 20,
+                payment_due_day: 10,
+                card_group_id: null,
+                type: "credit_card",
+              },
+            },
+            { update: stub.accountUpdate },
+          )
+        : chainable({ data: [] }, { upsert: vi.fn(async () => ({ error: null })) }),
+    ) as typeof stub.from;
+    (createClient as Mock).mockResolvedValue(stub);
+
+    await confirmStatementImport(buildConfirmFormData());
+
+    expect(stub.accountUpdate).not.toHaveBeenCalled();
   });
 });
 

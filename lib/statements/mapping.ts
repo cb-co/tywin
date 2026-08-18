@@ -3,6 +3,8 @@ export interface CardAccountOption {
   name: string;
   currency: string;
   credit_limit: number | null;
+  statement_closing_day?: number | null;
+  payment_due_day?: number | null;
 }
 
 /** Heuristic pre-fill only — the user confirms in the mapping dialog.
