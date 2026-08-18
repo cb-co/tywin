@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { accountInput, type AccountInput } from "@/lib/accounts/schema";
+import { accountInput, type AccountInput, cardStubInput, type CardStubInput } from "@/lib/accounts/schema";
 import { hasCardAccent } from "@/lib/accounts/card-art";
 import { inferCardArt } from "@/lib/accounts/llm/card-art";
 import { dbError } from "@/lib/errors";
@@ -343,5 +343,112 @@ export async function createCardWithLines(name: string, lines: AccountInput[]): 
   revalidatePath("/accounts");
   revalidatePath("/");
   return { id: group.id };
+}
+
+/**
+ * A credit card the user has not described yet — the entry point statement import
+ * uses when someone has no card at all.
+ *
+ * Deliberately ungrouped: most cards in this market are a single DOP line, and a
+ * one-line group would be a container around nothing. `addCardLine` promotes the
+ * card if a statement turns out to have sections this one account cannot receive.
+ */
+export async function createCardStub(input: CardStubInput): Promise<Result> {
+  const parsed = cardStubInput.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+
+  const { supabase, user } = await requireUser();
+  if (!user) return { error: "You're not signed in." };
+
+  const art = await inferCardArt(parsed.data.name);
+  const res = await supabase
+    .from("accounts")
+    .insert({
+      name: parsed.data.name,
+      type: "credit_card",
+      currency: parsed.data.currency,
+      user_id: user.id,
+      ...(parsed.data.last4 ? { last4: parsed.data.last4 } : {}),
+      ...(art ? { color: art.accent } : {}),
+      ...(art?.network ? { brand: art.network } : {}),
+    })
+    .select("id")
+    .single();
+
+  if (res.error) return { error: await dbError(res.error, "createCardStub") };
+  revalidatePath("/accounts");
+  revalidatePath("/");
+  return { id: res.data.id };
+}
+
+/**
+ * A further line on a card that already exists — the USD or cuotas section of a
+ * statement that the card's single account cannot receive, because
+ * `suggestAccountId` matches sections to accounts by currency.
+ *
+ * Promotion is a plain card_group_id update: statement_section_mappings rows are
+ * only ever written for cards that already have a group (see the guard in
+ * confirmStatementImport), so an ungrouped card has none to re-key.
+ */
+export async function addCardLine(siblingId: string, input: CardStubInput): Promise<Result> {
+  const parsed = cardStubInput.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+
+  const { supabase, user } = await requireUser();
+  if (!user) return { error: "You're not signed in." };
+
+  const { data: sibling } = await supabase
+    .from("accounts")
+    .select("id,name,type,card_group_id,color,brand")
+    .eq("id", siblingId)
+    .single();
+  if (!sibling || sibling.type !== "credit_card") return { error: "Not a credit card." };
+
+  // A group IS the physical card, so it inherits the face the sibling already wears.
+  const face = {
+    ...(sibling.color ? { color: sibling.color } : {}),
+    ...(sibling.brand ? { brand: sibling.brand } : {}),
+  };
+
+  let groupId = sibling.card_group_id;
+  if (!groupId) {
+    const { data: group, error: groupError } = await supabase
+      .from("card_groups")
+      .insert({
+        name: sibling.name,
+        user_id: user.id,
+        ...(sibling.color ? { art_color: sibling.color } : {}),
+        ...(sibling.brand ? { brand: sibling.brand } : {}),
+      })
+      .select("id")
+      .single();
+    if (groupError) return { error: await dbError(groupError, "addCardLine") };
+    groupId = group.id;
+
+    const { error: linkError } = await supabase
+      .from("accounts")
+      .update({ card_group_id: groupId })
+      .eq("id", sibling.id);
+    if (linkError) return { error: await dbError(linkError, "addCardLine") };
+  }
+
+  const res = await supabase
+    .from("accounts")
+    .insert({
+      name: parsed.data.name,
+      type: "credit_card",
+      currency: parsed.data.currency,
+      card_group_id: groupId,
+      user_id: user.id,
+      ...(parsed.data.last4 ? { last4: parsed.data.last4 } : {}),
+      ...face,
+    })
+    .select("id")
+    .single();
+
+  if (res.error) return { error: await dbError(res.error, "addCardLine") };
+  revalidatePath("/accounts");
+  revalidatePath("/");
+  return { id: res.data.id };
 }
 
