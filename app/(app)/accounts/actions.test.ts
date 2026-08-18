@@ -14,6 +14,11 @@ vi.mock("@/lib/accounts/llm/card-art", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/accounts/llm/card-art")>()),
   inferCardArt: vi.fn(async () => null),
 }));
+// dbError() calls getTranslations at module scope of lib/errors.ts; only the
+// failure-path tests below reach it, but every test collects the module.
+vi.mock("next-intl/server", () => ({
+  getTranslations: vi.fn(async () => (key: string) => key),
+}));
 
 import { createClient } from "@/lib/supabase/server";
 import { createCardStub, addCardLine } from "./actions";
@@ -121,5 +126,114 @@ describe("addCardLine", () => {
 
     expect(groupInsert).not.toHaveBeenCalled();
     expect(((accountInsert as unknown as Mock).mock.calls[0][0] as Record<string, unknown>).card_group_id).toBe("grp-existing");
+  });
+
+  it("deletes the group it just created if linking the sibling back to it fails", async () => {
+    const accountUpdate = vi.fn(() => chainable({ error: { code: "XXXXX", message: "boom" } }));
+    const groupInsert = vi.fn(() => chainable({ data: { id: "grp-1" }, error: null }));
+    let deletedGroupEq: Mock | undefined;
+    const groupDelete = vi.fn(() => {
+      const obj = chainable({ error: null });
+      deletedGroupEq = obj.eq as Mock;
+      return obj;
+    });
+    (createClient as Mock).mockResolvedValue({
+      auth: { getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })) },
+      from: vi.fn((table: string) =>
+        table === "card_groups"
+          ? chainable({ data: null }, { insert: groupInsert, delete: groupDelete })
+          : chainable(
+              {
+                data: {
+                  id: "acc-1",
+                  name: "Popular Visa",
+                  type: "credit_card",
+                  card_group_id: null,
+                  color: null,
+                  brand: null,
+                },
+              },
+              { update: accountUpdate },
+            ),
+      ),
+    });
+
+    const r = await addCardLine("acc-1", { name: "Popular Visa USD", currency: "USD" });
+
+    expect(r.error).toBeTruthy();
+    expect(groupDelete).toHaveBeenCalled();
+    // .delete() alone selects nothing; .eq("id", ...) is the row filter that
+    // makes it target only the group this call just created.
+    expect(deletedGroupEq).toHaveBeenCalledWith("id", "grp-1");
+  });
+
+  it("deletes the group it just created if the new line fails to insert", async () => {
+    const accountUpdate = vi.fn(() => chainable({ error: null }));
+    const accountInsert = vi.fn(() => chainable({ data: null, error: { code: "XXXXX", message: "boom" } }));
+    const groupInsert = vi.fn(() => chainable({ data: { id: "grp-1" }, error: null }));
+    let deletedGroupEq: Mock | undefined;
+    const groupDelete = vi.fn(() => {
+      const obj = chainable({ error: null });
+      deletedGroupEq = obj.eq as Mock;
+      return obj;
+    });
+    (createClient as Mock).mockResolvedValue({
+      auth: { getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })) },
+      from: vi.fn((table: string) =>
+        table === "card_groups"
+          ? chainable({ data: null }, { insert: groupInsert, delete: groupDelete })
+          : chainable(
+              {
+                data: {
+                  id: "acc-1",
+                  name: "Popular Visa",
+                  type: "credit_card",
+                  card_group_id: null,
+                  color: null,
+                  brand: null,
+                },
+              },
+              { insert: accountInsert, update: accountUpdate },
+            ),
+      ),
+    });
+
+    const r = await addCardLine("acc-1", { name: "Popular Visa USD", currency: "USD" });
+
+    expect(r.error).toBeTruthy();
+    expect(groupDelete).toHaveBeenCalled();
+    expect(deletedGroupEq).toHaveBeenCalledWith("id", "grp-1");
+  });
+
+  it("never deletes a reused group, even if the new line fails to insert", async () => {
+    const accountInsert = vi.fn(() => chainable({ data: null, error: { code: "XXXXX", message: "boom" } }));
+    const groupInsert = vi.fn(() => chainable({ data: { id: "grp-new" }, error: null }));
+    const groupDelete = vi.fn(() => chainable({ error: null }));
+    (createClient as Mock).mockResolvedValue({
+      auth: { getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })) },
+      from: vi.fn((table: string) =>
+        table === "card_groups"
+          ? chainable({ data: null }, { insert: groupInsert, delete: groupDelete })
+          : chainable(
+              {
+                data: {
+                  id: "acc-1",
+                  name: "Popular Visa",
+                  type: "credit_card",
+                  card_group_id: "grp-existing",
+                  color: null,
+                  brand: null,
+                },
+              },
+              { insert: accountInsert },
+            ),
+      ),
+    });
+
+    const r = await addCardLine("acc-1", { name: "Cuotas", currency: "DOP" });
+
+    expect(r.error).toBeTruthy();
+    expect(groupInsert).not.toHaveBeenCalled();
+    expect(groupDelete).not.toHaveBeenCalled();
   });
 });

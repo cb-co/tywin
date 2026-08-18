@@ -410,7 +410,11 @@ export async function addCardLine(siblingId: string, input: CardStubInput): Prom
     ...(sibling.brand ? { brand: sibling.brand } : {}),
   };
 
+  // Tracks whether THIS call minted the group, so a failure below can undo it.
+  // A reused group predates this call and must never be deleted for a failure
+  // that has nothing to do with its own creation.
   let groupId = sibling.card_group_id;
+  let createdGroup = false;
   if (!groupId) {
     const { data: group, error: groupError } = await supabase
       .from("card_groups")
@@ -424,12 +428,19 @@ export async function addCardLine(siblingId: string, input: CardStubInput): Prom
       .single();
     if (groupError) return { error: await dbError(groupError, "addCardLine") };
     groupId = group.id;
+    createdGroup = true;
 
     const { error: linkError } = await supabase
       .from("accounts")
       .update({ card_group_id: groupId })
       .eq("id", sibling.id);
-    if (linkError) return { error: await dbError(linkError, "addCardLine") };
+    if (linkError) {
+      // Same reasoning as createCardWithLines: a group this call just created,
+      // with nothing successfully linked to it, must not survive to render as
+      // an empty card in the gallery.
+      await supabase.from("card_groups").delete().eq("id", groupId);
+      return { error: await dbError(linkError, "addCardLine") };
+    }
   }
 
   const res = await supabase
@@ -446,7 +457,13 @@ export async function addCardLine(siblingId: string, input: CardStubInput): Prom
     .select("id")
     .single();
 
-  if (res.error) return { error: await dbError(res.error, "addCardLine") };
+  if (res.error) {
+    // The sibling is already linked to `groupId` at this point, so deleting the
+    // group would orphan it too — only clean up when the group is new AND
+    // nothing else references it yet, i.e. exactly the case this call created.
+    if (createdGroup) await supabase.from("card_groups").delete().eq("id", groupId);
+    return { error: await dbError(res.error, "addCardLine") };
+  }
   revalidatePath("/accounts");
   revalidatePath("/");
   return { id: res.data.id };
