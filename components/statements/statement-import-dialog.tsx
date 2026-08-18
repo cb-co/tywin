@@ -62,8 +62,9 @@ export function StatementImportDialog({
   const [parsedStatement, setParsedStatement] = useState<string | null>(null);
 
   // The dialog is only ever useful with a file in hand, so it reaches for the
-  // OS picker the moment it opens empty — the ref guard keeps it from
-  // reopening after the user cancels the picker or picks a file.
+  // OS picker the moment it opens empty — the latch keeps it from reopening
+  // after the user cancels the picker or picks a file, and resets on close so
+  // the next open starts at the picker again.
   const pickerOpenedRef = useRef(false);
   useEffect(() => {
     if (!open) {
@@ -71,8 +72,14 @@ export function StatementImportDialog({
       return;
     }
     if (pickerOpenedRef.current || file || preview) return;
+    // Latch only once the click actually lands. The input is mounted outside
+    // the dialog precisely so the ref is live here, but latching on a null ref
+    // would be unrecoverable: the deps never change again, so the picker would
+    // silently never open.
+    const input = fileRef.current;
+    if (!input) return;
     pickerOpenedRef.current = true;
-    fileRef.current?.click();
+    input.click();
   }, [open, file, preview]);
 
   function resetForm() {
@@ -149,176 +156,184 @@ export function StatementImportDialog({
   const allMapped = preview?.sections.every((s) => mappings[s.sectionKey]) ?? false;
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        // A dismissed dialog starts over next time — otherwise it would reopen
-        // onto a stale preview and skip the picker.
-        if (!next) resetForm();
-        onOpenChange(next);
-      }}
-    >
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{t("title")}</DialogTitle>
-          <DialogDescription>{t("description")}</DialogDescription>
-        </DialogHeader>
+    <>
+      {/* Outside the dialog on purpose. DialogContent renders through a portal
+          whose container is set in an effect, so the popup's children are not
+          in the DOM yet when the open effect above runs — an input in there
+          would leave the ref null exactly when the picker needs to open. Base
+          UI only marks outside content aria-hidden (never inert), so a hidden
+          input out here stays clickable while the modal is open. */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="application/pdf"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0] ?? null;
+          e.target.value = "";
+          if (!f) return;
+          // Stopped here rather than server-side because Next rejects an
+          // oversize server-action body while parsing it — the action never
+          // runs, so it has no way to turn that into a toast.
+          if (f.size > MAX_STATEMENT_BYTES) {
+            toast.error(t("fileTooLarge", { limit: MAX_STATEMENT_BYTES / (1024 * 1024) }));
+            playError();
+            return;
+          }
+          setFile(f);
+          setPassword("");
+          setNeedsPassword(false);
+          setPasswordIncorrect(false);
+          setPreview(null);
+          setParsedStatement(null);
+          onParse(f);
+        }}
+      />
 
-        {/* min-w-0: DialogContent's popup is a grid, and a grid item's automatic
-            minimum size is its content, not zero. The mapping selects are
-            whitespace-nowrap, so without this their min-content width would set
-            the modal's width instead of being clamped by it. */}
-        <div className="min-w-0 space-y-4">
-          <input
-            ref={fileRef}
-            type="file"
-            accept="application/pdf"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0] ?? null;
-              e.target.value = "";
-              if (!f) return;
-              // Stopped here rather than server-side because Next rejects an
-              // oversize server-action body while parsing it — the action never
-              // runs, so it has no way to turn that into a toast.
-              if (f.size > MAX_STATEMENT_BYTES) {
-                toast.error(t("fileTooLarge", { limit: MAX_STATEMENT_BYTES / (1024 * 1024) }));
-                playError();
-                return;
-              }
-              setFile(f);
-              setPassword("");
-              setNeedsPassword(false);
-              setPasswordIncorrect(false);
-              setPreview(null);
-              setParsedStatement(null);
-              onParse(f);
-            }}
-          />
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          // A dismissed dialog starts over next time — otherwise it would reopen
+          // onto a stale preview and skip the picker.
+          if (!next) resetForm();
+          onOpenChange(next);
+        }}
+      >
+        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{t("title")}</DialogTitle>
+            <DialogDescription>{t("description")}</DialogDescription>
+          </DialogHeader>
 
-          {/* Fallback for a dismissed picker, and the way back after a parse
-              failure — otherwise the dialog would sit there with nothing in it. */}
-          {!preview && !needsPassword ? (
-            <Button
-              variant="outline"
-              disabled={pending}
-              isLoading={pending}
-              onClick={() => fileRef.current?.click()}
-            >
-              <Upload className="mr-1.5 size-4" />
-              {t("importButton")}
-            </Button>
-          ) : null}
+          {/* min-w-0: DialogContent's popup is a grid, and a grid item's automatic
+              minimum size is its content, not zero. The mapping selects are
+              whitespace-nowrap, so without this their min-content width would set
+              the modal's width instead of being clamped by it. */}
+          <div className="min-w-0 space-y-4">
+            {/* Fallback for a dismissed picker, and the way back after a parse
+                failure — otherwise the dialog would sit there with nothing in it. */}
+            {!preview && !needsPassword ? (
+              <Button
+                variant="outline"
+                disabled={pending}
+                isLoading={pending}
+                onClick={() => fileRef.current?.click()}
+              >
+                <Upload className="mr-1.5 size-4" />
+                {t("importButton")}
+              </Button>
+            ) : null}
 
-          {needsPassword && file ? (
-            <div className="space-y-2">
-              <Label htmlFor="stmt-password">{t("passwordLabel")}</Label>
-              <p className={cn("text-xs", passwordIncorrect ? "text-destructive" : "text-muted-foreground")}>
-                {passwordIncorrect ? t("passwordIncorrect") : t("passwordHint")}
-              </p>
-              <div className="flex gap-2">
-                <Input
-                  id="stmt-password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <Button variant="outline" disabled={pending || !password} isLoading={pending} onClick={() => onParse(file)}>
-                  {t("retryButton")}
-                </Button>
-              </div>
-            </div>
-          ) : null}
-
-          {preview ? (
-            <div className="min-w-0 space-y-4">
-              {preview.sections.map((s) => (
-                <div key={s.sectionKey} className="min-w-0 rounded-lg border p-3 space-y-2">
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <p className="text-sm font-medium">
-                      {s.sectionKey} · {s.currency} · {formatDate(s.periodStart, locale)} →{" "}
-                      {formatDate(s.periodEnd, locale)}
-                    </p>
-                    <p className="figure text-sm">
-                      {formatMoney(Number(s.closingBalance), s.currency)}
-                    </p>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {t("sectionSummary", { lines: s.lineCount, payments: s.paymentCount })}
-                  </p>
-                  <div className="min-w-0 space-y-1.5">
-                    <Label className="text-xs">{t("mapSectionLabel", { section: s.sectionKey })}</Label>
-                    <Select
-                      value={mappings[s.sectionKey] || "none"}
-                      onValueChange={(v) =>
-                        setMappings((m) => ({ ...m, [s.sectionKey]: v === "none" ? "" : (v ?? "") }))
-                      }
-                      items={{
-                        none: t("mapSectionNone"),
-                        ...Object.fromEntries(
-                          preview.accountOptions.map((a) => [a.id, `${a.name} · ${a.currency}`]),
-                        ),
-                      }}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {/* Clearing frees this section's claim so accounts can be
-                            swapped between sections without a deadlock. */}
-                        <SelectItem value="none">{t("mapSectionNone")}</SelectItem>
-                        {preview.accountOptions
-                          .filter(
-                            (a) =>
-                              a.currency === s.currency &&
-                              (mappings[s.sectionKey] === a.id ||
-                                !Object.entries(mappings).some(
-                                  ([key, v]) => key !== s.sectionKey && v === a.id,
-                                )),
-                          )
-                          .map((a) => (
-                            <SelectItem key={a.id} value={a.id}>
-                              <span className="flex flex-col">
-                                <span>{a.name}</span>
-                                <span className="text-xs text-muted-foreground">{a.currency}</span>
-                              </span>
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+            {needsPassword && file ? (
+              <div className="space-y-2">
+                <Label htmlFor="stmt-password">{t("passwordLabel")}</Label>
+                <p className={cn("text-xs", passwordIncorrect ? "text-destructive" : "text-muted-foreground")}>
+                  {passwordIncorrect ? t("passwordIncorrect") : t("passwordHint")}
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    id="stmt-password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <Button variant="outline" disabled={pending || !password} isLoading={pending} onClick={() => onParse(file)}>
+                    {t("retryButton")}
+                  </Button>
                 </div>
-              ))}
-              <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3">
-                <Label htmlFor="exclude_from_budget" className="font-normal text-muted-foreground">
-                  {t("excludeFromBudgetLabel")}
-                  <span className="ml-1.5 block text-xs">{t("excludeFromBudgetHint")}</span>
-                </Label>
-                <Switch
-                  id="exclude_from_budget"
-                  checked={excludeFromBudget}
-                  onCheckedChange={setExcludeFromBudget}
-                />
               </div>
-              <div className="flex gap-2">
-                <Button disabled={pending || !allMapped} isLoading={pending} onClick={onConfirm}>
-                  {t("confirmButton")}
-                </Button>
-                <Button
-                  variant="ghost"
-                  disabled={pending}
-                  onClick={() => {
-                    resetForm();
-                    onOpenChange(false);
-                  }}
-                >
-                  {t("cancelButton")}
-                </Button>
+            ) : null}
+
+            {preview ? (
+              <div className="min-w-0 space-y-4">
+                {preview.sections.map((s) => (
+                  <div key={s.sectionKey} className="min-w-0 rounded-lg border p-3 space-y-2">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <p className="text-sm font-medium">
+                        {s.sectionKey} · {s.currency} · {formatDate(s.periodStart, locale)} →{" "}
+                        {formatDate(s.periodEnd, locale)}
+                      </p>
+                      <p className="figure text-sm">
+                        {formatMoney(Number(s.closingBalance), s.currency)}
+                      </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {t("sectionSummary", { lines: s.lineCount, payments: s.paymentCount })}
+                    </p>
+                    <div className="min-w-0 space-y-1.5">
+                      <Label className="text-xs">{t("mapSectionLabel", { section: s.sectionKey })}</Label>
+                      <Select
+                        value={mappings[s.sectionKey] || "none"}
+                        onValueChange={(v) =>
+                          setMappings((m) => ({ ...m, [s.sectionKey]: v === "none" ? "" : (v ?? "") }))
+                        }
+                        items={{
+                          none: t("mapSectionNone"),
+                          ...Object.fromEntries(
+                            preview.accountOptions.map((a) => [a.id, `${a.name} · ${a.currency}`]),
+                          ),
+                        }}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {/* Clearing frees this section's claim so accounts can be
+                              swapped between sections without a deadlock. */}
+                          <SelectItem value="none">{t("mapSectionNone")}</SelectItem>
+                          {preview.accountOptions
+                            .filter(
+                              (a) =>
+                                a.currency === s.currency &&
+                                (mappings[s.sectionKey] === a.id ||
+                                  !Object.entries(mappings).some(
+                                    ([key, v]) => key !== s.sectionKey && v === a.id,
+                                  )),
+                            )
+                            .map((a) => (
+                              <SelectItem key={a.id} value={a.id}>
+                                <span className="flex flex-col">
+                                  <span>{a.name}</span>
+                                  <span className="text-xs text-muted-foreground">{a.currency}</span>
+                                </span>
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3">
+                  <Label htmlFor="exclude_from_budget" className="font-normal text-muted-foreground">
+                    {t("excludeFromBudgetLabel")}
+                    <span className="ml-1.5 block text-xs">{t("excludeFromBudgetHint")}</span>
+                  </Label>
+                  <Switch
+                    id="exclude_from_budget"
+                    checked={excludeFromBudget}
+                    onCheckedChange={setExcludeFromBudget}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button disabled={pending || !allMapped} isLoading={pending} onClick={onConfirm}>
+                    {t("confirmButton")}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    disabled={pending}
+                    onClick={() => {
+                      resetForm();
+                      onOpenChange(false);
+                    }}
+                  >
+                    {t("cancelButton")}
+                  </Button>
+                </div>
               </div>
-            </div>
-          ) : null}
-        </div>
-      </DialogContent>
-    </Dialog>
+            ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

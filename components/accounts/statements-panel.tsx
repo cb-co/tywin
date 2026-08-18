@@ -95,12 +95,10 @@ export function StatementsPanel({
           <h2 className="text-lg font-medium">{t("title")}</h2>
           <p className="text-sm text-muted-foreground">{t("description")}</p>
         </div>
-        <Button
-          variant="outline"
-          disabled={pending}
-          isLoading={pending}
-          onClick={() => setImportOpen(true)}
-        >
+        {/* No isLoading here: `pending` now only covers deleting a statement and
+            expanding its lines, so tying the spinner to it would spin this
+            button for work it did not start. The dialog owns its own pending. */}
+        <Button variant="outline" disabled={pending} onClick={() => setImportOpen(true)}>
           <Upload className="mr-1.5 size-4" />
           {t("importButton")}
         </Button>
