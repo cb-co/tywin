@@ -37,7 +37,7 @@ export function CategoryRail({
 
   return (
     <div
-      className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1"
+      className="-mx-1 flex min-w-0 gap-1.5 overflow-x-auto px-1 pb-1"
       role="radiogroup"
       aria-label={t("categoryLabel")}
     >

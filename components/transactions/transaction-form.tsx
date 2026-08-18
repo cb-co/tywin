@@ -361,10 +361,14 @@ export function TransactionForm({
     );
   }
 
+  /* min-w-0 on the form: DialogContent's popup is a grid, and a grid item's
+     automatic minimum size is its content rather than zero. Without it the
+     category rail's nowrap chips set the form's min-content width and the whole
+     modal grows sideways to fit them instead of the rail scrolling. */
   return (
     <form
       onSubmit={handleSubmit(onSubmit, () => setExpanded(true))}
-      className="space-y-4"
+      className="min-w-0 space-y-4"
     >
       {/* Type segmented control */}
       <Controller
