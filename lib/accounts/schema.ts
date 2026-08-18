@@ -96,6 +96,29 @@ export const accountInput = accountBase.superRefine(refineAccount);
 export type AccountInput = z.infer<typeof accountInput>;
 
 /**
+ * The narrow path used by statement import: a card the user has not described yet.
+ *
+ * `refineAccount` demands credit_limit, statement_closing_day and payment_due_day
+ * for a credit card, which is right for the full form and wrong here — those are
+ * exactly the three fields a statement backfills, so requiring them would put a
+ * five-field form in front of the feature that exists to save typing. The columns
+ * are nullable and `card_status` already returns a null utilization_pct rather than
+ * dividing by a null limit.
+ */
+export const cardStubInput = z.object({
+  name: z.string().trim().min(1, "Name is required").max(80),
+  currency: z.string().trim().length(3, "Use a 3-letter code").toUpperCase(),
+  last4: z
+    .string()
+    .trim()
+    .regex(/^[0-9]{4}$/, "Enter exactly four digits")
+    .optional()
+    .or(z.literal("")),
+});
+
+export type CardStubInput = z.infer<typeof cardStubInput>;
+
+/**
  * What the account dialog validates: `accountInput` plus the extra card lines.
  *
  * The two toggles ("has installments" / "is multi-currency") are the only way to

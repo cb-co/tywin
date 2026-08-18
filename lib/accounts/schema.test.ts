@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { accountInput } from "./schema";
+import { accountInput, cardStubInput } from "./schema";
 import {
   blankToUndefined,
   normalizeFormValues,
@@ -126,5 +126,27 @@ describe("account form submit", () => {
     });
     expect(parsed.error?.issues ?? []).toEqual([]);
     expect(parsed.success).toBe(true);
+  });
+});
+
+describe("cardStubInput", () => {
+  test("accepts a card with no limit, closing day or due day", () => {
+    const r = cardStubInput.safeParse({ name: "Popular Visa", currency: "dop", last4: "4921" });
+    expect(r.success).toBe(true);
+    expect(r.data?.currency).toBe("DOP");
+  });
+
+  test("accepts a card with no last4 at all", () => {
+    expect(cardStubInput.safeParse({ name: "Popular Visa", currency: "DOP" }).success).toBe(true);
+  });
+
+  test("rejects a malformed last4", () => {
+    const r = cardStubInput.safeParse({ name: "Popular Visa", currency: "DOP", last4: "49" });
+    expect(r.success).toBe(false);
+  });
+
+  test("accountInput still requires the three card fields", () => {
+    const r = accountInput.safeParse({ name: "Popular Visa", type: "credit_card", currency: "DOP" });
+    expect(r.success).toBe(false);
   });
 });
