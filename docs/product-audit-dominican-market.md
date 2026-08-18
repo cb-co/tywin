@@ -90,7 +90,7 @@ Ranked by how much each one costs you in retention, not by how hard it is to fix
 
 ### UX-01 · Fix · High — Quick Add asks for ten things to log a RD$250 lunch
 
-- [ ] Done
+- [x] Done (17 Aug 2026)
 
 The ⌘K / FAB dialog renders the full `TransactionForm`: type, source account, amount,
 cross-currency rate, destination, category, apply-tax, apply-fee, exclude-from-budget, date,
@@ -101,6 +101,12 @@ is its heaviest interaction, and on mobile it opens a 90vh scrolling sheet.
 (last-used first). Account defaults to last-used and collapses to a one-line summary you tap to
 change. Everything else — rate, tax, fee, budget exclusion, notes — behind a single "More"
 disclosure. Target: three taps and under four seconds.
+
+**Done** — `TransactionForm` grew a `compact` prop (`components/transactions/transaction-form.tsx`):
+amount first and autofocused, a most-used category rail, last-used account and shared defaults
+served from the server, and every remaining field behind a "More details" disclosure in the same
+panel. Spec and plan in `docs/specs/2026-08-17-quick-add-compact-design.md` and
+`docs/plans/2026-08-17-quick-add-compact.md`. Help guide updated to match.
 
 ### UX-02 · Fix · High — The best feature in the app is buried three levels deep
 
@@ -263,7 +269,8 @@ app before they ever see the dashboard.
 
 ### UX-12 · Fix · Medium — Tax and fee toggles ask the user something the app already knows
 
-- [ ] Done
+- [~] Partial (17 Aug 2026) — the quiet fee line ships in Quick Add's compact mode only; the full
+      form on an account's page still shows both toggles as peer fields.
 
 Every payment form shows "Apply transfer tax" and "Apply network fee" as peer fields. The database
 already resolves same-bank waivers from `bank_id` equality, and the tax rate is a per-account setting.
@@ -557,16 +564,22 @@ every figure in the app slightly wrong.
 
 ### CHK-01 — Transfer tax default is `0.0020`
 
-- [ ] Verified / changed
+- [x] Verified (17 Aug 2026) — **no change needed; the audit was wrong**
 
-The DR tax on cheques and electronic transfers is **0.15%** under Ley 288-04. If that is the rate you
-are modelling, every user's fee arithmetic runs about a third high, on a field almost nobody will think
-to correct. Verify against a current statement and change the column default to `0.0015`. Bank
-commissions on top belong in `network_fee_amount`, where you already put them.
+The audit cited Ley 288-04's 0.15% without accounting for the July 2026 increase that raised the tax
+on cheques and electronic transfers to **0.20%**. The shipped default of `0.0020` is the current
+correct rate, and `taxRatePlaceholder` already documents it as `"0.002 = 0.20%"`.
+
+The field stays per-account configurable: `transfer_tax_rate numeric(18,8) not null default 0.0020`
+carries no CHECK constraint, so any rate stores and computes. Note that it is a **decimal fraction,
+not a percent** — 0.25% is entered as `0.0025`; entering `0.25` means 25% and would pass both the
+column and the zod rule (`min(0).max(1)`). That 100× typo is left unguarded deliberately: the fee
+preview line on the transaction form shows the computed amount before save, so it surfaces on the
+next entry.
 
 ### CHK-02 — Base currency default is `'USD'`
 
-- [x] Changed (17 Aug 2026) — **migration not yet pushed**
+- [x] Changed (17 Aug 2026) — migration pushed
 
 A DR-first product should create profiles in DOP and offer USD as the alternative. Today a Dominican
 user's first net-worth figure is in the wrong currency until they find Settings.
@@ -579,8 +592,8 @@ one place. Migration `20260817120000_base_currency_default_dop.sql` sets the col
 base under those rows would reconvert history against a currency it was never denominated in.
 Help-guide mocks updated to match.
 
-**Needs a human** — the migration has to be pushed (`npm run db:push`); until then only the
-app-side fallback is live, and a brand-new profile still gets `'USD'` from the column default.
+**Pushed** — confirmed by the repo owner on 17 Aug 2026; new profiles now get `'DOP'` from the
+column default, not just the app-side fallback.
 
 ### CHK-03 — FX failure falls back to 1:1
 
@@ -623,11 +636,11 @@ network mark — recognising the bank is what makes the card face land.
 
 ### Now · 4–6 weeks — Stop the leak
 
-- [ ] Quick Add rebuilt, amount-first (UX-01)
+- [x] Quick Add rebuilt, amount-first (UX-01)
 - [ ] Import promoted to a primary action (UX-02)
 - [ ] Categorisation triage + rules screen (UX-03, BUILD-13)
 - [x] Ledger pagination (UX-04) — main ledger done; account activity still capped
-- [ ] DOP default, 0.15% tax, FX degraded state (CHK-01, ~~CHK-02~~ done, CHK-03)
+- [ ] FX degraded state (CHK-03) — ~~CHK-01~~ no change needed, ~~CHK-02~~ done and pushed
 - [ ] CSV export (BUILD-07)
 - [ ] Cut list 01–06
 
