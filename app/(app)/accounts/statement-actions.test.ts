@@ -45,7 +45,18 @@ function chainable(result: unknown, extra: Record<string, unknown> = {}) {
   return obj;
 }
 
-function makeSupabaseStub() {
+/** `accountOverrides` lets a test put the account row in a different state
+ *  (e.g. already-populated backfill columns) while every other table keeps
+ *  the shared stub — narrower than swapping out `stub.from` wholesale, which
+ *  silently breaks unrelated tables like `categories` and short-circuits the
+ *  function before the code under test ever runs. */
+function makeSupabaseStub(
+  accountOverrides: Partial<{
+    credit_limit: number | null;
+    statement_closing_day: number | null;
+    payment_due_day: number | null;
+  }> = {},
+) {
   const account = {
     id: "acc-1",
     name: "Test Card",
@@ -55,6 +66,7 @@ function makeSupabaseStub() {
     payment_due_day: null,
     card_group_id: null,
     type: "credit_card",
+    ...accountOverrides,
   };
   const accountUpdate = vi.fn(() => chainable({ error: null }));
   const byTable: Record<string, () => unknown> = {
@@ -181,26 +193,11 @@ describe("confirmStatementImport", () => {
   });
 
   it("does not touch a card whose columns are already set", async () => {
-    const stub = makeSupabaseStub();
-    stub.from = vi.fn((table: string) =>
-      table === "accounts"
-        ? chainable(
-            {
-              data: {
-                id: "acc-1",
-                name: "Test Card",
-                currency: "DOP",
-                credit_limit: 100000,
-                statement_closing_day: 20,
-                payment_due_day: 10,
-                card_group_id: null,
-                type: "credit_card",
-              },
-            },
-            { update: stub.accountUpdate },
-          )
-        : chainable({ data: [] }, { upsert: vi.fn(async () => ({ error: null })) }),
-    ) as typeof stub.from;
+    const stub = makeSupabaseStub({
+      credit_limit: 100000,
+      statement_closing_day: 20,
+      payment_due_day: 10,
+    });
     (createClient as Mock).mockResolvedValue(stub);
 
     await confirmStatementImport(buildConfirmFormData());
