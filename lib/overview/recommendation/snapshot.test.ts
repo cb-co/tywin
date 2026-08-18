@@ -10,6 +10,7 @@ const rows: SnapshotRows = {
   now: NOW,
   overview: {
     hasAccounts: true,
+    importPrompt: "none",
     baseCurrency: "USD",
     displayName: "Carlos Mendoza",
     netWorth: 12480.22,

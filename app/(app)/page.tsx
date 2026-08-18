@@ -11,6 +11,7 @@ import { ColorTile } from "@/components/ui/color-tile";
 import { StatPill } from "@/components/ui/stat-pill";
 import { MarketingHome } from "@/components/marketing/marketing-home";
 import { RecommendationCard } from "@/components/overview/recommendation-card";
+import { ImportCallout } from "@/components/overview/import-callout";
 import { createClient } from "@/lib/supabase/server";
 import { getOverview } from "@/lib/overview/queries";
 import { getRecommendation } from "@/lib/overview/recommendation/queries";
@@ -69,13 +70,18 @@ export default async function OverviewPage() {
             />
           </HeroCard>
         </div>
+        {o.importPrompt !== "none" ? (
+          <div className="rise" style={{ "--i": 2 } as React.CSSProperties}>
+            <ImportCallout state={o.importPrompt} />
+          </div>
+        ) : null}
         <div className="grid gap-4 sm:grid-cols-3">
           {STARTER_CARDS.map(({ href, icon: Icon, tint, key }, i) => (
             <Link
               key={href}
               href={href}
               className="group rise"
-              style={{ "--i": i + 2 } as React.CSSProperties}
+              style={{ "--i": i + 3 } as React.CSSProperties}
             >
               <Card className="lift h-full p-5 group-hover:shadow-(--shadow-card-hover)">
                 <ColorTile
@@ -115,23 +121,29 @@ export default async function OverviewPage() {
         </HeroCard>
       </div>
 
+      {o.importPrompt !== "none" ? (
+        <div className="rise" style={{ "--i": 2 } as React.CSSProperties}>
+          <ImportCallout state={o.importPrompt} />
+        </div>
+      ) : null}
+
       {/* Stat cards */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card className="rise p-5" style={{ "--i": 2 } as React.CSSProperties}>
+        <Card className="rise p-5" style={{ "--i": 3 } as React.CSSProperties}>
           <div className="flex items-center gap-3">
             <ColorTile color="var(--success)" icon={ArrowDownLeft} />
             <p className="text-xs text-muted-foreground">{t("incomeThisMonth")}</p>
           </div>
           <MoneyDisplay amount={o.monthIncome} currency={o.baseCurrency} size="stat" animate className="mt-2 text-success" />
         </Card>
-        <Card className="rise p-5" style={{ "--i": 3 } as React.CSSProperties}>
+        <Card className="rise p-5" style={{ "--i": 4 } as React.CSSProperties}>
           <div className="flex items-center gap-3">
             <ColorTile color={null} icon={ArrowUpRight} />
             <p className="text-xs text-muted-foreground">{t("spendingThisMonth")}</p>
           </div>
           <MoneyDisplay amount={o.monthExpense} currency={o.baseCurrency} size="stat" animate className="mt-2 text-foreground" />
         </Card>
-        <Card className="rise p-5" style={{ "--i": 4 } as React.CSSProperties}>
+        <Card className="rise p-5" style={{ "--i": 5 } as React.CSSProperties}>
           <div className="flex items-center gap-3">
             <ColorTile color="var(--brand)" icon={PieChart} />
             <p className="text-xs text-muted-foreground">{t("budgetUsed")}</p>
@@ -147,19 +159,19 @@ export default async function OverviewPage() {
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
             <div
               className="bar-fill h-full rounded-full bg-brand"
-              style={{ width: `${budgetPct}%`, "--i": 4 } as React.CSSProperties}
+              style={{ width: `${budgetPct}%`, "--i": 5 } as React.CSSProperties}
             />
           </div>
         </Card>
       </div>
 
       {/* Coaching, after the figures it is about. */}
-      <div className="rise" style={{ "--i": 5 } as React.CSSProperties}>
+      <div className="rise" style={{ "--i": 6 } as React.CSSProperties}>
         <RecommendationCard rec={rec} stale={stale} />
       </div>
 
       {/* Upcoming rail */}
-      <div className="rise space-y-3" style={{ "--i": 6 } as React.CSSProperties}>
+      <div className="rise space-y-3" style={{ "--i": 7 } as React.CSSProperties}>
         <h2 className="text-lg font-medium text-foreground">{t("upcoming")}</h2>
         {o.upcoming.length === 0 ? (
           <Card className="p-6 text-sm text-muted-foreground">{t("upcomingEmpty")}</Card>

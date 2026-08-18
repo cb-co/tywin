@@ -99,7 +99,12 @@
     "starterBudgetsBody": "Set a monthly budget per category and watch what's used and what's left.",
     "starterSubscriptionsTitle": "Subscriptions",
     "starterSubscriptionsBody": "Track recurring charges and their next payment dates in one place.",
-    "welcomeNamed": "Welcome back, {name}"
+    "welcomeNamed": "Welcome back, {name}",
+    "importCalloutNeverTitle": "Import your first statement",
+    "importCalloutNeverBody": "Upload your card's PDF and Cashly logs the charges, balance, and due date for you.",
+    "importCalloutOverdueTitle": "Your last statement is overdue",
+    "importCalloutOverdueBody": "It's been over a month since your last import. Upload the latest PDF to keep your balances current.",
+    "importCalloutCta": "Import statement"
   },
   "AccountTypes": {
     "checking": "Checking",

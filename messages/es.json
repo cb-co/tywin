@@ -99,7 +99,12 @@
     "starterBudgetsBody": "Define un presupuesto mensual por categoría y controla qué se ha usado y qué queda.",
     "starterSubscriptionsTitle": "Suscripciones",
     "starterSubscriptionsBody": "Lleva el control de cargos recurrentes y sus próximas fechas de pago en un solo lugar.",
-    "welcomeNamed": "Hola de nuevo, {name}"
+    "welcomeNamed": "Hola de nuevo, {name}",
+    "importCalloutNeverTitle": "Importa tu primer estado de cuenta",
+    "importCalloutNeverBody": "Sube el PDF de tu tarjeta y Cashly registra los movimientos, el saldo y la fecha de pago por ti.",
+    "importCalloutOverdueTitle": "Tu último estado de cuenta ya venció",
+    "importCalloutOverdueBody": "Ya pasó más de un mes desde tu última importación. Sube el PDF más reciente para mantener tus saldos al día.",
+    "importCalloutCta": "Importar estado de cuenta"
   },
   "AccountTypes": {
     "checking": "Cuenta corriente",

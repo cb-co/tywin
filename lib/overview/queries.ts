@@ -5,6 +5,7 @@ import { monthStart } from "@/lib/budgets/month";
 import { nextChargeDate, monthlyEquivalent, type BillingCycle } from "@/lib/subscriptions/cycle";
 import { getExchangeRates, convertToBase } from "@/lib/fx";
 import { cardAmountDue, dayAfter } from "./card-due";
+import { importPromptState, type ImportPrompt } from "./import-prompt";
 
 export type UpcomingItem = {
   key: string;
@@ -26,6 +27,7 @@ export type Overview = {
   totalUsed: number;
   monthlySubscriptions: number;
   upcoming: UpcomingItem[];
+  importPrompt: ImportPrompt;
 };
 
 function nextDue(day: number | null, from = new Date()): Date | null {
@@ -194,5 +196,6 @@ export async function getOverview(): Promise<Overview> {
       0,
     ),
     upcoming: upcoming.slice(0, 6),
+    importPrompt: importPromptState(cards ?? []),
   };
 }
