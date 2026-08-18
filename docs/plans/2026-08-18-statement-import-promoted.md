@@ -134,6 +134,7 @@ Expected: PASS, including the existing tests in the file.
 - [ ] **Step 5: Commit**
 
 ```bash
+npm test
 git add lib/accounts/schema.ts lib/accounts/schema.test.ts
 git commit -m "feat(accounts): validate a credit card the statement will finish describing"
 ```
@@ -264,6 +265,7 @@ Expected: PASS, 5 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
+npm test
 git add lib/statements/backfill.ts lib/statements/backfill.test.ts
 git commit -m "feat(statements): decide what a statement teaches a card about itself"
 ```
@@ -723,9 +725,9 @@ git commit -m "feat(accounts): create a card from a statement, and a line when o
   }): React.JSX.Element;
   ```
 
-This task is a **pure refactor** — no behaviour change from the card page's point of view. It ends with
-the card page working exactly as before, with the import UI inside a dialog rather than inline in the
-panel.
+This task is a refactor with **one deliberate behaviour change**: the import UI moves from inline in
+the panel into a dialog, and the dialog opens the file picker for you. Nothing else about what the card
+page does may change — same parse, same preview, same confirm, same server calls.
 
 - [ ] **Step 1: Move the import flow**
 
