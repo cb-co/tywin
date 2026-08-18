@@ -28,17 +28,18 @@ vi.mock("next-intl/server", () => ({
 import { extractStatementText } from "@/lib/statements/extract";
 import { extractWithLLM } from "@/lib/statements/llm/extract";
 import { createClient } from "@/lib/supabase/server";
-import { confirmStatementImport, parseStatement } from "./statement-actions";
+import { confirmStatementImport, listImportTargets, parseStatement } from "./statement-actions";
 import { MAX_STATEMENT_BYTES } from "@/lib/statements/limits";
 import type { ParsedStatement } from "@/lib/statements/types";
 
-/** Minimal fake Supabase query builder: chainable select/eq, terminal
+/** Minimal fake Supabase query builder: chainable select/eq/order, terminal
  *  single/maybeSingle, and awaitable directly (bare `await supabase.from(...).select(...)`
  *  with no terminal call) via `.then`. `extra` lets a table also expose e.g. `upsert`. */
 function chainable(result: unknown, extra: Record<string, unknown> = {}) {
   const obj: Record<string, unknown> = { ...extra };
   obj.select = vi.fn(() => obj);
   obj.eq = vi.fn(() => obj);
+  obj.order = vi.fn(() => obj);
   obj.single = vi.fn(() => Promise.resolve(result));
   obj.maybeSingle = vi.fn(() => Promise.resolve(result));
   (obj as { then: unknown }).then = (resolve: (v: unknown) => void) => resolve(result);
@@ -232,5 +233,57 @@ describe("parseStatement", () => {
     const result = await parseStatement(buildUploadFormData(MAX_STATEMENT_BYTES));
     expect(extractStatementText).toHaveBeenCalled();
     expect(result.error).toBe("unreadablePdf");
+  });
+});
+
+describe("listImportTargets", () => {
+  const rows = [
+    { id: "acc-1", name: "Visa Infinite", currency: "DOP", last4: "1234" },
+    { id: "acc-2", name: "Visa Infinite · USD", currency: "USD", last4: null },
+  ];
+
+  /** Every `from()` returns the same builder, so the assertions below can read
+   *  the filters the action applied without guessing which table it asked for. */
+  function stubWithCards(data: unknown, user: { id: string } | null = { id: "user-1" }) {
+    const table = chainable({ data }) as Record<string, Mock>;
+    return {
+      auth: { getUser: vi.fn(async () => ({ data: { user } })) },
+      from: vi.fn(() => table),
+      table,
+    };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns the user's unarchived credit cards in sort order", async () => {
+    const stub = stubWithCards(rows);
+    (createClient as unknown as Mock).mockResolvedValue(stub);
+
+    await expect(listImportTargets()).resolves.toEqual(rows);
+
+    expect(stub.from).toHaveBeenCalledWith("accounts");
+    expect(stub.table.select).toHaveBeenCalledWith("id,name,currency,last4");
+    // Checking-account rows and archived cards would both render as targets the
+    // import can't actually land on.
+    expect(stub.table.eq).toHaveBeenCalledWith("type", "credit_card");
+    expect(stub.table.eq).toHaveBeenCalledWith("is_archived", false);
+    expect(stub.table.order).toHaveBeenCalledWith("sort_order");
+  });
+
+  it("returns an empty list, not null, when the query comes back with nothing", async () => {
+    (createClient as unknown as Mock).mockResolvedValue(stubWithCards(null));
+    await expect(listImportTargets()).resolves.toEqual([]);
+  });
+
+  it("never touches the accounts table when nobody is signed in", async () => {
+    const stub = stubWithCards(rows, null);
+    (createClient as unknown as Mock).mockResolvedValue(stub);
+
+    await expect(listImportTargets()).resolves.toEqual([]);
+    // The point of the guard: it short-circuits before the query, so an
+    // unauthenticated caller can't lean on RLS to do the filtering.
+    expect(stub.from).not.toHaveBeenCalled();
   });
 });

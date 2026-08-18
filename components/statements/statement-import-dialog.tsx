@@ -7,8 +7,12 @@ import { Upload } from "lucide-react";
 import {
   parseStatement,
   confirmStatementImport,
+  listImportTargets,
+  type ImportTarget,
   type StatementPreviewResult,
 } from "@/app/(app)/accounts/statement-actions";
+import { addCardLine } from "@/app/(app)/accounts/actions";
+import { ImportCardStubStep } from "@/components/statements/import-card-stub-step";
 import { MAX_STATEMENT_BYTES } from "@/lib/statements/limits";
 import { formatMoney, formatDate } from "@/lib/format";
 import { useUiSound } from "@/components/sound/sound-provider";
@@ -42,7 +46,9 @@ export function StatementImportDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Pins the target card. Omitted, a later task resolves one. */
+  /** Pins the target card. Omitted, the dialog resolves one itself: it lists
+   *  the user's cards, picks the only one, asks which of several, or offers to
+   *  create the first. */
   accountId?: string;
   /** Fired after a successful import so the host can refresh. */
   onImported?: () => void;
@@ -61,6 +67,29 @@ export function StatementImportDialog({
   const [excludeFromBudget, setExcludeFromBudget] = useState(true);
   const [parsedStatement, setParsedStatement] = useState<string | null>(null);
 
+  /* The card this import lands on. `accountId` pins it (the card page); without
+     one it is resolved from the user's own cards, and `targets` is the list
+     those choices are made from — null until it has been fetched. */
+  const [targetId, setTargetId] = useState<string | null>(accountId ?? null);
+  const [targets, setTargets] = useState<ImportTarget[] | null>(null);
+
+  // Fetched by the dialog rather than handed down, so an entry point can mount
+  // it knowing nothing about the user's accounts. Only when no card is pinned:
+  // the card page already knows its answer.
+  useEffect(() => {
+    if (!open || accountId || targets !== null) return;
+    let cancelled = false;
+    void listImportTargets().then((list) => {
+      if (cancelled) return;
+      setTargets(list);
+      // One card is not a choice worth asking about.
+      if (list.length === 1) setTargetId(list[0].id);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, accountId, targets]);
+
   // The dialog is only ever useful with a file in hand, so it reaches for the
   // OS picker the moment it opens empty — the latch keeps it from reopening
   // after the user cancels the picker or picks a file, and resets on close so
@@ -71,6 +100,9 @@ export function StatementImportDialog({
       pickerOpenedRef.current = false;
       return;
     }
+    // Nothing to import onto yet: the user is still picking or creating a card,
+    // and an OS picker over that step would be asking two questions at once.
+    if (!targetId) return;
     if (pickerOpenedRef.current || file || preview) return;
     // Latch only once the click actually lands. The input is mounted outside
     // the dialog precisely so the ref is live here, but latching on a null ref
@@ -80,7 +112,7 @@ export function StatementImportDialog({
     if (!input) return;
     pickerOpenedRef.current = true;
     input.click();
-  }, [open, file, preview]);
+  }, [open, file, preview, targetId]);
 
   function resetForm() {
     setPreview(null);
@@ -91,12 +123,17 @@ export function StatementImportDialog({
     setParsedStatement(null);
     setMappings({});
     setExcludeFromBudget(true);
+    // Back to whatever the host pinned, so a second open — possibly from a
+    // different card — never inherits the first one's target. `targets` is
+    // dropped with it: a card created during this run belongs in the next list.
+    setTargetId(accountId ?? null);
+    setTargets(null);
   }
 
   function buildFormData(f: File) {
     const fd = new FormData();
     fd.set("file", f);
-    if (accountId) fd.set("account_id", accountId);
+    if (targetId) fd.set("account_id", targetId);
     if (password) fd.set("password", password);
     return fd;
   }
@@ -133,7 +170,7 @@ export function StatementImportDialog({
   function onConfirm() {
     if (!preview || !parsedStatement) return;
     const fd = new FormData();
-    if (accountId) fd.set("account_id", accountId);
+    if (targetId) fd.set("account_id", targetId);
     fd.set("file_name", preview.fileName);
     fd.set("parsed_statement", parsedStatement);
     fd.set("mappings", JSON.stringify(mappings));
@@ -154,6 +191,50 @@ export function StatementImportDialog({
   }
 
   const allMapped = preview?.sections.every((s) => mappings[s.sectionKey]) ?? false;
+
+  /* What to call a line added from here. The trailing " · USD" a grouped card's
+     lines already carry is stripped first, so a second line is named
+     "Visa Infinite · USD" and never "Visa Infinite · DOP · USD". */
+  const cardName = (
+    targets?.find((c) => c.id === targetId)?.name ??
+    preview?.accountOptions[0]?.name ??
+    ""
+  ).replace(/\s·\s[A-Z]{3}$/, "");
+
+  /**
+   * The way out of a section no card of this user's can receive: `suggestAccountId`
+   * matches by currency, so a DOP-only card faced with a USD section leaves that
+   * section unmappable and Confirm permanently disabled.
+   *
+   * The new option is appended to the preview locally. Re-running `parseStatement`
+   * to have the server rebuild `accountOptions` would re-extract the PDF and
+   * re-call the LLM — there is no server-side parse cache; the parsed statement
+   * the client holds is echoed back on *confirm*, which is a different call.
+   *
+   * Trusting the client here costs nothing: `confirmStatementImport` rebuilds its
+   * own options from `loadAccountContext` and rejects any section mapped to an
+   * account the user does not own or whose currency does not match, so a forged
+   * option fails at confirm rather than importing anything anywhere.
+   */
+  function onAddLine(sectionKey: string, currency: string) {
+    if (!targetId) return;
+    const lineName = t("lineNameSuggestion", { card: cardName, currency });
+    startTransition(async () => {
+      const result = await addCardLine(targetId, { name: lineName, currency });
+      const newId = result.id;
+      if (!newId) {
+        if (result.error) toast.error(result.error);
+        playError();
+        return;
+      }
+      setPreview((p) =>
+        p ? { ...p, accountOptions: [...p.accountOptions, { id: newId, name: lineName, currency }] } : p,
+      );
+      setMappings((m) => ({ ...m, [sectionKey]: newId }));
+      toast.success(t("lineAdded"));
+      playSuccess();
+    });
+  }
 
   return (
     <>
@@ -210,9 +291,47 @@ export function StatementImportDialog({
               whitespace-nowrap, so without this their min-content width would set
               the modal's width instead of being clamped by it. */}
           <div className="min-w-0 space-y-4">
+            {/* Which card first, file second. Nothing is rendered while the list
+                is still in flight — a spinner for one small query would flash. */}
+            {!targetId && targets !== null ? (
+              targets.length === 0 ? (
+                <ImportCardStubStep
+                  onCreated={setTargetId}
+                  submitLabel={t("stubSubmit")}
+                  /* No preference: the step falls back to the profile's base
+                     currency, which it already fetches for its own list. */
+                  defaultCurrency=""
+                />
+              ) : (
+                <div className="min-w-0 space-y-3">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">{t("pickCardHeading")}</p>
+                    <p className="text-xs text-muted-foreground">{t("pickCardHint")}</p>
+                  </div>
+                  <ul className="min-w-0 space-y-2">
+                    {targets.map((c) => (
+                      <li key={c.id} className="min-w-0">
+                        <button
+                          type="button"
+                          className="flex w-full min-w-0 items-center justify-between gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-muted/50"
+                          onClick={() => setTargetId(c.id)}
+                        >
+                          <span className="min-w-0 truncate text-sm font-medium">{c.name}</span>
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {c.last4 ? `•••• ${c.last4} · ` : ""}
+                            {c.currency}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )
+            ) : null}
+
             {/* Fallback for a dismissed picker, and the way back after a parse
                 failure — otherwise the dialog would sit there with nothing in it. */}
-            {!preview && !needsPassword ? (
+            {targetId && !preview && !needsPassword ? (
               <Button
                 variant="outline"
                 disabled={pending}
@@ -246,63 +365,83 @@ export function StatementImportDialog({
 
             {preview ? (
               <div className="min-w-0 space-y-4">
-                {preview.sections.map((s) => (
-                  <div key={s.sectionKey} className="min-w-0 rounded-lg border p-3 space-y-2">
-                    <div className="flex flex-wrap items-baseline justify-between gap-2">
-                      <p className="text-sm font-medium">
-                        {s.sectionKey} · {s.currency} · {formatDate(s.periodStart, locale)} →{" "}
-                        {formatDate(s.periodEnd, locale)}
+                {preview.sections.map((s) => {
+                  /* No card of this user's is in the section's currency, so the
+                     select below has nothing but "not assigned" to offer. */
+                  const unmatched = !preview.accountOptions.some((a) => a.currency === s.currency);
+                  return (
+                    <div key={s.sectionKey} className="min-w-0 rounded-lg border p-3 space-y-2">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <p className="text-sm font-medium">
+                          {s.sectionKey} · {s.currency} · {formatDate(s.periodStart, locale)} →{" "}
+                          {formatDate(s.periodEnd, locale)}
+                        </p>
+                        <p className="figure text-sm">
+                          {formatMoney(Number(s.closingBalance), s.currency)}
+                        </p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {t("sectionSummary", { lines: s.lineCount, payments: s.paymentCount })}
                       </p>
-                      <p className="figure text-sm">
-                        {formatMoney(Number(s.closingBalance), s.currency)}
-                      </p>
+                      <div className="min-w-0 space-y-1.5">
+                        <Label className="text-xs">{t("mapSectionLabel", { section: s.sectionKey })}</Label>
+                        <Select
+                          value={mappings[s.sectionKey] || "none"}
+                          onValueChange={(v) =>
+                            setMappings((m) => ({ ...m, [s.sectionKey]: v === "none" ? "" : (v ?? "") }))
+                          }
+                          items={{
+                            none: t("mapSectionNone"),
+                            ...Object.fromEntries(
+                              preview.accountOptions.map((a) => [a.id, `${a.name} · ${a.currency}`]),
+                            ),
+                          }}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {/* Clearing frees this section's claim so accounts can be
+                                swapped between sections without a deadlock. */}
+                            <SelectItem value="none">{t("mapSectionNone")}</SelectItem>
+                            {preview.accountOptions
+                              .filter(
+                                (a) =>
+                                  a.currency === s.currency &&
+                                  (mappings[s.sectionKey] === a.id ||
+                                    !Object.entries(mappings).some(
+                                      ([key, v]) => key !== s.sectionKey && v === a.id,
+                                    )),
+                              )
+                              .map((a) => (
+                                <SelectItem key={a.id} value={a.id}>
+                                  <span className="flex flex-col">
+                                    <span>{a.name}</span>
+                                    <span className="text-xs text-muted-foreground">{a.currency}</span>
+                                  </span>
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {unmatched ? (
+                        <div className="space-y-2">
+                          <p className="text-xs text-muted-foreground">
+                            {t("unmatchedSection", { currency: s.currency })}
+                          </p>
+                          <Button
+                            variant="outline"
+                            disabled={pending}
+                            isLoading={pending}
+                            onClick={() => onAddLine(s.sectionKey, s.currency)}
+                          >
+                            {t("addLineButton", { currency: s.currency })}
+                          </Button>
+                        </div>
+                      ) : null}
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {t("sectionSummary", { lines: s.lineCount, payments: s.paymentCount })}
-                    </p>
-                    <div className="min-w-0 space-y-1.5">
-                      <Label className="text-xs">{t("mapSectionLabel", { section: s.sectionKey })}</Label>
-                      <Select
-                        value={mappings[s.sectionKey] || "none"}
-                        onValueChange={(v) =>
-                          setMappings((m) => ({ ...m, [s.sectionKey]: v === "none" ? "" : (v ?? "") }))
-                        }
-                        items={{
-                          none: t("mapSectionNone"),
-                          ...Object.fromEntries(
-                            preview.accountOptions.map((a) => [a.id, `${a.name} · ${a.currency}`]),
-                          ),
-                        }}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {/* Clearing frees this section's claim so accounts can be
-                              swapped between sections without a deadlock. */}
-                          <SelectItem value="none">{t("mapSectionNone")}</SelectItem>
-                          {preview.accountOptions
-                            .filter(
-                              (a) =>
-                                a.currency === s.currency &&
-                                (mappings[s.sectionKey] === a.id ||
-                                  !Object.entries(mappings).some(
-                                    ([key, v]) => key !== s.sectionKey && v === a.id,
-                                  )),
-                            )
-                            .map((a) => (
-                              <SelectItem key={a.id} value={a.id}>
-                                <span className="flex flex-col">
-                                  <span>{a.name}</span>
-                                  <span className="text-xs text-muted-foreground">{a.currency}</span>
-                                </span>
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3">
                   <Label htmlFor="exclude_from_budget" className="font-normal text-muted-foreground">
                     {t("excludeFromBudgetLabel")}

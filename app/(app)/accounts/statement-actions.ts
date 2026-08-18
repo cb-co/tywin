@@ -16,7 +16,7 @@ import { suggestAccountId, type CardAccountOption } from "@/lib/statements/mappi
 import { cardBackfillFromSection } from "@/lib/statements/backfill";
 import { resolveCategoryId, type CategoryRuleRow } from "@/lib/statements/categorize";
 import { baseRate, getExchangeRates } from "@/lib/fx";
-import { baseCurrencyOf } from "@/lib/profile";
+import { baseCurrencyOf, DEFAULT_BASE_CURRENCY } from "@/lib/profile";
 import type { ParsedStatement } from "@/lib/statements/types";
 
 export interface SectionPreview {
@@ -61,6 +61,53 @@ async function requireUser() {
 }
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
+
+export type ImportTarget = { id: string; name: string; currency: string; last4: string | null };
+
+/**
+ * The cards a statement could be imported onto.
+ *
+ * An action rather than a prop threaded through every page that offers the
+ * import: the dialog asks for this itself when it opens, so Overview, Wallet,
+ * Insights and onboarding can each mount it without fetching anything of their
+ * own. Archived cards are left out — they are not a place new spending lands.
+ */
+export async function listImportTargets(): Promise<ImportTarget[]> {
+  const { supabase, user } = await requireUser();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("accounts")
+    .select("id,name,currency,last4")
+    .eq("type", "credit_card")
+    .eq("is_archived", false)
+    .order("sort_order");
+  return data ?? [];
+}
+
+export type StubCurrencyOptions = {
+  /** The profile's base currency — what a card the user hasn't described yet
+   *  is most likely denominated in. */
+  baseCurrency: string;
+  currencies: { code: string; name: string }[];
+};
+
+/**
+ * The currency list the stub form offers, plus the currency to preselect.
+ *
+ * `getCurrencies` (lib/accounts/queries) is server-only and every other form
+ * receives the list as a prop from its page. The stub step has no page of its
+ * own — it is mounted inside a dialog that itself resolves its target — so it
+ * reads the list through an action instead.
+ */
+export async function listStubCurrencies(): Promise<StubCurrencyOptions> {
+  const { supabase, user } = await requireUser();
+  if (!user) return { baseCurrency: DEFAULT_BASE_CURRENCY, currencies: [] };
+  const [{ data: currencies }, { data: profile }] = await Promise.all([
+    supabase.from("currencies").select("code,name").order("code"),
+    supabase.from("profiles").select("base_currency").maybeSingle(),
+  ]);
+  return { baseCurrency: baseCurrencyOf(profile), currencies: currencies ?? [] };
+}
 
 /** Cheap half of the old runPipeline: account, card-group siblings, and saved
  *  section mappings for one card account + parser. No PDF/LLM work — safe to
