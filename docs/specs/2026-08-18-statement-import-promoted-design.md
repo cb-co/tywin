@@ -73,7 +73,9 @@ returns null rather than dividing by it.
 `last4`. It creates one credit-card account with the three card fields null. `accountInput` keeps its
 strict rule, so the main account form is unaffected.
 
-**The statement backfills what it knows.** On `confirmStatementImport`, for the target account only:
+**The statement backfills what it knows.** On `confirmStatementImport`, after the RPC succeeds, for
+**each mapped account from its own section** — not just the account the import was launched from, since
+on a grouped card the DOP line may be a sibling and each line has its own limit:
 
 | Column | Source | Rule |
 | --- | --- | --- |
@@ -108,11 +110,12 @@ single-currency DOP and should stay plain accounts rather than become one-line g
 with strict `accountInput` and creates the group before the lines exist. This needs a sibling action
 that takes stub input and attaches to a card that already exists.
 
-**Promotion must re-key saved section mappings.** `statement_section_mappings` is keyed on
-`card_group_id`, using a zero-UUID sentinel for ungrouped cards
-(`app/(app)/accounts/statement-actions.ts:93`). Promoting a card without moving its rows from the
-sentinel to the new group id leaves its remembered mappings silently unresolvable. A fresh stub has
-none; a long-standing ungrouped card that turns out to have a USD section does.
+**Promotion has nothing to re-key.** An earlier draft of this spec worried that
+`statement_section_mappings` rows keyed to the ungrouped zero-UUID sentinel
+(`app/(app)/accounts/statement-actions.ts:93`) would be orphaned by promotion. They cannot be: the
+sentinel appears only on the read side. The write is guarded by `if (account.card_group_id)`
+(`statement-actions.ts:390`), so an ungrouped card never saves a mapping in the first place, and the
+read for an ungrouped card always returns empty. Promotion is a plain `card_group_id` update.
 
 ## 5 · Overview callout
 
@@ -197,9 +200,9 @@ pipeline. This item adds no capability to the importer — it only changes who c
   credit card missing its limit, closing day or due day.
 - Backfill fills a null column, and leaves a set one alone, for each of the three fields.
 - Backfill with a null `dueDate` and a null `creditLimitCents` leaves those columns null.
+- Backfill on a two-section import writes each mapped account from its own section, not both from one.
 - `suggestAccountId` against a stub group: DOP section maps, USD section returns null before the line
   exists and maps after it is created.
-- Promotion re-keys `statement_section_mappings` from the sentinel to the new group id.
 - Callout state: no cards → loud; card with no statement → loud; newest `latest_period_end` 40 days
   old → overdue; 10 days old → absent; several cards where one is current → absent.
 - The dialog resolves to the file picker with one card, the picker with several, the stub with none.
