@@ -68,6 +68,33 @@ export async function getBudgetOverview(month: string): Promise<BudgetOverview> 
   };
 }
 
+export type PendingTriageImportRow = {
+  statement_line: {
+    statement: {
+      import: { id: string; created_at: string } | null;
+    } | null;
+  } | null;
+};
+
+/**
+ * Pure core of getPendingTriageImportId: the id of the import with the
+ * latest `created_at` among rows that carry one. A row whose embedded chain
+ * is incomplete — its statement line, statement, or import didn't resolve —
+ * is skipped rather than treated as a throw or as a tie-breaker; that shape
+ * shows up for a statement whose import was deleted out from under it
+ * (`card_statements.import_id` is `on delete set null`), which should just
+ * drop out of contention, not blow up the reduction.
+ */
+export function newestPendingImport(rows: PendingTriageImportRow[]): string | null {
+  let newest: { id: string; created_at: string } | null = null;
+  for (const r of rows) {
+    const imp = r.statement_line?.statement?.import;
+    if (!imp) continue;
+    if (!newest || imp.created_at > newest.created_at) newest = imp;
+  }
+  return newest?.id ?? null;
+}
+
 /**
  * The newest import that still has at least one uncategorised line — so the
  * budget page's uncategorised figure can be a link to somewhere useful, and
@@ -79,12 +106,28 @@ export async function getBudgetOverview(month: string): Promise<BudgetOverview> 
  * to one account's statements and walks forward from every statement line,
  * this one is unscoped across the whole ledger — so it walks backward from
  * `transactions`, starting at the rows that actually still need triage (null
- * category, statement-sourced), and follows each one up to its import. That
- * keeps the fetch bounded by how much is left to do rather than by how much
- * was ever imported. A null-category row with no `statement_line_id` is a
- * subscription charge (design §1c) and is deliberately excluded — triage
- * cannot help it, and it must never make this function return an import that
- * has nothing left in it.
+ * category, statement-sourced), and follows each one up to its import. A
+ * null-category row with no `statement_line_id` is a subscription charge
+ * (design §1c) and is deliberately excluded — triage cannot help it, and it
+ * must never make this function return an import that has nothing left in
+ * it.
+ *
+ * That first filter bounds the fetch by how much triage work is actually
+ * outstanding rather than by how much was ever imported, but it is not by
+ * itself a bound: PostgREST caps any single request at `max_rows` (1000,
+ * `supabase/config.toml`) and truncates past it silently, in whatever order
+ * the planner returns — the same failure mode `fetchAllTransferRows` and
+ * `fetchAllLoanPayments` in `lib/insights/queries.ts` page around in full.
+ * Full pagination isn't the fix here, though: this figure only ever needs to
+ * point at the *most recent* outstanding triage work, and an import old
+ * enough to fall outside the 500 most recent uncategorised statement lines
+ * is not what someone clicking a budget-page figure is looking for — it
+ * isn't stranded either, since every statement's own row already links to
+ * its import's triage screen (Task 7). So the ordering and the 500 cap below
+ * make the truncation deliberate and deterministic instead of silent and
+ * arbitrary: newest-first by `occurred_at`, comfortably under `max_rows`,
+ * and then `newestPendingImport` just picks the single newest import out of
+ * that bounded set.
  */
 async function getPendingTriageImportId(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -95,13 +138,9 @@ async function getPendingTriageImportId(
       "statement_line:card_statement_lines!transactions_statement_line_id_fkey(statement:card_statements(import:statement_imports(id,created_at)))",
     )
     .is("category_id", null)
-    .not("statement_line_id", "is", null);
+    .not("statement_line_id", "is", null)
+    .order("occurred_at", { ascending: false })
+    .limit(500);
 
-  let newest: { id: string; created_at: string } | null = null;
-  for (const r of rows ?? []) {
-    const imp = r.statement_line?.statement?.import;
-    if (!imp) continue;
-    if (!newest || imp.created_at > newest.created_at) newest = imp;
-  }
-  return newest?.id ?? null;
+  return newestPendingImport(rows ?? []);
 }
