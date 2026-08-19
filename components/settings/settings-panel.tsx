@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { Check, CircleHelp, LogOut, Trash2 } from "lucide-react";
+import { Check, CircleHelp, LogOut, Tag, Trash2 } from "lucide-react";
 import { deleteAccount, updateBaseCurrency, updateDisplayName } from "@/app/(app)/settings/actions";
 import type { CurrencyRow } from "@/lib/accounts/queries";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -223,6 +223,18 @@ export function SettingsPanel({
           <Button variant="outline" size="sm" render={<a href="/help" />} nativeButton={false}>
             <CircleHelp className="size-4" />
             {t("helpButton")}
+          </Button>
+        </Row>
+
+        <Row index={9} title={t("rulesTitle")} description={t("rulesDescription")}>
+          <Button
+            variant="outline"
+            size="sm"
+            render={<a href="/settings/rules" />}
+            nativeButton={false}
+          >
+            <Tag className="size-4" />
+            {t("rulesLink")}
           </Button>
         </Row>
       </Card>

@@ -675,7 +675,26 @@
     "deleting": "Eliminando…",
     "helpTitle": "Ayuda y guía",
     "helpDescription": "Qué hace cada pantalla, desde la incorporación hasta el análisis.",
-    "helpButton": "Abrir guía"
+    "helpButton": "Abrir guía",
+    "rulesTitle": "Reglas de categorías",
+    "rulesDescription": "Edita o elimina las reglas que Cashly aprendió de tus estados de cuenta.",
+    "rulesLink": "Reglas de categorías"
+  },
+  "Rules": {
+    "pageTitle": "Reglas de categorías",
+    "pageDescription": "Lo que la app aprendió de tus estados de cuenta.",
+    "retroNote": "Editar una regla cambia las próximas importaciones. No recategoriza lo que ya guardaste.",
+    "matchCount": "{count, plural, one {# línea} other {# líneas}}",
+    "patternAria": "Patrón del comercio",
+    "mccPatternAria": "Código MCC",
+    "mccBadge": "MCC",
+    "categoryAria": "Categoría de la regla",
+    "save": "Guardar",
+    "deleteAria": "Eliminar regla",
+    "empty": "Todavía no hay reglas",
+    "emptyBody": "Cada vez que categorizas un comercio después de importar, se guarda una regla aquí.",
+    "saved": "Regla guardada",
+    "deleted": "Regla eliminada"
   },
   "Pwa": {
     "title": "Instalar la app",

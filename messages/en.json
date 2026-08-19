@@ -675,7 +675,26 @@
     "deleting": "Deleting…",
     "helpTitle": "Help & guide",
     "helpDescription": "What each screen does, from onboarding to insights.",
-    "helpButton": "Open guide"
+    "helpButton": "Open guide",
+    "rulesTitle": "Category rules",
+    "rulesDescription": "Edit or delete the rules Cashly learned from your statements.",
+    "rulesLink": "Category rules"
+  },
+  "Rules": {
+    "pageTitle": "Category rules",
+    "pageDescription": "What the app learned from your statements.",
+    "retroNote": "Editing a rule changes future imports. It does not recategorise what you already saved.",
+    "matchCount": "{count, plural, one {# line} other {# lines}}",
+    "patternAria": "Merchant pattern",
+    "mccPatternAria": "MCC code",
+    "mccBadge": "MCC",
+    "categoryAria": "Rule category",
+    "save": "Save",
+    "deleteAria": "Delete rule",
+    "empty": "No rules yet",
+    "emptyBody": "Every time you categorise a merchant after an import, a rule is saved here.",
+    "saved": "Rule saved",
+    "deleted": "Rule deleted"
   },
   "Pwa": {
     "title": "Install app",
