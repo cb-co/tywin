@@ -145,7 +145,7 @@ line in place. Spec and plan in `docs/specs/2026-08-18-statement-import-promoted
 
 ### UX-03 · Fix · High — After an import, categorising 80 lines is 80 dialogs
 
-- [ ] Done
+- [x] Done (19 Aug 2026)
 
 `saveMerchantRule` exists and works, but the only way to reach it is to open one transaction, change
 its category, and tick a checkbox. A single Banco Popular statement can produce a hundred lines.
@@ -155,6 +155,32 @@ There is no queue, no bulk select, no rules screen, and no way to see what is st
 group, keyboard-navigable on desktop. Then a Rules screen under Settings listing every saved merchant
 rule so people can correct a bad one. This turns import from a chore into a ritual. (Pairs with
 BUILD-13.)
+
+**Done** — A triage screen at `app/(app)/imports/[id]/page.tsx`, rendered by
+`components/imports/triage-list.tsx`, groups the import's unrecognised lines by merchant and turns
+each one into a single tap against a category rail. The read side is `getImportTriage` and
+`groupForTriage` in `lib/statements/triage.ts`; the write side is `categorizeTriageGroup` in
+`app/(app)/imports/actions.ts`. Triage is re-enterable: a statement's row on its card's page links
+back into its import's triage screen with a count of what is left, so leaving lines for later doesn't
+lose them.
+
+What made a real queue possible: the importer now writes a *null* category for a line it can't
+identify, instead of filing it under "Other". `Other` conflated "the app couldn't tell" with "the user
+means miscellaneous", and assumed a category not every user owns — neither statement is one a queue can
+act on. Migration `20260819131444_null_category_triage.sql` lets the import RPC accept a null category
+and replaces the `expense_requires_category` CHECK constraint so an expense may lack a category only
+when it came from an import or a subscription charge. Help guide updated to match.
+
+**Remaining** —
+- [ ] Statements imported before this change keep the `Other` category they were given and never
+      appear in triage — indistinguishable from a deliberate choice, which is exactly the ambiguity
+      the null state exists to prevent.
+- [ ] A subscription saved without a category still produces null-category charges that triage never
+      shows. Deliberate — subscriptions have their own flow — but it means the uncategorised figure on
+      Budgets can exceed what triage offers to fix.
+- [ ] The end-to-end browser pass — import a real statement, land on triage, assign two merchants,
+      confirm the count drops, the ledger rows carry the category, and the Insights donut's grey slice
+      shrinks — has not been run yet; pending with the repo owner.
 
 ### UX-04 · Fix · High — The ledger silently stops at 200 rows
 
@@ -537,11 +563,26 @@ the figure mask respected by default, is a growth loop that costs you one route 
 
 #### BUILD-13 · Medium — Merchant rules, surfaced
 
-- [ ] Done
+- [x] Done (19 Aug 2026)
 
 The primitive exists. Give it a screen: every rule, editable, with a count of how many transactions it
 has categorised. Then let the importer apply rules automatically and report "68 de 80 categorizadas
 automáticamente" — which is the moment a user decides this app is worth keeping. (Pairs with UX-03.)
+
+**Done** — A rules screen at `app/(app)/settings/rules/page.tsx`, backed by
+`components/settings/rules-list.tsx` and `lib/rules/queries.ts`, lists every rule the app has learned:
+the pattern is editable, the category is changeable, and each row carries a count of how many
+statement lines it matches, from a new `category_rule_usage()` SQL function. Merchant patterns keep
+the issuer's location tail on purpose — shortening one by hand on this screen is how a user makes a
+rule cover every branch of a merchant, rather than just the one that happened to import first.
+
+Rules are now saved silently on every triage tap, not behind an opt-in checkbox — that checkbox is why
+the rules table this screen reads from used to be empty. The importer applies them automatically and
+the triage screen reports the "68 de 80 categorizadas automáticamente" line this item asked for.
+
+**Remaining** —
+- [ ] Editing a rule does not retroactively recategorise transactions already saved — it changes what
+      the next import assigns, not what's already in the ledger.
 
 #### BUILD-14 · Medium — Biometric lock on the installed app
 
@@ -682,7 +723,7 @@ network mark — recognising the bank is what makes the card face land.
 
 - [x] Quick Add rebuilt, amount-first (UX-01)
 - [x] Import promoted to a primary action (UX-02)
-- [ ] Categorisation triage + rules screen (UX-03, BUILD-13)
+- [x] Categorisation triage + rules screen (UX-03, BUILD-13)
 - [x] Ledger pagination (UX-04) — main ledger done; account activity still capped
 - [x] FX degraded state (CHK-03) — ~~CHK-01~~ no change needed, ~~CHK-02~~ done and pushed
 - [ ] CSV export (BUILD-07)
