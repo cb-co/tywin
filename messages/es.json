@@ -320,6 +320,19 @@
     "retryLoadButton": "Reintentar",
     "currenciesFailed": "No pudimos cargar la lista de monedas; solo está disponible la predeterminada."
   },
+  "Imports": {
+    "pageTitle": "Categorizar",
+    "pageDescription": "{fileName} · {account}",
+    "autoSummary": "{done} de {total} categorizadas automáticamente",
+    "remaining": "faltan {count} por categorizar",
+    "allDone": "Todo categorizado",
+    "allDoneBody": "Cada línea de este estado de cuenta tiene categoría. La próxima vez serán menos preguntas.",
+    "groupLines": "{count, plural, one {# consumo} other {# consumos}}",
+    "groupDates": "{from} – {to}",
+    "assigned": "{merchant} → {category}",
+    "backToAccount": "Volver a la cuenta",
+    "notFound": "Esa importación ya no existe."
+  },
   "Budgets": {
     "pageTitle": "Presupuestos y metas",
     "pageDescription": "Lo que planeas gastar este mes y aquello para lo que estás ahorrando.",

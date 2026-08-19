@@ -320,6 +320,19 @@
     "retryLoadButton": "Try again",
     "currenciesFailed": "We couldn't load the currency list; only the default is available."
   },
+  "Imports": {
+    "pageTitle": "Categorise",
+    "pageDescription": "{fileName} · {account}",
+    "autoSummary": "{done} of {total} categorised automatically",
+    "remaining": "{count} left to categorise",
+    "allDone": "All categorised",
+    "allDoneBody": "Every line on this statement has a category. Next time there will be fewer questions.",
+    "groupLines": "{count, plural, one {# transaction} other {# transactions}}",
+    "groupDates": "{from} – {to}",
+    "assigned": "{merchant} → {category}",
+    "backToAccount": "Back to the account",
+    "notFound": "That import no longer exists."
+  },
   "Budgets": {
     "pageTitle": "Budgets & Goals",
     "pageDescription": "What you plan to spend this month, and what you're saving toward.",
