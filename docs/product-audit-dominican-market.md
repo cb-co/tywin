@@ -640,7 +640,7 @@ are actually wrong. Help guide updated to match.
 **Remaining** —
 - [ ] The LLM coach still reasons off the distorted snapshot (`lib/overview/recommendation/`); it has
       no way to know the net worth it was handed is a 1:1 artefact.
-- [ ] A second FX provider is still CHK-06. This item makes a failure visible, not less likely.
+- ~~A second FX provider (CHK-06)~~ — dropped. Visibility is the fix; a second provider is not.
 
 ### CHK-04 — Ledger limit of 200 rows
 
@@ -656,10 +656,16 @@ Claimed in marketing copy and in the Privacy Policy — see BUILD-07.
 
 ### CHK-06 — Single FX provider (`open.er-api.com`)
 
-- [ ] Verified / changed
+- [x] Dropped (18 Aug 2026) — accepted risk
 
 One free, unauthenticated endpoint, 12-hour cache, no fallback provider. Every multi-currency figure in
-the app depends on it. Add a second source and an alert when both fail.
+the app depends on it.
+
+**Won't do** — A second provider doubles the integration surface, the cache logic and the ways rates can
+disagree, to protect against an outage that lasts hours and degrades to a visible, labelled 1:1 state
+(CHK-03). The rate table is cached for 12 hours, so a fetch has to fail for half a day before anyone
+sees it. If the endpoint disappears permanently, swapping the single source is a small change made once
+— not a fallback chain maintained forever.
 
 ### CHK-07 — Card networks limited to visa · mastercard · amex
 
