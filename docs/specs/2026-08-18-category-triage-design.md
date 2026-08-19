@@ -158,7 +158,12 @@ mapper already tolerates a null key — `catById.get(d.category_id ?? "")?.name 
 (`lib/insights/queries.ts:103`) — but that string is hardcoded English and the colour falls through to
 the `CHART_FALLBACK` rotation, so it would land on whatever hue the index gives it. Give it a
 translated name and a deliberate muted grey, so it reads as absence rather than as another category.
-The slice links into triage.
+
+The slice is **not** a link. Making one requires a click handler on a Recharts `Pie` plus a second data
+dependency on the Insights page, which would otherwise have no reason to know which import has
+leftovers — all to duplicate a link the Budgets line already carries as plain text. The donut's job
+here is to stop hiding the money; the actionable link lives one page over, where it reads as a task
+rather than as a chart affordance.
 
 **Budgets get a line, not a bar.** Budgets are per category; there is no honest bar for spend that has
 no category. Above the bars: *"RD$18,000 sin categorizar — categorizar"*, linking into triage, hidden
