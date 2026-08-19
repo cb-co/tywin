@@ -54,13 +54,14 @@ a user who renames or deletes it gets `cats?.[0]?.id`, whatever that happens to 
 "category is Other" would therefore both trap people who genuinely chose `Other` in a queue that never
 empties, and miss users who have no such category.
 
-**A null category means "the importer could not tell".** Nothing else in the app may produce it.
+**A null category means "nobody has said what this is".** For an imported line that is the importer
+admitting it could not tell — the case triage exists for.
 
 | Path | Rule |
 | --- | --- |
 | Import (`import_card_statement`) | May write null |
 | Manual entry / edit | Required — already enforced, `lib/transactions/schema.ts:40` |
-| Subscription charges | Required — needs a change, see below |
+| Subscription charges | May write null — `category_id` stays optional, see (c) |
 | Income | Null, as today (income has no category, `schema.ts:42`) |
 
 `transactions.category_id` is already nullable (`20260717234227_transactions.sql:7`), so this is not a
@@ -85,13 +86,18 @@ otherwise unchanged: merchant rule → MCC rule → LLM suggestion → `MCC_DEFA
 The `noCategories` early return in `confirmStatementImport` goes with it; a user with no categories now
 imports successfully and lands every line in triage, which is a better failure than a blocked import.
 
-**c) Subscriptions stop leaking null.** `lib/subscriptions/schema.ts:12` has `category_id` optional, so
-`addCharge` (`app/(app)/subscriptions/actions.ts:239`) can insert a null-category expense that triage
-will never show, because triage is scoped to imports. Make it required in the schema and the form.
+**c) Subscriptions keep their optional category.** `lib/subscriptions/schema.ts:12` leaves
+`category_id` optional, so `addCharge` (`app/(app)/subscriptions/actions.ts:239`) can also insert a
+null-category expense. This is left exactly as it is — a decision, not an oversight. Forcing a category
+onto a subscription would make every existing one un-editable until its owner picked something, to
+close a hole that costs nothing: a subscription is a named, recurring row the user created on purpose,
+and it is one tap to categorise in the ledger whenever they care to.
 
-Existing subscriptions saved without a category keep producing null charges until someone edits them.
-There is no correct value to backfill them to, so they are not backfilled; the donut slice in §2 is
-where they surface.
+The consequence, stated so nothing downstream assumes otherwise: **a null category does not imply the
+row came from an import.** Triage is scoped to an import's own statement lines (§3), so a subscription
+charge can never appear in it — but it does count toward the uncategorised figures in §2, where the
+ledger is the way to fix it. Any future code that reads "null category" as "imported and untriaged"
+would be wrong.
 
 **d) The extractor is told null is a right answer.** `lib/statements/llm/system-prompt.ts:50` already
 permits null, but frames guessing as free: *"a downstream rules system has final say, don't worry about
@@ -127,7 +133,9 @@ migration, mirroring `category_usage`'s inclusion rule exactly (`type in ('expen
 `exclude_from_budget`, card payments handled the same way) so the two cannot disagree about what counts.
 
 **Where those links go.** To the newest import that still has uncategorised lines. When more than one
-import has leftovers the copy says so; older ones stay reachable from their statement (§6).
+import has leftovers the copy says so; older ones stay reachable from their statement (§6). When no
+import has leftovers — the figure is entirely subscription charges (§1c) — the slice and the line render
+as plain figures with no link, because triage has nothing to offer them.
 
 ## 3 · The triage screen
 
@@ -270,6 +278,12 @@ ritual attached to a specific statement into a chore that is never finished.
 indistinguishable from a deliberate choice — exactly the ambiguity §1 exists to prevent. They stay put
 and never appear in triage.
 
+**An "uncategorised" filter on the ledger.** It would make the §2 figures actionable even when no
+import has leftovers, and it is a small change — a sentinel in `txnFilters` resolving to
+`.is("category_id", null)`. It is left out because it is one step from the standing cross-import queue
+that was rejected above, and the case it serves is a subscription the user chose not to categorise.
+Worth revisiting only if that figure turns out to sit above zero for long.
+
 **Bank-account statements (BUILD-02)** and the `notACard` gate: untouched.
 
 ## 9 · Testing
@@ -283,8 +297,11 @@ and never appear in triage.
   never grouped; a line whose transaction has a category is excluded.
 - `categorizeTriageGroup`: writes only null-category rows; rejects a category belonging to another
   user; derives its own transaction ids rather than trusting the caller; upserts exactly one rule.
-- Subscription schema rejects a charge without a category; the transaction schema still rejects a
-  manual expense without one.
+- The transaction schema still rejects a manual expense without a category; the subscription schema
+  still accepts one without (both unchanged — the tests pin them so the null state cannot quietly
+  spread to manual entry).
+- `getImportTriage` excludes a null-category subscription charge on the same account and month: triage
+  reads statement lines, not transactions-with-no-category.
 - Insights distribution renders a null-category row as the uncategorised slice with the muted colour,
   not a rotation colour.
 - Statement panel shows *categorizar (n)* only for imports with leftovers.
@@ -299,8 +316,12 @@ and never appear in triage.
 - **Uncategorised spend now shows as its own slice**, which will look like a regression to anyone who
   read the donut as complete. It is the opposite — the money was previously filed under `Other` as
   though someone had chosen it.
-- **A subscription saved without a category** keeps producing null-category charges until edited, and
-  those never appear in triage. They do appear in the donut slice and the budget line.
+- **A subscription without a category** produces null-category charges that never appear in triage, by
+  design (§1c). They do appear in the donut slice and the budget line, where the count can therefore
+  exceed what triage offers to fix — someone who empties every triage queue may still see a non-zero
+  uncategorised figure. The copy on those two surfaces says *sin categorizar*, not *sin triar*, so it
+  stays true either way; when no import has leftovers the figure simply stops being a link (§2), since
+  the only place to fix such a row is the transaction itself.
 
 ## 11 · Migration hand-off
 
