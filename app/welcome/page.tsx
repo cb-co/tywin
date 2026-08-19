@@ -5,6 +5,7 @@ import { baseCurrencyOf } from "@/lib/profile";
 import { getCurrencies } from "@/lib/accounts/queries";
 import { WelcomeFlow } from "@/components/onboarding/welcome-flow";
 import { Logo, Wordmark } from "@/components/brand/logo";
+import { SoundProvider } from "@/components/sound/sound-provider";
 
 export default async function WelcomePage() {
   const supabase = await createClient();
@@ -34,13 +35,19 @@ export default async function WelcomePage() {
       </header>
 
       <div className="flex flex-1 items-start justify-center px-6 pb-16 pt-4 sm:items-center sm:pt-0">
-        <WelcomeFlow
-          currencies={currencies}
-          initialName={profile?.display_name ?? ""}
-          initialCurrency={baseCurrencyOf(profile)}
-          email={user.email ?? ""}
-          stepLabels={[t("stepName"), t("stepCurrency"), t("stepAccount"), t("cardStepLabel")]}
-        />
+        {/* Welcome renders outside AppShell, which is where the rest of the app
+            gets its sound context. The card step mounts the same statement
+            import flow the app uses, and that flow plays the success and error
+            cues, so the provider has to exist here too. */}
+        <SoundProvider>
+          <WelcomeFlow
+            currencies={currencies}
+            initialName={profile?.display_name ?? ""}
+            initialCurrency={baseCurrencyOf(profile)}
+            email={user.email ?? ""}
+            stepLabels={[t("stepName"), t("stepCurrency"), t("stepAccount"), t("cardStepLabel")]}
+          />
+        </SoundProvider>
       </div>
     </main>
   );
