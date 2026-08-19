@@ -8,7 +8,6 @@ const names = new Map([
   ["Shopping", "cat-shopping"],
   ["Entertainment", "cat-entertainment"],
   ["Health", "cat-health"],
-  ["Other", "cat-other"],
 ]);
 
 describe("resolveCategoryId", () => {
@@ -18,10 +17,10 @@ describe("resolveCategoryId", () => {
       { rule_type: "mcc" as const, pattern: "4111", category_id: "cat-transport", priority: 0 },
     ];
     expect(
-      resolveCategoryId({ mcc: "4111", description: "UBER EATS-WB*UBER EATS" }, rules, names, "cat-other"),
+      resolveCategoryId({ mcc: "4111", description: "UBER EATS-WB*UBER EATS" }, rules, names),
     ).toBe("cat-dining");
     expect(
-      resolveCategoryId({ mcc: "4111", description: "METRO CARD" }, rules, names, "cat-other"),
+      resolveCategoryId({ mcc: "4111", description: "METRO CARD" }, rules, names),
     ).toBe("cat-transport");
   });
 
@@ -31,21 +30,21 @@ describe("resolveCategoryId", () => {
       { rule_type: "merchant" as const, pattern: "price", category_id: "cat-shopping", priority: 0 },
     ];
     expect(
-      resolveCategoryId({ mcc: null, description: "PRICEMART SAN ISIDRO" }, rules, names, "cat-other"),
+      resolveCategoryId({ mcc: null, description: "PRICEMART SAN ISIDRO" }, rules, names),
     ).toBe("cat-groceries");
   });
 
   it("falls back to built-in MCC defaults by seeded category name", () => {
-    expect(resolveCategoryId({ mcc: "5411", description: "X" }, [], names, "cat-other")).toBe("cat-groceries");
-    expect(resolveCategoryId({ mcc: "5812", description: "X" }, [], names, "cat-other")).toBe("cat-dining");
-    expect(resolveCategoryId({ mcc: "5541", description: "X" }, [], names, "cat-other")).toBe("cat-transport");
+    expect(resolveCategoryId({ mcc: "5411", description: "X" }, [], names)).toBe("cat-groceries");
+    expect(resolveCategoryId({ mcc: "5812", description: "X" }, [], names)).toBe("cat-dining");
+    expect(resolveCategoryId({ mcc: "5541", description: "X" }, [], names)).toBe("cat-transport");
   });
 
-  it("falls back to Other when nothing matches or the named category is missing", () => {
-    expect(resolveCategoryId({ mcc: null, description: "MYSTERY" }, [], names, "cat-other")).toBe("cat-other");
-    expect(resolveCategoryId({ mcc: "9999", description: "X" }, [], names, "cat-other")).toBe("cat-other");
+  it("returns null when nothing matches — the importer says so rather than guessing", () => {
+    expect(resolveCategoryId({ mcc: null, description: "MYSTERY" }, [], names)).toBeNull();
+    expect(resolveCategoryId({ mcc: "9999", description: "X" }, [], names)).toBeNull();
     const empty = new Map<string, string>();
-    expect(resolveCategoryId({ mcc: "5411", description: "X" }, [], empty, "cat-other")).toBe("cat-other");
+    expect(resolveCategoryId({ mcc: "5411", description: "X" }, [], empty)).toBeNull();
   });
 
   it("covers the MCCs seen on real statements", () => {
@@ -60,7 +59,6 @@ describe("resolveCategoryId", () => {
         { mcc: null, description: "SOME NEW MERCHANT", suggestedCategory: "Entertainment" },
         [],
         names,
-        "cat-other",
       ),
     ).toBe("cat-entertainment");
   });
@@ -71,7 +69,6 @@ describe("resolveCategoryId", () => {
         { mcc: null, description: "SOME NEW MERCHANT", suggestedCategory: "groceries" },
         [],
         names,
-        "cat-other",
       ),
     ).toBe("cat-groceries");
   });
@@ -85,7 +82,6 @@ describe("resolveCategoryId", () => {
         { mcc: "5812", description: "X", suggestedCategory: "Dining" },
         rules,
         names,
-        "cat-other",
       ),
     ).toBe("cat-transport");
   });
@@ -96,7 +92,6 @@ describe("resolveCategoryId", () => {
         { mcc: "5411", description: "X", suggestedCategory: "NotARealCategory" },
         [],
         names,
-        "cat-other",
       ),
     ).toBe("cat-groceries");
   });

@@ -206,6 +206,21 @@ describe("confirmStatementImport", () => {
 
     expect(stub.accountUpdate).not.toHaveBeenCalled();
   });
+
+  it("sends an empty category for a line no rule or MCC recognises", async () => {
+    const stub = makeSupabaseStub();
+    (createClient as Mock).mockResolvedValue(stub);
+
+    await confirmStatementImport(buildConfirmFormData());
+
+    const [, args] = stub.rpc.mock.calls[0] as unknown as [
+      string,
+      { p: { sections: { lines: { description: string; category_id: string }[] }[] } },
+    ];
+    const lines = args.p.sections.flatMap((s) => s.lines);
+    expect(lines.length).toBeGreaterThan(0);
+    for (const l of lines) expect(l.category_id).toBe("");
+  });
 });
 
 describe("parseStatement", () => {

@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, it, test } from "vitest";
 import { transactionInput } from "./schema";
 
 /* A transaction is denominated in its own account's currency — the bank settles
@@ -60,5 +60,26 @@ describe("transactionInput destination leg", () => {
       to_account_id: valid.account_id,
     });
     expect(parsed.success).toBe(false);
+  });
+});
+
+/* The importer is now allowed to write a null category to `statement_line_id`-
+ * backed expenses (see lib/statements/categorize.ts and
+ * app/(app)/accounts/statement-actions.ts) — but that exception lives in the
+ * database CHECK constraint, not here. A manually-entered expense still has to
+ * carry a category; this pins that down so a future change to the shared
+ * schema can't loosen it by accident. */
+describe("transactionInput", () => {
+  it("still refuses a manual expense with no category", () => {
+    const parsed = transactionInput.safeParse({
+      type: "expense",
+      account_id: "11111111-1111-1111-1111-111111111111",
+      amount: 100,
+      occurred_at: "2026-08-19T10:00:00.000Z",
+      category_id: "",
+    });
+    expect(parsed.success).toBe(false);
+    if (!parsed.success)
+      expect(parsed.error.issues.some((i) => i.path.includes("category_id"))).toBe(true);
   });
 });

@@ -23,12 +23,20 @@ export const MCC_DEFAULT_CATEGORY: Record<string, string> = {
   "8099": "Health",    // health services
 };
 
+/**
+ * The category an imported line belongs to, or null when the app cannot tell.
+ *
+ * Null is a real answer, not a failure: it is what puts the line in front of the
+ * user on the triage screen. The predecessor of this function fell back to the
+ * category named "Other", which conflated "the app could not tell" with "the user
+ * means miscellaneous" — and assumed a category not every user owns, since
+ * categories are per-user editable rows.
+ */
 export function resolveCategoryId(
   line: { mcc: string | null; description: string; suggestedCategory?: string | null },
   rules: CategoryRuleRow[],
   categoryIdByName: Map<string, string>,
-  otherId: string,
-): string {
+): string | null {
   const desc = line.description.toUpperCase();
   const merchant = rules
     .filter((r) => r.rule_type === "merchant" && desc.includes(r.pattern.toUpperCase()))
@@ -55,5 +63,5 @@ export function resolveCategoryId(
     const byDefault = name ? categoryIdByName.get(name) : undefined;
     if (byDefault) return byDefault;
   }
-  return otherId;
+  return null;
 }

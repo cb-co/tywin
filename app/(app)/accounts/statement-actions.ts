@@ -396,8 +396,6 @@ export async function confirmStatementImport(formData: FormData): Promise<{ erro
     supabase.from("profiles").select("base_currency").maybeSingle(),
   ]);
   const categoryIdByName = new Map((cats ?? []).map((c) => [c.name, c.id]));
-  const otherId = categoryIdByName.get("Other") ?? cats?.[0]?.id;
-  if (!otherId) return { error: t("noCategories") };
   const rules = (ruleRows ?? []) as CategoryRuleRow[];
   const baseCurrency = baseCurrencyOf(profile);
   const rates = await getExchangeRates(baseCurrency);
@@ -449,8 +447,11 @@ export async function confirmStatementImport(formData: FormData): Promise<{ erro
           auth_code: l.authCode ?? "",
           amount: centsToDecimal(l.amountCents),
           kind: l.kind,
+          // "" travels to the RPC as a null category — the line could not be
+          // identified and goes to triage. Payment lines never become
+          // transactions at all, so they take the same empty value.
           category_id:
-            l.kind === "payment" ? "" : resolveCategoryId(l, rules, categoryIdByName, otherId),
+            l.kind === "payment" ? "" : resolveCategoryId(l, rules, categoryIdByName) ?? "",
         })),
       };
     }),

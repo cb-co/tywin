@@ -47,7 +47,7 @@ LINE KIND: classify every transaction line by amount sign and description vocabu
   description starts with a fee/charge word (cargo, fee, comisión, interés, seguro) → "fee"
   everything else → "purchase"
 
-CATEGORIZATION (suggestion only — a downstream rules system has final say, don't worry about being wrong): for each line, set suggestedCategory to your best guess from exactly this list, based on the merchant name and MCC if present, or null if genuinely unclear:
+CATEGORIZATION: for each line, set suggestedCategory from exactly this list, based on the merchant name and MCC if present — or null when you are not confident. null is a correct answer, not a failure: an unrecognised line is put in front of the user, who answers it in one tap and the app remembers the answer. A wrong guess is worse than null, because nobody is asked and the money sits under the wrong heading. Do not guess from a merchant name you do not recognise:
   Groceries, Dining, Transport, Housing, Utilities, Health, Shopping, Entertainment, Savings, Other
 
 NUMBERS: every money field is a JSON number, not a string — no currency symbol, no thousands separator, no quotes. A row printed "RD$ 1,623.00" is 1623.00; "- RD$ 10.75" is -10.75; "US$1,623.00" is 1623.00. Give the value exactly as printed apart from that formatting: do not compute, round, or convert, with the single exception of the totalDebits/totalCredits combination described above for line-less sections. Negative amounts carry a negative sign; the currency belongs in the section's currency field and nowhere else. Use null, never 0, for a figure the statement does not print at all.
