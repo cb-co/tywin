@@ -690,6 +690,8 @@
     "accountNotFound": "That account no longer exists.",
     "accountCurrencyImmutable": "This transaction is recorded in {currency} and can only move to a {currency} account. Delete it and add it again to change currency.",
     "statementRowLocked": "This transaction comes from an imported statement. Delete the statement to remove it.",
+    "fxDegradedTitle": "Exchange rates are unavailable",
+    "fxDegradedBody": "Amounts in {currencies} are counted at 1:1 against {base} until rates come back, so any total here that mixes currencies is wrong.",
     "requiredFieldsHint": "* Required"
   },
   "Welcome": {
@@ -792,6 +794,7 @@
     "overviewStats": "This month's stats — income, spending, and budget used so far.",
     "overviewUpcoming": "Upcoming — a rail of what's due next: subscription charges and loan payments.",
     "overviewZeroState": "No accounts yet? Overview shows starter cards linking straight to Accounts, Budgets, and Subscriptions instead of an empty page.",
+    "overviewFxWarning": "If exchange rates can't be fetched, Overview and Insights say so — foreign holdings are counted 1:1 until rates return, and the warning tells you which currencies are affected.",
     "gettingAroundTitle": "Getting around",
     "desktopNavTitle": "Desktop sidebar",
     "mobileNavTitle": "Mobile bottom nav",

@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { baseCurrencyOf } from "@/lib/profile";
 import { monthStart } from "@/lib/budgets/month";
 import { nextChargeDate, monthlyEquivalent, type BillingCycle } from "@/lib/subscriptions/cycle";
-import { getExchangeRates, convertToBase } from "@/lib/fx";
+import { getExchangeRates, convertToBase, unconvertedCurrencies } from "@/lib/fx";
 import { cardAmountDue, dayAfter } from "./card-due";
 import { importPromptState, type ImportPrompt } from "./import-prompt";
 
@@ -28,6 +28,10 @@ export type Overview = {
   monthlySubscriptions: number;
   upcoming: UpcomingItem[];
   importPrompt: ImportPrompt;
+  /** Currencies that went into the totals above at a 1:1 fallback rate because
+   *  the FX table was unavailable. Empty on every single-currency account set,
+   *  which is why the page can render the warning unconditionally on it. */
+  fxUnconverted: string[];
 };
 
 function nextDue(day: number | null, from = new Date()): Date | null {
@@ -123,6 +127,18 @@ export async function getOverview(): Promise<Overview> {
     statementPaymentsByCard(supabase, cards ?? []),
   ]);
   const toBase = (amount: number, currency: string) => convertToBase(amount, currency, baseCurrency, rates);
+  // Only the rows that actually feed a base-currency total: `upcoming` shows
+  // each amount in its own currency, so a missing rate costs it nothing.
+  const fxUnconverted = unconvertedCurrencies(
+    [
+      ...(balances ?? []).map((b) => b.currency),
+      ...(cards ?? []).map((c) => c.currency),
+      ...(loans ?? []).map((l) => l.currency),
+      ...(subs ?? []).map((s) => s.currency),
+    ],
+    baseCurrency,
+    rates,
+  );
   const t = await getTranslations("Overview");
 
   const acctById = new Map((accounts ?? []).map((a) => [a.id, a]));
@@ -197,5 +213,6 @@ export async function getOverview(): Promise<Overview> {
     ),
     upcoming: upcoming.slice(0, 6),
     importPrompt: importPromptState(cards ?? []),
+    fxUnconverted,
   };
 }

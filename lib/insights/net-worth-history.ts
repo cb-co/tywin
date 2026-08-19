@@ -38,7 +38,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { baseCurrencyOf } from "@/lib/profile";
 import { addMonths, monthStart, monthEnd, shortMonth } from "@/lib/budgets/month";
-import { getExchangeRates, convertToBase } from "@/lib/fx";
+import { getExchangeRates, convertToBase, unconvertedCurrencies } from "@/lib/fx";
 import { splitPayments, type LoanPayment } from "@/lib/accounts/amortization";
 
 export const MONTHS = 6;
@@ -52,6 +52,9 @@ export type NetWorthPoint = {
 export type NetWorthHistory = {
   baseCurrency: string;
   points: NetWorthPoint[];
+  /** Currencies folded into the series at 1:1 because the FX table was
+   *  unavailable. Empty for single-currency users and on every healthy fetch. */
+  fxUnconverted: string[];
 };
 
 type TxRow = {
@@ -299,6 +302,17 @@ export async function getNetWorthHistory(): Promise<NetWorthHistory> {
 
   return {
     baseCurrency,
+    // Same caveat the Overview hero carries: without a rate table a foreign
+    // holding lands in the series at 1:1, so the chart needs to say so.
+    fxUnconverted: unconvertedCurrencies(
+      [
+        ...(balances ?? []).map((b) => b.currency),
+        ...(cards ?? []).map((c) => c.currency),
+        ...(loanAccounts ?? []).map((l) => l.currency),
+      ],
+      baseCurrency,
+      rates,
+    ),
     points: buildNetWorthSeries({
       months,
       baseCurrency,

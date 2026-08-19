@@ -11,6 +11,7 @@ const rows: SnapshotRows = {
   overview: {
     hasAccounts: true,
     importPrompt: "none",
+    fxUnconverted: [],
     baseCurrency: "USD",
     displayName: "Carlos Mendoza",
     netWorth: 12480.22,

@@ -619,12 +619,28 @@ column default, not just the app-side fallback.
 
 ### CHK-03 — FX failure falls back to 1:1
 
-- [ ] Verified / changed
+- [x] Done (18 Aug 2026)
 
 `convertToBase` falls back to a 1:1 rate when the rate table is unavailable. At roughly 60 DOP to the
 dollar, one failed fetch turns RD$500,000 into a $500,000 net worth. Transactions carry an "FX
 fallback" badge; balances carry nothing. Show a degraded-state banner on any total computed without
 live rates.
+
+**Done** — The 1:1 fallback stays: dropping a holding out of a total is worse than distorting it, and
+a rejected save on a failed FX fetch is worse than both. What changed is that the distortion is no
+longer silent. `unconvertedCurrencies` (`lib/fx.ts`, tested) names the currencies that went into a
+total at 1:1, and `getOverview` and `getNetWorthHistory` each return that list alongside their
+figures. `FxDegradedNotice` (`components/fx/fx-degraded-notice.tsx`) renders under the net-worth hero
+on Overview and at the top of Insights, listing the affected currencies against the base.
+
+The list is empty for a single-currency user and on every healthy fetch, so both pages mount the
+notice unconditionally and it costs them nothing — the warning only exists when the totals above it
+are actually wrong. Help guide updated to match.
+
+**Remaining** —
+- [ ] The LLM coach still reasons off the distorted snapshot (`lib/overview/recommendation/`); it has
+      no way to know the net worth it was handed is a 1:1 artefact.
+- [ ] A second FX provider is still CHK-06. This item makes a failure visible, not less likely.
 
 ### CHK-04 — Ledger limit of 200 rows
 
@@ -662,7 +678,7 @@ network mark — recognising the bank is what makes the card face land.
 - [x] Import promoted to a primary action (UX-02)
 - [ ] Categorisation triage + rules screen (UX-03, BUILD-13)
 - [x] Ledger pagination (UX-04) — main ledger done; account activity still capped
-- [ ] FX degraded state (CHK-03) — ~~CHK-01~~ no change needed, ~~CHK-02~~ done and pushed
+- [x] FX degraded state (CHK-03) — ~~CHK-01~~ no change needed, ~~CHK-02~~ done and pushed
 - [ ] CSV export (BUILD-07)
 - [ ] Cut list 01–06
 

@@ -690,6 +690,8 @@
     "accountNotFound": "Esa cuenta ya no existe.",
     "accountCurrencyImmutable": "Esta transacción está registrada en {currency} y solo puede moverse a una cuenta en {currency}. Elimínala y vuelve a crearla para cambiar de moneda.",
     "statementRowLocked": "Esta transacción proviene de un estado de cuenta importado. Elimina el estado de cuenta para quitarla.",
+    "fxDegradedTitle": "Las tasas de cambio no están disponibles",
+    "fxDegradedBody": "Los montos en {currencies} se cuentan 1:1 frente a {base} hasta que vuelvan las tasas, así que cualquier total de esta página que mezcle monedas está mal.",
     "requiredFieldsHint": "* Obligatorio"
   },
   "Welcome": {
@@ -792,6 +794,7 @@
     "overviewStats": "Datos del mes — ingresos, gastos y presupuesto usado hasta la fecha.",
     "overviewUpcoming": "Próximos — lo que se avecina: cargos de suscripciones y pagos de préstamos.",
     "overviewZeroState": "¿Aún no tienes cuentas? Resumen muestra tarjetas de inicio que llevan directo a Cuentas, Presupuestos y Suscripciones en vez de una pantalla vacía.",
+    "overviewFxWarning": "Si no se pueden obtener las tasas de cambio, Inicio e Insights lo avisan: los saldos en otras monedas se cuentan 1:1 hasta que vuelvan las tasas, y el aviso indica cuáles monedas están afectadas.",
     "gettingAroundTitle": "Cómo moverte por la app",
     "desktopNavTitle": "Barra lateral (escritorio)",
     "mobileNavTitle": "Barra inferior (móvil)",

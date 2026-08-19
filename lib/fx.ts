@@ -104,3 +104,26 @@ export function crossRate(
   if (!f || !t) return null;
   return t / f;
 }
+
+/**
+ * The subset of `currencies` that got converted at 1:1 because `rates` has no
+ * entry for them — i.e. every currency whose presence makes a base-currency
+ * total silently wrong.
+ *
+ * `convertToBase` degrades quietly on purpose: a total that is off beats a
+ * total that drops a holding. But quiet is only acceptable if the screen says
+ * so, and the screen can only say so if it knows which currencies were faked.
+ * The base currency is never in the result — it needs no rate.
+ */
+export function unconvertedCurrencies(
+  currencies: Iterable<string | null | undefined>,
+  base: string,
+  rates: Record<string, number>,
+): string[] {
+  const missing = new Set<string>();
+  for (const currency of currencies) {
+    if (!currency || currency === base) continue;
+    if (!rates[currency]) missing.add(currency);
+  }
+  return [...missing].sort();
+}

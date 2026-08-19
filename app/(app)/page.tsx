@@ -12,6 +12,7 @@ import { StatPill } from "@/components/ui/stat-pill";
 import { MarketingHome } from "@/components/marketing/marketing-home";
 import { RecommendationCard } from "@/components/overview/recommendation-card";
 import { ImportCallout } from "@/components/overview/import-callout";
+import { FxDegradedNotice } from "@/components/fx/fx-degraded-notice";
 import { createClient } from "@/lib/supabase/server";
 import { getOverview } from "@/lib/overview/queries";
 import { getRecommendation } from "@/lib/overview/recommendation/queries";
@@ -120,6 +121,10 @@ export default async function OverviewPage() {
           <p className="mt-3 text-sm opacity-80">{t("netWorthBody", { currency: o.baseCurrency })}</p>
         </HeroCard>
       </div>
+
+      {/* Directly under the hero it qualifies: the net worth above it is the
+          figure a 1:1 fallback distorts most. */}
+      <FxDegradedNotice currencies={o.fxUnconverted} base={o.baseCurrency} className="rise" />
 
       {o.importPrompt !== "none" ? (
         <div className="rise" style={{ "--i": 2 } as React.CSSProperties}>

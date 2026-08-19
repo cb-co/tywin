@@ -20,6 +20,7 @@ import {
 import { getTranslations, getLocale } from "next-intl/server";
 import { ImportButton } from "@/components/statements/import-button";
 import { PageHeader } from "@/components/page-header";
+import { FxDegradedNotice } from "@/components/fx/fx-degraded-notice";
 import { Card } from "@/components/ui/card";
 import { MoneyDisplay } from "@/components/ui/money-display";
 import {
@@ -197,6 +198,10 @@ export default async function InsightsPage({
   return (
     <div className="mx-auto max-w-5xl space-y-8">
       <PageHeader title={t("pageTitle")} description={t("pageDescription")} />
+
+      {/* Page level, not chart level: the same missing rates skew net worth,
+          cost of carry and the cashback totals below. */}
+      <FxDegradedNotice currencies={netWorth.fxUnconverted} base={cur} />
 
       {/* Ordered widest question to narrowest: what you're worth, then what
           moved this month, then what the debt behind it costs. The bands also

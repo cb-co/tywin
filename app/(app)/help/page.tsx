@@ -97,6 +97,7 @@ export default async function HelpPage() {
                 <li>{t("overviewNetWorth")}</li>
                 <li>{t("overviewStats")}</li>
                 <li>{t("overviewUpcoming")}</li>
+                <li>{t("overviewFxWarning")}</li>
               </ul>
               <p className="mt-3 text-sm text-muted-foreground">{t("overviewZeroState")}</p>
 
