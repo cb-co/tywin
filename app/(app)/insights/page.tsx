@@ -18,6 +18,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { getTranslations, getLocale } from "next-intl/server";
+import { ImportButton } from "@/components/statements/import-button";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { MoneyDisplay } from "@/components/ui/money-display";
@@ -357,7 +358,10 @@ export default async function InsightsPage({
                 }
               />
             ) : (
-              <p className="py-8 text-center text-sm text-muted-foreground">{t("costOfCarryEmpty")}</p>
+              <div className="flex flex-col items-center gap-3 py-8 text-center">
+                <p className="text-sm text-muted-foreground">{t("costOfCarryEmpty")}</p>
+                <ImportButton size="sm" />
+              </div>
             )}
           </ChartCard>
 
@@ -456,7 +460,10 @@ export default async function InsightsPage({
                 ))}
               />
             ) : (
-              <p className="py-8 text-center text-sm text-muted-foreground">{t("cashbackEmpty")}</p>
+              <div className="flex flex-col items-center gap-3 py-8 text-center">
+                <p className="text-sm text-muted-foreground">{t("cashbackEmpty")}</p>
+                <ImportButton size="sm" />
+              </div>
             )}
           </ChartCard>
 
@@ -542,7 +549,10 @@ export default async function InsightsPage({
                 }
               />
             ) : (
-              <p className="py-8 text-center text-sm text-muted-foreground">{t("cardFeesEmpty")}</p>
+              <div className="flex flex-col items-center gap-3 py-8 text-center">
+                <p className="text-sm text-muted-foreground">{t("cardFeesEmpty")}</p>
+                <ImportButton size="sm" />
+              </div>
             )}
           </ChartCard>
         </Section>

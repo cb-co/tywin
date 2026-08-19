@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/page-header";
 import { AccountGallery } from "@/components/accounts/account-gallery";
 import { CardArtBackfill } from "@/components/accounts/card-art-backfill";
+import { ImportButton } from "@/components/statements/import-button";
 import {
   getAccountsWithStatus,
   getCurrencies,
@@ -42,7 +43,11 @@ export default async function AccountsPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
-      <PageHeader title={t("pageTitle")} description={t("pageDescription")} />
+      <PageHeader
+        title={t("pageTitle")}
+        description={t("pageDescription")}
+        actions={<ImportButton />}
+      />
       <AccountGallery
         accounts={accounts}
         currencies={currencies}
