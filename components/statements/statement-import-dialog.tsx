@@ -14,6 +14,7 @@ import {
 import { addCardLine } from "@/app/(app)/accounts/actions";
 import { ImportCardStubStep } from "@/components/statements/import-card-stub-step";
 import { collapseImportTargets } from "@/lib/statements/import-targets";
+import { isInstallmentSection, suggestLineName } from "@/lib/statements/line-name";
 import { NAME_MAX_LENGTH } from "@/lib/accounts/schema";
 import { MAX_STATEMENT_BYTES } from "@/lib/statements/limits";
 import { formatMoney, formatDate } from "@/lib/format";
@@ -260,7 +261,7 @@ export function StatementImportDialog({
    */
   function onAddLine(sectionKey: string, currency: string) {
     if (!targetId) return;
-    const lineName = suggestedLineName(currency);
+    const lineName = suggestedLineName(sectionKey, currency);
     setAddingKey(sectionKey);
     startAddLine(async () => {
       try {
@@ -283,15 +284,24 @@ export function StatementImportDialog({
     });
   }
 
-  /* `cardStubInput` caps a name at NAME_MAX_LENGTH, and a long card name plus
-     " · USD" can cross it — which surfaced as a raw English zod message to a
-     Spanish reader. The card is trimmed rather than the composed string: cutting
-     the tail would drop the currency that makes the line identifiable at all. */
-  function suggestedLineName(currency: string) {
-    const compose = (card: string) => t("lineNameSuggestion", { card, currency });
-    const full = compose(cardName);
-    if (full.length <= NAME_MAX_LENGTH) return full;
-    return compose(cardName.slice(0, Math.max(1, cardName.length - (full.length - NAME_MAX_LENGTH))).trim());
+  /* Naming and trimming both live in lib/statements/line-name.ts, which is where
+     they can be tested: `cardStubInput` caps a name at NAME_MAX_LENGTH, and a
+     long card name plus its suffix can cross it — which once surfaced as a raw
+     English zod message to a Spanish reader. */
+  function suggestedLineName(sectionKey: string, currency: string) {
+    return suggestLineName({
+      cardName,
+      currency,
+      sectionKey,
+      takenNames: (preview?.accountOptions ?? []).map((a) => a.name),
+      maxLength: NAME_MAX_LENGTH,
+      format: (form, card, cur) =>
+        form === "plain"
+          ? t("lineNameSuggestion", { card, currency: cur })
+          : form === "installments"
+            ? t("lineNameInstallments", { card })
+            : t("lineNameInstallmentsCurrency", { card, currency: cur }),
+    });
   }
 
   return (
@@ -494,7 +504,13 @@ export function StatementImportDialog({
                       {unmatched ? (
                         <div className="space-y-2">
                           <p className="text-xs text-muted-foreground">
-                            {t("unmatchedSection", { currency: s.currency })}
+                            {/* A cuotas section is stuck for a different reason than a
+                                USD one — not "no line in this currency" but "the line
+                                in this currency is the consumos line" — so it is asked
+                                for in its own words. */}
+                            {isInstallmentSection(s.sectionKey)
+                              ? t("unmatchedInstallments")
+                              : t("unmatchedSection", { currency: s.currency })}
                           </p>
                           <Button
                             variant="outline"
@@ -504,7 +520,9 @@ export function StatementImportDialog({
                             isLoading={addLinePending && addingKey === s.sectionKey}
                             onClick={() => onAddLine(s.sectionKey, s.currency)}
                           >
-                            {t("addLineButton", { currency: s.currency })}
+                            {isInstallmentSection(s.sectionKey)
+                              ? t("addLineInstallmentsButton")
+                              : t("addLineButton", { currency: s.currency })}
                           </Button>
                         </div>
                       ) : null}
