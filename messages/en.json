@@ -358,7 +358,9 @@
     "budgetsCopied": "Copied last month's budgets",
     "categoryNameRequired": "Name is required",
     "badMonth": "Bad month.",
-    "noBudgetsToCopy": "No budgets to copy from last month."
+    "noBudgetsToCopy": "No budgets to copy from last month.",
+    "uncategorizedLine": "{amount} uncategorised this month.",
+    "uncategorizedAction": "Categorise"
   },
   "CategoryDialog": {
     "addTitle": "New category",
@@ -718,6 +720,7 @@
     "errorDuplicate": "That already exists.",
     "errorReference": "That refers to something that no longer exists.",
     "errorRequired": "A required field is missing.",
+    "uncategorized": "Uncategorized",
     "errorInvalidValue": "That value isn't valid.",
     "crossCurrencyRateRequired": "A payment between two currencies needs a conversion rate.",
     "accountNotFound": "That account no longer exists.",

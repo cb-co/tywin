@@ -358,7 +358,9 @@
     "budgetsCopied": "Se copiaron los presupuestos del mes anterior",
     "categoryNameRequired": "El nombre es obligatorio",
     "badMonth": "Mes inválido.",
-    "noBudgetsToCopy": "No hay presupuestos del mes anterior para copiar."
+    "noBudgetsToCopy": "No hay presupuestos del mes anterior para copiar.",
+    "uncategorizedLine": "{amount} sin categorizar este mes.",
+    "uncategorizedAction": "Categorizar"
   },
   "CategoryDialog": {
     "addTitle": "Nueva categoría",
@@ -718,6 +720,7 @@
     "errorDuplicate": "Eso ya existe.",
     "errorReference": "Eso hace referencia a algo que ya no existe.",
     "errorRequired": "Falta un campo obligatorio.",
+    "uncategorized": "Sin categoría",
     "errorInvalidValue": "Ese valor no es válido.",
     "crossCurrencyRateRequired": "Un pago entre dos monedas necesita una tasa de conversión.",
     "accountNotFound": "Esa cuenta ya no existe.",

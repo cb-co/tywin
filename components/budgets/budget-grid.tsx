@@ -258,6 +258,19 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
         </div>
       </div>
 
+      {!navPending && overview.uncategorized > 0 ? (
+        <p className="text-sm text-muted-foreground">
+          {t("uncategorizedLine", {
+            amount: maskedFormatMoney(overview.uncategorized, overview.baseCurrency),
+          })}{" "}
+          {overview.pendingTriageImportId ? (
+            <a className="underline" href={`/imports/${overview.pendingTriageImportId}`}>
+              {t("uncategorizedAction")}
+            </a>
+          ) : null}
+        </p>
+      ) : null}
+
       {navPending ? (
         view === "grid" ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

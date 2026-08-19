@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { baseCurrencyOf } from "@/lib/profile";
 import { addMonths, monthStart, shortMonth } from "@/lib/budgets/month";
@@ -96,14 +97,27 @@ export async function getInsights(month: string): Promise<Insights> {
     });
   }
 
+  const tCommon = await getTranslations("Common");
+
   const catById = new Map((cats ?? []).map((c) => [c.id, c]));
   const acctById = new Map((accounts ?? []).map((a) => [a.id, a.name]));
 
-  const distribution = (dist ?? []).map((d, i) => ({
-    name: catById.get(d.category_id ?? "")?.name ?? "Uncategorized",
-    value: Number(d.total ?? 0),
-    color: catById.get(d.category_id ?? "")?.color ?? CHART_FALLBACK[i % CHART_FALLBACK.length],
-  }));
+  /* A null category is money the importer could not identify, not a category
+     whose row went missing — so it gets a deliberate muted grey rather than the
+     next colour off the fallback rotation, and reads as absence. `spend_distribution`
+     stopped filtering these out so the donut would stop quietly under-reporting
+     the month; see the null_category_triage migration. */
+  const distribution = (dist ?? []).map((d, i) => {
+    const cat = d.category_id ? catById.get(d.category_id) : undefined;
+    return {
+      name: cat?.name ?? tCommon("uncategorized"),
+      value: Number(d.total ?? 0),
+      color: d.category_id
+        ? (cat?.color ?? CHART_FALLBACK[i % CHART_FALLBACK.length])
+        : "var(--muted-foreground)",
+      uncategorized: !d.category_id,
+    };
+  });
 
   const budgetBars = (usage ?? [])
     .map((u) => ({
