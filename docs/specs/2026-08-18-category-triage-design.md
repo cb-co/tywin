@@ -64,8 +64,42 @@ admitting it could not tell — the case triage exists for.
 | Subscription charges | May write null — `category_id` stays optional, see (c) |
 | Income | Null, as today (income has no category, `schema.ts:42`) |
 
-`transactions.category_id` is already nullable (`20260717234227_transactions.sql:7`), so this is not a
-column change. Three things do change.
+`transactions.category_id` is already nullable (`20260717234227_transactions.sql:7`) — but the column
+is not the only thing standing in the way. **A table CHECK constraint forbids exactly this**
+(`20260717234227_transactions.sql:36-37`), and no later migration touches it:
+
+```sql
+  constraint expense_requires_category
+    check (type <> 'expense' or category_id is not null),
+```
+
+Every imported line is inserted as `type = 'expense'`, so without changing this a null category fails
+at the constraint instead of at the ownership guard — the same broken import, one line further down.
+This was missed when the spec was first written and found during implementation.
+
+The constraint is replaced rather than dropped, because what it protects is still worth protecting.
+The new one encodes the table above directly: an expense may lack a category only when it came from an
+import or from a subscription charge.
+
+```sql
+alter table public.transactions drop constraint expense_requires_category;
+alter table public.transactions add constraint expense_requires_category
+  check (
+    type <> 'expense'
+    or category_id is not null
+    or statement_line_id is not null
+    or subscription_id is not null
+  );
+```
+
+Adding a CHECK validates existing rows, and every expense written under the old constraint has a
+category, so the weaker constraint passes trivially — no backfill, no failure on apply.
+
+Manual entry is still guarded at the database, not only by `lib/transactions/schema.ts:40`: a
+hand-entered expense sets neither `statement_line_id` nor `subscription_id`, so a null category on one
+is still rejected by Postgres.
+
+So this is not a column change, but it is four things, not three.
 
 **a) The import RPC must accept it.** The current guard runs on every non-payment line
 (`20260806120000_statement_cashback.sql:146-152`):
