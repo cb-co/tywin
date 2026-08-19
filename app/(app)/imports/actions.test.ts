@@ -12,14 +12,24 @@ import { createClient } from "@/lib/supabase/server";
 import { getImportTriage } from "@/lib/statements/triage";
 import { categorizeTriageGroup } from "./actions";
 
-function chainable(result: unknown, extra: Record<string, unknown> = {}) {
+// `selectResult`, when given, is what a bare `await` resolves to once `.select()`
+// has been called on the chain — mirrors real supabase-js, where `update()`
+// alone returns `{ error }` but `update().select()` returns `{ data, error }`.
+// `.maybeSingle()` is unaffected: it always resolves through `result`, which is
+// what the categories lookup (`.select().eq().maybeSingle()`) relies on.
+function chainable(result: unknown, extra: Record<string, unknown> = {}, selectResult?: unknown) {
   const obj: Record<string, unknown> = { ...extra };
-  obj.select = vi.fn(() => obj);
+  let selected = false;
+  obj.select = vi.fn(() => {
+    selected = true;
+    return obj;
+  });
   obj.eq = vi.fn(() => obj);
   obj.is = vi.fn(() => obj);
   obj.in = vi.fn(() => obj);
   obj.maybeSingle = vi.fn(() => Promise.resolve(result));
-  (obj as { then: unknown }).then = (resolve: (v: unknown) => void) => resolve(result);
+  (obj as { then: unknown }).then = (resolve: (v: unknown) => void) =>
+    resolve(selected && selectResult !== undefined ? selectResult : result);
   return obj;
 }
 
@@ -44,8 +54,8 @@ const TRIAGE = {
   ],
 };
 
-function stubWith(category: unknown) {
-  const update = vi.fn(() => chainable({ error: null }));
+function stubWith(category: unknown, writtenRows: { id: string }[] = [{ id: "txn-a" }, { id: "txn-b" }]) {
+  const update = vi.fn(() => chainable({ error: null }, {}, { data: writtenRows, error: null }));
   const upsert = vi.fn(() => Promise.resolve({ error: null }));
   return {
     auth: { getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })) },
@@ -81,6 +91,19 @@ describe("categorizeTriageGroup", () => {
       pattern: "SM NACIONAL",
       category_id: "cat-1",
     });
+  });
+
+  it("reports rows actually written, not the size of the group", async () => {
+    // One of the group's two transactions was categorised from the ledger
+    // between getImportTriage resolving the group and this update running —
+    // the `.is("category_id", null)` filter skips it, so only one row writes.
+    const stub = stubWith({ id: "cat-1" }, [{ id: "txn-a" }]);
+    (createClient as Mock).mockResolvedValue(stub);
+
+    const result = await categorizeTriageGroup("imp-1", "DOP|SM NACIONAL", "cat-1");
+
+    expect(result.error).toBeUndefined();
+    expect(result.updated).toBe(1);
   });
 
   it("refuses a category that is not the caller's", async () => {

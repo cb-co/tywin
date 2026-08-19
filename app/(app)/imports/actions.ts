@@ -44,12 +44,15 @@ export async function categorizeTriageGroup(
   if (!group) return { error: t("invalidInput") };
 
   // `.is("category_id", null)` so a category set from the ledger while this
-  // screen was open wins rather than being overwritten by a stale group.
-  const { error } = await supabase
+  // screen was open wins rather than being overwritten by a stale group — and
+  // `.select("id")` so the count we return below is what Postgres actually
+  // wrote, not the size of a group that may have gone stale in the same way.
+  const { data: written, error } = await supabase
     .from("transactions")
     .update({ category_id: categoryId })
     .in("id", group.transactionIds)
-    .is("category_id", null);
+    .is("category_id", null)
+    .select("id");
   if (error) return { error: await dbError(error, "categorizeTriageGroup") };
 
   const { error: ruleError } = await supabase.from("category_rules").upsert(
@@ -71,5 +74,5 @@ export async function categorizeTriageGroup(
   revalidatePath("/budgets");
   revalidatePath("/insights");
   revalidatePath("/");
-  return { updated: group.transactionIds.length };
+  return { updated: written?.length ?? 0 };
 }
