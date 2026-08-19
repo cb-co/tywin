@@ -110,7 +110,7 @@ panel. Spec and plan in `docs/specs/2026-08-17-quick-add-compact-design.md` and
 
 ### UX-02 · Fix · High — The best feature in the app is buried three levels deep
 
-- [ ] Done
+- [x] Done (18 Aug 2026)
 
 Statement import lives in a panel on `/accounts/[id]`, so a user must already own a credit card, have
 added it, and have navigated into it to discover the one feature that removes manual entry from their
@@ -120,6 +120,28 @@ life. Onboarding never mentions it. The overview never mentions it. Six Insights
 **Do this** — Make "Importar estado de cuenta" a primary action on Overview and Wallet. Add it as
 onboarding step 4 with a skip. Make every empty state that mentions it a link to it. Measure
 activation as *first statement imported*, not first account created.
+
+**Done** — The import flow moved out of `StatementsPanel` into a self-contained dialog
+(`components/statements/statement-import-dialog.tsx`) that resolves its own target: it lists the
+user's cards, picks the only one, asks which of several, or creates the first. It is now reachable
+from Overview (a callout that appears only when a statement is due or none was ever imported —
+`lib/overview/import-prompt.ts`, tested), the Wallet header, the three Insights cards that go empty
+for want of a statement, a new skippable onboarding step 4, and still from the card's own page, where
+the history list stayed.
+
+The rule that made it cheap enough to ask for in onboarding: a card can be created as a *stub* from
+three fields — name, currency, last 4 — with null limit, closing day and due day, because those are
+exactly the three the first confirmed statement backfills (`lib/statements/backfill.ts`, tested).
+Backfill only ever fills a null column, so it never overwrites a value the user set. A section whose
+currency matches no line on the card can promote that card into a card group by adding the sibling
+line in place. Spec and plan in `docs/specs/2026-08-18-statement-import-promoted-design.md` and
+`docs/plans/2026-08-18-statement-import-promoted.md`. Help guide updated to match.
+
+**Remaining** —
+- [ ] Activation measured as *first statement imported*. This is a SQL query over
+      `statement_imports`, not a build — there is no analytics surface in the app to hang it on yet.
+- [ ] Bank-account statements. The `notACard` gate in `app/(app)/accounts/statement-actions.ts`
+      still stands; lifting it is BUILD-02, not this item.
 
 ### UX-03 · Fix · High — After an import, categorising 80 lines is 80 dialogs
 
@@ -637,7 +659,7 @@ network mark — recognising the bank is what makes the card face land.
 ### Now · 4–6 weeks — Stop the leak
 
 - [x] Quick Add rebuilt, amount-first (UX-01)
-- [ ] Import promoted to a primary action (UX-02)
+- [x] Import promoted to a primary action (UX-02)
 - [ ] Categorisation triage + rules screen (UX-03, BUILD-13)
 - [x] Ledger pagination (UX-04) — main ledger done; account activity still capped
 - [ ] FX degraded state (CHK-03) — ~~CHK-01~~ no change needed, ~~CHK-02~~ done and pushed
