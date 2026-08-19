@@ -708,9 +708,12 @@
     "accountNamePlaceholder": "Ahorros principal",
     "accountCurrencyLabel": "Moneda",
     "accountBalanceLabel": "Saldo actual",
+    "cardStepLabel": "Tu tarjeta",
+    "cardStepTitle": "¿Tienes una tarjeta de crédito?",
+    "cardStepBody": "Añádela ahora y sube su estado de cuenta: el límite, la fecha de corte y la de pago se llenan solas.",
+    "cardStepSkip": "Ahora no",
     "backButton": "Atrás",
     "continueButton": "Continuar",
-    "finishButton": "Finalizar",
     "toastReady": "Todo listo",
     "errorNoAccount": "Añade una cuenta antes de finalizar."
   },

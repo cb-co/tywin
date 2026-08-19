@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { updateDisplayName, updateBaseCurrency } from "@/app/(app)/settings/actions";
 import { createAccount } from "@/app/(app)/accounts/actions";
 import { finishOnboarding } from "@/app/welcome/actions";
@@ -19,15 +19,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ImportCardStubStep } from "@/components/statements/import-card-stub-step";
+import { StatementImportDialog } from "@/components/statements/statement-import-dialog";
 import { cn } from "@/lib/utils";
 
-/** Onboarding creates one plain balance account. Credit cards and loans need
- *  limits, closing days, principals and terms, which would turn a three-step
- *  welcome into a form. They are one click away on the Accounts page. */
+/** Onboarding creates one plain balance account, and optionally one credit card.
+ *  The card is a stub — name, currency, last 4 — because the three fields that made
+ *  a card too heavy for this flow (limit, closing day, due day) are exactly the ones
+ *  a statement backfills on first import. Loans still need principals and terms, so
+ *  they stay one click away on the Accounts page. */
 const STARTER_TYPES = ["checking", "savings", "cash", "investment"] as const;
 type StarterType = (typeof STARTER_TYPES)[number];
 
-const STEP_COUNT = 3;
+const STEP_COUNT = 4;
 
 export function WelcomeFlow({
   currencies,
@@ -44,6 +48,9 @@ export function WelcomeFlow({
 }) {
   const t = useTranslations("Welcome");
   const tType = useTranslations("AccountTypes");
+  // The card step reuses the import dialog's stub form, and its button
+  // says the same thing there as here.
+  const tStatements = useTranslations("Statements");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [step, setStep] = useState(0);
@@ -57,15 +64,35 @@ export function WelcomeFlow({
   const [acctCurrency, setAcctCurrency] = useState(initialCurrency);
   const [acctBalance, setAcctBalance] = useState("");
 
+  // The card step's outcome. `importFor` holds the stub's id while its first
+  // statement is being imported; onboarding ends when that dialog closes,
+  // whether or not anything was imported.
+  const [importFor, setImportFor] = useState<string | null>(null);
+  // The dialog fires onImported and then closes, so without this both handlers
+  // would finish onboarding — and the second call would land after the replace.
+  const finishing = useRef(false);
+
   const currencyItems: Record<string, string> = Object.fromEntries(
     currencies.map((c) => [c.code, `${c.code} · ${c.name}`]),
   );
 
   const canAdvance =
-    step === 0 ? name.trim().length > 0 : step === 1 ? currency.length === 3 : acctName.trim().length > 0;
+    step === 0
+      ? name.trim().length > 0
+      : step === 1
+        ? currency.length === 3
+        : step === 2
+          ? acctName.trim().length > 0
+          : // The card is optional, so skipping is a valid answer and the step
+            // is always passable.
+            true;
+
+  /* Not available on the card step: the account behind it is already created,
+     and walking back into that form would create a second one. */
+  const canGoBack = step > 0 && step < STEP_COUNT - 1;
 
   function back() {
-    if (step > 0) setStep((s) => s - 1);
+    if (canGoBack) setStep((s) => s - 1);
   }
 
   /* Each step commits as it is passed, so a refresh mid-flow resumes with the
@@ -95,31 +122,45 @@ export function WelcomeFlow({
         return;
       }
 
-      const created = await createAccount({
-        name: acctName.trim(),
-        type: acctType,
-        currency: acctCurrency,
-        starting_balance: Number(acctBalance || 0),
-        transfer_tax_rate: 0.002,
-        network_fee_amount: 0,
-        network_fee_optional: true,
-        current_balance: 0,
-      });
-      if (created.error) {
-        toast.error(created.error);
+      if (step === 2) {
+        const created = await createAccount({
+          name: acctName.trim(),
+          type: acctType,
+          currency: acctCurrency,
+          starting_balance: Number(acctBalance || 0),
+          transfer_tax_rate: 0.002,
+          network_fee_amount: 0,
+          network_fee_optional: true,
+          current_balance: 0,
+        });
+        if (created.error) {
+          toast.error(created.error);
+          return;
+        }
+        setStep(3);
         return;
       }
 
-      const done = await finishOnboarding();
-      if (done.error) {
-        toast.error(done.error);
-        return;
-      }
-
-      toast.success(t("toastReady"));
-      router.replace("/");
-      router.refresh();
+      await finish();
     });
+  }
+
+  /* Ends onboarding from wherever the card step left off: skipped, card added,
+     or card added and its first statement imported. */
+  async function finish() {
+    if (finishing.current) return;
+    finishing.current = true;
+
+    const done = await finishOnboarding();
+    if (done.error) {
+      finishing.current = false;
+      toast.error(done.error);
+      return;
+    }
+
+    toast.success(t("toastReady"));
+    router.replace("/");
+    router.refresh();
   }
 
   return (
@@ -197,7 +238,7 @@ export function WelcomeFlow({
               <p className="text-xs text-muted-foreground">{t("currencyHint")}</p>
             </div>
           </div>
-        ) : (
+        ) : step === 2 ? (
           <div className="space-y-5">
             <div className="space-y-2">
               <h1 className="text-3xl font-semibold tracking-tight text-foreground">
@@ -275,6 +316,24 @@ export function WelcomeFlow({
               </div>
             </div>
           </div>
+        ) : (
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+                {t("cardStepTitle")}
+              </h1>
+              <p className="text-sm text-muted-foreground">{t("cardStepBody")}</p>
+            </div>
+
+            {/* The same stub form the import dialog offers when there is no card
+                to import onto — three fields, because the statement fills the
+                rest. Adding one hands straight over to its first import. */}
+            <ImportCardStubStep
+              onCreated={setImportFor}
+              submitLabel={tStatements("stubSubmit")}
+              defaultCurrency={currency}
+            />
+          </div>
         )}
       </div>
 
@@ -282,18 +341,22 @@ export function WelcomeFlow({
         <Button
           variant="ghost"
           onClick={back}
-          disabled={step === 0 || pending}
-          className={cn(step === 0 && "invisible")}
+          disabled={!canGoBack || pending}
+          className={cn(!canGoBack && "invisible")}
         >
           <ArrowLeft className="size-4" />
           {t("backButton")}
         </Button>
-        <Button onClick={next} disabled={!canAdvance || pending} isLoading={pending}>
+        {/* On the card step the primary action lives in the form above, so this
+            is the way past it rather than the way through it. */}
+        <Button
+          onClick={next}
+          disabled={!canAdvance || pending}
+          isLoading={pending}
+          variant={step === STEP_COUNT - 1 ? "ghost" : "default"}
+        >
           {step === STEP_COUNT - 1 ? (
-            <>
-              <Check className="size-4" />
-              {t("finishButton")}
-            </>
+            t("cardStepSkip")
           ) : (
             <>
               {t("continueButton")}
@@ -302,6 +365,20 @@ export function WelcomeFlow({
           )}
         </Button>
       </div>
+
+      {/* The stub's first statement, offered the moment the card exists. Either
+          outcome — imported or dismissed — ends onboarding. */}
+      <StatementImportDialog
+        open={importFor !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setImportFor(null);
+            void finish();
+          }
+        }}
+        accountId={importFor ?? undefined}
+        onImported={() => void finish()}
+      />
     </div>
   );
 }

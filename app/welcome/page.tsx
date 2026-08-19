@@ -39,7 +39,7 @@ export default async function WelcomePage() {
           initialName={profile?.display_name ?? ""}
           initialCurrency={baseCurrencyOf(profile)}
           email={user.email ?? ""}
-          stepLabels={[t("stepName"), t("stepCurrency"), t("stepAccount")]}
+          stepLabels={[t("stepName"), t("stepCurrency"), t("stepAccount"), t("cardStepLabel")]}
         />
       </div>
     </main>

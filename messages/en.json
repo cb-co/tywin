@@ -708,9 +708,12 @@
     "accountNamePlaceholder": "Main savings",
     "accountCurrencyLabel": "Currency",
     "accountBalanceLabel": "Current balance",
+    "cardStepLabel": "Your card",
+    "cardStepTitle": "Do you have a credit card?",
+    "cardStepBody": "Add it now and import its statement: the limit, closing day and due day fill themselves in.",
+    "cardStepSkip": "Not now",
     "backButton": "Back",
     "continueButton": "Continue",
-    "finishButton": "Finish setup",
     "toastReady": "You are all set",
     "errorNoAccount": "Add an account before finishing setup."
   },
