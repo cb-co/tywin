@@ -26,6 +26,7 @@ import {
   OverviewMock,
   SettingsMock,
   SubscriptionsMock,
+  TriageMock,
 } from "@/components/help/mocks";
 
 export default async function HelpPage() {
@@ -204,17 +205,30 @@ export default async function HelpPage() {
 
               <h3 className="mt-5 text-sm font-semibold text-foreground">{t("statementsTitle")}</h3>
               <p className="mt-2 text-sm text-muted-foreground">{t("statementsBody")}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{t("triageBody")}</p>
             </div>
-            <AccountsMock
-              checking={t("accountsMockChecking")}
-              checkingType={t("accountsMockCheckingType")}
-              owedLabel={t("accountsMockOwedLabel")}
-              cardLimit={t("accountsMockLimit")}
-              cardDue={t("accountsMockCardDue")}
-              holder={t("accountsMockHolder")}
-              lineCurrent={t("accountsMockLineCurrent")}
-              lineOther={t("accountsMockLineOther")}
-            />
+            <div className="space-y-4">
+              <AccountsMock
+                checking={t("accountsMockChecking")}
+                checkingType={t("accountsMockCheckingType")}
+                owedLabel={t("accountsMockOwedLabel")}
+                cardLimit={t("accountsMockLimit")}
+                cardDue={t("accountsMockCardDue")}
+                holder={t("accountsMockHolder")}
+                lineCurrent={t("accountsMockLineCurrent")}
+                lineOther={t("accountsMockLineOther")}
+              />
+              <TriageMock
+                summary={t("triageMockSummary")}
+                merchantOne={t("triageMockMerchantOne")}
+                merchantOneCount={t("triageMockMerchantOneCount")}
+                merchantTwo={t("triageMockMerchantTwo")}
+                merchantTwoCount={t("triageMockMerchantTwoCount")}
+                categoryOne={t("budgetsMockFood")}
+                categoryTwo={t("budgetsMockTransport")}
+                categoryThree={t("budgetsMockEntertainment")}
+              />
+            </div>
           </HelpChapter>
 
           <HelpChapter
@@ -347,13 +361,17 @@ export default async function HelpPage() {
             title={t("settingsTitle")}
             intro={t("settingsIntro")}
           >
-            <ul className="space-y-2 text-sm text-foreground">
-              <li>{t("settingsName")}</li>
-              <li>{t("settingsTheme")}</li>
-              <li>{t("settingsSound")}</li>
-              <li>{t("settingsInstall")}</li>
-              <li>{t("settingsAccount")}</li>
-            </ul>
+            <div>
+              <ul className="space-y-2 text-sm text-foreground">
+                <li>{t("settingsName")}</li>
+                <li>{t("settingsTheme")}</li>
+                <li>{t("settingsSound")}</li>
+                <li>{t("settingsInstall")}</li>
+                <li>{t("settingsAccount")}</li>
+              </ul>
+              <h3 className="mt-5 text-sm font-semibold text-foreground">{t("rulesTitle")}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">{t("rulesBody")}</p>
+            </div>
             <SettingsMock
               currencyLabel={t("settingsMockCurrency")}
               currencyValue={t("settingsMockCurrencyValue")}

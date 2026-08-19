@@ -254,6 +254,77 @@ export function AccountsMock({
   );
 }
 
+/**
+ * Two triage groups, drawn as a still of `TriageList`'s own card: a merchant
+ * name, how many lines it covers, the running total, and the same
+ * `CategoryRail` chip styling a real card offers — none of it wired up, and
+ * `TriageList` itself is never imported here. The line above mirrors the
+ * frozen "{done} of {total} categorised automatically" summary the real
+ * screen shows only on the redirect straight out of an import.
+ *
+ * Both merchant strings are raw bank text, not translated — the same reason
+ * `AccountsMock`'s `holder` prop is a fixed name — and the first one keeps
+ * its branch tail on purpose, the same location text a real rule pattern
+ * would keep unless a person shortens it on the rules screen.
+ */
+export function TriageMock({
+  summary,
+  merchantOne,
+  merchantOneCount,
+  merchantTwo,
+  merchantTwoCount,
+  categoryOne,
+  categoryTwo,
+  categoryThree,
+}: {
+  summary: string;
+  merchantOne: string;
+  merchantOneCount: string;
+  merchantTwo: string;
+  merchantTwoCount: string;
+  categoryOne: string;
+  categoryTwo: string;
+  categoryThree: string;
+}) {
+  const rows = [
+    { name: merchantOne, count: merchantOneCount, amount: 84.5, selected: 0 },
+    { name: merchantTwo, count: merchantTwoCount, amount: 32.0, selected: 1 },
+  ];
+  const chips = [categoryOne, categoryTwo, categoryThree];
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">{summary}</p>
+      {rows.map((row) => (
+        <Card key={row.name} className="gap-0 p-4">
+          <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-foreground">{row.name}</p>
+              <p className="text-xs text-muted-foreground">{row.count}</p>
+            </div>
+            <MoneyDisplay amount={row.amount} currency="USD" size="inline" />
+          </div>
+          <div aria-hidden className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+            {chips.map((chip, i) => (
+              <span
+                key={chip}
+                className={cn(
+                  "shrink-0 rounded-full border px-3 py-1.5 text-sm whitespace-nowrap",
+                  i === row.selected
+                    ? "border-primary bg-primary/10 text-foreground"
+                    : "border-input text-muted-foreground",
+                )}
+              >
+                {chip}
+              </span>
+            ))}
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 const TYPE_ICON = { expense: ArrowUpRight, income: ArrowDownLeft, payment: ArrowLeftRight } as const;
 
 export function LedgerMock({
