@@ -59,7 +59,7 @@ export default async function HelpPage() {
             intro={t("gettingStartedIntro")}
           >
             <ol className="space-y-3">
-              {[1, 2, 3].map((n) => (
+              {[1, 2, 3, 4].map((n) => (
                 <li key={n} className="flex gap-3">
                   <span className="figure flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
                     {n}
