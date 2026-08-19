@@ -115,7 +115,6 @@ export async function getInsights(month: string): Promise<Insights> {
       color: d.category_id
         ? (cat?.color ?? CHART_FALLBACK[i % CHART_FALLBACK.length])
         : "var(--muted-foreground)",
-      uncategorized: !d.category_id,
     };
   });
 
