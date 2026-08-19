@@ -1245,6 +1245,13 @@ export type Database = {
       }
     }
     Functions: {
+      category_rule_usage: {
+        Args: never
+        Returns: {
+          matches: number
+          rule_id: string
+        }[]
+      }
       category_usage: {
         Args: { p_month: string }
         Returns: {
@@ -1269,6 +1276,7 @@ export type Database = {
           total: number
         }[]
       }
+      uncategorized_spend: { Args: { p_month: string }; Returns: number }
     }
     Enums: {
       account_type:
