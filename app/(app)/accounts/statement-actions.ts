@@ -340,7 +340,9 @@ function parseIncomingStatement(raw: string): ParsedStatement | null {
   return value as ParsedStatement;
 }
 
-export async function confirmStatementImport(formData: FormData): Promise<{ error?: string }> {
+export async function confirmStatementImport(
+  formData: FormData,
+): Promise<{ error?: string; importId?: string; uncategorized?: number }> {
   const t = await getTranslations("Statements");
   const { supabase, user } = await requireUser();
   if (!user) return { error: (await getTranslations("Common"))("notSignedIn") };
@@ -457,7 +459,9 @@ export async function confirmStatementImport(formData: FormData): Promise<{ erro
     }),
   };
 
-  const { error } = await supabase.rpc("import_card_statement", { p: payload });
+  // The RPC has always returned the import id (`returns uuid`); it used to be
+  // thrown away. It is the handle the triage screen is keyed on.
+  const { data: importId, error } = await supabase.rpc("import_card_statement", { p: payload });
   if (error) return { error: await dbError(error, "importCardStatement") };
 
   /* What the issuer printed, written back onto the card. A stub created during
@@ -504,7 +508,14 @@ export async function confirmStatementImport(formData: FormData): Promise<{ erro
   revalidatePath("/transactions");
   revalidatePath("/budgets");
   revalidatePath("/insights");
-  return {};
+  // Counted from the payload rather than re-read from the database: this is the
+  // number of lines the importer could not identify, which is exactly what
+  // triage will offer to fix.
+  const uncategorized = payload.sections.reduce(
+    (n, s) => n + s.lines.filter((l) => l.kind !== "payment" && l.category_id === "").length,
+    0,
+  );
+  return { importId: importId ?? undefined, uncategorized };
 }
 
 export async function deleteCardStatement(id: string, accountId: string): Promise<{ error?: string }> {

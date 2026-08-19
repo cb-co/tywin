@@ -298,6 +298,7 @@
     "linesLoading": "Cargando líneas…",
     "linesEmpty": "No hay líneas registradas para este estado de cuenta.",
     "linePaymentBadge": "Pago (omitido)",
+    "categorizeCount": "Categorizar ({count})",
     "stubHeading": "Agrega tu tarjeta",
     "stubNameLabel": "Nombre de la tarjeta",
     "stubNamePlaceholder": "Visa Infinite",

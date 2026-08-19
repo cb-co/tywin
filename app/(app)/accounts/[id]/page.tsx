@@ -8,6 +8,7 @@ import {
   getCardGroups,
   getBanks,
   getCardStatements,
+  getPendingTriageCounts,
   getCardGroupSiblings,
   getCardGroupLines,
   getCardSpendByCategory,
@@ -56,6 +57,7 @@ export default async function AccountDetailPage({
     activity,
     quickAddData,
     statements,
+    triageCounts,
     siblings,
     cardLines,
   ] = await Promise.all([
@@ -66,6 +68,7 @@ export default async function AccountDetailPage({
     getAccountTransactions(id),
     getQuickAddData(),
     getCardStatements(id),
+    getPendingTriageCounts(id),
     getCardGroupSiblings(id),
     getCardGroupLines(id),
   ]);
@@ -456,7 +459,12 @@ export default async function AccountDetailPage({
       ) : null}
 
       {isCardType ? (
-        <StatementsPanel accountId={account.id} currency={currency} statements={statements} />
+        <StatementsPanel
+          accountId={account.id}
+          currency={currency}
+          statements={statements}
+          triageCounts={triageCounts}
+        />
       ) : null}
 
       {isLoanType ? (

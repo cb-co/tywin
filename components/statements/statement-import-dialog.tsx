@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
 import { Upload } from "lucide-react";
@@ -58,6 +59,7 @@ export function StatementImportDialog({
 }) {
   const t = useTranslations("Statements");
   const locale = useLocale();
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const { playSuccess, playError } = useUiSound();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -204,6 +206,12 @@ export function StatementImportDialog({
       resetForm();
       onImported?.();
       onOpenChange(false);
+      // Landing someone on an empty triage screen to congratulate them is worse
+      // than saying nothing, so a fully-recognised statement keeps today's
+      // behaviour: a toast, and the page they were already on.
+      if (result.importId && (result.uncategorized ?? 0) > 0) {
+        router.push(`/imports/${result.importId}?fresh=1`);
+      }
     });
   }
 

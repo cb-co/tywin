@@ -31,10 +31,12 @@ export function StatementsPanel({
   accountId,
   currency,
   statements,
+  triageCounts,
 }: {
   accountId: string;
   currency: string;
   statements: CardStatementRow[];
+  triageCounts: Record<string, { importId: string; count: number }>;
 }) {
   const t = useTranslations("Statements");
   const tc = useTranslations("Common");
@@ -141,6 +143,16 @@ export function StatementsPanel({
                 </div>
                 <div className="flex items-center gap-3">
                   <p className="figure text-sm">{formatMoney(Number(s.total_balance), currency)}</p>
+                  {triageCounts[s.id] ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      render={<a href={`/imports/${triageCounts[s.id].importId}`} />}
+                      nativeButton={false}
+                    >
+                      {t("categorizeCount", { count: triageCounts[s.id].count })}
+                    </Button>
+                  ) : null}
                   <Button
                     variant="ghost"
                     size="icon"

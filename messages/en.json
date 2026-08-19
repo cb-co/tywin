@@ -298,6 +298,7 @@
     "linesLoading": "Loading lines…",
     "linesEmpty": "No lines recorded for this statement.",
     "linePaymentBadge": "Payment (skipped)",
+    "categorizeCount": "Categorise ({count})",
     "stubHeading": "Add your card",
     "stubNameLabel": "Card name",
     "stubNamePlaceholder": "Visa Infinite",

@@ -119,6 +119,39 @@ export async function getCardStatements(accountId: string): Promise<CardStatemen
 }
 
 /**
+ * How many lines of each statement still have no category, and which import to
+ * send someone to. Keyed by statement id so the panel can render a count per row.
+ *
+ * Statements with no import (added by hand) are absent from the result: there is
+ * no import to triage.
+ */
+export async function getPendingTriageCounts(
+  accountId: string,
+): Promise<Record<string, { importId: string; count: number }>> {
+  const supabase = await createClient();
+  const { data: statements } = await supabase
+    .from("card_statements")
+    .select("id,import_id")
+    .eq("account_id", accountId)
+    .not("import_id", "is", null);
+  if (!statements || statements.length === 0) return {};
+
+  const { data: lines } = await supabase
+    .from("card_statement_lines")
+    .select("statement_id,transaction:transactions!card_statement_lines_transaction_id_fkey(category_id)")
+    .in("statement_id", statements.map((s) => s.id));
+
+  const counts: Record<string, { importId: string; count: number }> = {};
+  for (const s of statements) {
+    const n = (lines ?? []).filter(
+      (l) => l.statement_id === s.id && l.transaction && l.transaction.category_id === null,
+    ).length;
+    if (n > 0) counts[s.id] = { importId: s.import_id!, count: n };
+  }
+  return counts;
+}
+
+/**
  * One card's fee lines for one calendar year, ready for summarizeCardFees.
  *
  * A separate fetch from getCardFees rather than a filter over it: this one is

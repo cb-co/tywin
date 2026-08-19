@@ -221,6 +221,17 @@ describe("confirmStatementImport", () => {
     expect(lines.length).toBeGreaterThan(0);
     for (const l of lines) expect(l.category_id).toBe("");
   });
+
+  it("reports how many lines the importer could not identify", async () => {
+    const stub = makeSupabaseStub();
+    stub.rpc = vi.fn(async () => ({ data: "imp-1", error: null }));
+    (createClient as Mock).mockResolvedValue(stub);
+
+    const result = await confirmStatementImport(buildConfirmFormData());
+
+    expect(result.importId).toBe("imp-1");
+    expect(result.uncategorized).toBeGreaterThan(0);
+  });
 });
 
 describe("parseStatement", () => {
