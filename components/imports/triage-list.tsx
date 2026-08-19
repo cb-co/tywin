@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
@@ -8,6 +9,7 @@ import { categorizeTriageGroup } from "@/app/(app)/imports/actions";
 import { orderCategories } from "@/lib/transactions/defaults";
 import { CategoryRail } from "@/components/transactions/category-rail";
 import { EmptyState } from "@/components/empty-state";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MoneyDisplay } from "@/components/ui/money-display";
 import {
@@ -31,6 +33,7 @@ export function TriageList({
   totalLines,
   categorizedLines,
   fresh,
+  accountId,
 }: {
   importId: string;
   groups: TriageGroup[];
@@ -45,6 +48,10 @@ export function TriageList({
    *  `frozen` below for why this can't just be re-derived from props on
    *  every refresh. */
   fresh: boolean;
+  /** The account this import landed on — where the empty state's exit link
+   *  goes. Null for the (rare) import with no statements at all, in which
+   *  case the empty state renders without an action rather than guessing. */
+  accountId: string | null;
 }) {
   const t = useTranslations("Imports");
   // Reused rather than duplicated: this is the same label CategoryRail's own
@@ -143,7 +150,22 @@ export function TriageList({
       <p className="text-sm text-muted-foreground">{summary}</p>
 
       {groups.length === 0 ? (
-        <EmptyState title={t("allDone")} description={t("allDoneBody")} />
+        <EmptyState
+          title={t("allDone")}
+          description={t("allDoneBody")}
+          action={
+            accountId ? (
+              <Button
+                variant="outline"
+                size="sm"
+                nativeButton={false}
+                render={<Link href={`/accounts/${accountId}`} />}
+              >
+                {t("backToAccount")}
+              </Button>
+            ) : undefined
+          }
+        />
       ) : (
         // tabIndex so the list itself can hold focus and receive the keys;
         // the rail buttons and the "more" picker inside stay individually

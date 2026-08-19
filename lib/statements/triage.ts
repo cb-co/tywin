@@ -27,6 +27,9 @@ export interface ImportTriage {
   importId: string;
   fileName: string;
   accountName: string;
+  /** The account the import landed on — the way out of the empty state.
+   *  Nullable: an import with no statements has no account to return to. */
+  accountId: string | null;
   /** Every non-payment line in the import — the denominator of "68 de 80". */
   totalLines: number;
   categorizedLines: number;
@@ -92,13 +95,14 @@ export async function getImportTriage(importId: string): Promise<ImportTriage | 
 
   const { data: statements } = await supabase
     .from("card_statements")
-    .select("id,account:accounts!card_statements_account_id_fkey(name,currency)")
+    .select("id,account_id,account:accounts!card_statements_account_id_fkey(name,currency)")
     .eq("import_id", importId);
   if (!statements || statements.length === 0)
     return {
       importId,
       fileName: imp.file_name,
       accountName: "",
+      accountId: null,
       totalLines: 0,
       categorizedLines: 0,
       groups: [],
@@ -136,6 +140,7 @@ export async function getImportTriage(importId: string): Promise<ImportTriage | 
     importId,
     fileName: imp.file_name,
     accountName: statements[0].account?.name ?? "",
+    accountId: statements[0].account_id ?? null,
     totalLines: lines.length,
     categorizedLines: lines.filter((l) => l.categoryId !== null).length,
     groups: groupForTriage(lines),

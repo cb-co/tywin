@@ -44,6 +44,7 @@ export default async function ImportTriagePage({
         totalLines={triage.totalLines}
         categorizedLines={triage.categorizedLines}
         fresh={fresh === "1"}
+        accountId={triage.accountId}
       />
     </div>
   );
