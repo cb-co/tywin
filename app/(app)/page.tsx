@@ -12,6 +12,7 @@ import { StatPill } from "@/components/ui/stat-pill";
 import { MarketingHome } from "@/components/marketing/marketing-home";
 import { RecommendationCard } from "@/components/overview/recommendation-card";
 import { ImportCallout } from "@/components/overview/import-callout";
+import { ImportButton } from "@/components/statements/import-button";
 import { FxDegradedNotice } from "@/components/fx/fx-degraded-notice";
 import { createClient } from "@/lib/supabase/server";
 import { getOverview } from "@/lib/overview/queries";
@@ -47,7 +48,11 @@ export default async function OverviewPage() {
     return (
       <div className="mx-auto max-w-5xl space-y-8">
         <div className="rise">
-          <PageHeader title={emptyHeading} description={t("greetingDescription")} />
+          <PageHeader
+            title={emptyHeading}
+            description={t("greetingDescription")}
+            actions={<ImportButton />}
+          />
         </div>
         <div className="rise" style={{ "--i": 1 } as React.CSSProperties}>
           <HeroCard
@@ -111,7 +116,7 @@ export default async function OverviewPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-8">
       <div className="rise">
-        <PageHeader title={heading} description={t("description")} />
+        <PageHeader title={heading} description={t("description")} actions={<ImportButton />} />
       </div>
 
       {/* Net worth hero */}

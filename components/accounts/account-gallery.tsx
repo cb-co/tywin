@@ -52,7 +52,7 @@ function clusterCards(items: AccountWithStatus[]) {
  * Replaces what used to be a plain button opening a dialog with type as just
  * another field inside it — see spec §2.
  */
-function AddAccountControl({
+export function AddAccountControl({
   currencies,
   banks,
   baseCurrency,
@@ -177,15 +177,6 @@ export function AccountGallery({
 
   return (
     <div className="space-y-10">
-      <div className="flex justify-end">
-        <AddAccountControl
-          currencies={currencies}
-          banks={banks}
-          baseCurrency={baseCurrency}
-          placeholder={t("addAccount")}
-        />
-      </div>
-
       {groups.map((group) => (
         <section key={group.key} className="space-y-4">
           <div className="flex items-baseline justify-between">

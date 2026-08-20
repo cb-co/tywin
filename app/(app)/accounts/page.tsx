@@ -1,8 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/page-header";
-import { AccountGallery } from "@/components/accounts/account-gallery";
+import { AccountGallery, AddAccountControl } from "@/components/accounts/account-gallery";
 import { CardArtBackfill } from "@/components/accounts/card-art-backfill";
-import { ImportButton } from "@/components/statements/import-button";
 import {
   getAccountsWithStatus,
   getCurrencies,
@@ -46,7 +45,16 @@ export default async function AccountsPage() {
       <PageHeader
         title={t("pageTitle")}
         description={t("pageDescription")}
-        actions={<ImportButton />}
+        actions={
+          accounts.length > 0 ? (
+            <AddAccountControl
+              currencies={currencies}
+              banks={banks}
+              baseCurrency={baseCurrency}
+              placeholder={t("addAccount")}
+            />
+          ) : undefined
+        }
       />
       <AccountGallery
         accounts={accounts}

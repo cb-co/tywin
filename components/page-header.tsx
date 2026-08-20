@@ -14,7 +14,7 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-end justify-between gap-4 border-b pb-5",
+        "flex flex-wrap items-end gap-4 border-b pb-5",
         className,
       )}
     >
@@ -26,7 +26,11 @@ export function PageHeader({
           <p className="text-sm text-muted-foreground">{description}</p>
         ) : null}
       </div>
-      {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+      {/* `ml-auto` rather than the container's `justify-between`: when the
+          title's own line runs out of room and actions wrap to a line of
+          their own, `space-between` has only one item on that line and sinks
+          it to the left. Auto margin keeps it pinned right on every line. */}
+      {actions ? <div className="ml-auto flex items-center gap-2">{actions}</div> : null}
     </div>
   );
 }
