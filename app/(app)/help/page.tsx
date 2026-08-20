@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   LineChart,
   Coins,
+  MessageCircle,
   PieChart,
   Repeat,
   Settings,
@@ -19,6 +20,7 @@ import { HelpChapter, HelpCallout } from "@/components/help/chapter";
 import { SectionNav, type HelpSection } from "@/components/help/section-nav";
 import {
   AccountsMock,
+  AskMock,
   BudgetsMock,
   InsightsMock,
   LedgerMock,
@@ -41,6 +43,7 @@ export default async function HelpPage() {
     { id: "budgets", label: t("budgetsTitle"), icon: <PieChart className={navIconClass} /> },
     { id: "subscriptions", label: t("subscriptionsTitle"), icon: <Repeat className={navIconClass} /> },
     { id: "insights", label: t("insightsTitle"), icon: <LineChart className={navIconClass} /> },
+    { id: "ask", label: t("askTitle"), icon: <MessageCircle className={navIconClass} /> },
     { id: "settings", label: t("settingsTitle"), icon: <Settings className={navIconClass} /> },
   ];
 
@@ -355,9 +358,28 @@ export default async function HelpPage() {
           </HelpChapter>
 
           <HelpChapter
+            id="ask"
+            icon={MessageCircle}
+            index={8}
+            title={t("askTitle")}
+            intro={t("askIntro")}
+          >
+            <div>
+              <p className="text-sm text-foreground">{t("askAnswers")}</p>
+              <p className="mt-3 text-sm text-foreground">{t("askReadOnly")}</p>
+              <p className="mt-3 text-sm text-foreground">{t("askLimits")}</p>
+            </div>
+            <AskMock
+              question={t("askMockQuestion")}
+              narration={t("askMockNarration")}
+              answer={t("askMockAnswer")}
+            />
+          </HelpChapter>
+
+          <HelpChapter
             id="settings"
             icon={Settings}
-            index={8}
+            index={9}
             title={t("settingsTitle")}
             intro={t("settingsIntro")}
           >

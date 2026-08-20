@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.23",
+    "@ai-sdk/react": "^4.0.73",
     "@base-ui/react": "^1.6.0",
     "@hookform/resolvers": "^5.4.0",
     "@napi-rs/canvas": "^1.0.2",

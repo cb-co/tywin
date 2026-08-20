@@ -5,6 +5,7 @@ import {
   PieChart,
   Repeat,
   LineChart,
+  MessageCircleQuestionMark,
   Settings,
   CircleHelp,
   type LucideIcon,
@@ -20,6 +21,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/budgets", key: "budgets", icon: PieChart },
   { href: "/subscriptions", key: "subscriptions", icon: Repeat },
   { href: "/insights", key: "insights", icon: LineChart },
+  { href: "/ask", key: "ask", icon: MessageCircleQuestionMark },
   { href: "/settings", key: "settings", icon: Settings },
   { href: "/help", key: "help", icon: CircleHelp },
 ];

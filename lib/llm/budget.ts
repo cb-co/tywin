@@ -49,3 +49,16 @@ export const DEFERRED_INFERENCE_BUDGET_MS = 90_000;
 export function inferenceSignal(budgetMs: number): AbortSignal {
   return AbortSignal.timeout(budgetMs);
 }
+
+/**
+ * For the one inference the user actually sits and waits for.
+ *
+ * Bounds the WHOLE multi-step loop, not one call, so three tool round-trips
+ * share it. Short on purpose: a chat that answers in eight seconds and
+ * sometimes gives up beats one that might answer in forty.
+ *
+ * This is the budget the cold-call problem documented above actually bites.
+ * 15s loses a cold call outright, which is why the /ask route warms the
+ * process on mount and on input focus rather than discovering it on send.
+ */
+export const CHAT_INFERENCE_BUDGET_MS = 15_000;

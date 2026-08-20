@@ -7,6 +7,7 @@
     "budgets": "Budgets & Goals",
     "subscriptions": "Subscriptions",
     "insights": "Insights",
+    "ask": "Ask",
     "settings": "Settings",
     "help": "Help",
     "language": "Language",
@@ -645,6 +646,18 @@
     "savingsGoalsTotal": "Total saved",
     "savingsGoalsEmpty": "No savings goals yet"
   },
+  "Ask": {
+    "title": "Ask",
+    "description": "Ask about your money in your own words.",
+    "placeholder": "How much did I spend on transportation last month?",
+    "send": "Ask",
+    "emptyTitle": "Ask anything about your own numbers",
+    "emptyHint": "Try: what went on my Amex between the 8th and the 14th?",
+    "thinking": "Working on it…",
+    "timeout": "That one is taking too long — try a narrower date range.",
+    "error": "Something went wrong. Try asking again.",
+    "readOnly": "Read-only — this can look at your data but never change it."
+  },
   "Settings": {
     "pageTitle": "Settings",
     "pageDescription": "Your base currency, categories, and theme.",
@@ -965,6 +978,15 @@
     "legendDiscretionary": "Discretionary",
     "legendSubscriptions": "Subscriptions",
     "legendOther": "Other",
+
+    "askTitle": "Ask",
+    "askIntro": "A text box that answers questions about your own numbers in plain words — English or Spanish, whichever you're using. Cashly reads your data to answer, and writes a short reply with the real figures in it.",
+    "askAnswers": "Good questions: spending by category over any date range, what went on one specific card between two dates, what a balance is now, what's due and when, how a month tracked against its budget.",
+    "askReadOnly": "It can only read. There is no question you can ask that changes a transaction, a budget, or an account — and it only ever sees your own data, never anyone else's.",
+    "askLimits": "It answers from what's recorded. If you haven't imported a statement or logged a transaction, it can't know about it — and it will say so rather than guess.",
+    "askMockQuestion": "How much did I spend on transportation last month?",
+    "askMockNarration": "Adding up transportation for July…",
+    "askMockAnswer": "RD$8,420 across 14 transactions — about 12% more than June.",
 
     "settingsTitle": "Settings",
     "settingsIntro": "The essentials, in one place.",

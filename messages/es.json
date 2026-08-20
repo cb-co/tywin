@@ -7,6 +7,7 @@
     "budgets": "Presupuestos y metas",
     "subscriptions": "Suscripciones",
     "insights": "Análisis",
+    "ask": "Preguntar",
     "settings": "Configuración",
     "help": "Ayuda",
     "language": "Idioma",
@@ -645,6 +646,18 @@
     "savingsGoalsTotal": "Total ahorrado",
     "savingsGoalsEmpty": "Aún no hay metas de ahorro"
   },
+  "Ask": {
+    "title": "Preguntar",
+    "description": "Pregunta sobre tu dinero con tus propias palabras.",
+    "placeholder": "¿Cuánto gasté en transporte el mes pasado?",
+    "send": "Preguntar",
+    "emptyTitle": "Pregunta lo que quieras sobre tus números",
+    "emptyHint": "Prueba: ¿qué se cargó a mi Amex entre el 8 y el 14?",
+    "thinking": "Trabajando en ello…",
+    "timeout": "Esto está tardando demasiado — prueba con un rango de fechas más corto.",
+    "error": "Algo salió mal. Intenta preguntar de nuevo.",
+    "readOnly": "Solo lectura — puede ver tus datos, nunca cambiarlos."
+  },
   "Settings": {
     "pageTitle": "Configuración",
     "pageDescription": "Tu moneda base, categorías y tema.",
@@ -965,6 +978,15 @@
     "legendDiscretionary": "Discrecional",
     "legendSubscriptions": "Suscripciones",
     "legendOther": "Otros",
+
+    "askTitle": "Preguntar",
+    "askIntro": "Un cuadro de texto que responde preguntas sobre tus propios números en lenguaje natural — en inglés o español, el que estés usando. Cashly lee tus datos para responder y escribe una respuesta corta con las cifras reales.",
+    "askAnswers": "Buenas preguntas: gastos por categoría en cualquier rango de fechas, qué se cargó a una tarjeta específica entre dos fechas, cuál es un saldo ahora, qué vence y cuándo, cómo fue un mes frente a su presupuesto.",
+    "askReadOnly": "Solo puede leer. No hay pregunta que cambie una transacción, un presupuesto o una cuenta — y solo ve tus datos, nunca los de nadie más.",
+    "askLimits": "Responde con lo que está registrado. Si no has importado un estado de cuenta o registrado una transacción, no puede saberlo — y lo dirá en vez de adivinar.",
+    "askMockQuestion": "¿Cuánto gasté en transporte el mes pasado?",
+    "askMockNarration": "Sumando transporte de julio…",
+    "askMockAnswer": "RD$8,420 en 14 transacciones — cerca de 12% más que junio.",
 
     "settingsTitle": "Configuración",
     "settingsIntro": "Lo esencial, en un solo lugar.",

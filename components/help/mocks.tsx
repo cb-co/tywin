@@ -618,6 +618,36 @@ export function InsightsMock({
   );
 }
 
+export function AskMock({
+  question,
+  narration,
+  answer,
+}: {
+  question: string;
+  narration: string;
+  answer: string;
+}) {
+  return (
+    <MockPanel>
+      <div className="space-y-3">
+        <div className="flex justify-end">
+          <div className="max-w-xs rounded-2xl bg-primary px-4 py-2.5">
+            <p className="text-sm text-primary-foreground">{question}</p>
+          </div>
+        </div>
+        <div className="flex justify-start">
+          <p className="text-xs text-muted-foreground">{narration}</p>
+        </div>
+        <div className="flex justify-start">
+          <div className="max-w-xs rounded-2xl border bg-background px-4 py-2.5">
+            <p className="text-sm text-foreground">{answer}</p>
+          </div>
+        </div>
+      </div>
+    </MockPanel>
+  );
+}
+
 export function SettingsMock({
   currencyLabel,
   currencyValue,
