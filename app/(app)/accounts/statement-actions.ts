@@ -12,7 +12,7 @@ import { extractWithLLM, toParsedStatement } from "@/lib/statements/llm/extract"
 import { validateChecksums } from "@/lib/statements/validate";
 import { centsToDecimal } from "@/lib/statements/money";
 import { MAX_STATEMENT_BYTES } from "@/lib/statements/limits";
-import { suggestAccountId, type CardAccountOption } from "@/lib/statements/mapping";
+import { suggestAccountMappings, type CardAccountOption } from "@/lib/statements/mapping";
 import { cardBackfillFromSection } from "@/lib/statements/backfill";
 import { resolveCategoryId, type CategoryRuleRow } from "@/lib/statements/categorize";
 import { baseRate, getExchangeRates } from "@/lib/fx";
@@ -284,6 +284,8 @@ export async function parseStatement(formData: FormData): Promise<StatementPrevi
   if ("error" in accountCtx) return { error: accountCtx.error };
   const { account, options, saved } = accountCtx;
 
+  const suggestions = suggestAccountMappings(parsed.sections, saved, options);
+
   const sections: SectionPreview[] = parsed.sections.map((s) => {
     const mapped =
       saved.get(s.sectionKey) ??
@@ -300,7 +302,7 @@ export async function parseStatement(formData: FormData): Promise<StatementPrevi
       paymentCount: s.lines.filter((l) => l.kind === "payment").length,
       creditLimit: s.creditLimitCents === null ? null : centsToDecimal(s.creditLimitCents),
       mappedAccountId: mapped,
-      suggestedAccountId: mapped ?? suggestAccountId(s, options),
+      suggestedAccountId: mapped ?? suggestions.get(s.sectionKey) ?? null,
     };
   });
 
