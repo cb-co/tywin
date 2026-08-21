@@ -416,14 +416,24 @@ change. It lives beside the migration so the two move together.
 
 ## Model and budget
 
-`gemini-3.6-flash`, behind its own `GOOGLE_ASK_MODEL` env var rather than the
-shared `GOOGLE_MODEL`. The other four call sites do far easier work and should
-not be dragged up in cost by this one. `gemini-3.5-flash` is the fallback if
-3.6 is not enabled on the key — a typed model ID means the SDK knows it, not
-that the project has access, so confirm with one call first.
+Behind its own `GOOGLE_ASK_MODEL` env var rather than the shared `GOOGLE_MODEL`,
+which is the part of this that has held up: the other four call sites do far
+easier work, and this one needed to move independently of them almost
+immediately.
 
-Flash rather than Pro: better SQL is not worth a single call that can spend the
-entire budget on its own. This is an interactive box.
+Designed around `gemini-3.6-flash`. **Running on `gemini-3.5-flash-lite`**,
+because 3.6's quota does not survive an interactive box that can spend seven
+calls on one question — a feature that stops answering by lunchtime is worse than
+one that writes clumsier SQL. A typed model ID means the SDK knows the name, not
+that the project has room for it; that distinction cost a day.
+
+The cost of lite is paid in *wasted queries*, not wrong answers — it explores
+more before it commits — which is what `calls_left` and the six-query budget
+absorb. Vague answers, or a terminal trace showing it flailing over correct rows,
+are the signal to put 3.6 back; the env var does that without a deploy.
+
+Flash rather than Pro either way: better SQL is not worth a single call that can
+spend the entire budget on its own. This is an interactive box.
 
 ```ts
 // lib/llm/budget.ts

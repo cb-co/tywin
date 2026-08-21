@@ -20,8 +20,24 @@ import { takeAskToken } from "@/lib/ask/rate-limit";
    room for the auth and profile reads in front of it. */
 export const maxDuration = 120;
 
+/**
+ * The model that answers, and the one knob worth turning here.
+ *
+ * `gemini-3.5-flash-lite` for now — the same model the other four call sites
+ * use, and not the choice this feature was designed around. It runs on
+ * `gemini-3.6-flash` where quota allows; that quota is tight enough on this key
+ * that an interactive box burning up to seven calls a question exhausts it, and
+ * a feature that stops answering by lunchtime is worse than one that writes
+ * clumsier SQL.
+ *
+ * Expect clumsier SQL, and expect it to show up as wasted queries rather than
+ * wrong answers: lite explores more, which is what `calls_left` and the six-query
+ * budget in lib/ask/tools.ts exist to absorb. If answers get vague or the
+ * terminal trace shows it flailing over correct rows, this is the first thing to
+ * put back — `GOOGLE_ASK_MODEL` overrides it without a deploy.
+ */
 function askModel() {
-  return google(process.env.GOOGLE_ASK_MODEL ?? "gemini-3.6-flash");
+  return google(process.env.GOOGLE_ASK_MODEL ?? "gemini-3.5-flash-lite");
 }
 
 /**
