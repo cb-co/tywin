@@ -135,6 +135,27 @@ Savings goals, subscriptions as their own view (the name rides along on
 see what the thing actually cannot answer. Guessing now is how a semantic layer
 becomes six views nobody queries.
 
+### Known narrowness in the shipped views
+
+Recorded rather than fixed. None of these produces a wrong answer — each is a
+question the feature answers less well than it could — and every one costs a DDL
+push against the live project, so they wait for evidence that anyone asks.
+
+- **`q_budgets` is narrower than `category_usage`.** The screen starts from
+  `categories` and returns every category with a `status` enum; the view starts
+  from `category_budgets`, so a category with no budget set has no row and there
+  is no `status`. The document says so, and per-category spend without a budget
+  is a `q_transactions` question anyway. `status` is derivable from `budget` and
+  `used`.
+- **`q_budgets` re-derives the budget rule** in its lateral join instead of
+  summing `budget_spend` off `q_transactions`. That is a third copy of the one
+  rule this whole design exists to keep in one place, and it will drift. The fix
+  is mechanical; it needs a migration.
+- **`q_card_statements` omits `section_key` and `total_balance`.** One row per
+  period per card holds today because the importer refuses two sections against
+  one account, and `statement_balance` is the figure a person means. A cuotas
+  question wants `total_balance`.
+
 ## Execution
 
 One function. `security invoker`, `set search_path = ''`, and — critically —
@@ -165,6 +186,28 @@ The relation clause does double duty. It is a security control, but mostly it
 is the thing that stops the model quietly falling back to `transactions` and
 summing the wrong column. The function clause is purely a security control, and
 layer 2 explains why it exists.
+
+Three shapes are refused outright rather than parsed: double-quoted identifiers
+(`"delete_own_account"()` hides a call from the allowlist, since the quote sits
+between the name and the paren), dollar quoting, and `E'...'` literals (the one
+dialect where a backslash can hide a closing quote from the literal scanner).
+Nothing a money question needs is written any of those ways.
+
+Layer 1 also **rewrites** rather than only judging. Every whitelisted view is
+schema-qualified to `public.q_*` on the way out, outside string literals, and
+the statement that goes to the database is the rewritten one. Without that step
+nothing works at all: the executor sets `search_path = ''`, so the model's
+natural `from q_transactions` — which is what the schema document teaches —
+resolves to nothing and every question in the product dies on `relation
+"q_transactions" does not exist`.
+
+The useful consequence is that the empty search_path becomes a control in its
+own right. A relation the rewrite does not recognise stays bare and resolves to
+nothing, so a base table that slips past the relation check — the second item of
+a comma join, `from q_transactions t, accounts a`, which is only ever inspected
+after `from` and `join` — is refused by the engine instead of read and quietly
+summed. The regex missing something now costs a rejected query rather than a
+wrong number.
 
 **2. `stable` on the function — a real guard, and narrower than it looks.**
 
@@ -198,6 +241,12 @@ costs a timeout, not the request. The row cap also protects the context window:
 ten thousand rows coming back is a worse problem than a slow query. When the
 cap truncates, the tool result says so, so the model narrows or aggregates
 rather than reporting a total it only partly saw.
+
+Rows are the wrong unit for the context problem, though, so the tool trims the
+result a second time by **bytes** (48KB) before it reaches the model. 500 rows
+of a thirty-column view is a six-figure token count: it would spend the
+inference budget shipping a table nobody asked for, and push the schema document
+out of the model's attention on the step that needs it most.
 
 **4. RLS.** `security invoker` means it runs as `authenticated` under the
 caller's `auth.uid()`, the same mechanism every screen already trusts. No
@@ -282,6 +331,26 @@ false when written: a prompt-injected `select public.delete_own_account()` would
 have gone through. The risk is acceptable now because a specific control makes
 it so, not because the path was ever inherently safe.
 
+### Cost and abuse
+
+Every other inference in this app is triggered by writing something down — a
+card, a subscription, a saved transaction — so using the product paces the
+spend. A text box has no such shape: holding Enter is an ordinary thing for a
+person to do, and the four-step loop is the most expensive call in the codebase.
+
+So the route validates before it spends: at most 24 messages, 4KB each, parsed
+rather than trusted (the transcript is replayed into the prompt, so an
+unvalidated `messages` array is a thousand forged turns transcribed into the
+model's context). And it rate-limits per user, 20 requests per five minutes,
+counting the warming calls.
+
+That limiter is in memory, per instance, on purpose. A counter table would put
+an INSERT on the one path whose entire promise is that it cannot write. Under
+Fluid Compute one instance serves many requests, so it catches the case it aims
+at — one person hammering one box — and undercounts across a fleet.
+Undercounting a bill is acceptable; writing to the database here is not. A
+proper limiter belongs in front of the app, not inside the guarantee.
+
 ## The loop
 
 ```ts
@@ -296,8 +365,14 @@ askQuery: tool({
 })
 ```
 
-`streamText` with `stopWhen: stepCountIs(3)`. The model queries, sees real
-rows, refines if the shape surprises it, then answers.
+`streamText` with `stopWhen: stepCountIs(4)`. Three of those steps are the
+queries the prompt promises; the fourth is the turn the model needs to WRITE the
+answer once it has rows. At three, a question that used all three queries ended
+the stream on a tool result with no prose after it, and the page rendered an
+empty card — the step budget has to be one larger than the query budget, or the
+last query is wasted. The UI names that state anyway (`Ask.noAnswer`), because
+a loop can still run out on a bad day and an empty card reads as the app losing
+the answer.
 
 `purpose` costs almost nothing and pays for itself twice: it sharpens the SQL,
 and it is the copy the loading state renders (see below). It is not a debug
@@ -361,6 +436,13 @@ call then happens while the user is still typing, and 15s is comfortable for
 the warm call that follows. Without the warming fetch, expect the first
 question after a quiet period to time out.
 
+Two details decide whether that works, and the first draft got both wrong. The
+warm handler must live in **the same route file** as the question — a `GET` on
+`/api/ask`, not a neighbouring `/api/ask/warm` — because each route handler is
+its own function instance, so warming the neighbour warms a process that will
+never serve the question. And it must make a **real inference** (one token out),
+not a bare `fetch` to the host: what is slow is the SDK's first call, not DNS.
+
 ## Loading state
 
 Because the model supplies `purpose` with every query, there is no generic
@@ -379,10 +461,18 @@ try a narrower date range" — which is both true and actionable.
 ## Surface
 
 - `app/api/ask/route.ts` — the app's first route handler, since streaming needs
-  one.
+  one. `POST` answers; `GET` warms the same instance.
 - `app/(app)/ask/page.tsx` — transcript and input, following the existing
   section pattern.
-- Nav entry alongside the other sections.
+- Nav entry alongside the other sections, **and one in the mobile header**. The
+  bottom bar is a deliberate five-cell layout that Ask does not displace, and
+  the sidebar carrying it is `hidden md:flex` — so without a header entry the
+  feature is reachable on a phone only by typing the URL.
+- `outputFileTracingIncludes` for `/api/ask` in `next.config.ts`. The schema
+  document is read at request time through a runtime path, which the file tracer
+  cannot see, so untraced it is absent from the deployed function and the first
+  question throws ENOENT — while passing every test locally, where the repo is
+  the filesystem. Same class of problem as pdfjs's `createRequire`, same fix.
 
 ## Testing
 
@@ -395,10 +485,18 @@ where the tests go.
   accepted. This file is the security boundary in test form.
 - **Migration-level** — the `stable` guarantee proven by a query that tries to
   write and is refused.
-- **`lib/ask/schema-doc.test.ts`** — every column named in the schema document
-  exists in the generated `lib/supabase/types.ts`. Cheap, and it catches the
-  drift that would otherwise show up as the model hallucinating a column that
-  used to be real.
+- **`lib/ask/schema-doc.test.ts`** — drift in **both** directions against the
+  generated `lib/supabase/types.ts`: no column the document invents, and no
+  column the views have that the document forgot (`user_id` excepted, since the
+  document's first instruction is never to mention it). Both failures are
+  silent and both read as the model being stupid — an invented column comes back
+  as `column "x" does not exist` after the model confidently selected it, and a
+  forgotten one is a question the feature quietly cannot answer. The second
+  direction is also the forcing function: change a view, and the suite tells you
+  the prose is now behind.
+- **`lib/ask/tools.test.ts`** and **`lib/ask/rate-limit.test.ts`** — the byte cap
+  trims and says so; the limiter counts per person and forgets across the
+  window.
 - **View semantics** — `budget_spend` reproduces `spend_distribution` for a
   given month, and `cash_out` reproduces `monthly_cashflow`. If the views
   disagree with the screens, the feature is wrong no matter what the model does.
