@@ -13,7 +13,7 @@ describe("guardSql — accepts", () => {
     const r = guardSql("select sum(budget_spend) from q_transactions");
     expect(r).toEqual({
       ok: true,
-      sql: "select sum(budget_spend) from q_transactions",
+      sql: "select sum(budget_spend) from public.q_transactions",
     });
   });
 
@@ -42,12 +42,12 @@ describe("guardSql — accepts", () => {
      burn a whole step of the 3-step budget on a formatting nit. */
   it("a trailing semicolon, and strips it", () => {
     const r = guardSql("select 1 from q_budgets;  ");
-    expect(r).toEqual({ ok: true, sql: "select 1 from q_budgets" });
+    expect(r).toEqual({ ok: true, sql: "select 1 from public.q_budgets" });
   });
 
   it("strips comments rather than rejecting them", () => {
     const r = guardSql("select 1 from q_budgets -- monthly totals");
-    expect(r).toEqual({ ok: true, sql: "select 1 from q_budgets" });
+    expect(r).toEqual({ ok: true, sql: "select 1 from public.q_budgets" });
   });
 });
 
@@ -195,5 +195,84 @@ describe("guardSql — function calls", () => {
     const sql =
       "select * from (select category, sum(budget_spend) s from q_transactions where type in ('expense','payment') group by category) x where s > 100";
     expect(guardSql(sql).ok).toBe(true);
+  });
+});
+
+/* `ask_query` runs with `search_path = ''`, so the statement this function
+   returns is the only thing that can resolve a relation at all. These are the
+   tests for that rewrite; without it every question in the product dies on
+   `relation "q_transactions" does not exist`. */
+describe("guardSql — qualifies relations for an empty search_path", () => {
+  it("qualifies a bare view name", () => {
+    const r = guardSql("select count(*) from q_accounts");
+    expect(r).toEqual({ ok: true, sql: "select count(*) from public.q_accounts" });
+  });
+
+  it("leaves an already-qualified name alone", () => {
+    const r = guardSql("select 1 from public.q_accounts");
+    expect(r).toEqual({ ok: true, sql: "select 1 from public.q_accounts" });
+  });
+
+  it("qualifies every relation in a join", () => {
+    const r = guardSql(
+      "select a.name from q_transactions t join q_accounts a on a.id = t.account_id",
+    );
+    expect(r.ok && r.sql).toBe(
+      "select a.name from public.q_transactions t join public.q_accounts a on a.id = t.account_id",
+    );
+  });
+
+  it("qualifies a name inside a CTE body", () => {
+    const r = guardSql("with x as (select 1 from q_budgets) select * from x");
+    expect(r.ok && r.sql).toBe(
+      "with x as (select 1 from public.q_budgets) select * from x",
+    );
+  });
+
+  /* Rewriting inside a literal would change what the query asks rather than
+     where it reads from — a wrong answer instead of a rejected one. */
+  it("does not touch a view name inside a string literal", () => {
+    const r = guardSql(
+      "select 1 from q_budgets where category = 'q_accounts and q_budgets'",
+    );
+    expect(r.ok && r.sql).toBe(
+      "select 1 from public.q_budgets where category = 'q_accounts and q_budgets'",
+    );
+  });
+
+  it("handles a doubled quote inside a literal", () => {
+    const r = guardSql("select 1 from q_budgets where category = 'it''s q_accounts'");
+    expect(r.ok && r.sql).toBe(
+      "select 1 from public.q_budgets where category = 'it''s q_accounts'",
+    );
+  });
+
+  /* RELATION_RE only inspects what follows `from`/`join`, so the second item of
+     a comma join is never checked. It does not need to be: it stays bare, and
+     an empty search_path cannot resolve it. The database refuses the query
+     instead of quietly summing the wrong column off a base table. */
+  it("leaves a comma-joined base table unqualified, so the database refuses it", () => {
+    const r = guardSql("select 1 from q_transactions t, accounts a");
+    expect(r.ok && r.sql).toBe("select 1 from public.q_transactions t, accounts a");
+  });
+});
+
+describe("guardSql — rejects string syntax it does not parse", () => {
+  it("dollar quoting", () => {
+    expect(reject("select $$q_transactions$$ from q_transactions")).toMatch(
+      /dollar quoting/i,
+    );
+  });
+
+  /* Backslash escapes only exist in E-strings, and they are what would let a
+     closing quote hide from scanLiterals. */
+  it("an escaped string literal", () => {
+    expect(reject("select 1 from q_budgets where category = E'\\''")).toMatch(
+      /escaped string/i,
+    );
+  });
+
+  it("but accepts a backslash in an ordinary literal", () => {
+    expect(guardSql("select 1 from q_budgets where category = 'a\\b'").ok).toBe(true);
   });
 });

@@ -131,6 +131,95 @@ function stripComments(sql: string): string {
 }
 
 /**
+ * Splits a statement on single-quoted literals: even indices are code, odd
+ * indices are literals (quotes included).
+ *
+ * Every rewrite below has to know the difference. Qualifying a relation name
+ * inside `where description ilike '%q_accounts%'` would silently change what
+ * the query asks, which is a wrong answer rather than a rejected one — the
+ * failure this whole feature is built to avoid.
+ *
+ * `eString` reports an `E'...'` prefix anywhere outside a literal. Postgres
+ * treats backslashes as escapes only in those, which means `E'\''` hides a
+ * closing quote from this scanner. Rejecting the prefix is cheaper than
+ * teaching the scanner two quoting dialects, and nothing the model needs to
+ * ask about money is written that way.
+ */
+function scanLiterals(sql: string): { parts: string[]; eString: boolean } {
+  const parts: string[] = [];
+  let buf = "";
+  let eString = false;
+  let i = 0;
+
+  while (i < sql.length) {
+    if (sql[i] !== "'") {
+      buf += sql[i];
+      i++;
+      continue;
+    }
+
+    /* A standalone `e` immediately before the quote — not the tail of an
+       identifier like `cafe`, and not inside a literal, since this branch only
+       runs on code segments. */
+    if (/(^|[^\w$])[eE]$/.test(buf)) eString = true;
+
+    parts.push(buf);
+    buf = "";
+
+    let literal = "'";
+    i++;
+    while (i < sql.length) {
+      if (sql[i] === "'") {
+        // Doubled quote: an escaped quote, so the literal continues.
+        if (sql[i + 1] === "'") {
+          literal += "''";
+          i += 2;
+          continue;
+        }
+        literal += "'";
+        i++;
+        break;
+      }
+      literal += sql[i];
+      i++;
+    }
+    parts.push(literal);
+  }
+
+  parts.push(buf);
+  return { parts, eString };
+}
+
+/** A whitelisted view name that is not already schema-qualified. */
+const BARE_RELATION_RE = new RegExp(
+  `(?<![\\w$.])(${ALLOWED_RELATIONS.join("|")})\\b`,
+  "gi",
+);
+
+/**
+ * Rewrites every bare `q_*` to `public.q_*`.
+ *
+ * `ask_query` runs with `search_path = ''`, so an unqualified relation resolves
+ * to nothing at all. Without this the model's natural `from q_transactions` —
+ * which is what `schema-doc.md` teaches and what every test here asserts — dies
+ * with `relation "q_transactions" does not exist`, burning a step of a
+ * three-step budget on every single question.
+ *
+ * Doing it here rather than asking the model to qualify: a prompt instruction is
+ * followed most of the time, and the failure is invisible when it is not. This
+ * is also what turns the empty search_path into a second control — a relation
+ * this function does not recognise stays bare, so the database refuses it
+ * instead of reading it. A base table that slips past RELATION_RE (comma-joined
+ * `from q_transactions t, accounts a`, say) is unresolvable rather than
+ * silently summed.
+ */
+function qualifyRelations(parts: string[]): string {
+  return parts
+    .map((part, i) => (i % 2 === 1 ? part : part.replace(BARE_RELATION_RE, "public.$1")))
+    .join("");
+}
+
+/**
  * Decides whether one model-written string may be sent to `ask_query`.
  *
  * The app-side half of a two-layer control. The database half — `stable`, the
@@ -139,6 +228,10 @@ function stripComments(sql: string): string {
  * appears: `stable` stops DML, not a SELECT that calls something volatile. The
  * function allowlist above is what closes that, so treat it as load-bearing
  * rather than as belt-and-braces. See the spec's Execution section.
+ *
+ * On success `sql` is the statement to send: comments stripped, trailing
+ * semicolon removed, and every whitelisted view schema-qualified. Never send
+ * the caller's original string.
  */
 export function guardSql(input: string): GuardResult {
   const sql = stripComments(input ?? "").replace(/;+\s*$/, "").trim();
@@ -168,6 +261,19 @@ export function guardSql(input: string): GuardResult {
      bypass it closes. */
   if (sql.includes('"')) {
     return { ok: false, reason: "Double-quoted identifiers are not allowed." };
+  }
+
+  /* Dollar quoting is a second string syntax this file does not parse, and the
+     only reason to reach for it here is to hide something from the checks that
+     do. Nothing legitimate needs it: every literal in a money question fits in
+     single quotes. */
+  if (sql.includes("$")) {
+    return { ok: false, reason: "Dollar quoting is not allowed." };
+  }
+
+  const scan = scanLiterals(sql);
+  if (scan.eString) {
+    return { ok: false, reason: "Escaped string literals (E'...') are not allowed." };
   }
 
   const lower = sql.toLowerCase();
@@ -206,5 +312,5 @@ export function guardSql(input: string): GuardResult {
     }
   }
 
-  return { ok: true, sql };
+  return { ok: true, sql: qualifyRelations(scan.parts) };
 }
