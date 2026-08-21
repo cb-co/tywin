@@ -7,7 +7,7 @@
     "budgets": "Budgets & Goals",
     "subscriptions": "Subscriptions",
     "insights": "Insights",
-    "ask": "Ask",
+    "ask": "Ask Cashly",
     "settings": "Settings",
     "help": "Help",
     "language": "Language",
@@ -653,7 +653,7 @@
     "savingsGoalsEmpty": "No savings goals yet"
   },
   "Ask": {
-    "title": "Ask",
+    "title": "Ask Cashly",
     "description": "Ask about your money in your own words.",
     "placeholder": "How much did I spend on transportation last month?",
     "send": "Ask",
@@ -988,7 +988,7 @@
     "legendSubscriptions": "Subscriptions",
     "legendOther": "Other",
 
-    "askTitle": "Ask",
+    "askTitle": "Ask Cashly",
     "askIntro": "A text box that answers questions about your own numbers in plain words — English or Spanish, whichever you're using. Cashly reads your data to answer, and writes a short reply with the real figures in it.",
     "askAnswers": "Good questions: spending by category over any date range, what went on one specific card between two dates, what a balance is now, what's due and when, how a month tracked against its budget.",
     "askReadOnly": "It can only read. There is no question you can ask that changes a transaction, a budget, or an account — and it only ever sees your own data, never anyone else's.",

@@ -5,7 +5,7 @@ import {
   PieChart,
   Repeat,
   LineChart,
-  MessageCircleQuestionMark,
+  Sparkles,
   Settings,
   CircleHelp,
   type LucideIcon,
@@ -21,7 +21,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/budgets", key: "budgets", icon: PieChart },
   { href: "/subscriptions", key: "subscriptions", icon: Repeat },
   { href: "/insights", key: "insights", icon: LineChart },
-  { href: "/ask", key: "ask", icon: MessageCircleQuestionMark },
+  { href: "/ask", key: "ask", icon: Sparkles },
   { href: "/settings", key: "settings", icon: Settings },
   { href: "/help", key: "help", icon: CircleHelp },
 ];
@@ -66,12 +66,19 @@ export const SETTINGS_ITEM: NavItem = NAV_ITEMS.find(
 )!;
 
 /**
- * Ask, for the mobile header.
+ * Ask Cashly, for the mobile header.
  *
  * The bottom bar is a deliberate five-cell layout (see above) and Ask does not
- * displace anything in it. Without an entry here, though, the feature would be
- * reachable on a phone only by typing the URL — the sidebar that carries it is
- * `hidden md:flex`. It sits beside Settings for the same reason Settings does:
- * that strip is the only persistent chrome a phone gets.
+ * displace anything in it: a sixth cell takes every other tab from 66px to 55px
+ * at 360px, and the Spanish budgets label already truncates at five. The primary
+ * mobile entry is the box on Overview; this is the one that works from any other
+ * screen, beside Settings because that strip is the only persistent chrome a
+ * phone gets.
+ *
+ * `Sparkles`, not a question mark. The rail already ends in Help's CircleHelp,
+ * and two adjacent question marks meaning two different things — ask about your
+ * money, versus learn how the app works — is the confusion the label "Ask
+ * Cashly" also exists to settle. Sparkles is the mark the recommendation card
+ * uses, so both surfaces that read your numbers share it.
  */
 export const ASK_ITEM: NavItem = NAV_ITEMS.find((i) => i.href === "/ask")!;

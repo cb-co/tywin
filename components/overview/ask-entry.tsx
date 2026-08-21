@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MessageCircleQuestionMark, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,11 @@ export function AskEntry() {
         }}
         className="flex items-center gap-3"
       >
-        <ColorTile color="var(--brand)" icon={MessageCircleQuestionMark} />
+        {/* The same mark the sidebar and the coaching card use: one feature,
+            one icon, and the echo with the card above is the point — those two
+            are siblings. The tint differs, so they read as a family rather
+            than as the same card twice. */}
+        <ColorTile color="var(--brand)" icon={Sparkles} />
 
         <label className="sr-only" htmlFor="overview-ask">
           {t("askLabel")}
