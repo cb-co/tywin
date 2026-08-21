@@ -989,7 +989,7 @@
     "legendOther": "Otros",
 
     "askTitle": "Pregunta a Cashly",
-    "askIntro": "Un cuadro de texto que responde preguntas sobre tus propios números en lenguaje natural — en inglés o español, el que estés usando. Cashly lee tus datos para responder y escribe una respuesta corta con las cifras reales.",
+    "askIntro": "Un cuadro de texto que responde preguntas sobre tus propios números en lenguaje natural — en inglés o español, el que estés usando. Cashly lee tus datos para responder y te devuelve las cifras reales — una frase cuando es un solo número, una tabla cuando preguntaste por varios movimientos.",
     "askAnswers": "Buenas preguntas: gastos por categoría en cualquier rango de fechas, qué se cargó a una tarjeta específica entre dos fechas, cuál es un saldo ahora, qué vence y cuándo, cómo fue un mes frente a su presupuesto.",
     "askReadOnly": "Solo puede leer. No hay pregunta que cambie una transacción, un presupuesto o una cuenta — y solo ve tus datos, nunca los de nadie más.",
     "askLimits": "Responde con lo que está registrado. Si no has importado un estado de cuenta o registrado una transacción, no puede saberlo — y lo dirá en vez de adivinar.",

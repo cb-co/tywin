@@ -5,6 +5,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
+import { AskAnswer } from "@/components/ask/ask-answer";
 
 /**
  * One transport, built once.
@@ -71,7 +72,6 @@ export function AskChat({ initialQuestion }: { initialQuestion: string | null })
      ever optional-chained here, so a partial or absent value just falls
      through to the generic line; no state check is required for safety. */
   const narration = (() => {
-    console.log("messages", messages);
     const last = messages.at(-1);
     if (!busy || last?.role !== "assistant") return busy ? t("thinking") : null;
     const calls = last.parts.filter((p) => p.type === "tool-askQuery");
@@ -93,6 +93,12 @@ export function AskChat({ initialQuestion }: { initialQuestion: string | null })
           const text = m.parts.filter((p) => p.type === "text");
           const wordless = m.role === "assistant" && text.length === 0;
 
+          /* Joined, not rendered part by part. A model that emits its answer as
+             two text parts splits a list down the middle, and each half parsed
+             on its own loses the numbering and the table header. Blank line
+             between them because that is the block separator in markdown. */
+          const body = text.map((p) => ("text" in p ? p.text : "")).join("\n\n");
+
           /* While the model is still querying, its message exists but holds
              only tool parts. There is nothing to put in a bubble yet, and an
              empty one reads as a broken reply — the narration line below is
@@ -104,19 +110,20 @@ export function AskChat({ initialQuestion }: { initialQuestion: string | null })
           const silent = wordless && !busy;
 
           return (
-            <div
-              key={m.id}
-              className={m.role === "user" ? "self-end max-w-[85%]" : "max-w-[85%]"}
-            >
+            /* A question is short and reads as an aside, so it stays narrow and
+               right-aligned. An answer can be a month of transactions, and
+               capping it at the same width wrapped merchant names for no
+               reason — it gets the whole column. */
+            <div key={m.id} className={m.role === "user" ? "max-w-[85%] self-end" : "w-full"}>
               <Card className={m.role === "user" ? "bg-muted p-3" : "p-4"}>
                 {silent ? (
                   <p className="text-sm text-muted-foreground">{t("noAnswer")}</p>
+                ) : m.role === "user" ? (
+                  /* Their own words, shown as typed. Markdown here would let a
+                     stray asterisk in a question restyle it. */
+                  <p className="whitespace-pre-wrap text-sm">{body}</p>
                 ) : (
-                  text.map((p, i) => (
-                    <p key={i} className="whitespace-pre-wrap text-sm">
-                      {"text" in p ? p.text : null}
-                    </p>
-                  ))
+                  <AskAnswer text={body} />
                 )}
               </Card>
             </div>
