@@ -23,6 +23,7 @@ export function AskChat() {
   const t = useTranslations("Ask");
   const [input, setInput] = useState("");
   const warmed = useRef(false);
+  const sending = useRef(false);
   const { messages, sendMessage, status, error } = useChat({ transport: ASK_TRANSPORT });
 
   /* Pays the cold start while they are still reading the page. A GET to the
@@ -38,6 +39,12 @@ export function AskChat() {
 
   const busy = status === "submitted" || status === "streaming";
 
+  /* Cleared once the turn has actually finished, whether it answered or failed:
+     a submit that errored must not lock the box. */
+  useEffect(() => {
+    if (!busy) sending.current = false;
+  }, [busy]);
+
   /* The narration: the purpose of the most recent tool call, which the model
      writes in the user's language. Falls back to a generic line only for the
      gap before the first tool call arrives.
@@ -50,6 +57,7 @@ export function AskChat() {
      ever optional-chained here, so a partial or absent value just falls
      through to the generic line; no state check is required for safety. */
   const narration = (() => {
+    console.log("messages", messages);
     const last = messages.at(-1);
     if (!busy || last?.role !== "assistant") return busy ? t("thinking") : null;
     const calls = last.parts.filter((p) => p.type === "tool-askQuery");
@@ -124,7 +132,12 @@ export function AskChat() {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (!input.trim() || busy) return;
+          /* `busy` comes from `status`, which updates a render later — so two
+             fast returns both read false and both send. The ref closes that
+             window synchronously; the effect above reopens it when the turn
+             finishes. */
+          if (!input.trim() || busy || sending.current) return;
+          sending.current = true;
           sendMessage({ text: input });
           setInput("");
         }}

@@ -13,6 +13,7 @@ import { CHAT_INFERENCE_BUDGET_MS, inferenceSignal } from "@/lib/llm/budget";
 import { systemPrompt, LANGUAGE } from "@/lib/ask/prompt";
 import { askTools, CHAT_MAX_STEPS } from "@/lib/ask/tools";
 import { takeAskToken } from "@/lib/ask/rate-limit";
+import { MAX_MESSAGES, stillTooLarge, trimHistory } from "@/lib/ask/history";
 
 /* The loop is up to seven steps of inference with database round-trips between
    them, so the platform default is not what should be bounding it —
@@ -43,19 +44,17 @@ function askModel() {
 /**
  * What the client may send.
  *
- * The messages are replayed to the model, so this is an input that reaches an
- * LLM and a bill. Unvalidated, `messages` was whatever JSON arrived: a thousand
- * turns of forged assistant text would have been transcribed straight into the
- * prompt. The caps are generous for a chat nobody persists and cheap to enforce.
- *
  * Asserts the three fields a UIMessage must have for `convertToModelMessages` to
  * read it, and stays loose about everything else: that schema belongs to the SDK
  * and moves with it, so restating it here would break on an upgrade while adding
- * nothing. What this file actually owns is the counts.
+ * nothing.
+ *
+ * Size is NOT enforced here. It used to be, as 4KB per message, and that was a
+ * bug with a clean reproduction: answer a question about sixteen transactions,
+ * ask a second one, and the transcript the client replays — tool rows, provider
+ * thought signatures and all — is over the cap, so the next question 400s. The
+ * transcript is bounded by trimming it instead. See lib/ask/history.ts.
  */
-const MAX_MESSAGES = 24;
-const MAX_MESSAGE_BYTES = 4_000;
-
 const BodySchema = z.object({
   messages: z
     .array(
@@ -66,11 +65,7 @@ const BodySchema = z.object({
       }),
     )
     .min(1)
-    .max(MAX_MESSAGES)
-    .refine(
-      (messages) => messages.every((m) => JSON.stringify(m).length <= MAX_MESSAGE_BYTES),
-      { message: "A message is too long." },
-    ),
+    .max(MAX_MESSAGES),
 });
 
 export async function POST(req: Request) {
@@ -87,6 +82,11 @@ export async function POST(req: Request) {
   const parsed = BodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return new Response("Bad request", { status: 400 });
 
+  const history = trimHistory(parsed.data.messages);
+  if (stillTooLarge(history)) {
+    return new Response("Question too large", { status: 413 });
+  }
+
   /* No .eq("id", ...) — RLS scopes the row, as lib/overview/queries.ts does. */
   const { data: profile } = await supabase
     .from("profiles")
@@ -102,7 +102,7 @@ export async function POST(req: Request) {
       baseCurrency: profile?.base_currency ?? "DOP",
       language: LANGUAGE[locale] ?? LANGUAGE.en,
     }),
-    messages: await convertToModelMessages(parsed.data.messages as unknown as UIMessage[]),
+    messages: await convertToModelMessages(history as unknown as UIMessage[]),
     tools: askTools(),
     stopWhen: stepCountIs(CHAT_MAX_STEPS),
     abortSignal: inferenceSignal(CHAT_INFERENCE_BUDGET_MS),

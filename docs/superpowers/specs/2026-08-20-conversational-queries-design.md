@@ -339,11 +339,25 @@ spend. A text box has no such shape: holding Enter is an ordinary thing for a
 person to do, and the loop — up to seven inference turns — is the most expensive
 call in the codebase.
 
-So the route validates before it spends: at most 24 messages, 4KB each, parsed
-rather than trusted (the transcript is replayed into the prompt, so an
-unvalidated `messages` array is a thousand forged turns transcribed into the
-model's context). And it rate-limits per user, 20 requests per five minutes,
-counting the warming calls.
+So the route validates before it spends: the transcript is parsed rather than
+trusted (it is replayed into the prompt, so an unvalidated `messages` array is a
+thousand forged turns transcribed into the model's context), capped at 40 turns,
+and **trimmed** to 200KB rather than refused above it. It also rate-limits per
+user, 20 requests per five minutes, counting the warming calls.
+
+Trimming rather than refusing, because the first version of this refused, at 4KB
+per message, and that was a bug with a clean reproduction: nothing is persisted,
+so every question carries the whole transcript — and a transcript is not just
+prose. Each assistant turn brings its tool input, its tool *output* (the rows),
+and the provider's thought signatures back with it. One answer about sixteen
+transactions is a four-kilobyte message before anyone has typed a follow-up, so
+a data-heavy answer made the NEXT question a 400.
+
+The lesson is about which quantity to bound. One message was never the thing at
+risk; the prompt was. And when a conversation does outgrow its budget the person
+asking did nothing wrong, so forgetting the beginning of a chat nobody persists
+is the cheaper loss — which is what every long conversation needs eventually
+anyway.
 
 That limiter is in memory, per instance, on purpose. A counter table would put
 an INSERT on the one path whose entire promise is that it cannot write. Under
