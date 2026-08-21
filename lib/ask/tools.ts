@@ -87,16 +87,41 @@ export function askTools() {
             "One short line, in the user's language, saying what this query is for. Shown to them while it runs.",
           ),
       }),
-      execute: async ({ sql }) => {
+      execute: async ({ sql, purpose }) => {
         const guarded = guardSql(sql);
-        if (!guarded.ok) return { error: guarded.reason };
+        if (!guarded.ok) {
+          trace(purpose, `REJECTED ${guarded.reason}`, sql);
+          return { error: guarded.reason };
+        }
 
         const supabase = await createClient();
         const { data, error } = await supabase.rpc("ask_query", { p_sql: guarded.sql });
 
-        if (error) return { error: error.message };
+        if (error) {
+          trace(purpose, `FAILED ${error.message}`, guarded.sql);
+          return { error: error.message };
+        }
+
+        trace(purpose, "ok", guarded.sql);
         return capResult(data);
       },
     }),
   };
+}
+
+/**
+ * What the model asked for, in the dev server's terminal.
+ *
+ * The schema document is the highest-churn artifact in this feature and every
+ * wrong answer's fix is a sentence in it — but you cannot fix prose you cannot
+ * see the effect of. Without this, a bad answer is indistinguishable from a
+ * rejected query, a Postgres error the model recovered from, and the model
+ * simply reasoning badly over correct rows.
+ *
+ * Never in production: these lines carry the shape of someone's finances, and a
+ * log is a place data goes to be forgotten about.
+ */
+function trace(purpose: string, outcome: string, sql: string): void {
+  if (process.env.NODE_ENV === "production") return;
+  console.log(`[ask] ${outcome}\n  purpose: ${purpose}\n  sql: ${sql}`);
 }
