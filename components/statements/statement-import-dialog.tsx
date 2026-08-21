@@ -46,6 +46,7 @@ export function StatementImportDialog({
   open,
   onOpenChange,
   accountId,
+  forceStub,
   onImported,
 }: {
   open: boolean;
@@ -54,6 +55,11 @@ export function StatementImportDialog({
    *  the user's cards, picks the only one, asks which of several, or offers to
    *  create the first. */
   accountId?: string;
+  /** Always opens on the stub-creation step, regardless of how many cards the
+   *  user already has. For entry points whose whole point is adding a new
+   *  card, not resolving one of the existing ones — the target list is never
+   *  fetched. */
+  forceStub?: boolean;
   /** Fired after a successful import so the host can refresh. */
   onImported?: () => void;
 }) {
@@ -86,7 +92,7 @@ export function StatementImportDialog({
   // it knowing nothing about the user's accounts. Only when no card is pinned:
   // the card page already knows its answer.
   useEffect(() => {
-    if (!open || accountId || targets !== null || targetsFailed) return;
+    if (!open || accountId || forceStub || targets !== null || targetsFailed) return;
     let cancelled = false;
     void listImportTargets()
       .then((list) => {
@@ -105,12 +111,18 @@ export function StatementImportDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, accountId, targets, targetsFailed]);
+  }, [open, accountId, forceStub, targets, targetsFailed]);
 
   // The dialog is only ever useful with a file in hand, so it reaches for the
   // OS picker the moment it opens empty — the latch keeps it from reopening
   // after the user cancels the picker or picks a file, and resets on close so
   // the next open starts at the picker again.
+  //
+  // Not under `forceStub`: that entry point's whole promise is a fast card,
+  // not a statement, and the person may not have one on hand. Landing on the
+  // OS file picker uninvited right after they typed a card name would make
+  // the upload feel mandatory. The "Import statement" button below (targetId
+  // && !preview && !needsPassword) still offers it — just as a choice.
   const pickerOpenedRef = useRef(false);
   useEffect(() => {
     if (!open) {
@@ -119,7 +131,7 @@ export function StatementImportDialog({
     }
     // Nothing to import onto yet: the user is still picking or creating a card,
     // and an OS picker over that step would be asking two questions at once.
-    if (!targetId) return;
+    if (!targetId || forceStub) return;
     if (pickerOpenedRef.current || file || preview) return;
     // Latch only once the click actually lands. The input is mounted outside
     // the dialog precisely so the ref is live here, but latching on a null ref
@@ -129,7 +141,7 @@ export function StatementImportDialog({
     if (!input) return;
     pickerOpenedRef.current = true;
     input.click();
-  }, [open, file, preview, targetId]);
+  }, [open, file, preview, targetId, forceStub]);
 
   function resetForm() {
     setPreview(null);
@@ -370,7 +382,17 @@ export function StatementImportDialog({
             {/* The list never arrived. Surfaced in the modal rather than as a
                 toast, because the modal is otherwise empty and the retry has to
                 live somewhere the reader is already looking. */}
-            {!targetId && targetsFailed ? (
+            {/* `forceStub` skips the target list entirely: the target is always a
+                new card, never one of the existing ones. */}
+            {!targetId && forceStub ? (
+              <ImportCardStubStep
+                onCreated={setTargetId}
+                submitLabel={t("stubSubmit")}
+                defaultCurrency=""
+              />
+            ) : null}
+
+            {!targetId && !forceStub && targetsFailed ? (
               <div className="space-y-2">
                 <p className="text-sm text-destructive">{t("targetsFailed")}</p>
                 <Button variant="outline" onClick={() => setTargetsFailed(false)}>
@@ -381,7 +403,7 @@ export function StatementImportDialog({
 
             {/* Which card first, file second. Nothing is rendered while the list
                 is still in flight — a spinner for one small query would flash. */}
-            {!targetId && !targetsFailed && targets !== null ? (
+            {!targetId && !forceStub && !targetsFailed && targets !== null ? (
               targets.length === 0 ? (
                 <ImportCardStubStep
                   onCreated={setTargetId}
@@ -421,7 +443,13 @@ export function StatementImportDialog({
             ) : null}
 
             {/* Fallback for a dismissed picker, and the way back after a parse
-                failure — otherwise the dialog would sit there with nothing in it. */}
+                failure — otherwise the dialog would sit there with nothing in it.
+                Under `forceStub` this is the primary landing state (the picker
+                never auto-opens there), so it gets a line explaining the card
+                already exists and the upload is optional. */}
+            {targetId && forceStub && !preview && !needsPassword ? (
+              <p className="text-sm text-muted-foreground">{t("stubCreatedHint")}</p>
+            ) : null}
             {targetId && !preview && !needsPassword ? (
               <Button
                 variant="outline"

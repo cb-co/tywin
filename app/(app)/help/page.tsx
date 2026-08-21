@@ -154,7 +154,9 @@ export default async function HelpPage() {
             intro={t("accountsIntro")}
           >
             <div>
-              <h3 className="text-sm font-semibold text-foreground">{t("commonFieldsTitle")}</h3>
+              <p className="text-sm text-muted-foreground">{t("quickAddCardNote")}</p>
+
+              <h3 className="mt-4 text-sm font-semibold text-foreground">{t("commonFieldsTitle")}</h3>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {(["fieldName", "fieldBank", "fieldCurrency", "fieldStartingBalance", "fieldTransferTax", "fieldNetworkFee"] as const).map(
                   (k) => (

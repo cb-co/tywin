@@ -8,6 +8,7 @@ import { SpotIllustration } from "@/components/brand/spot-illustration";
 import { AccountCard } from "./account-card";
 import { CardGroupTile } from "./card-group-tile";
 import { AccountFormDialog } from "./account-form-dialog";
+import { StatementImportDialog } from "@/components/statements/statement-import-dialog";
 import {
   ACCOUNT_GROUPS,
   CREATABLE_TYPES,
@@ -127,6 +128,32 @@ export function AddAccountControl({
   );
 }
 
+/**
+ * The fast path onto the "Cards" divider — always present, even before the
+ * user has a single card, so a fast card doesn't require going through
+ * `AddAccountControl`'s full form. Opens the same stub-then-statement dialog
+ * the Overview empty state offers, forced onto the stub step regardless of
+ * how many cards already exist.
+ */
+function QuickAddCardControl() {
+  const t = useTranslations("Accounts");
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary hover:underline"
+      >
+        <Plus className="size-3.5" />
+        {t("quickAddCard")}
+      </button>
+      <StatementImportDialog open={open} onOpenChange={setOpen} forceStub />
+    </>
+  );
+}
+
 export function AccountGallery({
   accounts,
   currencies,
@@ -173,44 +200,53 @@ export function AccountGallery({
   const groups = ACCOUNT_GROUPS.map((g) => ({
     ...g,
     items: accounts.filter((a) => accountTypeMeta(a.type).group === g.key),
-  })).filter((g) => g.items.length > 0);
+  })).filter((g) => g.key === "cards" || g.items.length > 0);
 
   return (
     <div className="space-y-10">
       {groups.map((group) => (
         <section key={group.key} className="space-y-4">
-          <div className="flex items-baseline justify-between">
+          <div className="flex items-baseline justify-between gap-3">
             <h2 className="text-lg font-medium text-foreground">{groupLabels[group.key].title}</h2>
-            <span className="text-xs text-muted-foreground">{groupLabels[group.key].blurb}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground">
+                {group.key === "cards" && group.items.length === 0
+                  ? t("groupCardsEmptyBlurb")
+                  : groupLabels[group.key].blurb}
+              </span>
+              {group.key === "cards" ? <QuickAddCardControl /> : null}
+            </div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {group.key === "cards"
-              ? clusterCards(group.items).map((cluster) => {
-                  // Whether a card belongs to a card_groups row — not how many
-                  // currency lines it currently has — decides whether the
-                  // group tile (and its one-per-card face) renders. A card
-                  // that is the sole member of a fresh group still belongs to
-                  // that group, and must still get a face; `cluster.key` is
-                  // only ever a real card_group_id when a group exists (solo
-                  // cards key off `solo:${id}`, which never matches).
-                  const cardGroup = groupById.get(cluster.key);
-                  return cardGroup ? (
-                    <CardGroupTile
-                      key={cluster.key}
-                      name={cardGroup.name}
-                      brand={cardGroup.brand}
-                      artColor={cardGroup.art_color}
-                      holder={holder}
-                      accounts={cluster.items}
-                    />
-                  ) : (
-                    <AccountCard key={cluster.key} account={cluster.items[0]} holder={holder} />
-                  );
-                })
-              : group.items.map((account) => (
-                  <AccountCard key={account.id} account={account} holder={holder} />
-                ))}
-          </div>
+          {group.items.length > 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {group.key === "cards"
+                ? clusterCards(group.items).map((cluster) => {
+                    // Whether a card belongs to a card_groups row — not how many
+                    // currency lines it currently has — decides whether the
+                    // group tile (and its one-per-card face) renders. A card
+                    // that is the sole member of a fresh group still belongs to
+                    // that group, and must still get a face; `cluster.key` is
+                    // only ever a real card_group_id when a group exists (solo
+                    // cards key off `solo:${id}`, which never matches).
+                    const cardGroup = groupById.get(cluster.key);
+                    return cardGroup ? (
+                      <CardGroupTile
+                        key={cluster.key}
+                        name={cardGroup.name}
+                        brand={cardGroup.brand}
+                        artColor={cardGroup.art_color}
+                        holder={holder}
+                        accounts={cluster.items}
+                      />
+                    ) : (
+                      <AccountCard key={cluster.key} account={cluster.items[0]} holder={holder} />
+                    );
+                  })
+                : group.items.map((account) => (
+                    <AccountCard key={account.id} account={account} holder={holder} />
+                  ))}
+            </div>
+          ) : null}
         </section>
       ))}
     </div>
