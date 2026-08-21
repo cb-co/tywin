@@ -276,3 +276,50 @@ describe("guardSql — rejects string syntax it does not parse", () => {
     expect(guardSql("select 1 from q_budgets where category = 'a\\b'").ok).toBe(true);
   });
 });
+
+/* Literals are data, not syntax. Every one of these was rejected before the
+   checks moved onto a masked copy of the statement, and each rejection cost the
+   model a step to learn nothing — the reason a real question ("what did I spend
+   on my amex usd between aug 8th and 14th?") burned its whole budget. */
+describe("guardSql — reads string literals as data", () => {
+  it("accepts a semicolon inside a literal", () => {
+    const r = guardSql("select split_part(description, ';', 1) from q_transactions");
+    expect(r.ok).toBe(true);
+  });
+
+  it("accepts a SQL keyword inside a literal", () => {
+    const r = guardSql("select 1 from q_transactions where description ilike '%update%'");
+    expect(r.ok).toBe(true);
+  });
+
+  it("accepts a merchant name that reads like a schema", () => {
+    const r = guardSql("select 1 from q_transactions where description = 'auth.users'");
+    expect(r.ok).toBe(true);
+  });
+
+  it("accepts a literal naming a base table", () => {
+    const r = guardSql("select 1 from q_transactions where notes = 'from transactions'");
+    expect(r.ok).toBe(true);
+  });
+
+  /* The point of masking is that it does not weaken anything: the same shapes
+     outside a literal are still refused. */
+  it("still refuses a second statement", () => {
+    expect(reject("select 1 from q_budgets; select 2 from q_budgets")).toMatch(
+      /one statement/i,
+    );
+  });
+
+  it("still refuses a keyword outside a literal", () => {
+    expect(reject("with x as (delete from q_transactions returning 1) select * from x")).toMatch(
+      /not allowed/i,
+    );
+  });
+
+  /* A refusal the model cannot act on is a wasted step, and it had four. */
+  it("tells the model how to ask for two things at once", () => {
+    expect(reject("select 1 from q_budgets; select 2 from q_accounts")).toMatch(
+      /union all|cte/i,
+    );
+  });
+});

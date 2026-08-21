@@ -5,19 +5,21 @@ import { createClient } from "@/lib/supabase/server";
 import { guardSql } from "./guard";
 
 /**
- * Four steps: three queries and the answer.
+ * Five steps: four queries and the answer.
  *
- * One query answers most questions; the second exists so a failed one can be
- * corrected rather than surrendered; the third is slack. The fourth step is not
- * a query — it is the turn the model needs to WRITE the answer once it has the
- * rows.
+ * The last step is not a query — it is the turn the model needs to WRITE the
+ * answer once it has rows. The budget must be one larger than the query budget
+ * the prompt states, or a question that uses every query ends on a tool result
+ * with no prose after it.
  *
- * At three, a question that used all three queries ended the stream on a tool
- * result with no prose after it, and the page rendered an empty card. The step
- * budget has to be one larger than the query budget the prompt states, or the
- * last query is wasted.
+ * Four rather than three because the first query is not always the one that
+ * counts. A refused statement, a column guessed wrong, a date range that comes
+ * back empty — each costs a step and each is recoverable, and at three the
+ * recovery came out of the answer's budget. Observed: a question that wanted two
+ * things at once spent every step being told to send one statement, and the page
+ * showed "I ran out of tries".
  */
-export const CHAT_MAX_STEPS = 4;
+export const CHAT_MAX_STEPS = 5;
 
 /**
  * How much query result may go back to the model, in bytes of JSON.
@@ -80,7 +82,11 @@ export function askTools() {
       description:
         "Run one read-only SQL SELECT against the q_ views and return the rows.",
       inputSchema: z.object({
-        sql: z.string().describe("A single SELECT statement. No semicolons, no writes."),
+        sql: z
+          .string()
+          .describe(
+            "ONE SELECT statement. No semicolons, no writes. To answer two things at once, combine them with UNION ALL or a CTE — never two statements.",
+          ),
         purpose: z
           .string()
           .describe(

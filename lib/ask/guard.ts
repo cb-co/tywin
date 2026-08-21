@@ -20,10 +20,12 @@ export type GuardResult = { ok: true; sql: string } | { ok: false; reason: strin
 /* Whole words only, so `created_at` does not trip on `create` and `offset` does
    not trip on `set`.
 
-   Known and accepted false positive: a legitimate `where description ilike
-   '%update%'` is rejected. Merchants with a SQL keyword in the name are rare
-   enough that loosening this to parse string literals would cost more safety
-   than it buys usability. */
+   Matched against a copy with every string literal blanked, so a merchant named
+   "Update Salon" and a `split_part(description, ';', 1)` are data rather than
+   syntax. That distinction is not a convenience: a `where description ilike
+   '%update%'` rejected for containing a keyword costs the model a step and
+   teaches it nothing, and a semicolon inside a literal read as a second
+   statement is the same waste. Postgres draws the line here too. */
 const FORBIDDEN_KEYWORDS =
   /\b(insert|update|delete|drop|alter|create|grant|revoke|truncate|copy|call|do|set|reset|vacuum|analyze|reindex|lock|merge|prepare|execute|listen|notify)\b/;
 
@@ -238,10 +240,6 @@ export function guardSql(input: string): GuardResult {
 
   if (!sql) return { ok: false, reason: "The query was empty." };
 
-  if (sql.includes(";")) {
-    return { ok: false, reason: "Only one statement is allowed." };
-  }
-
   if (!/^(select|with)\b/i.test(sql)) {
     return { ok: false, reason: "The query must be a SELECT." };
   }
@@ -276,7 +274,23 @@ export function guardSql(input: string): GuardResult {
     return { ok: false, reason: "Escaped string literals (E'...') are not allowed." };
   }
 
-  const lower = sql.toLowerCase();
+  /* Every check below reads this rather than the statement itself: same
+     structure, literals blanked. */
+  const masked = scan.parts.map((part, i) => (i % 2 === 1 ? "''" : part)).join("");
+
+  if (masked.includes(";")) {
+    return {
+      ok: false,
+      /* Says what to do, not only what went wrong. The model reaches for two
+         statements when it wants two things at once, and a bare refusal sends
+         it round the same loop until the steps run out — which is exactly how
+         this was found. */
+      reason:
+        "Only one statement is allowed. Send one SELECT; to answer two things at once, combine them with UNION ALL or a CTE instead of two statements.",
+    };
+  }
+
+  const lower = masked.toLowerCase();
 
   if (FORBIDDEN_KEYWORDS.test(lower)) {
     return { ok: false, reason: "That keyword is not allowed — this is read-only." };

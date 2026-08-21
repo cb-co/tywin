@@ -50,6 +50,7 @@ export function AskChat() {
      ever optional-chained here, so a partial or absent value just falls
      through to the generic line; no state check is required for safety. */
   const narration = (() => {
+    console.log("messages", messages);
     const last = messages.at(-1);
     if (!busy || last?.role !== "assistant") return busy ? t("thinking") : null;
     const calls = last.parts.filter((p) => p.type === "tool-askQuery");
@@ -69,10 +70,17 @@ export function AskChat() {
 
         {messages.map((m) => {
           const text = m.parts.filter((p) => p.type === "text");
-          /* An assistant turn that ran out of steps mid-query ends with tool
-             results and no prose. Rendering an empty card reads as the app
-             having lost the answer; saying so reads as what happened. */
-          const silent = m.role === "assistant" && text.length === 0 && !busy;
+          const wordless = m.role === "assistant" && text.length === 0;
+
+          /* While the model is still querying, its message exists but holds
+             only tool parts. There is nothing to put in a bubble yet, and an
+             empty one reads as a broken reply — the narration line below is
+             what covers this moment. */
+          if (wordless && busy) return null;
+
+          /* Once the stream has ENDED wordless, the loop ran out of steps.
+             Say so: an empty bubble reads as the app having lost the answer. */
+          const silent = wordless && !busy;
 
           return (
             <div
