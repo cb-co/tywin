@@ -5,7 +5,7 @@ import {
   PieChart,
   Repeat,
   LineChart,
-  Sparkles,
+  MessagesSquare,
   Settings,
   CircleHelp,
   type LucideIcon,
@@ -21,7 +21,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/budgets", key: "budgets", icon: PieChart },
   { href: "/subscriptions", key: "subscriptions", icon: Repeat },
   { href: "/insights", key: "insights", icon: LineChart },
-  { href: "/ask", key: "ask", icon: Sparkles },
+  { href: "/ask", key: "ask", icon: MessagesSquare },
   { href: "/settings", key: "settings", icon: Settings },
   { href: "/help", key: "help", icon: CircleHelp },
 ];
@@ -75,10 +75,15 @@ export const SETTINGS_ITEM: NavItem = NAV_ITEMS.find(
  * screen, beside Settings because that strip is the only persistent chrome a
  * phone gets.
  *
- * `Sparkles`, not a question mark. The rail already ends in Help's CircleHelp,
- * and two adjacent question marks meaning two different things — ask about your
- * money, versus learn how the app works — is the confusion the label "Ask
- * Cashly" also exists to settle. Sparkles is the mark the recommendation card
- * uses, so both surfaces that read your numbers share it.
+ * `MessagesSquare`: the one square in a rail of circles and charts, and the only
+ * shape here that means conversation. It has to dodge two marks, not one — a
+ * question mark in a circle collides with Help two rows below (the confusion the
+ * label "Ask Cashly" also exists to settle), and Sparkles collides with the
+ * recommendation card, which had it first and is the surface people already read
+ * as the app noticing something. Sharing that mark sounded like family and
+ * looked, stacked on Overview, like the same chip printed twice.
+ *
+ * A speech bubble is also the more honest mark: this is a conversation you start,
+ * not a thing that happens to you.
  */
 export const ASK_ITEM: NavItem = NAV_ITEMS.find((i) => i.href === "/ask")!;

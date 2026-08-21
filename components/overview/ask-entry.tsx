@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { MessagesSquare, ArrowRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,11 +40,12 @@ export function AskEntry() {
         }}
         className="flex items-center gap-3"
       >
-        {/* The same mark the sidebar and the coaching card use: one feature,
-            one icon, and the echo with the card above is the point — those two
-            are siblings. The tint differs, so they read as a family rather
-            than as the same card twice. */}
-        <ColorTile color="var(--brand)" icon={Sparkles} />
+        {/* The sidebar's mark, and deliberately NOT the coaching card's Sparkles
+            directly above. Sharing it was meant to read as family; on screen,
+            two sparkle tiles a card apart just read as the same chip twice. A
+            speech bubble says the other true thing about this one: it is a
+            conversation you start, not a thing that happens to you. */}
+        <ColorTile color="var(--brand)" icon={MessagesSquare} />
 
         <label className="sr-only" htmlFor="overview-ask">
           {t("askLabel")}
