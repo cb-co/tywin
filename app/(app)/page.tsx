@@ -11,6 +11,7 @@ import { ColorTile } from "@/components/ui/color-tile";
 import { StatPill } from "@/components/ui/stat-pill";
 import { MarketingHome } from "@/components/marketing/marketing-home";
 import { RecommendationCard } from "@/components/overview/recommendation-card";
+import { AskEntry } from "@/components/overview/ask-entry";
 import { ImportCallout } from "@/components/overview/import-callout";
 import { ImportButton } from "@/components/statements/import-button";
 import { FxDegradedNotice } from "@/components/fx/fx-degraded-notice";
@@ -180,8 +181,16 @@ export default async function OverviewPage() {
         <RecommendationCard rec={rec} stale={stale} />
       </div>
 
+      {/* And the other half of the same idea: the card says what it noticed,
+          this asks what you noticed. Also the only way onto /ask from a phone —
+          the bottom bar stays at five cells — so it is a box you can type in
+          rather than a link you have to follow first. */}
+      <div className="rise" style={{ "--i": 7 } as React.CSSProperties}>
+        <AskEntry />
+      </div>
+
       {/* Upcoming rail */}
-      <div className="rise space-y-3" style={{ "--i": 7 } as React.CSSProperties}>
+      <div className="rise space-y-3" style={{ "--i": 8 } as React.CSSProperties}>
         <h2 className="text-lg font-medium text-foreground">{t("upcoming")}</h2>
         {o.upcoming.length === 0 ? (
           <Card className="p-6 text-sm text-muted-foreground">{t("upcomingEmpty")}</Card>

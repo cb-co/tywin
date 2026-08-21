@@ -19,11 +19,16 @@ import { Card } from "@/components/ui/card";
  */
 const ASK_TRANSPORT = new DefaultChatTransport({ api: "/api/ask" });
 
-export function AskChat() {
+export function AskChat({ initialQuestion }: { initialQuestion: string | null }) {
   const t = useTranslations("Ask");
   const [input, setInput] = useState("");
   const warmed = useRef(false);
   const sending = useRef(false);
+  /* React invokes effects twice in development, and the cleanup runs between
+     the two passes — so a guard that lives anywhere but a ref sends the
+     question twice and pays for two answers. Same trap, same fix, as
+     components/overview/recommendation-card.tsx. */
+  const asked = useRef(false);
   const { messages, sendMessage, status, error } = useChat({ transport: ASK_TRANSPORT });
 
   /* Pays the cold start while they are still reading the page. A GET to the
@@ -44,6 +49,15 @@ export function AskChat() {
   useEffect(() => {
     if (!busy) sending.current = false;
   }, [busy]);
+
+  /* A question typed on Overview arrives in the URL and is asked on landing, so
+     the two screens read as one gesture rather than a handoff that makes you
+     retype. Once per mount: a resend on every render would be a bill. */
+  useEffect(() => {
+    if (!initialQuestion || asked.current) return;
+    asked.current = true;
+    sendMessage({ text: initialQuestion });
+  }, [initialQuestion, sendMessage]);
 
   /* The narration: the purpose of the most recent tool call, which the model
      writes in the user's language. Falls back to a generic line only for the
