@@ -107,6 +107,13 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (!user && !isPublicPath(request.nextUrl.pathname)) {
+    /* A fetch cannot follow a redirect to a login PAGE and do anything useful
+       with it: /api/ask would answer a question with 200 and a document, and
+       the chat client would report a parse failure instead of a signed-out
+       session. Route handlers get a status they can act on. */
+    if (request.nextUrl.pathname.startsWith("/api/")) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { SETTINGS_ITEM } from "@/lib/nav";
+import { ASK_ITEM, SETTINGS_ITEM } from "@/lib/nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { FigureMaskToggle } from "@/components/figure-mask/figure-mask-toggle";
@@ -16,7 +16,7 @@ export function MobileHeader() {
         <Wordmark className="text-base" />
       </Link>
       {/* Every destination has a home: five tabs in the bottom bar (two of
-          them behind Activity) and Settings here. No overflow menu means
+          them behind Activity), with Ask and Settings here. No overflow menu means
           nothing can clip off the right edge.
 
           Theme and language stay here as well as in Settings. On a phone this
@@ -28,6 +28,15 @@ export function MobileHeader() {
         <FigureMaskToggle />
         <ThemeToggle />
         <LanguageSwitcher />
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={t(ASK_ITEM.key)}
+          nativeButton={false}
+          render={<Link href={ASK_ITEM.href} />}
+        >
+          <ASK_ITEM.icon className="h-5 w-5" />
+        </Button>
         <Button
           variant="ghost"
           size="icon"

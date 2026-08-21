@@ -6,23 +6,33 @@ import { DefaultChatTransport } from "ai";
 import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
 
+/**
+ * One transport, built once.
+ *
+ * AI SDK v7 dropped the top-level `api` option from useChat — it now lives on
+ * the transport (see ai/dist/index.d.ts: ChatInit has no `api` field,
+ * HttpChatTransportInitOptions does). Constructed at module scope rather than in
+ * the component body because the body runs on every render, and this component
+ * re-renders on every keystroke: the input is state. A fresh transport per
+ * keypress is a new object handed to useChat mid-conversation for a
+ * configuration that never changes.
+ */
+const ASK_TRANSPORT = new DefaultChatTransport({ api: "/api/ask" });
+
 export function AskChat() {
   const t = useTranslations("Ask");
   const [input, setInput] = useState("");
   const warmed = useRef(false);
-  /* AI SDK v7 dropped the top-level `api` option from useChat — it now lives
-     on the transport. See ai/dist/index.d.ts's ChatInit (no `api` field) and
-     HttpChatTransportInitOptions (where `api` actually lives). */
-  const { messages, sendMessage, status, error } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/ask" }),
-  });
+  const { messages, sendMessage, status, error } = useChat({ transport: ASK_TRANSPORT });
 
-  /* Pays the cold start while they are still reading the page. See
-     app/api/ask/warm/route.ts for why this is not premature. */
+  /* Pays the cold start while they are still reading the page. A GET to the
+     SAME route, not a neighbouring one: each route handler is its own function
+     instance, so /api/ask/warm used to warm a process that would never serve
+     the question. See the GET handler in app/api/ask/route.ts. */
   function warm() {
     if (warmed.current) return;
     warmed.current = true;
-    void fetch("/api/ask/warm");
+    void fetch("/api/ask", { method: "GET" }).catch(() => {});
   }
   useEffect(warm, []);
 
@@ -57,34 +67,49 @@ export function AskChat() {
           </Card>
         ) : null}
 
-        {messages.map((m) => (
-          <div
-            key={m.id}
-            className={m.role === "user" ? "self-end max-w-[85%]" : "max-w-[85%]"}
-          >
-            <Card className={m.role === "user" ? "bg-muted p-3" : "p-4"}>
-              {m.parts
-                .filter((p) => p.type === "text")
-                .map((p, i) => (
-                  <p key={i} className="whitespace-pre-wrap text-sm">
-                    {"text" in p ? p.text : null}
-                  </p>
-                ))}
-            </Card>
-          </div>
-        ))}
+        {messages.map((m) => {
+          const text = m.parts.filter((p) => p.type === "text");
+          /* An assistant turn that ran out of steps mid-query ends with tool
+             results and no prose. Rendering an empty card reads as the app
+             having lost the answer; saying so reads as what happened. */
+          const silent = m.role === "assistant" && text.length === 0 && !busy;
+
+          return (
+            <div
+              key={m.id}
+              className={m.role === "user" ? "self-end max-w-[85%]" : "max-w-[85%]"}
+            >
+              <Card className={m.role === "user" ? "bg-muted p-3" : "p-4"}>
+                {silent ? (
+                  <p className="text-sm text-muted-foreground">{t("noAnswer")}</p>
+                ) : (
+                  text.map((p, i) => (
+                    <p key={i} className="whitespace-pre-wrap text-sm">
+                      {"text" in p ? p.text : null}
+                    </p>
+                  ))
+                )}
+              </Card>
+            </div>
+          );
+        })}
 
         {narration ? (
-          <p className="animate-pulse text-sm text-muted-foreground" aria-live="polite">
+          <p
+            className="animate-pulse text-sm text-muted-foreground motion-reduce:animate-none"
+            aria-live="polite"
+          >
             {narration}
           </p>
         ) : null}
 
         {error ? (
-          <p className="text-sm text-destructive">
-            {/* An aborted stream is the 15s budget expiring, which has its own
-                actionable copy; anything else is a real failure. */}
-            {error.name === "AbortError" ? t("timeout") : t("error")}
+          <p className="text-sm text-destructive" role="alert">
+            {/* The route maps an aborted stream to ASK_TIMEOUT (see its
+                onError). Reading `error.name` here never worked: by the time a
+                server-side abort has crossed the stream it is an ordinary
+                Error carrying that text, not an AbortError. */}
+            {error.message.includes("ASK_TIMEOUT") ? t("timeout") : t("error")}
           </p>
         ) : null}
       </div>
@@ -98,11 +123,19 @@ export function AskChat() {
         }}
         className="flex gap-2"
       >
+        {/* A placeholder is not a label: it is gone the moment anyone types, and
+            a screen reader announcing it is not required to. */}
+        <label className="sr-only" htmlFor="ask-input">
+          {t("inputLabel")}
+        </label>
         <input
+          id="ask-input"
+          name="question"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onFocus={warm}
           placeholder={t("placeholder")}
+          autoComplete="off"
           className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
         />
         <button

@@ -659,7 +659,9 @@
     "thinking": "Working on it…",
     "timeout": "That one is taking too long — try a narrower date range.",
     "error": "Something went wrong. Try asking again.",
-    "readOnly": "Read-only — this can look at your data but never change it."
+    "readOnly": "Read-only — this can look at your data but never change it.",
+    "inputLabel": "Your question",
+    "noAnswer": "I ran out of tries on that one — ask it again, or narrow it to one card or one month."
   },
   "Settings": {
     "pageTitle": "Settings",

@@ -64,3 +64,14 @@ export const ACTIVITY_ITEMS: NavItem[] = ["/transactions", "/subscriptions"].map
 export const SETTINGS_ITEM: NavItem = NAV_ITEMS.find(
   (i) => i.href === "/settings",
 )!;
+
+/**
+ * Ask, for the mobile header.
+ *
+ * The bottom bar is a deliberate five-cell layout (see above) and Ask does not
+ * displace anything in it. Without an entry here, though, the feature would be
+ * reachable on a phone only by typing the URL — the sidebar that carries it is
+ * `hidden md:flex`. It sits beside Settings for the same reason Settings does:
+ * that strip is the only persistent chrome a phone gets.
+ */
+export const ASK_ITEM: NavItem = NAV_ITEMS.find((i) => i.href === "/ask")!;

@@ -47,6 +47,16 @@ const nextConfig: NextConfig = {
   // `DOMMatrix is not defined` at module load in production.
   serverExternalPackages: ["pdfjs-dist", "@napi-rs/canvas"],
 
+  // lib/ask/schema-doc.ts reads its markdown at request time with a runtime
+  // path, which the file tracer cannot see any more than it could see pdfjs's
+  // createRequire above. Untraced, the .md is absent from the deployed function
+  // and /api/ask throws ENOENT on the first question — while passing every test
+  // locally, where the repo is the filesystem. The file is read rather than
+  // imported on purpose: fixing a wrong answer should be a prose edit.
+  outputFileTracingIncludes: {
+    "/api/ask": ["./lib/ask/schema-doc.md"],
+  },
+
   experimental: {
     // Statement import posts the PDF itself through a server action, and the
     // 1MB default rejects a routine statement during body parsing — before the

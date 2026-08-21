@@ -5,13 +5,61 @@ import { createClient } from "@/lib/supabase/server";
 import { guardSql } from "./guard";
 
 /**
- * Three, against a 15s budget for the whole loop.
+ * Four steps: three queries and the answer.
  *
- * One call answers most questions; the second exists so a failed query can be
- * corrected rather than surrendered; the third is slack. A fourth would mostly
- * buy the model room to wander.
+ * One query answers most questions; the second exists so a failed one can be
+ * corrected rather than surrendered; the third is slack. The fourth step is not
+ * a query — it is the turn the model needs to WRITE the answer once it has the
+ * rows.
+ *
+ * At three, a question that used all three queries ended the stream on a tool
+ * result with no prose after it, and the page rendered an empty card. The step
+ * budget has to be one larger than the query budget the prompt states, or the
+ * last query is wasted.
  */
-export const CHAT_MAX_STEPS = 3;
+export const CHAT_MAX_STEPS = 4;
+
+/**
+ * How much query result may go back to the model, in bytes of JSON.
+ *
+ * `ask_query` caps rows, which is the wrong unit for the thing that actually
+ * breaks: 500 rows of a 30-column view is well over a hundred thousand tokens.
+ * That does not merely cost money, it spends the 15s budget on transferring a
+ * table nobody asked for, and it pushes the schema document out of the model's
+ * attention on the step where it matters most.
+ *
+ * Bytes, then, and generously below the model's window: an answer about money
+ * is a handful of aggregate rows. Anything larger means the model should have
+ * aggregated in SQL, and `truncated` is what tells it so.
+ */
+const MAX_RESULT_BYTES = 48_000;
+
+/** Row counts to fall back through, largest first. */
+const ROW_LADDER = [200, 100, 50, 20, 10, 5, 1];
+
+/**
+ * Trims a result to fit MAX_RESULT_BYTES, reporting that it did.
+ *
+ * Fails toward the smallest ladder rung rather than toward an error: one row of
+ * a wide view still tells the model what shape it asked for and lets it narrow
+ * the next query, where an error tells it nothing.
+ */
+export function capResult(data: unknown): unknown {
+  if (data === null || typeof data !== "object" || !("rows" in data)) return data;
+
+  const result = data as { rows: unknown[]; truncated?: boolean };
+  const rows = Array.isArray(result.rows) ? result.rows : [];
+  if (JSON.stringify(rows).length <= MAX_RESULT_BYTES) return data;
+
+  for (const n of ROW_LADDER) {
+    const kept = rows.slice(0, n);
+    if (JSON.stringify(kept).length <= MAX_RESULT_BYTES) {
+      return { rows: kept, truncated: true };
+    }
+  }
+
+  return { rows: [], truncated: true };
+}
 
 /**
  * The model's one tool.
@@ -47,7 +95,7 @@ export function askTools() {
         const { data, error } = await supabase.rpc("ask_query", { p_sql: guarded.sql });
 
         if (error) return { error: error.message };
-        return data;
+        return capResult(data);
       },
     }),
   };

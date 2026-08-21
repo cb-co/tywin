@@ -659,7 +659,9 @@
     "thinking": "Trabajando en ello…",
     "timeout": "Esto está tardando demasiado — prueba con un rango de fechas más corto.",
     "error": "Algo salió mal. Intenta preguntar de nuevo.",
-    "readOnly": "Solo lectura — puede ver tus datos, nunca cambiarlos."
+    "readOnly": "Solo lectura — puede ver tus datos, nunca cambiarlos.",
+    "inputLabel": "Tu pregunta",
+    "noAnswer": "Se me acabaron los intentos con esa — vuelve a preguntarla, o acótala a una tarjeta o un mes."
   },
   "Settings": {
     "pageTitle": "Configuración",
