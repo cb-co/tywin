@@ -14,10 +14,11 @@ import { systemPrompt, LANGUAGE } from "@/lib/ask/prompt";
 import { askTools, CHAT_MAX_STEPS } from "@/lib/ask/tools";
 import { takeAskToken } from "@/lib/ask/rate-limit";
 
-/* The loop is four steps of inference with database round-trips between them,
-   so the platform default is not what should be bounding it — CHAT_INFERENCE_
-   BUDGET_MS is. This only has to be comfortably larger than that. */
-export const maxDuration = 60;
+/* The loop is up to seven steps of inference with database round-trips between
+   them, so the platform default is not what should be bounding it —
+   CHAT_INFERENCE_BUDGET_MS is. This only has to sit comfortably above that, with
+   room for the auth and profile reads in front of it. */
+export const maxDuration = 120;
 
 function askModel() {
   return google(process.env.GOOGLE_ASK_MODEL ?? "gemini-3.6-flash");

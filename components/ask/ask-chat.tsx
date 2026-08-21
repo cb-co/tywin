@@ -50,7 +50,6 @@ export function AskChat() {
      ever optional-chained here, so a partial or absent value just falls
      through to the generic line; no state check is required for safety. */
   const narration = (() => {
-    console.log("messages", messages);
     const last = messages.at(-1);
     if (!busy || last?.role !== "assistant") return busy ? t("thinking") : null;
     const calls = last.parts.filter((p) => p.type === "tool-askQuery");

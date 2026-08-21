@@ -56,14 +56,18 @@ export function inferenceSignal(budgetMs: number): AbortSignal {
  * Bounds the WHOLE multi-step loop, not one call, so up to five inference turns
  * and the database round-trips between them share it.
  *
- * 20s rather than the 15s this started at, because the loop grew a fourth query
- * to recover from a refused one and 15s could not fit five turns. This is the
- * one surface where the wait is legible while it happens — each query narrates
+ * 45s, up from the 15s this started at, because the loop is now up to seven
+ * inference turns with a database round-trip between each. This is the one
+ * surface where the wait is legible while it happens — each query narrates
  * itself from the `purpose` the model supplies — so the ceiling that matters is
  * the one where someone gives up, not the one where a spinner gets boring.
+ *
+ * The failure this replaces was not a slow answer, it was no answer: a loop cut
+ * off mid-plan renders "I ran out of tries", and someone who waited ten seconds
+ * for that would rather have waited twenty-five and been told the number.
  *
  * This is also the budget the cold-call problem documented above actually
  * bites, which is why the /ask route warms its own instance on mount and on
  * input focus rather than discovering it on send.
  */
-export const CHAT_INFERENCE_BUDGET_MS = 20_000;
+export const CHAT_INFERENCE_BUDGET_MS = 45_000;

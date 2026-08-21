@@ -5,21 +5,59 @@ import { createClient } from "@/lib/supabase/server";
 import { guardSql } from "./guard";
 
 /**
- * Five steps: four queries and the answer.
+ * Seven steps: six queries and the answer.
  *
  * The last step is not a query — it is the turn the model needs to WRITE the
  * answer once it has rows. The budget must be one larger than the query budget
  * the prompt states, or a question that uses every query ends on a tool result
  * with no prose after it.
  *
- * Four rather than three because the first query is not always the one that
- * counts. A refused statement, a column guessed wrong, a date range that comes
- * back empty — each costs a step and each is recoverable, and at three the
- * recovery came out of the answer's budget. Observed: a question that wanted two
- * things at once spent every step being told to send one statement, and the page
- * showed "I ran out of tries".
+ * Six because the observed failure was never one bad query, it was a model
+ * exploring: one call to find an account, one to see what a column holds, one
+ * refused for asking two things at once, and the answer's turn already gone.
+ * Widening alone does not fix that — see `callBudget`, which tells the model
+ * what it is spending — but a ceiling low enough to cut off a reasonable line of
+ * enquiry turns a slow answer into no answer.
  */
-export const CHAT_MAX_STEPS = 5;
+export const CHAT_MAX_STEPS = 7;
+
+/** Queries, as distinct from steps: the last step writes the answer. */
+export const MAX_QUERIES = CHAT_MAX_STEPS - 1;
+
+/**
+ * What the model is told about its remaining budget, with every result.
+ *
+ * The loop's hardest failure to diagnose is a transcript that simply stops: the
+ * model is mid-plan, the step budget runs out, and the page renders "I ran out
+ * of tries". It reads like a bug and it is not one — it is a model spending a
+ * budget it was never shown. `stopWhen` is invisible from inside the
+ * conversation, and a rule in the system prompt ("you get six") is a number the
+ * model has to track itself across turns, which is exactly the kind of
+ * bookkeeping it is worst at.
+ *
+ * So the count rides along with the rows, where it cannot be lost, and the last
+ * one is an instruction rather than a number. Cheap: two fields on a result the
+ * model is already reading.
+ */
+export function callBudget(used: number): { calls_left: number; note?: string } {
+  const left = Math.max(0, MAX_QUERIES - used);
+
+  if (left === 0) {
+    return {
+      calls_left: 0,
+      note: "That was your last query. Answer now, from the rows you already have. If they cannot answer the question, say what is missing instead of asking again.",
+    };
+  }
+
+  if (left === 1) {
+    return {
+      calls_left: 1,
+      note: "One query left. Make it the one that answers the question, then write the answer.",
+    };
+  }
+
+  return { calls_left: left };
+}
 
 /**
  * How much query result may go back to the model, in bytes of JSON.
@@ -77,6 +115,10 @@ export function capResult(data: unknown): unknown {
  * answer that" and a right answer a second later.
  */
 export function askTools() {
+  /* Per request, because `askTools()` is called once per question. A module-level
+     counter would leak one person's budget into the next person's question. */
+  let used = 0;
+
   return {
     askQuery: tool({
       description:
@@ -94,10 +136,15 @@ export function askTools() {
           ),
       }),
       execute: async ({ sql, purpose }) => {
+        /* Counts refusals too. A rejected statement costs a step whether or not
+           it reached the database, and hiding that from the model is how it
+           runs out mid-plan. */
+        const budget = callBudget(++used);
+
         const guarded = guardSql(sql);
         if (!guarded.ok) {
           trace(purpose, `REJECTED ${guarded.reason}`, sql);
-          return { error: guarded.reason };
+          return { error: guarded.reason, ...budget };
         }
 
         const supabase = await createClient();
@@ -105,11 +152,14 @@ export function askTools() {
 
         if (error) {
           trace(purpose, `FAILED ${error.message}`, guarded.sql);
-          return { error: error.message };
+          return { error: error.message, ...budget };
         }
 
         trace(purpose, "ok", guarded.sql);
-        return capResult(data);
+        const capped = capResult(data);
+        return typeof capped === "object" && capped !== null
+          ? { ...capped, ...budget }
+          : capped;
       },
     }),
   };

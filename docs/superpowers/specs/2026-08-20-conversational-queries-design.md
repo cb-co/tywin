@@ -336,7 +336,8 @@ it so, not because the path was ever inherently safe.
 Every other inference in this app is triggered by writing something down — a
 card, a subscription, a saved transaction — so using the product paces the
 spend. A text box has no such shape: holding Enter is an ordinary thing for a
-person to do, and the four-step loop is the most expensive call in the codebase.
+person to do, and the loop — up to seven inference turns — is the most expensive
+call in the codebase.
 
 So the route validates before it spends: at most 24 messages, 4KB each, parsed
 rather than trusted (the transcript is replayed into the prompt, so an
@@ -365,14 +366,25 @@ askQuery: tool({
 })
 ```
 
-`streamText` with `stopWhen: stepCountIs(4)`. Three of those steps are the
-queries the prompt promises; the fourth is the turn the model needs to WRITE the
-answer once it has rows. At three, a question that used all three queries ended
-the stream on a tool result with no prose after it, and the page rendered an
-empty card — the step budget has to be one larger than the query budget, or the
-last query is wasted. The UI names that state anyway (`Ask.noAnswer`), because
-a loop can still run out on a bad day and an empty card reads as the app losing
-the answer.
+`streamText` with `stopWhen: stepCountIs(7)`. Six of those steps are the queries
+the prompt promises; the seventh is the turn the model needs to WRITE the answer
+once it has rows. The step budget must always be one larger than the query
+budget, or a question that uses every query ends on a tool result with no prose
+after it. The UI names that state anyway (`Ask.noAnswer`), because a loop can
+still run out on a bad day and an empty card reads as the app losing the answer.
+
+Three and then four were both too few, and widening was only half the fix. The
+observed failure was never one bad query — it was a model exploring: a call to
+find an account, a call to see what a column holds, a call refused for asking two
+things at once, and the answer's turn already gone. What it lacked was not room
+but information: `stopWhen` is invisible from inside the conversation, and a
+number in the system prompt is bookkeeping across turns, which is what models are
+worst at.
+
+So every tool result carries `calls_left`, and the last one carries an
+instruction rather than a number — *answer now, from the rows you already have*.
+Two fields on a result the model is already reading, and the difference between a
+transcript that stops mid-plan and one that lands.
 
 `purpose` costs almost nothing and pays for itself twice: it sharpens the SQL,
 and it is the copy the loading state renders (see below). It is not a debug
@@ -415,11 +427,19 @@ entire budget on its own. This is an interactive box.
 
 ```ts
 // lib/llm/budget.ts
-export const CHAT_INFERENCE_BUDGET_MS = 15_000;
+export const CHAT_INFERENCE_BUDGET_MS = 45_000;
 ```
 
-15s covering the whole multi-step loop, against a 3s per-query
+45s covering the whole multi-step loop, against a 3s per-query
 `statement_timeout` so one slow query cannot consume the window.
+
+It started at 15s, on the reasoning that a chat which answers in eight seconds
+and sometimes gives up beats one that might answer in forty. That trade was
+mispriced: the loop grew to seven turns with a database round-trip between each,
+and what 15s bought was not a faster answer but *no* answer — a loop cut off
+mid-plan renders "I ran out of tries", and someone who waited ten seconds for
+that would rather have waited twenty-five and been told the number. The wait is
+legible while it happens, which is what makes the longer ceiling affordable.
 
 ### The cold-start conflict
 
@@ -427,7 +447,7 @@ export const CHAT_INFERENCE_BUDGET_MS = 15_000;
 Node process takes **9 to 70 seconds** versus ~600ms warm, and that a plain
 `fetch` to the host beforehand is enough to fix it.
 
-A 15s cap loses that request outright. The existing features hide this because
+A 45s cap still loses a bad cold call outright. The existing features hide this because
 nothing waits on them — a card colour arrives late and nobody notices. Chat is
 the one surface where a person sits watching a cursor.
 

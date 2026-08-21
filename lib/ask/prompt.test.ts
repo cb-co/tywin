@@ -28,6 +28,17 @@ describe("systemPrompt", () => {
   it("forbids advice, matching the house rule", () => {
     expect(systemPrompt(ctx)).toMatch(/investment, tax/i);
   });
+
+  /* The rule the model broke in testing: two statements in one call, then a
+     wasted step, then no answer. */
+  it("states the one-statement rule and how to combine two questions", () => {
+    expect(systemPrompt(ctx)).toMatch(/one statement per call/i);
+    expect(systemPrompt(ctx)).toMatch(/union all/i);
+  });
+
+  it("tells the model its query budget is reported back to it", () => {
+    expect(systemPrompt(ctx)).toMatch(/how many are left/i);
+  });
 });
 
 describe("LANGUAGE", () => {
