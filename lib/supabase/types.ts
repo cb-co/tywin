@@ -1601,8 +1601,8 @@ export type Database = {
         Args: { p_month: string }
         Returns: {
           day: number
-          this_month: number | null
-          last_month: number | null
+          last_month: number
+          this_month: number
         }[]
       }
       uncategorized_spend: { Args: { p_month: string }; Returns: number }

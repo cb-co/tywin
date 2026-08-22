@@ -49,11 +49,21 @@ import { SavingsGoals } from "@/components/insights/savings-goals";
 
 function ChartCard({
   title,
+  basis,
   icon: Icon,
   className,
   children,
 }: {
   title: string;
+  /** How this card counts money — "when charged" or "when paid". Set on the
+   *  three cards where it is load-bearing, because this page deliberately shows
+   *  both bases at once: the donut and the pace line count a purchase the day
+   *  it is made, while Expenses vs budget counts it the day it leaves an
+   *  account. Two of those figures can land within a few dollars of each other
+   *  in a given month by pure coincidence, which reads as a rounding bug unless
+   *  the cards say what they are. Its own prop rather than a longer title so
+   *  the qualifier stays visually subordinate to the name. */
+  basis?: string;
   icon: LucideIcon;
   className?: string;
   children: React.ReactNode;
@@ -65,9 +75,12 @@ function ChartCard({
     // titles floated a full 2rem clear of their content.
     <Card className={`h-full gap-0 p-6 ${className ?? ""}`}>
       {/* h3, not h2: the section headings are this page's h2s. */}
-      <h3 className="mb-4 flex items-center gap-2 text-lg font-medium text-foreground">
+      <h3 className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-lg font-medium text-foreground">
         <Icon className="size-4 text-muted-foreground" />
         {title}
+        {basis ? (
+          <span className="text-xs font-normal text-muted-foreground">· {basis}</span>
+        ) : null}
       </h3>
       <div className="flex flex-1 flex-col">{children}</div>
     </Card>
@@ -247,15 +260,15 @@ export default async function InsightsPage({
         </Section>
 
         <Section title={t("sectionThisMonth")} actions={monthNav}>
-          <ChartCard title={t("cardSpendingPace")} icon={Gauge} className="@[34rem]:col-span-2">
+          <ChartCard title={t("cardSpendingPace")} basis={t("basisWhenCharged")} icon={Gauge} className="@[34rem]:col-span-2">
             <SpendingPace data={insights.pace} currency={cur} />
           </ChartCard>
 
-          <ChartCard title={t("cardSpendDistribution")} icon={PieChart} className="@[34rem]:col-span-2">
+          <ChartCard title={t("cardSpendDistribution")} basis={t("basisWhenCharged")} icon={PieChart} className="@[34rem]:col-span-2">
             <SpendDonut data={insights.distribution} total={insights.totalSpend} currency={cur} />
           </ChartCard>
 
-          <ChartCard title={t("cardExpensesVsBudget")} icon={BarChart3}>
+          <ChartCard title={t("cardExpensesVsBudget")} basis={t("basisWhenPaid")} icon={BarChart3}>
             <BudgetBars data={insights.budgetBars} currency={cur} />
           </ChartCard>
 
