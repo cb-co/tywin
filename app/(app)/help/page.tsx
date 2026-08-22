@@ -349,6 +349,7 @@ export default async function HelpPage() {
               <li>{t("insightsCostOfOwnership")}</li>
               <li>{t("insightsLoanInterest")}</li>
             </ul>
+            <p className="mt-3 text-sm text-muted-foreground">{t("insightsBasis")}</p>
             <InsightsMock
               label={t("insightsMockLabel")}
               thisMonth={t("insightsMockThisMonth")}

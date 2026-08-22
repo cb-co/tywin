@@ -1597,6 +1597,14 @@ export type Database = {
           total: number
         }[]
       }
+      spending_pace: {
+        Args: { p_month: string }
+        Returns: {
+          day: number
+          this_month: number | null
+          last_month: number | null
+        }[]
+      }
       uncategorized_spend: { Args: { p_month: string }; Returns: number }
     }
     Enums: {

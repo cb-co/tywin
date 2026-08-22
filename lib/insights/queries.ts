@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { baseCurrencyOf } from "@/lib/profile";
-import { addMonths, monthStart, shortMonth } from "@/lib/budgets/month";
+import { addMonths, shortMonth } from "@/lib/budgets/month";
 import { getExchangeRates, convertToBase } from "@/lib/fx";
 import { CHART_FALLBACK } from "@/lib/chart-series";
 import { splitPayments } from "@/lib/accounts/amortization";
@@ -9,6 +9,17 @@ import { loanPaymentAmounts } from "@/lib/insights/net-worth-history";
 import { summarizeCardFees, type FeeLineRow } from "@/lib/accounts/card-fees";
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
+
+/** A pace point past the end of its month comes back null, and the chart needs
+ *  that null to stop drawing rather than flatten the line to zero.
+ *
+ *  Typed `number | null` rather than reading types.ts's shape directly on
+ *  purpose: Postgres does not record whether a set-returning function's output
+ *  columns are nullable, so `npm run db:types` will regenerate these as plain
+ *  `number` even though they are not. Narrowing here keeps the null check legal
+ *  under either generated shape instead of turning into a "no overlap" error
+ *  the next time somebody regenerates. */
+const paceValue = (v: number | null): number | null => (v === null ? null : Number(v));
 
 /** The `"{group} — {name}"` label convention shared by every per-card insights
  *  list, so a card group's multiple currency lines are told apart consistently
@@ -19,11 +30,6 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
  *  fit without contortion. */
 function cardLabel(groupName: string | null | undefined, accountName: string): string {
   return groupName ? `${groupName} — ${accountName}` : accountName;
-}
-
-function daysInMonth(monthIso: string): number {
-  const [y, m] = monthIso.split("-").map(Number);
-  return new Date(y, m, 0).getDate();
 }
 
 export type Insights = {
@@ -48,7 +54,7 @@ export async function getInsights(month: string): Promise<Insights> {
     { data: cats },
     { data: accounts },
     { data: profile },
-    { data: expenses },
+    { data: paceRows },
   ] = await Promise.all([
     supabase.rpc("spend_distribution", { p_month: month }),
     supabase.rpc("category_usage", { p_month: month }),
@@ -62,40 +68,18 @@ export async function getInsights(month: string): Promise<Insights> {
     supabase.from("categories").select("id,name,color"),
     supabase.from("accounts").select("id,name"),
     supabase.from("profiles").select("base_currency").maybeSingle(),
-    supabase
-      .from("transactions")
-      .select("base_total_amount,occurred_at")
-      .in("type", ["expense", "payment"])
-      .eq("exclude_from_budget", false)
-      .gte("occurred_at", addMonths(month, -1))
-      .lt("occurred_at", addMonths(month, 1)),
+    supabase.rpc("spending_pace", { p_month: month }),
   ]);
 
-  // Cumulative spend by day-of-month, this month vs last.
-  const prevMonth = addMonths(month, -1);
-  const thisArr = new Array(31).fill(0);
-  const lastArr = new Array(31).fill(0);
-  for (const e of expenses ?? []) {
-    const d = new Date(e.occurred_at);
-    const iso = monthStart(d);
-    const day = d.getDate();
-    if (iso === month) thisArr[day - 1] += Number(e.base_total_amount ?? 0);
-    else if (iso === prevMonth) lastArr[day - 1] += Number(e.base_total_amount ?? 0);
-  }
-  const thisDays = daysInMonth(month);
-  const lastDays = daysInMonth(prevMonth);
-  const pace: Insights["pace"] = [];
-  let ct = 0;
-  let cl = 0;
-  for (let i = 0; i < 31; i++) {
-    ct += thisArr[i];
-    cl += lastArr[i];
-    pace.push({
-      day: i + 1,
-      thisMonth: i < thisDays ? Math.round(ct * 100) / 100 : null,
-      lastMonth: i < lastDays ? Math.round(cl * 100) / 100 : null,
-    });
-  }
+  /* Cumulative spend by day-of-month, this month against last. Shaped entirely
+     by the spending_pace RPC so it cannot drift from the donut beside it: both
+     read the same accrual rule, and both bucket days with the same date_trunc.
+     See 20260822143000_accrual_spend_insights.sql. */
+  const pace: Insights["pace"] = (paceRows ?? []).map((r) => ({
+    day: r.day,
+    thisMonth: paceValue(r.this_month),
+    lastMonth: paceValue(r.last_month),
+  }));
 
   const tCommon = await getTranslations("Common");
 
