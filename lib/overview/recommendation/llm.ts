@@ -2,6 +2,7 @@ import { z } from "zod";
 import { generateObject } from "ai";
 import { google } from "@ai-sdk/google";
 import { DEFERRED_INFERENCE_BUDGET_MS, inferenceSignal } from "@/lib/llm/budget";
+import { modelForUser } from "@/lib/llm/owner";
 import { asTone, type Tone } from "./tone";
 import type { RecommendationSnapshot } from "./snapshot";
 
@@ -71,6 +72,9 @@ The snapshot contains no names — not the person's, not their bank's, not their
  * the CHECK constraint would refuse. `headline` and `body` have no such default
  * — an empty card is worse than no card — so an empty one is null.
  *
+ * `email` only picks the model — see lib/llm/owner.ts. It is not sent anywhere:
+ * the snapshot is the whole prompt, and it deliberately contains no names.
+ *
  * A call that overruns DEFERRED_INFERENCE_BUDGET_MS aborts and is treated like
  * any other failure. The budget is generous because nothing waits on this: the
  * overview has already rendered, so a cold call costs a card that fills in late
@@ -79,10 +83,11 @@ The snapshot contains no names — not the person's, not their bank's, not their
 export async function inferRecommendation(
   snapshot: RecommendationSnapshot,
   locale: string,
+  email?: string | null,
 ): Promise<Recommendation | null> {
   try {
     const { object } = await generateObject({
-      model: google(process.env.GOOGLE_MODEL ?? "gemini-3.5-flash-lite"),
+      model: google(modelForUser(email, process.env.GOOGLE_MODEL ?? "gemini-3.5-flash-lite")),
       schema: RecommendationSchema,
       system: systemPrompt(LANGUAGE[locale] ?? LANGUAGE.en),
       prompt: JSON.stringify(snapshot),
