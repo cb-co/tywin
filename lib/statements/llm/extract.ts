@@ -3,6 +3,7 @@ import { google } from "@ai-sdk/google";
 import { StatementSchema, type LlmLine, type LlmSection, type LlmStatement } from "./schema";
 import { SYSTEM_PROMPT } from "./system-prompt";
 import { ddmmyyyyToIso, monthBeforePlusDay } from "../dates";
+import { movesBalance } from "../validate";
 import type { ParsedLine, ParsedSection, ParsedStatement } from "../types";
 
 export type LlmExtractResult =
@@ -118,13 +119,22 @@ function toSection(s: LlmSection): ParsedSection {
   // Σ over the lines whenever there are lines: the checksum is the point, and a
   // stated total the model mis-transcribed would defeat it. The stated figures
   // are the fallback for a summary-only section, which has nothing to sum.
+  //
+  // Adjustments are excluded from both totals, because these two figures ARE
+  // the movement for a line-less section (the checksum's fallback is
+  // totalDebits - totalCredits), and the two paths have to mean the same thing
+  // by "moved the balance". The cost is that the stored credit total no longer
+  // reproduces the bank's printed credit-column figure on a statement carrying
+  // an adjustment; nothing displays or re-derives a balance from it, and an
+  // internally consistent number is worth more than that parity.
+  const moved = lines.filter(movesBalance);
   const totalDebitsCents =
     lines.length > 0
-      ? lines.filter((l) => l.amountCents > 0).reduce((sum, l) => sum + l.amountCents, 0)
+      ? moved.filter((l) => l.amountCents > 0).reduce((sum, l) => sum + l.amountCents, 0)
       : centsOrNull(s.totalDebits) ?? 0;
   const totalCreditsCents =
     lines.length > 0
-      ? lines.filter((l) => l.amountCents < 0).reduce((sum, l) => sum - l.amountCents, 0)
+      ? moved.filter((l) => l.amountCents < 0).reduce((sum, l) => sum - l.amountCents, 0)
       : centsOrNull(s.totalCredits) ?? 0;
 
   return {

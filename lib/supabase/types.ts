@@ -1618,7 +1618,12 @@ export type Database = {
         | "loan"
       billing_cycle: "weekly" | "monthly" | "yearly" | "custom"
       budget_status: "within" | "approaching" | "over"
-      statement_line_kind: "purchase" | "fee" | "credit" | "payment"
+      statement_line_kind:
+        | "purchase"
+        | "fee"
+        | "credit"
+        | "payment"
+        | "adjustment"
       statement_source: "manual" | "import"
       transaction_type: "expense" | "income" | "payment"
     }
@@ -1762,7 +1767,13 @@ export const Constants = {
       ],
       billing_cycle: ["weekly", "monthly", "yearly", "custom"],
       budget_status: ["within", "approaching", "over"],
-      statement_line_kind: ["purchase", "fee", "credit", "payment"],
+      statement_line_kind: [
+        "purchase",
+        "fee",
+        "credit",
+        "payment",
+        "adjustment",
+      ],
       statement_source: ["manual", "import"],
       transaction_type: ["expense", "income", "payment"],
     },

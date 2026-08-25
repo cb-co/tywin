@@ -1,4 +1,15 @@
-export type LineKind = "purchase" | "fee" | "credit" | "payment";
+/** `adjustment` is the odd one: a line the statement PRINTS but does not apply
+ *  to its own closing balance (see validate.ts). Every other kind moves the
+ *  balance by its amount. */
+export type LineKind = "purchase" | "fee" | "credit" | "payment" | "adjustment";
+
+/** Kinds the import records as a statement line but never turns into a
+ *  transaction. A payment is money arriving at the card rather than spending,
+ *  and an adjustment moved no money at all. Mirrored by the `kind not in
+ *  (...)` guard in import_card_statement — change both together. */
+export const NON_TRANSACTION_KINDS: readonly LineKind[] = ["payment", "adjustment"];
+
+export const becomesTransaction = (kind: LineKind) => !NON_TRANSACTION_KINDS.includes(kind);
 
 export interface ParsedLine {
   lineNo: number;
@@ -20,8 +31,8 @@ export interface ParsedSection {
   periodEnd: string;       // ISO date (fecha de corte) — the anchor date
   dueDate: string | null;
   previousBalanceCents: number;
-  totalDebitsCents: number;   // Σ positive line amounts (or stated total when no lines)
-  totalCreditsCents: number;  // Σ |negative| line amounts (or stated total)
+  totalDebitsCents: number;   // Σ positive line amounts, adjustments excluded (or stated total when no lines)
+  totalCreditsCents: number;  // Σ |negative| line amounts, adjustments excluded (or stated total)
   closingBalanceCents: number;   // BALANCE TOTAL / BALANCE AL CORTE — the anchor value
   balanceToPayCents: number;     // BALANCE A PAGAR (equals closing when absent)
   minimumPaymentCents: number | null;

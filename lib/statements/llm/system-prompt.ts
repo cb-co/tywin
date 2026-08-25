@@ -42,10 +42,15 @@ UNLABELED SUMMARY BLOCKS: some banks draw their summary table as artwork, so the
   and the foot of the transaction table further down reads "9,875.40   350.00". Match them: 9,875.40 is the debit total, 350.00 the credit total, 10,725.40 the closing balance (repeated in the payment stub). The unmatched 1,200.00 is therefore previousBalance, and it checks out: 1200.00 + 9875.40 - 350.00 = 10725.40. Reporting previousBalance as 0 here because no label said "BALANCE ANTERIOR" is WRONG — the figure is printed, it just lost its heading. These figures illustrate the method only; never carry them into your output.
 
 LINE KIND: classify every transaction line by amount sign and description vocabulary (Spanish or English) —
+  a credit the statement prints but does not apply to its own balance → "adjustment" (see below)
   negative amount + payment vocabulary (pago, abono, payment, ACH, SPE) → "payment"
   other negative amount → "credit"
   description starts with a fee/charge word (cargo, fee, comisión, interés, seguro) → "fee"
   everything else → "purchase"
+
+ADJUSTMENT: a few issuers post a credit that appears in the transaction list and in the credit-column total, but that their own closing balance does not reflect — most often the reversal of financing interest granted for paying the balance in full: CREDITO POR PAGO TOTAL, CREDITO POR PAGO OPORTUNO, REVERSO DE INTERES, INTEREST REVERSAL, INTEREST REFUND FOR FULL PAYMENT. The interest being reversed was charged outside the previous balance, so the reversal does not change the balance either, and the caller excludes these lines from the statement's arithmetic. Mark such a line "adjustment" rather than "credit".
+
+  Use it ONLY for that: a line whose amount you can see the closing balance does not include. Check before assigning it — take previousBalance, add every charge, subtract every payment and credit, and if the result equals the printed closing balance exactly then NOTHING here is an adjustment and every line is an ordinary credit. Cashback and rewards (AHORRO POR COMPRA, rebates) DO reduce the balance and are ordinary credits, never adjustments. Merchant refunds and reversals of a purchase are ordinary credits too. Misfiling an ordinary credit as an adjustment silently overstates what the cardholder owes, so when the arithmetic already ties, do not use this kind at all.
 
 CATEGORIZATION: for each line, set suggestedCategory from exactly this list, based on the merchant name and MCC if present — or null when you are not confident. null is a correct answer, not a failure: an unrecognised line is put in front of the user, who answers it in one tap and the app remembers the answer. A wrong guess is worse than null, because nobody is asked and the money sits under the wrong heading. Do not guess from a merchant name you do not recognise:
   Groceries, Dining, Transport, Housing, Utilities, Health, Shopping, Entertainment, Savings, Other

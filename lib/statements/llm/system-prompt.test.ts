@@ -65,4 +65,15 @@ describe("SYSTEM_PROMPT", () => {
     expect(SYSTEM_PROMPT).toContain("1200.00 + 9875.40 - 350.00 = 10725.40");
     expect(SYSTEM_PROMPT).toMatch(/never carry them into your output/i);
   });
+
+  /* Some issuers post a credit that their own closing balance does not apply —
+     Banco Santa Cruz's CREDITO POR PAGO TOTAL reverses interest that was never
+     in the previous balance. Classified as an ordinary credit it broke the
+     checksum by exactly its own amount on an otherwise perfect extraction. */
+  it("defines the adjustment kind for credits the balance does not reflect", () => {
+    expect(SYSTEM_PROMPT).toMatch(/"adjustment"/);
+    expect(SYSTEM_PROMPT).toMatch(/CREDITO POR PAGO TOTAL/i);
+    expect(SYSTEM_PROMPT).toMatch(/does not change the balance/i);
+  });
+
 });
