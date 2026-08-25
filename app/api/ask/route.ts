@@ -10,7 +10,9 @@ import { google } from "@ai-sdk/google";
 import { getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { CHAT_INFERENCE_BUDGET_MS, inferenceSignal } from "@/lib/llm/budget";
+import { modelForUser } from "@/lib/llm/owner";
 import { systemPrompt, LANGUAGE } from "@/lib/ask/prompt";
+import { collectAskContext } from "@/lib/ask/context";
 import { askTools, CHAT_MAX_STEPS } from "@/lib/ask/tools";
 import { takeAskToken } from "@/lib/ask/rate-limit";
 import { MAX_MESSAGES, stillTooLarge, trimHistory } from "@/lib/ask/history";
@@ -36,9 +38,16 @@ export const maxDuration = 120;
  * budget in lib/ask/tools.ts exist to absorb. If answers get vague or the
  * terminal trace shows it flailing over correct rows, this is the first thing to
  * put back — `GOOGLE_ASK_MODEL` overrides it without a deploy.
+ *
+ * The owner's questions run on the newer model instead (lib/llm/owner.ts). That
+ * is the same quota bet the paragraph above lost, taken again for one account:
+ * if /ask starts 429ing, this is where it will show first, and `OWNER_MODEL`
+ * points back at lite without a deploy.
  */
-function askModel() {
-  return google(process.env.GOOGLE_ASK_MODEL ?? "gemini-3.5-flash-lite");
+function askModel(email: string | null | undefined) {
+  return google(
+    modelForUser(email, process.env.GOOGLE_ASK_MODEL ?? "gemini-3.5-flash-lite"),
+  );
 }
 
 /**
@@ -87,20 +96,27 @@ export async function POST(req: Request) {
     return new Response("Question too large", { status: 413 });
   }
 
-  /* No .eq("id", ...) — RLS scopes the row, as lib/overview/queries.ts does. */
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("base_currency")
-    .maybeSingle();
+  /* Both reads together: they are independent, and the person is waiting on the
+     later of the two rather than the sum.
+
+     No .eq("id", ...) — RLS scopes the row, as lib/overview/queries.ts does.
+     `context` is the accounts, categories and date range the model would
+     otherwise burn an inference turn discovering; milliseconds against a step
+     of a six-step budget, and it never fails the request. */
+  const [{ data: profile }, context] = await Promise.all([
+    supabase.from("profiles").select("base_currency").maybeSingle(),
+    collectAskContext(),
+  ]);
 
   const locale = await getLocale();
 
   const result = streamText({
-    model: askModel(),
+    model: askModel(user.email),
     system: systemPrompt({
       today: new Date().toISOString().slice(0, 10),
       baseCurrency: profile?.base_currency ?? "DOP",
       language: LANGUAGE[locale] ?? LANGUAGE.en,
+      context,
     }),
     messages: await convertToModelMessages(history as unknown as UIMessage[]),
     tools: askTools(),
@@ -150,7 +166,7 @@ export async function GET() {
 
   try {
     await generateText({
-      model: askModel(),
+      model: askModel(user.email),
       prompt: "ok",
       maxOutputTokens: 1,
       abortSignal: inferenceSignal(10_000),

@@ -1,10 +1,11 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import type { Mock } from "vitest";
 
 vi.mock("ai", () => ({ generateObject: vi.fn() }));
 vi.mock("@ai-sdk/google", () => ({ google: vi.fn(() => "model") }));
 
 import { generateObject } from "ai";
+import { google } from "@ai-sdk/google";
 import { inferRecommendation } from "./llm";
 import type { RecommendationSnapshot } from "./snapshot";
 
@@ -116,5 +117,34 @@ describe("inferRecommendation call shape", () => {
     mockReturn({ headline: "Steady month", body: "Nothing needs attention.", tone: "good" });
     await inferRecommendation(snapshot, "en");
     expect(lastCall().prompt).toContain("Dining");
+  });
+});
+
+/* The card is written by whichever model lib/llm/owner.ts picks; everything else
+   about the call is identical, which is why only the model id is asserted. */
+describe("inferRecommendation model choice", () => {
+  const asked = () => (google as unknown as Mock).mock.calls[0][0];
+
+  beforeEach(() => {
+    process.env.OWNER_EMAIL = "me@example.com";
+    mockReturn({ headline: "Steady month", body: "Nothing needs attention.", tone: "good" });
+  });
+  afterEach(() => {
+    delete process.env.OWNER_EMAIL;
+  });
+
+  it("uses the owner model for the owner", async () => {
+    await inferRecommendation(snapshot, "en", "me@example.com");
+    expect(asked()).toBe("gemini-3.7-flash");
+  });
+
+  it("uses the shared model for anyone else", async () => {
+    await inferRecommendation(snapshot, "en", "someone@example.com");
+    expect(asked()).toBe("gemini-3.5-flash-lite");
+  });
+
+  it("uses the shared model when no email is passed at all", async () => {
+    await inferRecommendation(snapshot, "en");
+    expect(asked()).toBe("gemini-3.5-flash-lite");
   });
 });

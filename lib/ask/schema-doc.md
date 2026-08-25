@@ -3,6 +3,25 @@
 You may query these four views and nothing else. They are already scoped to one
 person — never filter by `user_id`, and never mention it.
 
+## Dates and types
+
+Money columns are `numeric`. Ids are `uuid`. Everything else is `text` unless
+said otherwise below.
+
+Only one date column is a timestamp: `occurred_at` on q_transactions. Compare it
+half-open, never with BETWEEN:
+
+    occurred_at >= date '2026-07-01' and occurred_at < date '2026-08-01'
+
+`between '2026-07-01' and '2026-07-31'` reads the second bound as midnight and
+silently drops everything that happened during the last day — a wrong total that
+looks right. Bucketing by month is `date_trunc('month', occurred_at)::date`,
+which buckets in UTC.
+
+Every other date column is a plain `date`, so `=` works on it: `month` on
+q_budgets (always the first of the month), `period_start`, `period_end` and
+`due_date` on q_card_statements, and `start_date` on q_accounts.
+
 ## q_transactions
 
 One row per transaction.

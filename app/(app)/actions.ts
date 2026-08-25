@@ -43,7 +43,7 @@ export async function refreshRecommendation(): Promise<{ refreshed: boolean }> {
   const snapshot = await collectSnapshot();
   if (!snapshot) return { refreshed: false };
 
-  const rec = await inferRecommendation(snapshot, locale);
+  const rec = await inferRecommendation(snapshot, locale, user.email);
   if (!rec) return { refreshed: false };
 
   const { error } = await supabase.from("daily_recommendations").upsert(
