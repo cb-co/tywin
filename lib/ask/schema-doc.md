@@ -1,7 +1,36 @@
 # The data you can query
 
-You may query these four views and nothing else. They are already scoped to one
+You may query these five views and nothing else. They are already scoped to one
 person — never filter by `user_id`, and never mention it.
+
+## Two different questions: what it WAS, and what it was FOR
+
+Spending is described along two dimensions, and confusing them is the single
+easiest way to give a wrong answer here.
+
+`category` is the **qualifier** — what a transaction actually was. Groceries,
+Utilities, Dining. There are many of them and they are specific.
+
+`budget_group` is the **plan** — the handful of buckets the person budgets
+against. Essentials, Lifestyle, Future. There are few of them and they are
+coarse.
+
+They are not two names for the same thing and they do not line up one-to-one. A
+category rolls up to at most one group, and a single transaction may override
+that: a taxi is `category = Transport` but may be `budget_group = Lifestyle`
+because it was a night out. Both are true of the same row at the same time.
+
+So:
+
+- "What did I spend on **groceries**?" is a `category` question — q_transactions.
+- "How am I doing on **Essentials**?" is a `budget_group` question —
+  q_budget_groups.
+- Never answer one with the other, and never sum categories to reach a group
+  total. Read `budget_group` off the row instead; the rollup and the overrides
+  are already applied there.
+
+A row may have a `category` and no `budget_group`, or the reverse. Neither is an
+error — it means that part has not been set up.
 
 ## Dates and types
 
@@ -39,6 +68,7 @@ One row per transaction.
 | `cash_out` | **Use this for "how much left my account".** |
 | `cash_in` | Income. |
 | `exclude_from_budget`, `fx_fallback`, `mcc` | `mcc` is the merchant category code, present only on imported statement rows. |
+| `budget_group_id`, `budget_group` | Which budget bucket this row counts against — the transaction's own override if it has one, otherwise the group its category rolls up to. Already resolved; never recompute it from `category`. |
 
 ### budget_spend vs cash_out
 
@@ -83,9 +113,26 @@ Columns: `id`, `account_id`, `account`, `period_start`, `period_end`,
 `avg_daily_balance`, `cost_of_carry`, `credit_limit`, `available_credit`,
 `overdue_amount`, `source`.
 
+## q_budget_groups
+
+One row per month per budgeted **group** — the planning dimension. Read this for
+"am I over on Essentials", "how much of my Lifestyle budget is left".
+
+Columns: `month`, `budget_group_id`, `budget_group`, `budget`, `used`,
+`remaining`. `month` is the first day of the month. A group with no budget set
+for that month has no row — spending per group regardless of budget is a GROUP
+BY on `budget_group` in q_transactions, not a question for this view.
+
+`used` counts the same money q_budgets counts — expenses and card payments,
+minus anything excluded. Only the grouping differs.
+
 ## q_budgets
 
-One row per month per budgeted category.
+One row per month per budgeted **category** — the qualifier dimension. This is
+the older of the two budget systems and the two are independent: a person may
+use either, both, or neither. If a question is about a bucket by name, check
+which vocabulary the name belongs to before choosing between this and
+q_budget_groups.
 
 Columns: `month`, `category_id`, `category`, `budget`, `used`, `remaining`.
 `month` is the first day of the month. A category with no budget set has no row.

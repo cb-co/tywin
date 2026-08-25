@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -181,6 +176,77 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      budget_group_budgets: {
+        Row: {
+          amount: number
+          budget_group_id: string
+          created_at: string
+          id: string
+          month: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          budget_group_id: string
+          created_at?: string
+          id?: string
+          month: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          budget_group_id?: string
+          created_at?: string
+          id?: string
+          month?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_group_budgets_budget_group_id_fkey"
+            columns: ["budget_group_id"]
+            isOneToOne: false
+            referencedRelation: "budget_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_groups: {
+        Row: {
+          color: string | null
+          created_at: string
+          emoji: string | null
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
           updated_at?: string
           user_id?: string
         }
@@ -489,6 +555,7 @@ export type Database = {
       }
       categories: {
         Row: {
+          budget_group_id: string | null
           color: string | null
           created_at: string
           emoji: string | null
@@ -500,6 +567,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          budget_group_id?: string | null
           color?: string | null
           created_at?: string
           emoji?: string | null
@@ -511,6 +579,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          budget_group_id?: string | null
           color?: string | null
           created_at?: string
           emoji?: string | null
@@ -521,7 +590,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categories_budget_group_id_fkey"
+            columns: ["budget_group_id"]
+            isOneToOne: false
+            referencedRelation: "budget_groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       category_budgets: {
         Row: {
@@ -1048,6 +1125,7 @@ export type Database = {
           amount: number
           base_amount: number
           base_total_amount: number
+          budget_group_id: string | null
           category_id: string | null
           created_at: string
           currency: string
@@ -1076,6 +1154,7 @@ export type Database = {
           amount: number
           base_amount?: number
           base_total_amount?: number
+          budget_group_id?: string | null
           category_id?: string | null
           created_at?: string
           currency: string
@@ -1104,6 +1183,7 @@ export type Database = {
           amount?: number
           base_amount?: number
           base_total_amount?: number
+          budget_group_id?: string | null
           category_id?: string | null
           created_at?: string
           currency?: string
@@ -1168,6 +1248,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "q_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_budget_group_id_fkey"
+            columns: ["budget_group_id"]
+            isOneToOne: false
+            referencedRelation: "budget_groups"
             referencedColumns: ["id"]
           },
           {
@@ -1340,6 +1427,26 @@ export type Database = {
         }
         Relationships: []
       }
+      q_budget_groups: {
+        Row: {
+          budget: number | null
+          budget_group: string | null
+          budget_group_id: string | null
+          month: string | null
+          remaining: number | null
+          used: number | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_group_budgets_budget_group_id_fkey"
+            columns: ["budget_group_id"]
+            isOneToOne: false
+            referencedRelation: "budget_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       q_budgets: {
         Row: {
           budget: number | null
@@ -1440,6 +1547,8 @@ export type Database = {
           base_amount: number | null
           base_currency: string | null
           base_total_amount: number | null
+          budget_group: string | null
+          budget_group_id: string | null
           budget_spend: number | null
           cash_in: number | null
           cash_out: number | null
@@ -1584,6 +1693,10 @@ export type Database = {
         }[]
       }
       delete_own_account: { Args: never; Returns: undefined }
+      effective_budget_group: {
+        Args: { p_category_group: string; p_transaction_group: string }
+        Returns: string
+      }
       import_card_statement: { Args: { p: Json }; Returns: string }
       recompute_card_balance: {
         Args: { p_account: string }
@@ -1779,3 +1892,4 @@ export const Constants = {
     },
   },
 } as const
+
