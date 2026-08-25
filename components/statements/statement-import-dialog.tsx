@@ -503,7 +503,7 @@ export function StatementImportDialog({
                         </p>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {t("sectionSummary", { lines: s.lineCount, payments: s.paymentCount })}
+                        {t("sectionSummary", { lines: s.lineCount, skipped: s.skippedCount })}
                       </p>
                       <div className="min-w-0 space-y-1.5">
                         <Label className="text-xs">{t("mapSectionLabel", { section: s.sectionKey })}</Label>

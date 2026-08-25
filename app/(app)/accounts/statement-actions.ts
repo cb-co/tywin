@@ -17,7 +17,7 @@ import { cardBackfillFromSection } from "@/lib/statements/backfill";
 import { resolveCategoryId, type CategoryRuleRow } from "@/lib/statements/categorize";
 import { baseRate, getExchangeRates } from "@/lib/fx";
 import { baseCurrencyOf, DEFAULT_BASE_CURRENCY } from "@/lib/profile";
-import type { ParsedStatement } from "@/lib/statements/types";
+import { becomesTransaction, type LineKind, type ParsedStatement } from "@/lib/statements/types";
 import type { ImportTarget } from "@/lib/statements/import-targets";
 
 export interface SectionPreview {
@@ -28,8 +28,11 @@ export interface SectionPreview {
   dueDate: string | null;
   closingBalance: string;
   costOfCarry: string | null;
+  /** Lines that become transactions. */
   lineCount: number;
-  paymentCount: number;
+  /** Lines the import records but does not turn into transactions: payments,
+   *  and adjustments the statement never applied to its own balance. */
+  skippedCount: number;
   creditLimit: string | null;
   mappedAccountId: string | null;
   suggestedAccountId: string | null;
@@ -298,8 +301,8 @@ export async function parseStatement(formData: FormData): Promise<StatementPrevi
       dueDate: s.dueDate,
       closingBalance: centsToDecimal(s.closingBalanceCents),
       costOfCarry: s.costOfCarryCents === null ? null : centsToDecimal(s.costOfCarryCents),
-      lineCount: s.lines.filter((l) => l.kind !== "payment").length,
-      paymentCount: s.lines.filter((l) => l.kind === "payment").length,
+      lineCount: s.lines.filter((l) => becomesTransaction(l.kind)).length,
+      skippedCount: s.lines.filter((l) => !becomesTransaction(l.kind)).length,
       creditLimit: s.creditLimitCents === null ? null : centsToDecimal(s.creditLimitCents),
       mappedAccountId: mapped,
       suggestedAccountId: mapped ?? suggestions.get(s.sectionKey) ?? null,
@@ -558,7 +561,7 @@ export interface StatementLineDetail {
   description: string;
   mcc: string | null;
   amount: number;
-  kind: "purchase" | "fee" | "credit" | "payment";
+  kind: LineKind;
 }
 
 export async function getStatementLineDetail(statementId: string): Promise<StatementLineDetail[]> {

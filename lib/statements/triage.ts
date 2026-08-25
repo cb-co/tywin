@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { merchantPattern } from "@/lib/statements/merchant";
+import { becomesTransaction } from "@/lib/statements/types";
 
 export interface TriageLine {
   transactionId: string;
@@ -122,11 +123,11 @@ export async function getImportTriage(importId: string): Promise<ImportTriage | 
       statements.map((s) => s.id),
     );
 
-  // Payment lines never become transactions (the import RPC skips them), so they
-  // are neither triaged nor counted — the denominator is what a person could
-  // categorise, not every printed row.
+  // Payments and adjustments never become transactions (the import RPC skips
+  // them), so they are neither triaged nor counted — the denominator is what a
+  // person could categorise, not every printed row.
   const lines: TriageLine[] = (rows ?? [])
-    .filter((r) => r.kind !== "payment" && r.transaction)
+    .filter((r) => becomesTransaction(r.kind) && r.transaction)
     .map((r) => ({
       transactionId: r.transaction!.id,
       description: r.description,

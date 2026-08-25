@@ -83,6 +83,51 @@ const LINE_LESS: LlmStatement = {
   ],
 };
 
+/* A real Banco Santa Cruz shape: the bank prints CREDITO POR PAGO TOTAL among
+   the credits, but its closing balance is computed without it. 1000.00 + 500.00
+   = 1500.00 closing, with the -1140.08 adjustment sitting alongside. */
+const WITH_ADJUSTMENT: LlmStatement = {
+  cardNetwork: "visa",
+  cardLast4: "3627",
+  sections: [
+    {
+      sectionKind: "revolving",
+      periodStart: null,
+      currency: "DOP",
+      periodEnd: "2026-08-03",
+      dueDate: "2026-08-28",
+      previousBalance: 1000.00,
+      closingBalance: 1500.00,
+      balanceToPay: 1500.00,
+      minimumPayment: null,
+      overdueAmount: null,
+      overdueInstallments: null,
+      creditLimit: null,
+      availableCredit: null,
+      interestRateAnnual: null,
+      avgDailyBalance: null,
+      avgDailyBalancePrior: null,
+      costOfCarry: null,
+      costOfCarryPrior: null,
+      totalDebits: null,
+      totalCredits: null,
+      totalCashback: null,
+      lines: [
+        {
+          madeOn: "2026-07-10", postedOn: "2026-07-11", reference: null,
+          description: "TOTALENERGIES CARR MELLA", mcc: null, authCode: null,
+          amount: 500.00, kind: "purchase", suggestedCategory: "Transport",
+        },
+        {
+          madeOn: "2026-07-04", postedOn: "2026-07-04", reference: null,
+          description: "CREDITO POR PAGO TOTAL", mcc: null, authCode: null,
+          amount: -1140.08, kind: "adjustment", suggestedCategory: null,
+        },
+      ],
+    },
+  ],
+};
+
 describe("toParsedStatement", () => {
   it("derives a stable parserId from network + last4 + currencies", () => {
     expect(toParsedStatement(WITH_LINES).parserId).toBe("visa_1234_dop");
@@ -119,6 +164,26 @@ describe("toParsedStatement", () => {
 
   it("passes checksums for a line-less section", () => {
     expect(validateChecksums(toParsedStatement(LINE_LESS))).toEqual([]);
+  });
+
+  /* An adjustment moves no money, so it must not enter the movement figures
+     either — the stored totals and the checksum have to agree on what "moved
+     the balance" means, or the line-less fallback (total_debits - total_credits)
+     would answer a different question than the with-lines path. */
+  it("leaves adjustment lines out of the debit and credit totals", () => {
+    const s = toParsedStatement(WITH_ADJUSTMENT).sections[0];
+    expect(s.totalDebitsCents).toBe(50000);
+    expect(s.totalCreditsCents).toBe(0);
+  });
+
+  it("keeps the adjustment line itself, so the imported ledger matches the PDF", () => {
+    const lines = toParsedStatement(WITH_ADJUSTMENT).sections[0].lines;
+    expect(lines).toHaveLength(2);
+    expect(lines[1]).toMatchObject({ kind: "adjustment", amountCents: -114008 });
+  });
+
+  it("passes checksums for a statement carrying an adjustment", () => {
+    expect(validateChecksums(toParsedStatement(WITH_ADJUSTMENT))).toEqual([]);
   });
 
   /* `ParsedSection.currency` is declared ISO 4217 and consumed as one — the preview

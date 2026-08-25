@@ -195,6 +195,12 @@ export function StatementsPanel({
                             <span className="ml-1.5 rounded bg-muted px-1 py-0.5 text-[9px] uppercase text-muted-foreground">
                               {t("linePaymentBadge")}
                             </span>
+                          ) : l.kind === "adjustment" ? (
+                            /* Printed by the bank, never applied to its balance — the badge is
+                               the only thing that explains why this row does not move the total. */
+                            <span className="ml-1.5 rounded bg-muted px-1 py-0.5 text-[9px] uppercase text-muted-foreground">
+                              {t("lineAdjustmentBadge")}
+                            </span>
                           ) : l.amount < 0 ? (
                             <span className="ml-1.5 rounded bg-success/10 px-1 py-0.5 text-[9px] uppercase text-success">
                               {tTxn("refundBadge")}

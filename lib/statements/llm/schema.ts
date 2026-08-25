@@ -42,7 +42,7 @@ export const LineSchema = z.object({
   mcc: z.string().nullable(),
   authCode: z.string().nullable(),
   amount: Amount,
-  kind: z.enum(["purchase", "fee", "credit", "payment"]),
+  kind: z.enum(["purchase", "fee", "credit", "payment", "adjustment"]),
   suggestedCategory: z.string().nullable(),
 });
 
