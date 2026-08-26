@@ -5,14 +5,24 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
 import { useUiSound } from "@/components/sound/sound-provider";
-import { Plus, Trash2, CopyPlus, Pencil, LayoutGrid, Table as TableIcon } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  CopyPlus,
+  Pencil,
+  FolderPlus,
+  LayoutGrid,
+  Table as TableIcon,
+} from "lucide-react";
 import { setBudget, deleteCategory, copyPreviousMonth } from "@/app/(app)/budgets/actions";
 import { normalizeMonth } from "@/lib/budgets/month";
 import { formatPercent } from "@/lib/format";
-import type { BudgetOverview, BudgetRow } from "@/lib/budgets/queries";
+import type { BudgetGroupRow, BudgetOverview } from "@/lib/budgets/queries";
+import { STATUS_COLOR, barPct } from "@/lib/budgets/bar";
 import { budgetLabelParts } from "@/lib/budgets/label";
 import type { Period, PayCycle } from "@/lib/period/cycle";
 import { CategoryDialog } from "./category-dialog";
+import { GroupDialog } from "./group-dialog";
 import { PeriodPicker } from "./period-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,29 +35,20 @@ import { EmptyState } from "@/components/empty-state";
 import { PieChart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Three states, escalating in loudness. `within` used to be `--primary`, which
-// drew a comfortable budget as the heaviest black bar on the screen and made
-// every row look urgent; the calm state should be the quietest mark here, and
-// only `over` should shout.
-const STATUS_COLOR: Record<BudgetRow["status"], string> = {
-  within: "var(--brand)",
-  approaching: "var(--warning)",
-  over: "var(--destructive)",
-};
-
 /** 28px is fine for a mouse; a thumb wants closer to 40. */
 const TOUCH_TARGET = "[@media(hover:none)]:size-9";
-
-function barPct(used: number, budget: number) {
-  if (budget > 0) return Math.min(Math.max((used / budget) * 100, 0), 100);
-  return used > 0 ? 100 : 0;
-}
 
 export function BudgetGrid({
   overview,
   mode,
   payCycle,
   payAnchor,
+  /* The groups a category can roll up to. Empty for a user who has never made
+     one — which is the whole zero-group path through this component: the
+     category dialog drops its group field, and the only trace of the feature
+     left on the page is the one quiet "Add group" button beside "Add
+     category". */
+  groups = [],
 }: {
   overview: BudgetOverview;
   /** Which side of the picker's toggle is active. Meaningless (and unused)
@@ -55,6 +56,7 @@ export function BudgetGrid({
   mode: "month" | "native";
   payCycle: PayCycle;
   payAnchor: number | null;
+  groups?: BudgetGroupRow[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -66,6 +68,7 @@ export function BudgetGrid({
   // moment any one of them starts deleting.
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const t = useTranslations("Budgets");
+  const tg = useTranslations("BudgetGroups");
   const locale = useLocale();
   const maskedFormatMoney = useMaskedFormatMoney();
   const { playSuccess, playDelete, playError } = useUiSound();
@@ -133,23 +136,45 @@ export function BudgetGrid({
     });
   }
 
-  /* One action, mounted in two places, with width deciding which of them is
-     visible — both are rendered, and the hidden one is inert. Called as a
-     plain function rather than declared as a component so the two stay one
-     definition. Below 450px the toolbar cannot hold
-     three controls without wrapping (in Spanish, "Copiar mes anterior" and
-     "Añadir categoría" together overrun a 375px screen on their own), so the
-     primary action moves up beside the section heading, where GoalGrid keeps
-     its own "add goal" button. Above 450px it stays in the toolbar. */
-  const addCategoryTrigger = (className: string) => (
-    <CategoryDialog
-      trigger={
-        <Button size="sm" className={className}>
-          <Plus className="size-4" />
-          {t("addCategory")}
-        </Button>
-      }
-    />
+  /* The page's two "add" actions, mounted in two places, with width deciding
+     which mount is visible — both are rendered, and the hidden one is inert.
+     Called as a plain function rather than declared as a component so the two
+     stay one definition. Below 450px the toolbar cannot hold three controls
+     without wrapping (in Spanish, "Copiar mes anterior" and "Añadir categoría"
+     together overrun a 375px screen on their own), so they move up beside the
+     section heading, where GoalGrid keeps its own "add goal" button. Above
+     450px they stay in the toolbar.
+
+     They travel together rather than splitting across the two rows because
+     they are the same kind of act — naming a new bucket — and a person who has
+     just decided to make a group should not have to find it somewhere the
+     category button is not. */
+  const addTriggers = (className: string) => (
+    <div className={cn("flex items-center gap-2", className)}>
+      {/* The feature's entire entry point, and deliberately the quieter of the
+          two buttons. Someone who wants groups finds it because it sits where
+          they already are; someone who does not never has to learn the concept
+          exists. There is no wizard and no nag anywhere else — the old budget
+          system keeps working untouched, so there is no deadline to push
+          anyone toward. */}
+      <GroupDialog
+        trigger={
+          <Button variant="outline" size="sm">
+            <FolderPlus className="size-4" />
+            {tg("addGroup")}
+          </Button>
+        }
+      />
+      <CategoryDialog
+        groups={groups}
+        trigger={
+          <Button size="sm">
+            <Plus className="size-4" />
+            {t("addCategory")}
+          </Button>
+        }
+      />
+    </div>
   );
 
   return (
@@ -158,7 +183,7 @@ export function BudgetGrid({
         <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           {t("sectionTitle")}
         </h2>
-        {addCategoryTrigger("min-[450px]:hidden")}
+        {addTriggers("min-[450px]:hidden")}
       </div>
 
       {/* Month switcher + totals.
@@ -255,7 +280,7 @@ export function BudgetGrid({
               <TableIcon className="size-4" />
             </button>
           </div>
-          {addCategoryTrigger("max-[450px]:hidden")}
+          {addTriggers("max-[450px]:hidden")}
         </div>
       </div>
 
@@ -353,6 +378,7 @@ export function BudgetGrid({
                   <CategoryDialog
                     mode="edit"
                     category={row}
+                    groups={groups}
                     trigger={
                       <Button
                         variant="ghost"
@@ -445,6 +471,7 @@ export function BudgetGrid({
                     <CategoryDialog
                       mode="edit"
                       category={row}
+                      groups={groups}
                       trigger={
                         <Button
                           variant="ghost"

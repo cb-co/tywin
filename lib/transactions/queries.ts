@@ -130,11 +130,24 @@ export type QuickAddCategory = {
   name: string;
   emoji: string | null;
   color: string | null;
+  /** The group this category rolls up to by default. The form shows it as the
+   *  override select's resting value, so a person can see what they are
+   *  departing from before they depart from it. */
+  budget_group_id: string | null;
+};
+
+export type QuickAddBudgetGroup = {
+  id: string;
+  name: string;
+  emoji: string | null;
 };
 
 export type QuickAddData = {
   accounts: QuickAddAccount[];
   categories: QuickAddCategory[];
+  /** Empty for a user who has never made a group, which is what keeps the
+   *  transaction form free of the override field for everybody else. */
+  budgetGroups: QuickAddBudgetGroup[];
   currencies: CurrencyRow[];
   baseCurrency: string;
   /** Source account of the most recent expense/payment, for pre-selecting it
@@ -155,6 +168,7 @@ export async function getQuickAddData(): Promise<QuickAddData> {
   const [
     { data: accounts },
     { data: categories },
+    { data: budgetGroups },
     { data: currencies },
     { data: profile },
     { data: recent },
@@ -167,7 +181,8 @@ export async function getQuickAddData(): Promise<QuickAddData> {
       .eq("is_archived", false)
       .order("sort_order")
       .order("created_at"),
-    supabase.from("categories").select("id,name,emoji,color").order("sort_order"),
+    supabase.from("categories").select("id,name,emoji,color,budget_group_id").order("sort_order"),
+    supabase.from("budget_groups").select("id,name,emoji").order("sort_order"),
     supabase.from("currencies").select("*").order("code"),
     supabase.from("profiles").select("base_currency").maybeSingle(),
     /* Enough history to rank categories meaningfully without paying for a full
@@ -189,6 +204,7 @@ export async function getQuickAddData(): Promise<QuickAddData> {
   return {
     accounts: accounts ?? [],
     categories: categories ?? [],
+    budgetGroups: budgetGroups ?? [],
     currencies: currencies ?? [],
     baseCurrency,
     recentAccountId: recentSourceAccountId(recentRows),

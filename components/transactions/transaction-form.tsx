@@ -100,7 +100,7 @@ export function TransactionForm({
   onSuccess?: () => void;
   compact?: boolean;
 }) {
-  const { accounts, categories, baseCurrency, rates } = data;
+  const { accounts, categories, budgetGroups, baseCurrency, rates } = data;
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const t = useTranslations("TransactionForm");
@@ -181,6 +181,7 @@ export function TransactionForm({
           include_tax: transaction.include_tax,
           include_commission: transaction.include_commission,
           exclude_from_budget: transaction.exclude_from_budget,
+          budget_group_id: transaction.budget_group_id ?? "none",
           occurred_at: toDateOnly(transaction.occurred_at),
           description: transaction.description ?? "",
           notes: transaction.notes ?? "",
@@ -195,6 +196,9 @@ export function TransactionForm({
           include_tax: initialFees.include_tax,
           include_commission: initialFees.include_commission,
           exclude_from_budget: false,
+          // "none" is inherit-from-the-category, which is the right default for
+          // every row: an override is a departure, and nothing has departed yet.
+          budget_group_id: "none",
           occurred_at: todayLocal(),
           description: "",
           notes: "",
@@ -206,6 +210,9 @@ export function TransactionForm({
   const toAccountId = useWatch({ control, name: "to_account_id" }) ?? "";
   const amountRaw = useWatch({ control, name: "amount" }) ?? "";
   const transferRateRaw = useWatch({ control, name: "transfer_rate" }) ?? "";
+  /* Watched, not read once: the override's resting label names the group the
+     chosen category rolls up to, so changing the category has to relabel it. */
+  const categoryId = useWatch({ control, name: "category_id" }) ?? "";
 
   const src = accounts.find((a) => a.id === accountId);
   const dst = accounts.find((a) => a.id === toAccountId);
@@ -236,6 +243,33 @@ export function TransactionForm({
   // Transfer tax and network fee model money leaving a bank account via
   // wire/ACH — meaningless from a card, cash, loan, or investment origin.
   const srcIsBankAccount = src?.type === "checking" || src?.type === "savings";
+
+  /* The budget-group override.
+     Shown only to somebody who actually has groups, and never for income,
+     which counts against no plan. It is the feature's whole reason for
+     existing — the taxi that stays Transport for reporting and counts as
+     Lifestyle in the plan — and it is also the easiest thing to get wrong by
+     making it prominent, so it lives down here with the fee toggles rather
+     than anywhere in the primary field flow. Most rows never touch it. */
+  const showGroupOverride = type !== "income" && budgetGroups.length > 0;
+  const groupNameById = new Map(budgetGroups.map((g) => [g.id, g]));
+  /* What the row would count under if the override were left alone, shown as
+     the resting option's label so the default is visible and the override
+     reads as a departure from something rather than a choice out of nowhere. */
+  const inheritedGroup = groupNameById.get(
+    categories.find((c) => c.id === categoryId)?.budget_group_id ?? "",
+  );
+  const inheritLabel = inheritedGroup
+    ? t("budgetGroupInheritNamed", {
+        group: `${inheritedGroup.emoji ? `${inheritedGroup.emoji} ` : ""}${inheritedGroup.name}`,
+      })
+    : t("budgetGroupInherit");
+  const groupItems: Record<string, string> = {
+    none: inheritLabel,
+    ...Object.fromEntries(
+      budgetGroups.map((g) => [g.id, `${g.emoji ? `${g.emoji} ` : ""}${g.name}`]),
+    ),
+  };
 
   /* Watched, not read once, so the compact fee line updates live as the
      amount is typed or the (hidden, in compact mode) toggles change. */
@@ -278,6 +312,9 @@ export function TransactionForm({
   // uncategorized rather than silently inheriting whatever was picked
   // before switching type.
   useEffect(() => {
+    // Income counts against no plan, so an override left standing from an
+    // expense would be a group on a row that can never reach a budget.
+    if (type === "income") setValue("budget_group_id", "none");
     if (type === "income") setValue("category_id", "");
     else if (type === "expense" && !getValues("category_id"))
       setValue("category_id", categories[0]?.id ?? "");
@@ -582,7 +619,7 @@ export function TransactionForm({
           ) : null}
 
           {/* Fee toggles */}
-          {type !== "income" && (srcIsBankAccount || type === "expense") ? (
+          {type !== "income" && (srcIsBankAccount || type === "expense" || showGroupOverride) ? (
             <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
               {srcIsBankAccount ? (
                 <>
@@ -629,6 +666,42 @@ export function TransactionForm({
                     />
                   )}
                 />
+              ) : null}
+              {showGroupOverride ? (
+                <div className="space-y-1.5">
+                  {/* Named for what it does, not for what it is. "Budget group"
+                      would read as a second category field; the category
+                      already implies a group, and this is the row that leaves
+                      it. */}
+                  <Label htmlFor="budget_group_id" className="text-sm font-normal">
+                    {t("budgetGroupOverrideLabel")}
+                  </Label>
+                  <Controller
+                    control={control}
+                    name="budget_group_id"
+                    render={({ field }) => (
+                      <Select
+                        value={field.value || "none"}
+                        onValueChange={(v) => field.onChange(v ?? "none")}
+                        items={groupItems}
+                      >
+                        <SelectTrigger id="budget_group_id" className="w-full bg-card">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">{inheritLabel}</SelectItem>
+                          {budgetGroups.map((g) => (
+                            <SelectItem key={g.id} value={g.id}>
+                              {g.emoji ? `${g.emoji} ` : ""}
+                              {g.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  <p className="text-xs text-muted-foreground">{t("budgetGroupOverrideHint")}</p>
+                </div>
               ) : null}
             </div>
           ) : null}

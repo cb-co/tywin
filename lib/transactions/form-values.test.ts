@@ -13,6 +13,7 @@ function form(overrides: Partial<TransactionFormValues> = {}): TransactionFormVa
     include_tax: false,
     include_commission: false,
     exclude_from_budget: false,
+    budget_group_id: "none",
     occurred_at: "2026-07-28",
     description: "",
     notes: "",
@@ -45,6 +46,27 @@ describe("normalizeFormValues", () => {
     const note = "Peaje Autopista Duarte";
     expect(normalizeFormValues(form({ notes: note })).notes).toBe(note);
   });
+
+  /* The override's sentinel means "inherit from the category", and the schema
+     only accepts a uuid or "" — the same shape mismatch that once made a
+     payment fail validation on a field its own Select had filled in. */
+  test("flattens the budget-group sentinel to an empty override", () => {
+    expect(normalizeFormValues(form({ budget_group_id: "none" })).budget_group_id).toBe("");
+  });
+
+  test("keeps a real budget group on an expense", () => {
+    const id = "44444444-4444-4444-8444-444444444444";
+    expect(
+      normalizeFormValues(form({ type: "expense", budget_group_id: id })).budget_group_id,
+    ).toBe(id);
+  });
+
+  test("clears the budget group for income, which counts against no plan", () => {
+    const id = "44444444-4444-4444-8444-444444444444";
+    expect(
+      normalizeFormValues(form({ type: "income", budget_group_id: id })).budget_group_id,
+    ).toBe("");
+  });
 });
 
 describe("transactionResolver", () => {
@@ -65,5 +87,15 @@ describe("transactionResolver", () => {
   test("still rejects a genuinely invalid category id", async () => {
     const result = await resolve(form({ type: "expense", category_id: "not-a-uuid" }));
     expect(result.errors.category_id).toBeTruthy();
+  });
+
+  test("does not reject a row left on the 'inherit' budget-group sentinel", async () => {
+    const result = await resolve(form({ budget_group_id: "none" }));
+    expect(result.errors).toEqual({});
+  });
+
+  test("hands the valid callback the budget-group sentinel back", async () => {
+    const result = await resolve(form({ budget_group_id: "none" }));
+    expect(result.values?.budget_group_id).toBe("none");
   });
 });

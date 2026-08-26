@@ -1,7 +1,8 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { baseCurrencyOf } from "@/lib/profile";
-import { addMonths, shortMonth } from "@/lib/budgets/month";
+import { addMonths, monthEnd, shortMonth } from "@/lib/budgets/month";
+import { getBudgetGroupOverview } from "@/lib/budgets/queries";
 import { getExchangeRates, convertToBase } from "@/lib/fx";
 import { CHART_FALLBACK } from "@/lib/chart-series";
 import { splitPayments } from "@/lib/accounts/amortization";
@@ -38,6 +39,9 @@ export type Insights = {
   baseCurrency: string;
   distribution: { name: string; value: number; color: string }[];
   budgetBars: { name: string; used: number; budget: number }[];
+  /** Which dimension `budgetBars` is sliced by, so the card can name what it is
+   *  showing. Only ever one of them — see the switch in getInsights. */
+  budgetBarsBy: "category" | "group";
   trend: { month: string; income: number; expense: number; net: number }[];
   utilization: { id: string; name: string; pct: number; currency: string }[];
   loans: { id: string; name: string; paidPct: number; currency: string }[];
@@ -114,6 +118,7 @@ export async function getInsights(month: string): Promise<Insights> {
     { data: cats },
     { data: accounts },
     pace,
+    groupOverview,
   ] = await Promise.all([
     supabase.rpc("spend_distribution", { p_month: month }),
     supabase.rpc("category_usage", { p_month: month }),
@@ -127,6 +132,10 @@ export async function getInsights(month: string): Promise<Insights> {
     supabase.from("categories").select("id,name,color"),
     supabase.from("accounts").select("id,name"),
     fetchPace(supabase, month, period),
+    // The calendar month, not `period`: these bars sit where category_usage's
+    // monthly bars sit (UX-07 keeps every card but pace monthly), and swapping
+    // which slice the card shows must not also swap its clock.
+    getBudgetGroupOverview({ start: month, end: monthEnd(month) }),
   ]);
 
   const tCommon = await getTranslations("Common");
@@ -150,15 +159,32 @@ export async function getInsights(month: string): Promise<Insights> {
     };
   });
 
-  const budgetBars = (usage ?? [])
-    .map((u) => ({
+  /* Expenses against budget, sliced ONE way.
+     Two stacked charts of the same money sliced two ways is the exact confusion
+     the qualifier/group split exists to remove, so groups replace categories
+     here rather than joining them.
+
+     The switch is on whether the groups have any money in them, not merely on
+     whether any group exists. Someone who makes a single group and never
+     budgets it has said nothing about their plan yet, and flipping the card to
+     an empty state the moment they create one would punish them for trying the
+     feature — with a blank chart, on a screen they did not change. */
+  const barsOf = <T extends { name: string; used: number; budget: number }>(rows: T[]) =>
+    rows
+      .filter((b) => b.budget > 0 || b.used > 0)
+      .sort((a, b) => b.used - b.budget - (a.used - a.budget))
+      .slice(0, 8)
+      .map((b) => ({ name: b.name, used: b.used, budget: b.budget }));
+
+  const groupBars = barsOf(groupOverview.rows);
+  const categoryBars = barsOf(
+    (usage ?? []).map((u) => ({
       name: catById.get(u.category_id ?? "")?.name ?? "—",
       used: Number(u.used ?? 0),
       budget: Number(u.budget ?? 0),
-    }))
-    .filter((b) => b.budget > 0 || b.used > 0)
-    .sort((a, b) => b.used - b.budget - (a.used - a.budget))
-    .slice(0, 8);
+    })),
+  );
+  const budgetBars = groupBars.length > 0 ? groupBars : categoryBars;
 
   const trend = (cashflow ?? []).slice(-8).map((c) => ({
     month: shortMonth(c.month ?? month),
@@ -199,6 +225,7 @@ export async function getInsights(month: string): Promise<Insights> {
     baseCurrency,
     distribution,
     budgetBars,
+    budgetBarsBy: groupBars.length > 0 ? ("group" as const) : ("category" as const),
     trend,
     utilization,
     loans: loanRows,

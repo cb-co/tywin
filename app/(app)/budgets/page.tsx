@@ -1,9 +1,10 @@
 import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/page-header";
 import { BudgetGrid } from "@/components/budgets/budget-grid";
+import { GroupGrid } from "@/components/budgets/group-grid";
 import { GoalGrid } from "@/components/goals/goal-grid";
 import { Separator } from "@/components/ui/separator";
-import { getBudgetOverview } from "@/lib/budgets/queries";
+import { getBudgetOverview, getBudgetGroupOverview } from "@/lib/budgets/queries";
 import { getGoalsOverview } from "@/lib/goals/queries";
 import { normalizeMonth, monthEnd } from "@/lib/budgets/month";
 import { createClient } from "@/lib/supabase/server";
@@ -57,8 +58,9 @@ export default async function BudgetsPage({
         ? "month"
         : "native";
 
-  const [overview, goals] = await Promise.all([
+  const [overview, groupOverview, goals] = await Promise.all([
     getBudgetOverview(period),
+    getBudgetGroupOverview(period),
     getGoalsOverview(),
   ]);
   const t = await getTranslations("Budgets");
@@ -77,11 +79,19 @@ export default async function BudgetsPage({
           budgets heading doubles as an overflow slot for the "add category"
           button on narrow screens, and that placement only makes sense next to
           the toolbar it moves out of. */}
+      {/* The plan, then its breakdown. Groups answer to the same period as
+          budgets, so they sit inside the same band pair rather than getting a
+          picker of their own — and GroupGrid renders nothing at all until the
+          first group exists, so for everyone else this line is invisible and
+          the page below is exactly the page that was here before. */}
+      <GroupGrid overview={groupOverview} payCycle={payCycle} />
+
       <BudgetGrid
         overview={overview}
         mode={mode}
         payCycle={payCycle}
         payAnchor={payAnchor}
+        groups={groupOverview.rows}
       />
 
       <Separator />

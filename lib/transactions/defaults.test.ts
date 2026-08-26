@@ -29,7 +29,7 @@ function account(over: Partial<QuickAddAccount> = {}): QuickAddAccount {
 }
 
 function category(id: string): QuickAddCategory {
-  return { id, name: id, emoji: null, color: null };
+  return { id, name: id, emoji: null, color: null, budget_group_id: null };
 }
 
 describe("rankCategoryIds", () => {

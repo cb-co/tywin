@@ -402,7 +402,34 @@
     "addButton": "Añadir categoría",
     "saveChangesButton": "Guardar cambios",
     "toastAdded": "Categoría añadida",
-    "toastUpdated": "Categoría actualizada"
+    "toastUpdated": "Categoría actualizada",
+    "groupLabel": "Grupo de presupuesto",
+    "groupNone": "Sin grupo",
+    "groupHint": "Contra qué cuenta este gasto en tu plan mensual."
+  },
+  "BudgetGroups": {
+    "sectionTitle": "Grupos de presupuesto",
+    "addGroup": "Añadir grupo",
+    "amountOfBudget": "{used} de {budget}",
+    "amountPlaceholder": "0",
+    "budgetForAria": "Presupuesto para {name}",
+    "editAria": "Editar {name}",
+    "deleteAria": "Eliminar {name}",
+    "groupDeleted": "Grupo eliminado",
+    "nameRequired": "El nombre es obligatorio"
+  },
+  "BudgetGroupDialog": {
+    "addTitle": "Nuevo grupo",
+    "editTitle": "Editar grupo",
+    "emojiLabel": "Emoji",
+    "nameLabel": "Nombre",
+    "namePlaceholder": "ej. Esenciales",
+    "colorLabel": "Color",
+    "colorSwatchAria": "Color {color}",
+    "addButton": "Añadir grupo",
+    "saveChangesButton": "Guardar cambios",
+    "toastAdded": "Grupo añadido",
+    "toastUpdated": "Grupo actualizado"
   },
   "Goals": {
     "nameRequired": "Ponle un nombre a la meta",
@@ -559,7 +586,11 @@
     "feeLineTax": "+{amount} impuesto",
     "feeLineFee": "+{amount} comisión",
     "feeLineNoFeeSameBank": "sin comisión, mismo banco",
-    "feeLineEdit": "editar"
+    "feeLineEdit": "editar",
+    "budgetGroupOverrideLabel": "Contar en otro grupo",
+    "budgetGroupInherit": "Igual que la categoría",
+    "budgetGroupInheritNamed": "Igual que la categoría ({group})",
+    "budgetGroupOverrideHint": "El gasto conserva su categoría; solo cambia dónde cuenta en el plan."
   },
   "Subscriptions": {
     "pageTitle": "Suscripciones",
@@ -676,7 +707,8 @@
     "transferTaxLabel": "Impuesto",
     "cardSavingsGoals": "Metas de ahorro",
     "savingsGoalsTotal": "Total ahorrado",
-    "savingsGoalsEmpty": "Aún no hay metas de ahorro"
+    "savingsGoalsEmpty": "Aún no hay metas de ahorro",
+    "cardExpensesVsBudgetGroups": "Grupos frente al presupuesto"
   },
   "Ask": {
     "title": "Pregunta a Cashly",
@@ -1081,6 +1113,18 @@
     "settingsMockSound": "Sonido",
     "settingsMockInstall": "Instalar app",
     "settingsMockInstallButton": "Instalar",
+
+    "budgetGroupsTitle": "Grupos de presupuesto",
+    "budgetGroupsIntro": "Una categoría dice qué fue un gasto. Un grupo dice contra qué cuenta. Separar las dos cosas te deja nombrar tus gastos con precisión sin que tu plan mensual se convierta en una lista de cuarenta renglones.",
+    "budgetGroupsQualifier": "Categoría: Supermercado, Combustible, Alquiler. Específica, y puedes tener tantas como quieras.",
+    "budgetGroupsGroup": "Grupo: Esenciales, Estilo de vida, Futuro. Grueso, y la mayoría de la gente quiere entre tres y seis.",
+    "budgetGroupsAssign": "Cada categoría se asigna a un grupo desde su propio diálogo, y todo gasto de esa categoría lo hereda.",
+    "budgetGroupsOverride": "Un gasto suelto puede contar en otro grupo sin dejar su categoría: ese Uber sigue siendo Transporte en tus reportes y cuenta en Estilo de vida en tu plan.",
+    "budgetGroupsOptionalTitle": "Todo esto es opcional",
+    "budgetGroupsOptionalBody": "Si nunca creas un grupo, la página de Presupuestos se ve y funciona exactamente como siempre. Tus presupuestos por categoría siguen ahí y siguen contando.",
+    "budgetGroupsMockEssentials": "Esenciales",
+    "budgetGroupsMockLifestyle": "Estilo de vida",
+    "budgetGroupsMockFuture": "Futuro",
 
     "footerNote": "Esta guía sigue la propia navegación de la app, de principio a fin."
   }

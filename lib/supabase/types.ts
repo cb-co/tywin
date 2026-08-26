@@ -1711,6 +1711,17 @@ export type Database = {
           used: number
         }[]
       }
+      budget_group_usage_range: {
+        Args: { p_end: string; p_start: string }
+        Returns: {
+          budget: number
+          budget_group_id: string
+          budget_monthly: number
+          remaining: number
+          status: Database["public"]["Enums"]["budget_status"]
+          used: number
+        }[]
+      }
       category_usage_range: {
         Args: { p_end: string; p_start: string }
         Returns: {

@@ -268,7 +268,15 @@ export default async function InsightsPage({
             <SpendDonut data={insights.distribution} total={insights.totalSpend} currency={cur} />
           </ChartCard>
 
-          <ChartCard title={t("cardExpensesVsBudget")} basis={t("basisWhenPaid")} icon={BarChart3}>
+          <ChartCard
+            title={
+              insights.budgetBarsBy === "group"
+                ? t("cardExpensesVsBudgetGroups")
+                : t("cardExpensesVsBudget")
+            }
+            basis={t("basisWhenPaid")}
+            icon={BarChart3}
+          >
             <BudgetBars data={insights.budgetBars} currency={cur} />
           </ChartCard>
 

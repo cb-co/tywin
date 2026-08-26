@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Sparkles,
   Tags,
+  Layers,
   Wallet,
 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
@@ -22,6 +23,7 @@ import { SectionNav, type HelpSection } from "@/components/help/section-nav";
 import {
   AccountsMock,
   AskMock,
+  BudgetGroupsMock,
   BudgetsMock,
   InsightsMock,
   LedgerMock,
@@ -42,6 +44,7 @@ export default async function HelpPage() {
     { id: "accounts", label: t("accountsTitle"), icon: <Wallet className={navIconClass} /> },
     { id: "transactions", label: t("transactionsTitle"), icon: <ArrowLeftRight className={navIconClass} /> },
     { id: "budgets", label: t("budgetsTitle"), icon: <PieChart className={navIconClass} /> },
+    { id: "budget-groups", label: t("budgetGroupsTitle"), icon: <Layers className={navIconClass} /> },
     { id: "subscriptions", label: t("subscriptionsTitle"), icon: <Repeat className={navIconClass} /> },
     { id: "insights", label: t("insightsTitle"), icon: <LineChart className={navIconClass} /> },
     { id: "ask", label: t("askTitle"), icon: <MessageCircle className={navIconClass} /> },
@@ -329,9 +332,37 @@ export default async function HelpPage() {
           </HelpChapter>
 
           <HelpChapter
+            id="budget-groups"
+            icon={Layers}
+            index={6}
+            title={t("budgetGroupsTitle")}
+            intro={t("budgetGroupsIntro")}
+          >
+            <div>
+              {/* Lead with the distinction, not the feature. Somebody reading
+                  this has categories already and no idea why a second kind of
+                  bucket would help; the answer is the first two lines. */}
+              <ul className="space-y-2 text-sm text-foreground">
+                <li>{t("budgetGroupsQualifier")}</li>
+                <li>{t("budgetGroupsGroup")}</li>
+                <li>{t("budgetGroupsAssign")}</li>
+                <li>{t("budgetGroupsOverride")}</li>
+              </ul>
+              <HelpCallout icon={PieChart} title={t("budgetGroupsOptionalTitle")}>
+                {t("budgetGroupsOptionalBody")}
+              </HelpCallout>
+            </div>
+            <BudgetGroupsMock
+              essentials={t("budgetGroupsMockEssentials")}
+              lifestyle={t("budgetGroupsMockLifestyle")}
+              future={t("budgetGroupsMockFuture")}
+            />
+          </HelpChapter>
+
+          <HelpChapter
             id="subscriptions"
             icon={Repeat}
-            index={6}
+            index={7}
             title={t("subscriptionsTitle")}
             intro={t("subscriptionsIntro")}
           >
@@ -359,7 +390,7 @@ export default async function HelpPage() {
           <HelpChapter
             id="insights"
             icon={LineChart}
-            index={7}
+            index={8}
             title={t("insightsTitle")}
             intro={t("insightsIntro")}
           >
@@ -387,7 +418,7 @@ export default async function HelpPage() {
           <HelpChapter
             id="ask"
             icon={MessageCircle}
-            index={8}
+            index={9}
             title={t("askTitle")}
             intro={t("askIntro")}
           >
@@ -406,7 +437,7 @@ export default async function HelpPage() {
           <HelpChapter
             id="settings"
             icon={Settings}
-            index={9}
+            index={10}
             title={t("settingsTitle")}
             intro={t("settingsIntro")}
           >

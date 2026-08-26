@@ -22,6 +22,7 @@ import { PaymentCard } from "@/components/accounts/payment-card";
 import { BrandGlyph } from "@/components/ui/brand-glyph";
 import { ACCOUNT_TYPE_META } from "@/lib/accounts/meta";
 import { SWATCHES } from "@/lib/palette";
+import { STATUS_COLOR } from "@/lib/budgets/bar";
 import { readableForeground } from "@/lib/color";
 import { cn } from "@/lib/utils";
 
@@ -469,14 +470,6 @@ export function LedgerMock({
   );
 }
 
-// Same escalation as budget-grid.tsx's STATUS_COLOR: the calm state is the
-// quietest mark on the row, not green — see the comment there for why.
-const BUDGET_STATUS_COLOR = {
-  within: "var(--brand)",
-  approaching: "var(--warning)",
-  over: "var(--destructive)",
-} as const;
-
 export function BudgetsMock({
   month,
   food,
@@ -516,7 +509,65 @@ export function BudgetsMock({
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
               <div
                 className="h-full rounded-full"
-                style={{ width: `${row.pct}%`, backgroundColor: BUDGET_STATUS_COLOR[row.status] }}
+                style={{ width: `${row.pct}%`, backgroundColor: STATUS_COLOR[row.status] }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </MockPanel>
+  );
+}
+
+/**
+ * The group band as it sits above the category band.
+ *
+ * Drawn with the same tile, figure, pill and bar as BudgetsMock directly above
+ * it, because on the real page the two bands are the same money sliced twice
+ * and look it. What the mock is actually teaching is the row count: three
+ * coarse buckets over what the guide has just shown as a longer list of
+ * categories.
+ */
+export function BudgetGroupsMock({
+  essentials,
+  lifestyle,
+  future,
+}: {
+  essentials: string;
+  lifestyle: string;
+  future: string;
+}) {
+  const rows = [
+    { name: essentials, emoji: "🏠", color: SWATCHES[2], used: 1180, budget: 1400, pct: 84, status: "approaching" as const },
+    { name: lifestyle, emoji: "🎈", color: SWATCHES[4], used: 520, budget: 600, pct: 87, status: "approaching" as const },
+    { name: future, emoji: "🌱", color: SWATCHES[7], used: 300, budget: 500, pct: 60, status: "within" as const },
+  ];
+
+  return (
+    <MockPanel>
+      <div className="space-y-4">
+        {rows.map((row) => (
+          <div key={row.name}>
+            <div className="flex items-center gap-3">
+              <ColorTile color={row.color} emoji={row.emoji} name={row.name} size="md" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-foreground">{row.name}</p>
+                <p className="figure text-xs text-muted-foreground tabular-nums">
+                  ${row.used} of ${row.budget}
+                </p>
+              </div>
+            </div>
+            <div className="mt-2 flex items-end justify-between gap-2">
+              <MoneyDisplay amount={row.used} currency="USD" size="stat" />
+              {/* None of these three is over. A plan on track is the truer
+                  picture of the group band — the category mock above already
+                  shows what over looks like, and it looks the same here. */}
+              <StatPill tone="neutral">{row.pct}%</StatPill>
+            </div>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${row.pct}%`, backgroundColor: STATUS_COLOR[row.status] }}
               />
             </div>
           </div>

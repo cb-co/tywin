@@ -18,6 +18,10 @@ export type TransactionFormValues = {
   include_tax: boolean;
   include_commission: boolean;
   exclude_from_budget: boolean;
+  /* Holds the "none" sentinel for "inherit from the category", the same way
+     category_id holds it for "no category" — a Select cannot carry "" as a
+     value, and this one's resting state is the common one. */
+  budget_group_id: string;
   occurred_at: string;
   description: string;
   /* Free text the user adds themselves. Its reason for existing is the
@@ -42,10 +46,19 @@ export type TransactionFormValues = {
  *
  *  Income carries the same rule the schema's superRefine enforces (income has no
  *  category) — the type switch already clears it on screen, this is the same
- *  guarantee for whatever reaches the server. */
+ *  guarantee for whatever reaches the server.
+ *
+ *  `budget_group_id` gets both treatments for the same reasons: its select holds
+ *  the same "none" sentinel, meaning "inherit from the category" rather than "no
+ *  group", and income has no plan to count against. */
 export function normalizeFormValues(values: TransactionFormValues): TransactionFormValues {
   const category_id = values.category_id === "none" ? "" : values.category_id;
-  return { ...values, category_id: values.type === "income" ? "" : category_id };
+  const budget_group_id = values.budget_group_id === "none" ? "" : values.budget_group_id;
+  return {
+    ...values,
+    category_id: values.type === "income" ? "" : category_id,
+    budget_group_id: values.type === "income" ? "" : budget_group_id,
+  };
 }
 
 /** The dialog's resolver. Validates `transactionInput` against the cleaned

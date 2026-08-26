@@ -402,7 +402,34 @@
     "addButton": "Add category",
     "saveChangesButton": "Save changes",
     "toastAdded": "Category added",
-    "toastUpdated": "Category updated"
+    "toastUpdated": "Category updated",
+    "groupLabel": "Budget group",
+    "groupNone": "No group",
+    "groupHint": "What this spending counts against in your monthly plan."
+  },
+  "BudgetGroups": {
+    "sectionTitle": "Budget groups",
+    "addGroup": "Add group",
+    "amountOfBudget": "{used} of {budget}",
+    "amountPlaceholder": "0",
+    "budgetForAria": "Budget for {name}",
+    "editAria": "Edit {name}",
+    "deleteAria": "Delete {name}",
+    "groupDeleted": "Group deleted",
+    "nameRequired": "Name is required"
+  },
+  "BudgetGroupDialog": {
+    "addTitle": "New group",
+    "editTitle": "Edit group",
+    "emojiLabel": "Emoji",
+    "nameLabel": "Name",
+    "namePlaceholder": "e.g. Essentials",
+    "colorLabel": "Color",
+    "colorSwatchAria": "Color {color}",
+    "addButton": "Add group",
+    "saveChangesButton": "Save changes",
+    "toastAdded": "Group added",
+    "toastUpdated": "Group updated"
   },
   "Goals": {
     "nameRequired": "Give the goal a name",
@@ -559,7 +586,11 @@
     "feeLineTax": "+{amount} tax",
     "feeLineFee": "+{amount} fee",
     "feeLineNoFeeSameBank": "no fee, same bank",
-    "feeLineEdit": "edit"
+    "feeLineEdit": "edit",
+    "budgetGroupOverrideLabel": "Count under a different group",
+    "budgetGroupInherit": "Same as the category",
+    "budgetGroupInheritNamed": "Same as the category ({group})",
+    "budgetGroupOverrideHint": "The expense keeps its category; only where it counts in the plan changes."
   },
   "Subscriptions": {
     "pageTitle": "Subscriptions",
@@ -676,7 +707,8 @@
     "transferTaxLabel": "Tax",
     "cardSavingsGoals": "Savings goals",
     "savingsGoalsTotal": "Total saved",
-    "savingsGoalsEmpty": "No savings goals yet"
+    "savingsGoalsEmpty": "No savings goals yet",
+    "cardExpensesVsBudgetGroups": "Groups vs budget"
   },
   "Ask": {
     "title": "Ask Cashly",
@@ -1081,6 +1113,18 @@
     "settingsMockSound": "Sound",
     "settingsMockInstall": "Install app",
     "settingsMockInstallButton": "Install",
+
+    "budgetGroupsTitle": "Budget groups",
+    "budgetGroupsIntro": "A category says what an expense was. A group says what it counts against. Keeping the two apart lets you name your spending precisely without your monthly plan turning into a list of forty lines.",
+    "budgetGroupsQualifier": "Category: Groceries, Fuel, Rent. Specific, and you can have as many as you like.",
+    "budgetGroupsGroup": "Group: Essentials, Lifestyle, Future. Coarse, and most people want between three and six.",
+    "budgetGroupsAssign": "Each category is assigned to a group from its own dialog, and every expense in that category inherits it.",
+    "budgetGroupsOverride": "A single expense can count under a different group without leaving its category: that Uber stays Transport in your reports and counts under Lifestyle in your plan.",
+    "budgetGroupsOptionalTitle": "All of this is optional",
+    "budgetGroupsOptionalBody": "If you never create a group, the Budgets page looks and works exactly as it always has. Your category budgets are still there and still count.",
+    "budgetGroupsMockEssentials": "Essentials",
+    "budgetGroupsMockLifestyle": "Lifestyle",
+    "budgetGroupsMockFuture": "Future",
 
     "footerNote": "This guide mirrors the app's own navigation, top to bottom."
   }

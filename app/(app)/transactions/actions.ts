@@ -26,6 +26,13 @@ const statementEdit = z.object({
   category_id: z.string().uuid().or(z.literal("")).or(z.literal("none")).optional(),
   notes: z.string().optional(),
   exclude_from_budget: z.boolean().default(false),
+  /* The budget-group override belongs on this short list even though the rest
+     of an imported row is the issuer's to own. It is not a fact about the
+     charge — it is a decision about which bucket the charge counts against,
+     which is exactly the decision a person makes while reviewing an import.
+     Leaving it off meant the field the form renders on these rows would accept
+     a change and then silently drop it. */
+  budget_group_id: z.string().uuid().or(z.literal("")).or(z.literal("none")).optional(),
 });
 
 type Result = { error?: string; id?: string };
@@ -43,6 +50,9 @@ function toRow(v: TransactionInput) {
     include_tax: v.include_tax,
     include_commission: v.include_commission,
     exclude_from_budget: v.type === "expense" ? v.exclude_from_budget : false,
+    /* Null means inherit, not "no group" — see transactionInput. Income never
+       carries one, matching the category rule directly above. */
+    budget_group_id: v.type === "income" ? null : v.budget_group_id || null,
     occurred_at: new Date(v.occurred_at).toISOString(),
     description: v.description || null,
     notes: v.notes || null,
@@ -235,16 +245,19 @@ export async function updateTransaction(id: string, input: unknown): Promise<Res
       category_id: raw.category_id,
       notes: raw.notes,
       exclude_from_budget: raw.exclude_from_budget,
+      budget_group_id: raw.budget_group_id,
     });
     if (!parsedEdit.success) return { error: parsedEdit.error.issues[0]?.message ?? t("invalidInput") };
 
     const categoryId = parsedEdit.data.category_id;
+    const groupId = parsedEdit.data.budget_group_id;
     const { error } = await supabase
       .from("transactions")
       .update({
         category_id: !categoryId || categoryId === "none" ? null : categoryId,
         notes: parsedEdit.data.notes || null,
         exclude_from_budget: parsedEdit.data.exclude_from_budget,
+        budget_group_id: !groupId || groupId === "none" ? null : groupId,
       })
       .eq("id", id);
     if (error) return { error: await dbError(error, "updateTransaction") };

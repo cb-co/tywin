@@ -47,6 +47,15 @@ function categorySchema(nameRequiredMessage: string) {
     name: z.string().trim().min(1, nameRequiredMessage).max(40),
     emoji: z.string().trim().max(8).optional().or(z.literal("")),
     color: z.string().trim().max(9).optional().or(z.literal("")),
+    /* Which budget group this category rolls up to.
+       `nullable` and `optional` mean two different things here and both are
+       used. Null is the clear — "this category belongs to no group" — and has
+       to survive as a written value. Undefined is silence, from any caller
+       that predates the field, and must leave the stored group alone; see the
+       update below. An empty string is neither, which is why the dialog sends
+       null rather than "" — `""` fails the uuid cast and surfaces as a
+       validation error about a field the user never typed in. */
+    budget_group_id: z.string().uuid().nullable().optional(),
   });
 }
 
@@ -72,6 +81,7 @@ export async function createCategory(input: unknown): Promise<Result> {
       name: parsed.data.name,
       emoji: parsed.data.emoji || null,
       color: parsed.data.color || null,
+      budget_group_id: parsed.data.budget_group_id ?? null,
       sort_order: (last?.sort_order ?? 0) + 1,
     })
     .select("id")
@@ -88,12 +98,20 @@ export async function updateCategory(id: string, input: unknown): Promise<Result
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? t("invalidInput") };
   const { supabase, user } = await requireUser();
   if (!user) return { error: t("notSignedIn") };
+  /* The group is written only when the caller said something about it. A
+     caller that omits the field is not asking to clear it, and `?? null` here
+     would quietly unassign every category edited by anything that has not
+     learned about groups. An explicit null still clears, which is the whole
+     point of the field being nullable. */
   const { error } = await supabase
     .from("categories")
     .update({
       name: parsed.data.name,
       emoji: parsed.data.emoji || null,
       color: parsed.data.color || null,
+      ...(parsed.data.budget_group_id !== undefined
+        ? { budget_group_id: parsed.data.budget_group_id }
+        : {}),
     })
     .eq("id", id);
   if (error) return { error: await dbError(error, "updateCategory") };

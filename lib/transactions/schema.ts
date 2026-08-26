@@ -32,6 +32,17 @@ export const transactionInput = z
     include_tax: z.boolean().default(false),
     include_commission: z.boolean().default(false),
     exclude_from_budget: z.boolean().default(false),
+    /* The per-transaction budget-group override, and the reason the schema has
+       two group-ish fields where the database has one.
+
+       Empty means INHERIT, never "no group": `effective_budget_group` coalesces
+       the transaction's group over the category's, so a null here leaves the row
+       counting under whatever its category rolls up to. Saying "belongs to no
+       group at all" is not something a single transaction can say, and nothing
+       in the form offers it — clearing the override on a categorised row puts it
+       back under its category's group, which is the only sensible reading of
+       clearing an override. */
+    budget_group_id: z.string().uuid().optional().or(z.literal("")),
     occurred_at: z.string().min(1, "Pick a date"),
     description: z.string().trim().max(200).optional().or(z.literal("")),
     notes: z.string().trim().max(1000).optional().or(z.literal("")),
@@ -41,6 +52,10 @@ export const transactionInput = z
       ctx.addIssue({ code: "custom", path: ["category_id"], message: "Pick a category" });
     if (v.type === "income" && v.category_id)
       ctx.addIssue({ code: "custom", path: ["category_id"], message: "Income has no category" });
+    // Income is not spending, so it counts against no plan and has nothing to
+    // override. The same rule the category above already follows.
+    if (v.type === "income" && v.budget_group_id)
+      ctx.addIssue({ code: "custom", path: ["budget_group_id"], message: "Income has no budget group" });
     if (v.type === "payment") {
       if (!v.to_account_id)
         ctx.addIssue({ code: "custom", path: ["to_account_id"], message: "Pick a destination account" });
