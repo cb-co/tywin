@@ -166,6 +166,7 @@ const context: AskContext = {
     { name: "Old Savings", type: "savings", brand: null, last4: null, currency: "DOP", archived: true },
   ],
   categories: ["Dining", "Groceries"],
+  budgetGroups: ["Essentials", "Lifestyle"],
   earliest: "2024-03-11",
   latest: "2026-08-25",
   partial: false,
@@ -194,11 +195,23 @@ describe("renderContext", () => {
      none, which is a worse answer than saying nothing and letting the model
      look them up the way it always could. */
   it("renders nothing at all when there is nothing to say", () => {
-    expect(renderContext({ accounts: [], categories: [], earliest: null, latest: null, partial: false })).toBe("");
+    expect(renderContext({ accounts: [], categories: [], budgetGroups: [], earliest: null, latest: null, partial: false })).toBe("");
   });
 
   it("says so when a list was cut", () => {
     expect(renderContext({ ...context, partial: true })).toMatch(/not all of them/i);
+  });
+
+  /* The whole point of the second dimension: a flat second list of nouns would
+     make the confusion worse, not better. */
+  it("says the groups are not categories, and which view each one answers", () => {
+    const out = renderContext(context);
+    expect(out).toMatch(/NOT categories/);
+    expect(out).toContain("q_budget_groups");
+  });
+
+  it("omits the groups on a database that has none", () => {
+    expect(renderContext({ ...context, budgetGroups: [] })).not.toMatch(/budget groups/i);
   });
 
   it("reaches the system prompt", () => {

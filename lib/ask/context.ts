@@ -21,6 +21,8 @@ import { createClient } from "@/lib/supabase/server";
 export type AskContext = {
   accounts: AccountFact[];
   categories: string[];
+  /** The planning dimension. Empty on a database where it is not set up. */
+  budgetGroups: string[];
   earliest: string | null;
   latest: string | null;
   /** True when a list was cut, so the prompt can stop claiming it is exhaustive. */
@@ -43,10 +45,14 @@ export type AccountFact = {
  */
 const MAX_ACCOUNTS = 40;
 const MAX_CATEGORIES = 60;
+/* Groups are the dimension a person can hold in their head; a list this long
+   already means the two dimensions have collapsed back into one. */
+const MAX_GROUPS = 20;
 
 export const EMPTY_ASK_CONTEXT: AskContext = {
   accounts: [],
   categories: [],
+  budgetGroups: [],
   earliest: null,
   latest: null,
   partial: false,
@@ -66,7 +72,13 @@ export async function collectAskContext(): Promise<AskContext> {
 
     /* No .eq("user_id", ...) anywhere here — RLS scopes every one of them, as
        lib/overview/queries.ts does. */
-    const [accounts, categories, first, last] = await Promise.all([
+    /* budget_groups may not exist yet — the view lands with a migration, and
+       this code ships ahead of it. PostgREST answers a missing relation with an
+       error rather than a throw, so that arm resolves to no rows and the prompt
+       simply omits the paragraph. It must not take the other three down with
+       it, which is why it is its own entry rather than a second query inside
+       one of them. */
+    const [accounts, categories, groups, first, last] = await Promise.all([
       supabase
         .from("q_accounts")
         .select("name,type,brand,last4,currency,is_archived")
@@ -74,6 +86,7 @@ export async function collectAskContext(): Promise<AskContext> {
         .order("name")
         .limit(MAX_ACCOUNTS + 1),
       supabase.from("categories").select("name").order("sort_order").limit(MAX_CATEGORIES + 1),
+      supabase.from("budget_groups").select("name").order("sort_order").limit(MAX_GROUPS),
       supabase
         .from("transactions")
         .select("occurred_at")
@@ -106,6 +119,9 @@ export async function collectAskContext(): Promise<AskContext> {
           archived: Boolean(a.is_archived),
         })),
       categories: categoryRows.map((c) => c.name).filter((n): n is string => Boolean(n)).slice(0, MAX_CATEGORIES),
+      budgetGroups: (groups.data ?? [])
+        .map((g) => g.name)
+        .filter((n): n is string => Boolean(n)),
       earliest: day(first.data?.[0]?.occurred_at),
       latest: day(last.data?.[0]?.occurred_at),
       partial:

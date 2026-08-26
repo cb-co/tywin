@@ -31,6 +31,16 @@ export function renderContext(ctx: AskContext): string {
     lines.push(`Their categories: ${ctx.categories.join(", ")}.`);
   }
 
+  /* Named as the planning dimension rather than listed flat beside the
+     categories. A bare second list of nouns is exactly what makes the two
+     collapse into one in the model's head — the sentence has to do the work the
+     schema now does. */
+  if (ctx.budgetGroups.length) {
+    lines.push(
+      `Their budget groups — the buckets they plan against, which are NOT categories: ${ctx.budgetGroups.join(", ")}. A question naming one of these is a q_budget_groups question; a question naming a category is a q_transactions question.`,
+    );
+  }
+
   if (ctx.earliest && ctx.latest) {
     lines.push(
       `Their transactions run from ${ctx.earliest} to ${ctx.latest}. A question about a date outside that range has no data behind it — say so rather than querying for it.`,
@@ -90,6 +100,8 @@ Worked examples. Copy the shape, not the values:
   \`select category, sum(budget_spend) as total from q_transactions where occurred_at >= date '2026-07-01' and occurred_at < date '2026-08-01' and budget_spend > 0 group by 1 order by total desc\`
 - "How am I doing on groceries this month?"
   \`select budget, used, remaining from q_budgets where category ilike 'groceries' and month = date_trunc('month', date '${ctx.today}')::date\`
+- "How am I doing on Essentials this month?" (a budget GROUP, not a category)
+  \`select budget_group, budget, used, remaining from q_budget_groups where budget_group ilike 'essentials' and month = date_trunc('month', date '${ctx.today}')::date\`
 - "How much do I owe on the Amex and when is it due?"
   \`select statement_balance, minimum_payment, due_date, available_credit from q_card_statements where account_id = (select id from q_accounts where name ilike '%amex%' or brand ilike '%amex%' limit 1) order by period_end desc limit 1\`
 - "How much have I spent at Nacional this year, and how often do I go?"

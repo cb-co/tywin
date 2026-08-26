@@ -13,6 +13,7 @@ export const ALLOWED_RELATIONS = [
   "q_accounts",
   "q_card_statements",
   "q_budgets",
+  "q_budget_groups",
 ] as const;
 
 export type GuardResult = { ok: true; sql: string } | { ok: false; reason: string };

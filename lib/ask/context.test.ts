@@ -33,11 +33,13 @@ describe("collectAskContext", () => {
     client({
       q_accounts: ACCOUNTS,
       categories: { data: [{ name: "Dining" }, { name: "Groceries" }] },
+      budget_groups: { data: [{ name: "Essentials" }, { name: "Lifestyle" }] },
       transactions: { data: [{ occurred_at: "2024-03-11T14:02:00+00:00" }] },
     });
 
     const ctx = await collectAskContext();
 
+    expect(ctx.budgetGroups).toEqual(["Essentials", "Lifestyle"]);
     expect(ctx.accounts).toHaveLength(2);
     expect(ctx.accounts[0]).toMatchObject({ name: "Amex Platinum", last4: "1234", archived: false });
     expect(ctx.categories).toEqual(["Dining", "Groceries"]);
@@ -57,6 +59,23 @@ describe("collectAskContext", () => {
     const ctx = await collectAskContext();
 
     expect(ctx.accounts).toEqual([]);
+    expect(ctx.categories).toEqual(["Dining"]);
+  });
+
+  /* The view arrives with a migration and this code ships ahead of it.
+     PostgREST answers a missing relation with an error, not a throw — losing
+     the groups paragraph must not lose the accounts and categories too. */
+  it("keeps the rest of the context when budget_groups does not exist yet", async () => {
+    client({
+      q_accounts: ACCOUNTS,
+      categories: { data: [{ name: "Dining" }] },
+      budget_groups: { data: null, error: { message: 'relation "budget_groups" does not exist' } },
+    });
+
+    const ctx = await collectAskContext();
+
+    expect(ctx.budgetGroups).toEqual([]);
+    expect(ctx.accounts).toHaveLength(2);
     expect(ctx.categories).toEqual(["Dining"]);
   });
 
