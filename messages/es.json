@@ -317,6 +317,7 @@
     "stubSubmit": "Agregar y continuar",
     "pickCardHeading": "¿A cuál tarjeta pertenece?",
     "pickCardHint": "Elige la tarjeta que emitió este estado de cuenta.",
+    "pickCardLoading": "Cargando tus tarjetas…",
     "unmatchedSection": "No hay ninguna línea en {currency} libre para esta sección. Agrega una para poder importarla.",
     "addLineButton": "Agregar una línea en {currency}",
     "lineNameSuggestion": "{card} · {currency}",

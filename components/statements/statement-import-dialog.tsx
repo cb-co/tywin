@@ -401,8 +401,40 @@ export function StatementImportDialog({
               </div>
             ) : null}
 
-            {/* Which card first, file second. Nothing is rendered while the list
-                is still in flight — a spinner for one small query would flash. */}
+            {/* The list is still in flight. This used to render nothing, on the
+                theory that a spinner for one small query would only flash — but
+                the query is a round trip to a hosted database, and what it
+                actually left on screen was a dialog with a title, a close
+                button and nothing else, which reads as broken rather than as
+                loading. The heading comes up with the placeholders so the
+                dialog says what it is about from the first frame.
+
+                Accepted: a user with one card (or none) sees the question for
+                as long as the fetch takes before it resolves into the file
+                picker or the stub form. A heading that briefly names the wrong
+                step is a smaller cost than an empty modal, and dodging it would
+                mean holding the whole step behind a delay timer. */}
+            {!targetId && !forceStub && !targetsFailed && targets === null ? (
+              <div className="min-w-0 space-y-3">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">{t("pickCardHeading")}</p>
+                  <p className="text-xs text-muted-foreground">{t("pickCardHint")}</p>
+                </div>
+                {/* h-12 is the height a real row settles at: a text-sm line
+                    (20px) inside p-3 and a 1px border. Sized here so the list
+                    does not jump when it lands. */}
+                <ul className="min-w-0 space-y-2" aria-hidden>
+                  {[0, 1, 2].map((i) => (
+                    <li key={i} className="skeleton h-12 rounded-lg" />
+                  ))}
+                </ul>
+                <p className="sr-only" role="status">
+                  {t("pickCardLoading")}
+                </p>
+              </div>
+            ) : null}
+
+            {/* Which card first, file second. */}
             {!targetId && !forceStub && !targetsFailed && targets !== null ? (
               targets.length === 0 ? (
                 <ImportCardStubStep

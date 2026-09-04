@@ -317,6 +317,7 @@
     "stubSubmit": "Add and continue",
     "pickCardHeading": "Which card is this for?",
     "pickCardHint": "Pick the card this statement came from.",
+    "pickCardLoading": "Loading your cards…",
     "unmatchedSection": "No {currency} line is free for this section. Add one so it can be imported.",
     "addLineButton": "Add a {currency} line",
     "lineNameSuggestion": "{card} · {currency}",
