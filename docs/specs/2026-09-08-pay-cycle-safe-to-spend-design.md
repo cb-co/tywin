@@ -185,6 +185,16 @@ range version keys on **day-offset from period start** and compares the requeste
 period immediately preceding it, returning as many rows as the longer of the two. A quincena is then
 paced against the previous quincena rather than against a month it does not fit inside.
 
+### The range predicate, and why it is written this way
+
+`occurred_at` is `timestamptz`, and every existing routine buckets it with `date_trunc(..., occurred_at)`,
+which resolves in the database's timezone. The range predicate is therefore written
+`occurred_at >= p_start and occurred_at < p_end + 1`, whose implicit date-to-timestamptz cast lands on
+that same midnight boundary. This is not incidental. `20260822143000` exists partly because two charts
+on one page bucketed in different timezones — one in the server's, one in the database's — and
+disagreed about which month a late-night charge belonged to. A range function using a different
+boundary expression would reintroduce exactly that.
+
 ### Guards
 
 Every `_range` function asserts `p_end >= p_start` and rejects a span beyond 366 days, so a malformed
@@ -321,9 +331,14 @@ leap and a common year; a `monthly` anchor of 31 landing in a 30-day month; a `w
 crossing a month boundary and a year boundary; `nextPayday` on the last day of a period and on the
 first; `shiftPeriod` round-tripping ±1 across all three cycles.
 
-**`lib/period/prorate.test.ts`** — a full month prorating to a factor of exactly 1; both quincenas of
-a 31-day month summing to the stored monthly amount; a week spanning two months with different stored
-budgets prorating against each month's own denominator.
+**Proration has no unit test, and that is a deliberate limit.** Proration lives in SQL (§3), and this
+repo has no SQL test harness — every existing `*.test.ts` exercises a pure TypeScript function with
+hand-built rows. Adding a TypeScript mirror of the proration rule purely so a test could assert on it
+would re-create the exact duplication §3 exists to avoid. Instead it is verified once, after the push,
+by a read-only query against the linked project (`supabase db query --linked`), recorded in the plan
+as an explicit verification step: a full month must prorate to a factor of exactly 1, both quincenas
+of a 31-day month must sum to the stored monthly amount, and a week spanning two months must prorate
+against each month's own denominator.
 
 **`lib/overview/available.test.ts`** — each leg in isolation and composed; the minimum clamped to
 `amountDue` when a payment has already taken the balance below the printed minimum; the no-statement
