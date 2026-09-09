@@ -38,11 +38,21 @@ alter table public.profiles
 -- rather than as one loose `between 1 and 31` that would accept a weekday of
 -- 30. Consequence for the app: switching monthly -> semimonthly must null the
 -- anchor in the same statement, or this rejects the write.
+--
+-- A null anchor is allowed for monthly and weekly, and it is not "unset" —
+-- it means the default: the 1st for monthly, Monday for weekly, exactly as
+-- lib/period/cycle.ts (Task 1) already resolves a null anchor. semimonthly
+-- has no such default because it has nothing to anchor: its two periods
+-- always fall on the 15th and the end of the month, which is why its clause
+-- requires null rather than merely allowing it. Writing "is null or between"
+-- explicitly, instead of leaving a bare `between` for Postgres's three-valued
+-- logic to quietly pass a null through, is what keeps a later reader from
+-- "tightening" this into rejecting the very state the app relies on.
 alter table public.profiles
   add constraint profiles_pay_anchor_day_valid check (
     (pay_cycle = 'semimonthly' and pay_anchor_day is null)
-    or (pay_cycle = 'monthly' and pay_anchor_day between 1 and 31)
-    or (pay_cycle = 'weekly'  and pay_anchor_day between 1 and 7)
+    or (pay_cycle = 'monthly' and (pay_anchor_day is null or pay_anchor_day between 1 and 31))
+    or (pay_cycle = 'weekly'  and (pay_anchor_day is null or pay_anchor_day between 1 and 7))
   );
 
 -- card_status does not expose the statement's minimum payment, and the
@@ -268,9 +278,14 @@ $$;
 -- Pace, keyed on day-offset from the period start rather than day-of-month, and
 -- compared against the period immediately preceding this one. A quincena is
 -- then paced against the previous quincena rather than against a month it does
--- not fit inside. Row count is the longer of the two periods; the shorter one's
--- column goes null past its own length, which is what tells the chart to stop
--- drawing that line.
+-- not fit inside. Unlike the calendar-month version this replaces, the previous
+-- period here is constructed to the same length as the current one (`prev_s`
+-- is exactly `cur_days` before `p_start`), not to whatever the actual prior
+-- pay-cycle period happened to be — a quincena can vary from 13 to 16 days
+-- depending on the month, and comparing two different lengths is what the
+-- day-offset framing exists to avoid. So both series always cover the same
+-- day-offsets 0..cur_days-1, and both columns are zero-filled (coalesce),
+-- never null: there is no shorter period here for a null to mark the end of.
 create or replace function public.spending_pace_range(p_start date, p_end date)
 returns table (day_offset integer, this_period numeric, last_period numeric)
 language sql
