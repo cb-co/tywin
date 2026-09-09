@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOverview } from "@/lib/overview/queries";
 import { getBudgetOverview } from "@/lib/budgets/queries";
 import { getGoalsOverview } from "@/lib/goals/queries";
-import { monthStart } from "@/lib/budgets/month";
+import { monthStart, monthEnd } from "@/lib/budgets/month";
 import { buildSnapshot, type RecommendationSnapshot } from "./snapshot";
 
 /**
@@ -23,7 +23,13 @@ export async function collectSnapshot(now = new Date()): Promise<RecommendationS
   const [overview, budgets, goals, { data: accounts }, { data: balances }, { data: cards }, { data: loans }] =
     await Promise.all([
       getOverview(),
-      getBudgetOverview(monthStart(now)),
+      // Deliberately the calendar month, not overview.period: getBudgetOverview
+      // now takes a Period (Task 7), but this snapshot is unrelated to the
+      // Budgets page's own period toggle — it feeds the daily coaching card,
+      // whose wording (daysLeftInMonth, "this month") already assumes a
+      // calendar month everywhere else in this file. Re-scoping it to a
+      // quincena is a real behaviour change, not a signature update.
+      getBudgetOverview({ start: monthStart(now), end: monthEnd(monthStart(now)) }),
       getGoalsOverview(),
       supabase.from("accounts").select("id,name,type,currency").eq("is_archived", false),
       supabase.from("account_balances").select("account_id,balance"),

@@ -5,21 +5,14 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
 import { useUiSound } from "@/components/sound/sound-provider";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  Trash2,
-  CopyPlus,
-  Pencil,
-  LayoutGrid,
-  Table as TableIcon,
-} from "lucide-react";
+import { Plus, Trash2, CopyPlus, Pencil, LayoutGrid, Table as TableIcon } from "lucide-react";
 import { setBudget, deleteCategory, copyPreviousMonth } from "@/app/(app)/budgets/actions";
-import { addMonths, monthLabel } from "@/lib/budgets/month";
+import { normalizeMonth } from "@/lib/budgets/month";
 import { formatPercent } from "@/lib/format";
-import type { BudgetOverview, BudgetRow } from "@/lib/budgets/queries";
+import { budgetLabelParts, type BudgetOverview, type BudgetRow } from "@/lib/budgets/queries";
+import type { Period, PayCycle } from "@/lib/period/cycle";
 import { CategoryDialog } from "./category-dialog";
+import { PeriodPicker } from "./period-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -49,7 +42,19 @@ function barPct(used: number, budget: number) {
   return used > 0 ? 100 : 0;
 }
 
-export function BudgetGrid({ month, overview }: { month: string; overview: BudgetOverview }) {
+export function BudgetGrid({
+  overview,
+  mode,
+  payCycle,
+  payAnchor,
+}: {
+  overview: BudgetOverview;
+  /** Which side of the picker's toggle is active. Meaningless (and unused)
+   *  for a `monthly` profile, whose period is always the calendar month. */
+  mode: "month" | "native";
+  payCycle: PayCycle;
+  payAnchor: number | null;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [navPending, startNavTransition] = useTransition();
@@ -63,14 +68,23 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
   const locale = useLocale();
   const maskedFormatMoney = useMaskedFormatMoney();
   const { playSuccess, playDelete, playError } = useUiSound();
-  const { rows, totalBudget, totalUsed, baseCurrency } = overview;
+  const { rows, totalBudget, totalUsed, baseCurrency, period } = overview;
   const remaining = totalBudget - totalUsed;
+  // category_budgets still stores months, not periods — a quincena's own
+  // "half budget" isn't a real row anywhere. Both the amount input and
+  // "Copy last month" below target the month containing the active period's
+  // start, which for a whole month is just that month.
+  const month = normalizeMonth(period.start);
 
-  function go(delta: number) {
+  function navigate(next: Period, nextMode: "month" | "native") {
     startNavTransition(() => {
-      // Same reason as the Insights picker: changing month is a re-scope, not a
-      // new page, and jumping to the top loses the row being looked at.
-      router.push(`/budgets?month=${addMonths(month, delta)}`, { scroll: false });
+      // Same reason as the Insights picker: changing period is a re-scope, not
+      // a new page, and jumping to the top loses the row being looked at.
+      const url =
+        nextMode === "month"
+          ? `/budgets?month=${normalizeMonth(next.start)}`
+          : `/budgets?from=${next.start}&to=${next.end}`;
+      router.push(url, { scroll: false });
     });
   }
 
@@ -160,29 +174,15 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
           switcher gets, and a row that wraps degrades where a row that only
           shrinks eventually clips its last figure off the screen. */}
       <div className="flex flex-col gap-4 rounded-xl border bg-card p-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        <div className="flex shrink-0 items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon-sm"
-            aria-label={t("prevMonth")}
-            onClick={() => go(-1)}
-            disabled={navPending}
-          >
-            <ChevronLeft className="size-4" />
-          </Button>
-          <span className="min-w-36 text-center text-sm font-medium text-foreground">
-            {monthLabel(month, locale)}
-          </span>
-          <Button
-            variant="outline"
-            size="icon-sm"
-            aria-label={t("nextMonth")}
-            onClick={() => go(1)}
-            disabled={navPending}
-          >
-            <ChevronRight className="size-4" />
-          </Button>
-        </div>
+        <PeriodPicker
+          period={period}
+          mode={mode}
+          payCycle={payCycle}
+          payAnchor={payAnchor}
+          locale={locale}
+          pending={navPending}
+          onNavigate={navigate}
+        />
         {navPending ? (
           <div className="flex flex-wrap gap-x-6 gap-y-2">
             {[0, 1, 2].map((i) => (
@@ -293,105 +293,39 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
         />
       ) : view === "grid" ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {rows.map((row) => (
-            <Card key={row.category_id} className="gap-0 p-5">
-              <div className="flex items-center gap-3">
-                <ColorTile color={row.color} emoji={row.emoji} name={row.name} size="md" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground">{row.name}</p>
-                  <p className="text-xs text-muted-foreground tabular-nums">
-                    {t("amountOfBudget", {
-                      used: maskedFormatMoney(row.used, baseCurrency),
-                      budget: maskedFormatMoney(row.budget, baseCurrency),
-                    })}
-                  </p>
+          {rows.map((row) => {
+            // null `prorated` means "one figure" — a whole calendar month, or
+            // nothing budgeted at all. See budgetLabelParts's own comment.
+            const parts = budgetLabelParts(period, row.budget_monthly, row.budget);
+            return (
+              <Card key={row.category_id} className="gap-0 p-5">
+                <div className="flex items-center gap-3">
+                  <ColorTile color={row.color} emoji={row.emoji} name={row.name} size="md" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">{row.name}</p>
+                    <p className="text-xs text-muted-foreground tabular-nums">
+                      {t("amountOfBudget", {
+                        used: maskedFormatMoney(row.used, baseCurrency),
+                        budget: maskedFormatMoney(row.budget, baseCurrency),
+                      })}
+                    </p>
+                    {parts.prorated !== null ? (
+                      <p className="text-xs text-muted-foreground tabular-nums">
+                        {t(payCycle === "weekly" ? "budgetProratedWeekly" : "budgetProrated", {
+                          monthly: maskedFormatMoney(parts.monthly, baseCurrency),
+                          prorated: maskedFormatMoney(parts.prorated, baseCurrency),
+                        })}
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-              <div className="mt-3 flex items-end justify-between gap-2">
-                <MoneyDisplay amount={row.used} currency={baseCurrency} size="stat" />
-                <StatPill tone={row.status === "over" ? "destructive" : "neutral"}>
-                  {formatPercent(barPct(row.used, row.budget))}
-                </StatPill>
-              </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{
-                    width: `${barPct(row.used, row.budget)}%`,
-                    backgroundColor: STATUS_COLOR[row.status],
-                  }}
-                />
-              </div>
-              <div className="mt-4 flex items-center gap-1">
-                <Input
-                  key={`${row.category_id}-${row.budget}`}
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  defaultValue={row.budget || ""}
-                  placeholder={t("amountPlaceholder")}
-                  aria-label={t("budgetForAria", { name: row.name })}
-                  className="h-8 flex-1 tabular-nums"
-                  onBlur={(e) => onSaveBudget(row.category_id, e.target.value, row.budget)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                  }}
-                />
-                <CategoryDialog
-                  mode="edit"
-                  category={row}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      aria-label={t("editAria", { name: row.name })}
-                      className={cn("text-muted-foreground", TOUCH_TARGET)}
-                    >
-                      <Pencil className="size-4" />
-                    </Button>
-                  }
-                />
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={t("deleteAria", { name: row.name })}
-                  className={cn("text-muted-foreground hover:text-destructive", TOUCH_TARGET)}
-                  onClick={() => onDelete(row.category_id)}
-                  disabled={deletingId === row.category_id}
-                  isLoading={deletingId === row.category_id}
-                >
-                  {deletingId === row.category_id ? null : <Trash2 className="size-4" />}
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="divide-y">
-          {rows.map((row) => (
-            <div
-              key={row.category_id}
-              className="group -mx-3 flex items-center gap-4 rounded-lg px-3 py-4"
-            >
-              <ColorTile color={row.color} emoji={row.emoji} name={row.name} size="md" />
-
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline justify-between gap-2">
-                  <p className="truncate text-sm font-medium text-foreground">{row.name}</p>
+                <div className="mt-3 flex items-end justify-between gap-2">
+                  <MoneyDisplay amount={row.used} currency={baseCurrency} size="stat" />
                   <StatPill tone={row.status === "over" ? "destructive" : "neutral"}>
                     {formatPercent(barPct(row.used, row.budget))}
                   </StatPill>
                 </div>
-                <div className="mt-1 flex items-baseline justify-between gap-2">
-                  <MoneyDisplay amount={row.used} currency={baseCurrency} size="stat" />
-                  <p className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                    {t("amountOfBudget", {
-                      used: maskedFormatMoney(row.used, baseCurrency),
-                      budget: maskedFormatMoney(row.budget, baseCurrency),
-                    })}
-                  </p>
-                </div>
-                <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
                   <div
                     className="h-full rounded-full transition-all"
                     style={{
@@ -400,24 +334,21 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
                     }}
                   />
                 </div>
-              </div>
-
-              <div className="flex items-center gap-1">
-                <Input
-                  key={`${row.category_id}-${row.budget}`}
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  defaultValue={row.budget || ""}
-                  placeholder={t("amountPlaceholder")}
-                  aria-label={t("budgetForAria", { name: row.name })}
-                  className="h-8 w-24 text-right tabular-nums"
-                  onBlur={(e) => onSaveBudget(row.category_id, e.target.value, row.budget)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                  }}
-                />
-                <div className="flex items-center">
+                <div className="mt-4 flex items-center gap-1">
+                  <Input
+                    key={`${row.category_id}-${row.budget_monthly}`}
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    defaultValue={row.budget_monthly || ""}
+                    placeholder={t("amountPlaceholder")}
+                    aria-label={t("budgetForAria", { name: row.name })}
+                    className="h-8 flex-1 tabular-nums"
+                    onBlur={(e) => onSaveBudget(row.category_id, e.target.value, row.budget_monthly)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                    }}
+                  />
                   <CategoryDialog
                     mode="edit"
                     category={row}
@@ -444,9 +375,102 @@ export function BudgetGrid({ month, overview }: { month: string; overview: Budge
                     {deletingId === row.category_id ? null : <Trash2 className="size-4" />}
                   </Button>
                 </div>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="divide-y">
+          {rows.map((row) => {
+            const parts = budgetLabelParts(period, row.budget_monthly, row.budget);
+            return (
+              <div
+                key={row.category_id}
+                className="group -mx-3 flex items-center gap-4 rounded-lg px-3 py-4"
+              >
+                <ColorTile color={row.color} emoji={row.emoji} name={row.name} size="md" />
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="truncate text-sm font-medium text-foreground">{row.name}</p>
+                    <StatPill tone={row.status === "over" ? "destructive" : "neutral"}>
+                      {formatPercent(barPct(row.used, row.budget))}
+                    </StatPill>
+                  </div>
+                  <div className="mt-1 flex items-baseline justify-between gap-2">
+                    <MoneyDisplay amount={row.used} currency={baseCurrency} size="stat" />
+                    <p className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                      {t("amountOfBudget", {
+                        used: maskedFormatMoney(row.used, baseCurrency),
+                        budget: maskedFormatMoney(row.budget, baseCurrency),
+                      })}
+                    </p>
+                  </div>
+                  {parts.prorated !== null ? (
+                    <p className="text-right text-xs text-muted-foreground tabular-nums">
+                      {t(payCycle === "weekly" ? "budgetProratedWeekly" : "budgetProrated", {
+                        monthly: maskedFormatMoney(parts.monthly, baseCurrency),
+                        prorated: maskedFormatMoney(parts.prorated, baseCurrency),
+                      })}
+                    </p>
+                  ) : null}
+                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${barPct(row.used, row.budget)}%`,
+                        backgroundColor: STATUS_COLOR[row.status],
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <Input
+                    key={`${row.category_id}-${row.budget_monthly}`}
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    defaultValue={row.budget_monthly || ""}
+                    placeholder={t("amountPlaceholder")}
+                    aria-label={t("budgetForAria", { name: row.name })}
+                    className="h-8 w-24 text-right tabular-nums"
+                    onBlur={(e) => onSaveBudget(row.category_id, e.target.value, row.budget_monthly)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                    }}
+                  />
+                  <div className="flex items-center">
+                    <CategoryDialog
+                      mode="edit"
+                      category={row}
+                      trigger={
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={t("editAria", { name: row.name })}
+                          className={cn("text-muted-foreground", TOUCH_TARGET)}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                      }
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={t("deleteAria", { name: row.name })}
+                      className={cn("text-muted-foreground hover:text-destructive", TOUCH_TARGET)}
+                      onClick={() => onDelete(row.category_id)}
+                      disabled={deletingId === row.category_id}
+                      isLoading={deletingId === row.category_id}
+                    >
+                      {deletingId === row.category_id ? null : <Trash2 className="size-4" />}
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>

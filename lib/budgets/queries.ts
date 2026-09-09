@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { baseCurrencyOf } from "@/lib/profile";
+import { isWholeMonth, type Period } from "@/lib/period/cycle";
 
 export type BudgetStatus = "within" | "approaching" | "over";
 
@@ -8,7 +9,15 @@ export type BudgetRow = {
   name: string;
   emoji: string | null;
   color: string | null;
+  /** Prorated onto the active period — what the row's bar and remaining
+   *  figure compare `used` against. Equal to `budget_monthly` whenever the
+   *  period is a whole calendar month, which is what keeps a `monthly`
+   *  profile's numbers byte-for-byte what they were before periods existed. */
   budget: number;
+  /** The rate actually stored in `category_budgets`, unprorated. The input
+   *  field edits this figure, never the prorated one above — editing a
+   *  quincena's half-budget would silently halve the monthly rate on save. */
+  budget_monthly: number;
   used: number;
   remaining: number;
   status: BudgetStatus;
@@ -19,7 +28,7 @@ export type BudgetOverview = {
   totalBudget: number;
   totalUsed: number;
   baseCurrency: string;
-  /** Spend with no category this month — expense/payment rows excluded from
+  /** Spend with no category in the period — expense/payment rows excluded from
    *  budget stay out, mirroring category_usage's inclusion rule exactly (see
    *  uncategorized_spend in 20260819131444_null_category_triage.sql), so the
    *  two figures can never disagree about what counts as spending. */
@@ -29,16 +38,34 @@ export type BudgetOverview = {
    *  subscription charge (design §1c / §2) — triage has nothing to offer
    *  those, so the figure renders as plain text instead. */
   pendingTriageImportId: string | null;
+  /** The period rows are scoped to. A whole calendar month for a `monthly`
+   *  profile (or for anyone viewing the "Mes" side of the toggle); a quincena
+   *  or a week otherwise. Echoed back so the grid never has to re-derive what
+   *  it already asked for. */
+  period: Period;
 };
 
-export async function getBudgetOverview(month: string): Promise<BudgetOverview> {
+/** Which budget figures a row shows. A whole calendar month shows the stored
+ *  amount alone — that is today's page and it must not change. Anything else
+ *  shows the stored monthly rate and what it prorates to, so the derived
+ *  number never appears without the number it came from. */
+export function budgetLabelParts(
+  period: Period,
+  monthly: number,
+  prorated: number,
+): { monthly: number; prorated: number | null } {
+  if (monthly === 0) return { monthly, prorated: null };
+  return { monthly, prorated: isWholeMonth(period) ? null : prorated };
+}
+
+export async function getBudgetOverview(period: Period): Promise<BudgetOverview> {
   const supabase = await createClient();
   const [{ data: usage }, { data: categories }, { data: profile }, { data: uncategorized }, pendingTriageImportId] =
     await Promise.all([
-      supabase.rpc("category_usage", { p_month: month }),
+      supabase.rpc("category_usage_range", { p_start: period.start, p_end: period.end }),
       supabase.from("categories").select("id,name,emoji,color").order("sort_order"),
       supabase.from("profiles").select("base_currency").maybeSingle(),
-      supabase.rpc("uncategorized_spend", { p_month: month }),
+      supabase.rpc("uncategorized_spend_range", { p_start: period.start, p_end: period.end }),
       getPendingTriageImportId(supabase),
     ]);
 
@@ -52,6 +79,7 @@ export async function getBudgetOverview(month: string): Promise<BudgetOverview> 
       emoji: c.emoji,
       color: c.color,
       budget: Number(u?.budget ?? 0),
+      budget_monthly: Number(u?.budget_monthly ?? 0),
       used: Number(u?.used ?? 0),
       remaining: Number(u?.remaining ?? 0),
       status: (u?.status ?? "within") as BudgetStatus,
@@ -65,6 +93,7 @@ export async function getBudgetOverview(month: string): Promise<BudgetOverview> 
     baseCurrency: baseCurrencyOf(profile),
     uncategorized: Number(uncategorized ?? 0),
     pendingTriageImportId,
+    period,
   };
 }
 
