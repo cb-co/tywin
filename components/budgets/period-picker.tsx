@@ -5,24 +5,34 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/format";
 import { monthLabel, monthEnd, normalizeMonth } from "@/lib/budgets/month";
-import { periodFor, shiftPeriod, type Period, type PayCycle } from "@/lib/period/cycle";
+import { periodFor, shiftPeriod, isWholeMonth, type Period, type PayCycle } from "@/lib/period/cycle";
 import { cn } from "@/lib/utils";
 
 type Mode = "month" | "native";
 
 /**
- * The month switcher — now also the period switcher. For a `monthly`
- * profile this renders exactly what budget-grid.tsx used to inline at
- * :174 (same arrows, same label, same aria) and nothing else, because a
- * `monthly` profile's period IS the calendar month and a toggle between two
- * identical views would just be a control that does nothing.
+ * The month switcher — now also the period switcher. It grows a two-way
+ * toggle ("Mes" vs. the profile's own cycle) except when both sides would
+ * render the exact same thing, in which case the toggle would be a control
+ * that does nothing and is omitted instead.
  *
- * For a `semimonthly` or `weekly` profile it grows a two-way toggle: "Mes"
- * still means the plain calendar month (not the profile's own cycle — the
- * two only coincide for `monthly`), and the other side is the profile's own
- * quincena or week. Whichever side is active decides what the arrows step
- * by, so the label and the arrows never disagree about what "next" means.
+ * "Both sides identical" is NOT the same predicate as `payCycle === "monthly"`
+ * — a `monthly` profile can still be anchored off the 1st (e.g. paid on the
+ * 25th, `pay_anchor_day: 25`), whose own period straddles two calendar
+ * months and genuinely differs from "Mes". The gate below is
+ * `isWholeMonth` applied to what the profile's OWN cycle would show right
+ * now — computed fresh from payCycle/payAnchor, not read off whichever side
+ * of the toggle happens to be on screen. That distinction matters: if the
+ * gate instead read the `period` prop directly, a `semimonthly` user who had
+ * just toggled onto "Mes" would find the toggle vanish out from under them
+ * (their currently-displayed period being, in that moment, a whole month)
+ * with no way back to their quincena. Computing it from the cycle instead
+ * means the toggle's presence never depends on which side is active.
  */
+export function showsPeriodToggle(period: Period, payCycle: PayCycle, payAnchor: number | null): boolean {
+  return !isWholeMonth(periodFor(period.start, payCycle, payAnchor));
+}
+
 export function PeriodPicker({
   period,
   mode,
@@ -72,7 +82,15 @@ export function PeriodPicker({
           end: formatDate(period.end, locale, { day: "numeric", month: "short" }),
         });
 
-  const cycleLabel = payCycle === "weekly" ? t("periodWeekly") : t("periodSemimonthly");
+  const cycleLabel =
+    payCycle === "weekly"
+      ? t("periodWeekly")
+      : payCycle === "monthly"
+        ? // An anchored monthly profile's own period is a month's length but
+          // not calendar-aligned — "Quincena"/"Semana" would both be wrong,
+          // and "Mes" is already taken by the other side of this toggle.
+          t("periodOwnCycle")
+        : t("periodSemimonthly");
 
   const arrows = (
     <div className="flex shrink-0 items-center gap-2">
@@ -99,9 +117,10 @@ export function PeriodPicker({
   );
 
   // No wrapping element and no toggle here at all, not just a hidden one —
-  // for a `monthly` profile this must be the exact node budget-grid.tsx used
-  // to inline, or the "unchanged for monthly" constraint is only true by eye.
-  if (payCycle === "monthly") return arrows;
+  // for a `monthly` profile with a null/1 anchor this must be the exact node
+  // budget-grid.tsx used to inline, or the "unchanged for monthly" constraint
+  // is only true by eye.
+  if (!showsPeriodToggle(period, payCycle, payAnchor)) return arrows;
 
   return (
     <div className="flex flex-wrap items-center gap-2">

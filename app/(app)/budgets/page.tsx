@@ -8,7 +8,7 @@ import { getGoalsOverview } from "@/lib/goals/queries";
 import { normalizeMonth, monthEnd } from "@/lib/budgets/month";
 import { createClient } from "@/lib/supabase/server";
 import { currentPeriod, payCycleOf, payAnchorOf } from "@/lib/period/profile";
-import { localDate, type Period } from "@/lib/period/cycle";
+import { localDate, isWholeMonth, type Period } from "@/lib/period/cycle";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -31,24 +31,31 @@ export default async function BudgetsPage({
   const payCycle = payCycleOf(profile);
   const payAnchor = payAnchorOf(profile);
 
-  // Resolution order: explicit from/to (the picker's own "quincena/semana"
-  // side) → month, normalised to that calendar month (the picker's "Mes"
-  // side, and every pre-existing bookmark or link) → the profile's own
-  // current period. Keeping `month` alive after `from`/`to` shipped is what
-  // stops every old /budgets?month=... link from breaking.
+  // Resolution order: explicit from/to (the picker's own "Quincena" /
+  // "Semana" / "Mi período" side) → month, normalised to that calendar
+  // month (the picker's "Mes" side, and every pre-existing bookmark or
+  // link) → the profile's own current period. Keeping `month` alive after
+  // `from`/`to` shipped is what stops every old /budgets?month=... link
+  // from breaking.
   const hasRange = !!from && !!to && DATE_RE.test(from) && DATE_RE.test(to) && from <= to;
-  const mode: "month" | "native" = hasRange
-    ? "native"
-    : monthParam
-      ? "month"
-      : payCycle === "monthly"
-        ? "month"
-        : "native";
   const period: Period = hasRange
     ? { start: from!, end: to! }
     : monthParam
       ? { start: normalizeMonth(monthParam), end: monthEnd(normalizeMonth(monthParam)) }
       : currentPeriod(profile, localDate());
+  // Which side of the toggle is active. NOT `payCycle === "monthly"`: an
+  // anchored monthly profile's own period (Task 8's Settings UI lets someone
+  // choose e.g. pay_anchor_day: 25) is not the calendar month, so landing
+  // with no params should show THAT — same as a quincenal profile landing on
+  // its own quincena — with `isWholeMonth` deciding it, exactly as
+  // PeriodPicker's own toggle-visibility gate does.
+  const mode: "month" | "native" = hasRange
+    ? "native"
+    : monthParam
+      ? "month"
+      : isWholeMonth(period)
+        ? "month"
+        : "native";
 
   const [overview, goals] = await Promise.all([
     getBudgetOverview(period),

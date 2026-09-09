@@ -367,6 +367,7 @@
     "periodMonth": "Month",
     "periodSemimonthly": "Semimonthly",
     "periodWeekly": "Weekly",
+    "periodOwnCycle": "My period",
     "periodRange": "{start} – {end}",
     "budgetProrated": "{monthly}/mo · {prorated} this pay period",
     "budgetProratedWeekly": "{monthly}/mo · {prorated} this week",

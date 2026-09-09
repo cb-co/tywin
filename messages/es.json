@@ -367,6 +367,7 @@
     "periodMonth": "Mes",
     "periodSemimonthly": "Quincena",
     "periodWeekly": "Semana",
+    "periodOwnCycle": "Mi período",
     "periodRange": "{start} – {end}",
     "budgetProrated": "{monthly}/mes · {prorated} esta quincena",
     "budgetProratedWeekly": "{monthly}/mes · {prorated} esta semana",
