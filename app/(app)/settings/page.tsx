@@ -4,6 +4,7 @@ import { SettingsPanel } from "@/components/settings/settings-panel";
 import { getCurrencies } from "@/lib/accounts/queries";
 import { createClient } from "@/lib/supabase/server";
 import { baseCurrencyOf } from "@/lib/profile";
+import { payCycleOf, payAnchorOf } from "@/lib/period/profile";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -14,7 +15,7 @@ export default async function SettingsPage() {
   const user = userData.user;
   const { data: profile } = await supabase
     .from("profiles")
-    .select("base_currency,display_name")
+    .select("base_currency,display_name,pay_cycle,pay_anchor_day")
     .maybeSingle();
   const t = await getTranslations("Settings");
 
@@ -26,6 +27,8 @@ export default async function SettingsPage() {
         displayName={profile?.display_name ?? ""}
         baseCurrency={baseCurrencyOf(profile)}
         currencies={currencies}
+        payCycle={payCycleOf(profile)}
+        payAnchorDay={payAnchorOf(profile)}
       />
     </div>
   );

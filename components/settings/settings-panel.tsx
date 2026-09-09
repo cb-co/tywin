@@ -5,8 +5,14 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { Check, CircleHelp, LogOut, Tag, Trash2 } from "lucide-react";
-import { deleteAccount, updateBaseCurrency, updateDisplayName } from "@/app/(app)/settings/actions";
+import {
+  deleteAccount,
+  setPayCycle,
+  updateBaseCurrency,
+  updateDisplayName,
+} from "@/app/(app)/settings/actions";
 import type { CurrencyRow } from "@/lib/accounts/queries";
+import { PAY_CYCLE_VALUES, type PayCycle } from "@/lib/period/cycle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { InstallAppRow } from "@/components/pwa/install-app-row";
@@ -15,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUiSound } from "@/components/sound/sound-provider";
 import { cn } from "@/lib/utils";
 import {
@@ -34,16 +41,49 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+/** Translation key per cycle, for both the segmented control and its help
+ *  text — kept next to each other so a new cycle value can't add one and
+ *  forget the other. */
+const PAY_CYCLE_LABEL_KEY: Record<PayCycle, string> = {
+  monthly: "payCycleMonthly",
+  semimonthly: "payCycleSemimonthly",
+  weekly: "payCycleWeekly",
+};
+const PAY_CYCLE_HELP_KEY: Record<PayCycle, string> = {
+  monthly: "payCycleHelpMonthly",
+  semimonthly: "payCycleHelpSemimonthly",
+  weekly: "payCycleHelpWeekly",
+};
+
+/** ISO weekday order (Monday = 1 … Sunday = 7), matching `isoWeekday` in
+ *  lib/period/cycle.ts — the weekly anchor picker's values must agree with
+ *  what that module expects. */
+const WEEKDAY_KEYS: Record<number, string> = {
+  1: "weekdayMonday",
+  2: "weekdayTuesday",
+  3: "weekdayWednesday",
+  4: "weekdayThursday",
+  5: "weekdayFriday",
+  6: "weekdaySaturday",
+  7: "weekdaySunday",
+};
+const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7];
+const MONTH_DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
+
 export function SettingsPanel({
   email,
   displayName,
   baseCurrency,
   currencies,
+  payCycle,
+  payAnchorDay,
 }: {
   email: string;
   displayName: string;
   baseCurrency: string;
   currencies: CurrencyRow[];
+  payCycle: PayCycle;
+  payAnchorDay: number | null;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -53,11 +93,66 @@ export function SettingsPanel({
   const [namePending, startNameTransition] = useTransition();
   const [deletePending, startDeleteTransition] = useTransition();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [cycle, setCycle] = useState<PayCycle>(payCycle);
+  // Each cycle keeps its own remembered anchor so switching away and back
+  // (monthly -> quincenal -> monthly) restores what the user last picked
+  // instead of resetting to day 1 / Monday.
+  const [monthlyAnchor, setMonthlyAnchor] = useState(
+    payCycle === "monthly" && payAnchorDay ? payAnchorDay : 1,
+  );
+  const [weeklyAnchor, setWeeklyAnchor] = useState(
+    payCycle === "weekly" && payAnchorDay ? payAnchorDay : 1,
+  );
+  const [payCyclePending, startPayCycleTransition] = useTransition();
   const t = useTranslations("Settings");
   const tc = useTranslations("Common");
   const { enabled, setEnabled, playSuccess, playError } = useUiSound();
 
   const nameDirty = name.trim() !== savedName.trim();
+
+  const monthlyAnchorItems: Record<string, string> = Object.fromEntries(
+    MONTH_DAYS.map((day) => [String(day), t("payCycleDayOption", { day })]),
+  );
+  const weeklyAnchorItems: Record<string, string> = Object.fromEntries(
+    WEEKDAYS.map((day) => [String(day), t(WEEKDAY_KEYS[day])]),
+  );
+
+  function savePayCycle(nextCycle: PayCycle, nextMonthlyAnchor: number, nextWeeklyAnchor: number) {
+    const anchorDay =
+      nextCycle === "monthly" ? nextMonthlyAnchor : nextCycle === "weekly" ? nextWeeklyAnchor : null;
+    startPayCycleTransition(async () => {
+      const result = await setPayCycle({ cycle: nextCycle, anchorDay });
+      if (result.error) {
+        toast.error(result.error);
+        playError();
+        // Revert to the last value the server actually holds, same as the
+        // currency select below.
+        setCycle(payCycle);
+        setMonthlyAnchor(payCycle === "monthly" && payAnchorDay ? payAnchorDay : 1);
+        setWeeklyAnchor(payCycle === "weekly" && payAnchorDay ? payAnchorDay : 1);
+        return;
+      }
+      toast.success(t("toastPayCycleUpdated"));
+      playSuccess();
+      router.refresh();
+    });
+  }
+
+  function onCycle(next: PayCycle) {
+    if (next === cycle) return;
+    setCycle(next);
+    savePayCycle(next, monthlyAnchor, weeklyAnchor);
+  }
+
+  function onMonthlyAnchor(day: number) {
+    setMonthlyAnchor(day);
+    savePayCycle(cycle, day, weeklyAnchor);
+  }
+
+  function onWeeklyAnchor(day: number) {
+    setWeeklyAnchor(day);
+    savePayCycle(cycle, monthlyAnchor, day);
+  }
 
   /* Without `items`, Base UI's `<Select.Value>` shows the raw value, so the
      closed trigger read "USD" instead of "USD · US Dollar". */
@@ -188,16 +283,78 @@ export function SettingsPanel({
           </Select>
         </Row>
 
-        <Row index={3} title={t("themeTitle")} description={t("themeDescription")}>
+        <Row index={3} title={t("payCycleTitle")} description={t("payCycleDescription")}>
+          <div className="flex flex-col items-end gap-2">
+            <Tabs value={cycle} onValueChange={(v) => onCycle(v as PayCycle)}>
+              <TabsList>
+                {PAY_CYCLE_VALUES.map((c) => (
+                  <TabsTrigger key={c} value={c} disabled={payCyclePending}>
+                    {t(PAY_CYCLE_LABEL_KEY[c])}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+
+            {cycle === "monthly" && (
+              <Select
+                value={String(monthlyAnchor)}
+                onValueChange={(v) => onMonthlyAnchor(Number(v ?? monthlyAnchor))}
+                disabled={payCyclePending}
+                items={monthlyAnchorItems}
+              >
+                <SelectTrigger size="sm" className="w-28" aria-label={t("payCycleAnchorDayLabel")}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MONTH_DAYS.map((day) => (
+                    <SelectItem key={day} value={String(day)}>
+                      {t("payCycleDayOption", { day })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {cycle === "weekly" && (
+              <Select
+                value={String(weeklyAnchor)}
+                onValueChange={(v) => onWeeklyAnchor(Number(v ?? weeklyAnchor))}
+                disabled={payCyclePending}
+                items={weeklyAnchorItems}
+              >
+                <SelectTrigger
+                  size="sm"
+                  className="w-28"
+                  aria-label={t("payCycleAnchorWeekdayLabel")}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {WEEKDAYS.map((day) => (
+                    <SelectItem key={day} value={String(day)}>
+                      {t(WEEKDAY_KEYS[day])}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            <p className="text-right text-xs text-muted-foreground">
+              {t(PAY_CYCLE_HELP_KEY[cycle])}
+            </p>
+          </div>
+        </Row>
+
+        <Row index={4} title={t("themeTitle")} description={t("themeDescription")}>
           <ThemeToggle />
         </Row>
 
-        <Row index={4} title={t("languageTitle")} description={t("languageDescription")}>
+        <Row index={5} title={t("languageTitle")} description={t("languageDescription")}>
           <LanguageSwitcher />
         </Row>
 
         <Row
-          index={5}
+          index={6}
           title={t("soundEffectsTitle")}
           description={t("soundEffectsDescription")}
         >
@@ -208,7 +365,7 @@ export function SettingsPanel({
           />
         </Row>
 
-        <Row index={6} title={t("sessionTitle")} description={t("sessionDescription")}>
+        <Row index={7} title={t("sessionTitle")} description={t("sessionDescription")}>
           <form action="/auth/signout" method="post">
             <Button type="submit" variant="outline" size="sm">
               <LogOut className="size-4" />
@@ -217,16 +374,16 @@ export function SettingsPanel({
           </form>
         </Row>
 
-        <InstallAppRow index={7} />
+        <InstallAppRow index={8} />
 
-        <Row index={8} title={t("helpTitle")} description={t("helpDescription")}>
+        <Row index={9} title={t("helpTitle")} description={t("helpDescription")}>
           <Button variant="outline" size="sm" render={<a href="/help" />} nativeButton={false}>
             <CircleHelp className="size-4" />
             {t("helpButton")}
           </Button>
         </Row>
 
-        <Row index={9} title={t("rulesTitle")} description={t("rulesDescription")}>
+        <Row index={10} title={t("rulesTitle")} description={t("rulesDescription")}>
           <Button
             variant="outline"
             size="sm"
