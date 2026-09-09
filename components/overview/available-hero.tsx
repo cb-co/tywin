@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useId, useRef, useEffect } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import { HeroCard } from "@/components/ui/hero-card";
 import { MoneyDisplay } from "@/components/ui/money-display";
@@ -46,6 +46,8 @@ export function AvailableHero({
   const t = useTranslations("Overview");
   const f = useFormatter();
   const breakdownRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const breakdownId = useId();
 
   // Interpolated, never concatenated: es and en order the date differently.
   const date = f.dateTime(new Date(`${a.periodEnd}T00:00:00Z`), {
@@ -58,14 +60,22 @@ export function AvailableHero({
     // Collapsed by default only below `sm`, set once on mount rather than
     // watched on resize — someone widening the window mid-glance is not a
     // case worth chasing. Toggled straight through the DOM node afterward
-    // (see toggleBreakdown) so opening it never costs a re-render.
+    // (see toggleBreakdown) so opening it never costs a re-render. Net worth
+    // is a sibling of this element, not a child — it must stay visible at
+    // every width, so it is deliberately outside what this collapses.
     if (breakdownRef.current && window.matchMedia("(max-width: 639px)").matches) {
       breakdownRef.current.hidden = true;
+      toggleRef.current?.setAttribute("aria-expanded", "false");
     }
   }, []);
 
   function toggleBreakdown() {
-    if (breakdownRef.current) breakdownRef.current.hidden = !breakdownRef.current.hidden;
+    const el = breakdownRef.current;
+    if (!el) return;
+    el.hidden = !el.hidden;
+    // Kept in sync by hand alongside `el.hidden` rather than from React state,
+    // for the same no-re-render reason the disclosure itself avoids state.
+    toggleRef.current?.setAttribute("aria-expanded", String(!el.hidden));
   }
 
   // A negative figure is information ("the period is already over-committed"),
@@ -99,33 +109,53 @@ export function AvailableHero({
 
       <button
         type="button"
+        ref={toggleRef}
         onClick={toggleBreakdown}
+        aria-expanded="true"
+        aria-controls={breakdownId}
         className="mt-4 text-sm underline decoration-white/40 underline-offset-4 sm:hidden"
       >
         {t("availableBreakdownToggle")}
       </button>
 
-      <div ref={breakdownRef} className="mt-6 space-y-1.5">
+      <div id={breakdownId} ref={breakdownRef} className="mt-6 space-y-1.5">
         <div className="flex items-baseline justify-between gap-4 text-sm">
           <span className="opacity-80">{t("availableLiquid")}</span>
           <MoneyDisplay amount={a.liquid} currency={currency} size="inline" />
         </div>
         <Row label={t("availableCommitted")} amount={a.committed} currency={currency} />
-        <Row label={t("availableCards")} amount={a.cardsMinimum} currency={currency} />
-        {a.cardBasis.map((c) => (
-          <p key={c.accountId} className="pl-3 text-xs opacity-60">
-            {t(c.basis === "minimum" ? "availableBasisMinimum" : "availableBasisFull", {
-              name: c.name,
-            })}
-          </p>
-        ))}
+        {/* Exempt from the zero-suppression every other row uses: computeAvailable
+            clamps a card's contribution to `Math.min(minimum, due)`, so a card with
+            a legitimate $0 printed minimum on a nonzero balance sums to 0 here even
+            though it is genuinely owed. cardBasis is populated for every card with
+            a nonzero due regardless of its minimum, so gate this unit on that list
+            being non-empty — not on the amount — or the basis lines below end up
+            floating with no header explaining what they're footnoting. */}
+        {a.cardBasis.length > 0 ? (
+          <>
+            <div className="flex items-baseline justify-between gap-4 text-sm">
+              <span className="opacity-80">{t("availableCards")}</span>
+              <MoneyDisplay amount={-a.cardsMinimum} currency={currency} size="inline" />
+            </div>
+            {a.cardBasis.map((c) => (
+              <p key={c.accountId} className="pl-3 text-xs opacity-60">
+                {t(c.basis === "minimum" ? "availableBasisMinimum" : "availableBasisFull", {
+                  name: c.name,
+                })}
+              </p>
+            ))}
+          </>
+        ) : null}
         <Row label={t("availableLoans")} amount={a.loans} currency={currency} />
         <Row label={t("availableSubscriptions")} amount={a.subscriptions} currency={currency} />
+      </div>
 
-        <div className="mt-3 flex items-baseline justify-between gap-4 border-t border-white/15 pt-4 text-sm">
-          <span className="opacity-80">{t("netWorthSecondary")}</span>
-          <MoneyDisplay amount={netWorth} currency={currency} size="stat" />
-        </div>
+      {/* A sibling of the collapsible breakdown, not a child of it: net worth
+          is demoted, not removed, and must stay visible at every width — the
+          returning user's anchor while the hero above it changes meaning. */}
+      <div className="mt-6 flex items-baseline justify-between gap-4 border-t border-white/15 pt-4 text-sm">
+        <span className="opacity-80">{t("netWorthSecondary")}</span>
+        <MoneyDisplay amount={netWorth} currency={currency} size="stat" />
       </div>
     </HeroCard>
   );
