@@ -9,7 +9,8 @@ import { Plus, Trash2, CopyPlus, Pencil, LayoutGrid, Table as TableIcon } from "
 import { setBudget, deleteCategory, copyPreviousMonth } from "@/app/(app)/budgets/actions";
 import { normalizeMonth } from "@/lib/budgets/month";
 import { formatPercent } from "@/lib/format";
-import { budgetLabelParts, type BudgetOverview, type BudgetRow } from "@/lib/budgets/queries";
+import type { BudgetOverview, BudgetRow } from "@/lib/budgets/queries";
+import { budgetLabelParts } from "@/lib/budgets/label";
 import type { Period, PayCycle } from "@/lib/period/cycle";
 import { CategoryDialog } from "./category-dialog";
 import { PeriodPicker } from "./period-picker";

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { baseCurrencyOf } from "@/lib/profile";
-import { isWholeMonth, type Period } from "@/lib/period/cycle";
+import type { Period } from "@/lib/period/cycle";
 
 export type BudgetStatus = "within" | "approaching" | "over";
 
@@ -44,19 +44,6 @@ export type BudgetOverview = {
    *  it already asked for. */
   period: Period;
 };
-
-/** Which budget figures a row shows. A whole calendar month shows the stored
- *  amount alone — that is today's page and it must not change. Anything else
- *  shows the stored monthly rate and what it prorates to, so the derived
- *  number never appears without the number it came from. */
-export function budgetLabelParts(
-  period: Period,
-  monthly: number,
-  prorated: number,
-): { monthly: number; prorated: number | null } {
-  if (monthly === 0) return { monthly, prorated: null };
-  return { monthly, prorated: isWholeMonth(period) ? null : prorated };
-}
 
 export async function getBudgetOverview(period: Period): Promise<BudgetOverview> {
   const supabase = await createClient();
