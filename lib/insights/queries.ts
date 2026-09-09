@@ -7,6 +7,8 @@ import { CHART_FALLBACK } from "@/lib/chart-series";
 import { splitPayments } from "@/lib/accounts/amortization";
 import { loanPaymentAmounts } from "@/lib/insights/net-worth-history";
 import { summarizeCardFees, type FeeLineRow } from "@/lib/accounts/card-fees";
+import { currentPeriod } from "@/lib/period/profile";
+import { isWholeMonth, type Period } from "@/lib/period/cycle";
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -43,8 +45,66 @@ export type Insights = {
   pace: { day: number; thisMonth: number | null; lastMonth: number | null }[];
 };
 
+/**
+ * Cumulative spend by day into the period, this period against the one
+ * before it — the only Insights card that follows the profile's pay-cycle
+ * period rather than the calendar month (see the plan's UX-07 framing: the
+ * other ten cards stay monthly on purpose).
+ *
+ * Which RPC gets called is not a free choice. `spending_pace(p_month)` and
+ * `spending_pace_range(p_start, p_end)` answer different questions —
+ * `spending_pace` compares against the TRUE previous calendar month, while
+ * `spending_pace_range` compares against an equal-length lookback so a
+ * 13-16 day quincena is paced against a same-length quincena. Those two
+ * "previous periods" only agree when the current and prior months happen to
+ * share a length (they disagree every September, for instance). So a
+ * `monthly` profile's whole-month period keeps calling `spending_pace`
+ * exactly as before — which is what makes Step 3's invariant (identical
+ * chart for a monthly profile) hold — and everything else calls
+ * `spending_pace_range`. See 20260908120000_pay_cycle.sql's comment on
+ * `spending_pace_range` for this same rule spelled out on the SQL side.
+ */
+async function fetchPace(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  month: string,
+  period: Period,
+): Promise<Insights["pace"]> {
+  if (isWholeMonth(period)) {
+    const { data } = await supabase.rpc("spending_pace", { p_month: month });
+    return (data ?? []).map((r) => ({
+      day: r.day,
+      thisMonth: paceValue(r.this_month),
+      lastMonth: paceValue(r.last_month),
+    }));
+  }
+  const { data } = await supabase.rpc("spending_pace_range", {
+    p_start: period.start,
+    p_end: period.end,
+  });
+  return (data ?? []).map((r) => ({
+    day: r.day_offset,
+    thisMonth: paceValue(r.this_period),
+    lastMonth: paceValue(r.last_period),
+  }));
+}
+
 export async function getInsights(month: string): Promise<Insights> {
   const supabase = await createClient();
+
+  // The pace RPC's args (and which RPC to call at all) depend on the
+  // profile's pay-cycle period, so the profile is read on its own before the
+  // batch below — same pattern as lib/overview/queries.ts. `month` here is
+  // the page's navigated reference date (first-of-month), not literal
+  // "today": passing it through to currentPeriod is what keeps the pace
+  // chart scoped to whichever month is on screen instead of snapping back to
+  // the current period when a monthly profile navigates away from it.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("base_currency,pay_cycle,pay_anchor_day")
+    .maybeSingle();
+
+  const period = currentPeriod(profile, month);
+
   const [
     { data: dist },
     { data: usage },
@@ -53,8 +113,7 @@ export async function getInsights(month: string): Promise<Insights> {
     { data: loans },
     { data: cats },
     { data: accounts },
-    { data: profile },
-    { data: paceRows },
+    pace,
   ] = await Promise.all([
     supabase.rpc("spend_distribution", { p_month: month }),
     supabase.rpc("category_usage", { p_month: month }),
@@ -67,19 +126,8 @@ export async function getInsights(month: string): Promise<Insights> {
       ),
     supabase.from("categories").select("id,name,color"),
     supabase.from("accounts").select("id,name"),
-    supabase.from("profiles").select("base_currency").maybeSingle(),
-    supabase.rpc("spending_pace", { p_month: month }),
+    fetchPace(supabase, month, period),
   ]);
-
-  /* Cumulative spend by day-of-month, this month against last. Shaped entirely
-     by the spending_pace RPC so it cannot drift from the donut beside it: both
-     read the same accrual rule, and both bucket days with the same date_trunc.
-     See 20260822143000_accrual_spend_insights.sql. */
-  const pace: Insights["pace"] = (paceRows ?? []).map((r) => ({
-    day: r.day,
-    thisMonth: paceValue(r.this_month),
-    lastMonth: paceValue(r.last_month),
-  }));
 
   const tCommon = await getTranslations("Common");
 

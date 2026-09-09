@@ -45,9 +45,16 @@ export function SpendingPace({
           labelFormatter={(label) => t("dayLabel", { day: label })}
         />
         <Legend wrapperStyle={{ fontSize: 12 }} />
+        {/* This chart's two lines are the only Insights legend that isn't
+            calendar-month scoped: a semimonthly/weekly profile is comparing
+            against its own equal-length previous period (spending_pace_range),
+            not literally "last month". So these use dedicated paceThisPeriod/
+            paceLastPeriod keys rather than the thisMonth/lastMonth keys —
+            spend-donut.tsx uses those same shared keys for its own caption,
+            which must keep reading "this month" verbatim. */}
         <Line
           dataKey="lastMonth"
-          name={t("lastMonth")}
+          name={t("paceLastPeriod")}
           stroke="var(--muted-foreground)"
           strokeWidth={1.5}
           strokeDasharray="4 4"
@@ -56,7 +63,7 @@ export function SpendingPace({
         />
         <Line
           dataKey="thisMonth"
-          name={t("thisMonth")}
+          name={t("paceThisPeriod")}
           stroke="var(--chart-1)"
           strokeWidth={2}
           dot={false}

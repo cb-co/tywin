@@ -647,6 +647,8 @@
     "spendDonutEmpty": "Aún no hay gastos este mes.",
     "thisMonth": "Este mes",
     "lastMonth": "Mes anterior",
+    "paceThisPeriod": "Este período",
+    "paceLastPeriod": "Período anterior",
     "spendingPaceEmpty": "Aún no hay gastos para medir el ritmo.",
     "dayLabel": "Día {day}",
     "costOfCarryTitle": "Costo de financiamiento",

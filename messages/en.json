@@ -647,6 +647,8 @@
     "spendDonutEmpty": "No spending this month yet.",
     "thisMonth": "This month",
     "lastMonth": "Last month",
+    "paceThisPeriod": "This period",
+    "paceLastPeriod": "Last period",
     "spendingPaceEmpty": "No spending to pace yet.",
     "dayLabel": "Day {day}",
     "costOfCarryTitle": "Cost of carry",
