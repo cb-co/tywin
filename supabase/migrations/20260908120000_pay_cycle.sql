@@ -327,6 +327,33 @@ as $$
   order by d.d;
 $$;
 
+-- spending_pace(p_month) (20260822143000) is deliberately left as it is and
+-- deliberately gets no wrapper here, unlike category_usage, uncategorized_spend
+-- and spend_distribution above. Not an omission: the two functions answer
+-- different questions and collapsing them would be a real behaviour change,
+-- not a tidy-up.
+--
+-- spending_pace_range compares the requested period against an equal-length
+-- window immediately before it (prev_s above is p_start - cur_days), on
+-- purpose, so that a 13-16 day quincena is paced against a same-length
+-- quincena rather than a month it doesn't fit inside. spending_pace instead
+-- compares the calendar month against the true previous calendar month. Those
+-- two "previous periods" are the same window only when adjacent months happen
+-- to share a length. They differ, for instance, every September: an
+-- equal-length lookback from Sep 1 is Aug 2-31, but the previous calendar
+-- month is Aug 1-31 — a whole extra day. Wrapping spending_pace over this
+-- range function would silently shift the monthly chart's comparison line by
+-- that day, for the exact same reason a 366-day guard exists above: dates
+-- move in ways a formula can get quietly wrong.
+--
+-- So the inclusion rule (expense from anywhere, payment only into a loan)
+-- exists twice in this migration — once here, once in spending_pace — and
+-- that duplication is intentional, not drift to be merged the way
+-- category_usage_range's callers were. A caller whose period is exactly a
+-- calendar month should keep calling spending_pace; everything else calls
+-- spending_pace_range. lib/period/cycle.ts exports isWholeMonth(period) as
+-- exactly that predicate, so callers don't have to reimplement it.
+
 -- Cashflow over a range. monthly_cashflow (a view, keyed by month) is left
 -- exactly as it is — Insights and Ask both still read it.
 create or replace function public.cashflow_range(p_start date, p_end date)
