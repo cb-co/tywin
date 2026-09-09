@@ -1,11 +1,14 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { baseCurrencyOf } from "@/lib/profile";
-import { monthStart } from "@/lib/budgets/month";
 import { nextChargeDate, monthlyEquivalent, type BillingCycle } from "@/lib/subscriptions/cycle";
 import { getExchangeRates, convertToBase, unconvertedCurrencies } from "@/lib/fx";
 import { cardAmountDue, dayAfter } from "./card-due";
 import { importPromptState, type ImportPrompt } from "./import-prompt";
+import { currentPeriod } from "@/lib/period/profile";
+import type { Period } from "@/lib/period/cycle";
+import { computeAvailable, type Available } from "./available";
+import { computeFunding, type ContributionRow } from "@/lib/goals/funding";
 
 export type UpcomingItem = {
   key: string;
@@ -32,6 +35,14 @@ export type Overview = {
    *  the FX table was unavailable. Empty on every single-currency account set,
    *  which is why the page can render the warning unconditionally on it. */
   fxUnconverted: string[];
+  /** The pay-cycle period `today` falls in. A monthly profile's period is
+   *  exactly the calendar month, which is what keeps this build byte-for-byte
+   *  identical to today's app for every profile that hasn't opted into a
+   *  quincena. */
+  period: Period;
+  /** "Disponible hasta el <payday>" — composed from the rows above, not
+   *  queried separately. See lib/overview/available.ts. */
+  available: Available;
 };
 
 function nextDue(day: number | null, from = new Date()): Date | null {
@@ -92,34 +103,51 @@ async function statementPaymentsByCard(
 
 export async function getOverview(): Promise<Overview> {
   const supabase = await createClient();
-  const month = monthStart();
+
+  // The period must be resolved before the range RPCs below can run, so the
+  // profile is read on its own first rather than folded into the Promise.all.
+  // One extra round trip on the most-viewed page is worth less than a period
+  // that's wrong for everyone on it.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("base_currency,display_name,pay_cycle,pay_anchor_day")
+    .maybeSingle();
+
+  const period = currentPeriod(profile, new Date().toISOString().slice(0, 10));
 
   const [
-    { data: profile },
-    { data: cashflow },
+    { data: cashflowRows },
     { data: usage },
     { data: accounts },
     { data: balances },
     { data: cards },
     { data: loans },
     { data: subs },
+    { data: contributions },
   ] = await Promise.all([
-    supabase.from("profiles").select("base_currency,display_name").maybeSingle(),
-    supabase.from("monthly_cashflow").select("income,expense").eq("month", month).maybeSingle(),
-    supabase.rpc("category_usage", { p_month: month }),
-    supabase.from("accounts").select("id,name,currency").eq("is_archived", false),
+    supabase.rpc("cashflow_range", { p_start: period.start, p_end: period.end }),
+    supabase.rpc("category_usage_range", { p_start: period.start, p_end: period.end }),
+    supabase.from("accounts").select("id,name,currency,type").eq("is_archived", false),
     supabase.from("account_balances").select("account_id,currency,balance"),
     supabase
       .from("card_status")
       .select(
-        "account_id,currency,owed,latest_statement_balance,latest_due_date,latest_period_end,payment_due_day",
+        "account_id,currency,owed,latest_statement_balance,latest_due_date,latest_period_end,payment_due_day,latest_minimum_payment",
       ),
     supabase.from("loan_status").select("account_id,currency,outstanding_balance,installment_amount,payment_due_day"),
     supabase
       .from("subscriptions")
       .select("id,name,amount,currency,billing_cycle,anchor_day,is_active")
       .eq("is_active", true),
+    // The full set, never scoped to a single account — computeFunding's
+    // borrow-back allocation depends on every goal sharing an account. See the
+    // same comment in lib/goals/queries.ts:147.
+    supabase.from("goal_contributions").select("id,goal_id,account_id,amount,base_amount,occurred_at"),
   ]);
+
+  // cashflow_range always returns exactly one row (its sums are coalesced),
+  // but a table-returning RPC is typed as an array.
+  const cashflow = (cashflowRows ?? [])[0];
 
   const baseCurrency = baseCurrencyOf(profile);
   const [rates, cardPaid] = await Promise.all([
@@ -198,6 +226,61 @@ export async function getOverview(): Promise<Overview> {
   }
   upcoming.sort((a, b) => a.date.localeCompare(b.date));
 
+  const contributionRows: ContributionRow[] = (contributions ?? []).map((c) => ({
+    id: c.id,
+    goal_id: c.goal_id,
+    account_id: c.account_id,
+    amount: Number(c.amount),
+    base_amount: Number(c.base_amount),
+    occurred_at: c.occurred_at,
+  }));
+
+  // All contributions and all balances, never scoped to the accounts this
+  // page happens to render — see the comment on the goal_contributions query
+  // above.
+  const funding = computeFunding(
+    contributionRows,
+    (balances ?? []).map((b) => ({ account_id: b.account_id!, balance: Number(b.balance) })),
+  );
+
+  const available = computeAvailable({
+    periodEnd: period.end,
+    toBase,
+    accounts: (accounts ?? []).map((a) => {
+      // funding.accounts is keyed off the balance rows, so every account with
+      // a balance has an entry. An account with no contributions has
+      // committed 0.
+      const f = funding.accounts.get(a.id);
+      return {
+        accountId: a.id,
+        type: a.type,
+        balance: f?.balance ?? Number((balances ?? []).find((b) => b.account_id === a.id)?.balance ?? 0),
+        committed: f?.committed ?? 0,
+        currency: a.currency,
+      };
+    }),
+    cards: (cards ?? []).map((c) => ({
+      accountId: c.account_id ?? "",
+      name: acctById.get(c.account_id ?? "")?.name ?? "",
+      currency: c.currency ?? baseCurrency,
+      statementBalance: c.latest_statement_balance,
+      owed: c.owed,
+      paidSinceStatement: cardPaid.get(c.account_id ?? "") ?? 0,
+      minimumPayment: c.latest_minimum_payment,
+    })),
+    loans: (loans ?? []).map((l) => ({
+      amount: Number(l.installment_amount ?? 0),
+      currency: l.currency ?? baseCurrency,
+      date: nextDue(l.payment_due_day)?.toISOString().slice(0, 10) ?? null,
+    })),
+    subscriptions: (subs ?? []).map((s) => ({
+      amount: Number(s.amount),
+      currency: s.currency,
+      date: nextChargeDate(s.billing_cycle as BillingCycle, s.anchor_day)?.toISOString().slice(0, 10) ?? null,
+    })),
+    fxUnconverted,
+  });
+
   return {
     hasAccounts: (accounts ?? []).length > 0,
     baseCurrency,
@@ -214,5 +297,7 @@ export async function getOverview(): Promise<Overview> {
     upcoming: upcoming.slice(0, 6),
     importPrompt: importPromptState(cards ?? []),
     fxUnconverted,
+    period,
+    available,
   };
 }
