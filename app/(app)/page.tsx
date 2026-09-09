@@ -10,6 +10,7 @@ import { MoneyDisplay } from "@/components/ui/money-display";
 import { ColorTile } from "@/components/ui/color-tile";
 import { StatPill } from "@/components/ui/stat-pill";
 import { MarketingHome } from "@/components/marketing/marketing-home";
+import { AvailableHero } from "@/components/overview/available-hero";
 import { RecommendationCard } from "@/components/overview/recommendation-card";
 import { AskEntry } from "@/components/overview/ask-entry";
 import { ImportCallout } from "@/components/overview/import-callout";
@@ -120,16 +121,15 @@ export default async function OverviewPage() {
         <PageHeader title={heading} description={t("description")} actions={<ImportButton />} />
       </div>
 
-      {/* Net worth hero */}
+      {/* "Disponible hasta el <payday>" hero — what you can spend before the
+          next quincenal payday, not what you're worth. Net worth moves to a
+          secondary stat inside the same card rather than disappearing. */}
       <div className="rise" style={{ "--i": 1 } as React.CSSProperties}>
-        <HeroCard label={t("netWorth")}>
-          <MoneyDisplay amount={o.netWorth} currency={o.baseCurrency} size="hero" animate />
-          <p className="mt-3 text-sm opacity-80">{t("netWorthBody", { currency: o.baseCurrency })}</p>
-        </HeroCard>
+        <AvailableHero available={o.available} netWorth={o.netWorth} currency={o.baseCurrency} />
       </div>
 
-      {/* Directly under the hero it qualifies: the net worth above it is the
-          figure a 1:1 fallback distorts most. */}
+      {/* Directly under the hero it qualifies: the available figure above it
+          is now the one a 1:1 fallback distorts most. */}
       <FxDegradedNotice currencies={o.fxUnconverted} base={o.baseCurrency} className="rise" />
 
       {o.importPrompt !== "none" ? (
@@ -143,14 +143,14 @@ export default async function OverviewPage() {
         <Card className="rise p-5" style={{ "--i": 3 } as React.CSSProperties}>
           <div className="flex items-center gap-3">
             <ColorTile color="var(--success)" icon={ArrowDownLeft} />
-            <p className="text-xs text-muted-foreground">{t("incomeThisMonth")}</p>
+            <p className="text-xs text-muted-foreground">{t("incomeThisPeriod")}</p>
           </div>
           <MoneyDisplay amount={o.monthIncome} currency={o.baseCurrency} size="stat" animate className="mt-2 text-success" />
         </Card>
         <Card className="rise p-5" style={{ "--i": 4 } as React.CSSProperties}>
           <div className="flex items-center gap-3">
             <ColorTile color={null} icon={ArrowUpRight} />
-            <p className="text-xs text-muted-foreground">{t("spendingThisMonth")}</p>
+            <p className="text-xs text-muted-foreground">{t("spendingThisPeriod")}</p>
           </div>
           <MoneyDisplay amount={o.monthExpense} currency={o.baseCurrency} size="stat" animate className="mt-2 text-foreground" />
         </Card>
