@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { periodFor, nextPayday, shiftPeriod, isWholeMonth } from "./cycle";
+import { periodFor, nextPayday, shiftPeriod, isWholeMonth, localDate } from "./cycle";
 
 describe("periodFor · semimonthly", () => {
   it("puts the 1st through the 15th in the first half", () => {
@@ -149,5 +149,24 @@ describe("isWholeMonth", () => {
 
   it("is false for a period that spans two months", () => {
     expect(isWholeMonth({ start: "2026-08-25", end: "2026-09-24" })).toBe(false);
+  });
+});
+
+describe("localDate", () => {
+  it("zero-pads single-digit months and days", () => {
+    expect(localDate(new Date(2026, 0, 5))).toBe("2026-01-05");
+  });
+
+  it("returns the given calendar date for a Date built from local midnight, unlike toISOString at a positive UTC offset", () => {
+    // 2026-09-08 local midnight: at any positive UTC offset,
+    // `d.toISOString().slice(0, 10)` would roll back to 2026-09-07 because
+    // toISOString renders in UTC. localDate must read the local getters and
+    // return the same date the constructor was given.
+    const d = new Date(2026, 8, 8, 0, 0, 0);
+    expect(localDate(d)).toBe("2026-09-08");
+  });
+
+  it("does not zero-pad past two digits, for a double-digit month and day", () => {
+    expect(localDate(new Date(2026, 11, 25))).toBe("2026-12-25");
   });
 });

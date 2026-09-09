@@ -6,7 +6,7 @@ import { getExchangeRates, convertToBase, unconvertedCurrencies } from "@/lib/fx
 import { cardAmountDue, dayAfter } from "./card-due";
 import { importPromptState, type ImportPrompt } from "./import-prompt";
 import { currentPeriod } from "@/lib/period/profile";
-import type { Period } from "@/lib/period/cycle";
+import { localDate, type Period } from "@/lib/period/cycle";
 import { computeAvailable, type Available } from "./available";
 import { computeFunding, type ContributionRow } from "@/lib/goals/funding";
 
@@ -113,7 +113,7 @@ export async function getOverview(): Promise<Overview> {
     .select("base_currency,display_name,pay_cycle,pay_anchor_day")
     .maybeSingle();
 
-  const period = currentPeriod(profile, new Date().toISOString().slice(0, 10));
+  const period = currentPeriod(profile, localDate());
 
   const [
     { data: cashflowRows },
@@ -268,16 +268,22 @@ export async function getOverview(): Promise<Overview> {
       paidSinceStatement: cardPaid.get(c.account_id ?? "") ?? 0,
       minimumPayment: c.latest_minimum_payment,
     })),
-    loans: (loans ?? []).map((l) => ({
-      amount: Number(l.installment_amount ?? 0),
-      currency: l.currency ?? baseCurrency,
-      date: nextDue(l.payment_due_day)?.toISOString().slice(0, 10) ?? null,
-    })),
-    subscriptions: (subs ?? []).map((s) => ({
-      amount: Number(s.amount),
-      currency: s.currency,
-      date: nextChargeDate(s.billing_cycle as BillingCycle, s.anchor_day)?.toISOString().slice(0, 10) ?? null,
-    })),
+    loans: (loans ?? []).map((l) => {
+      const d = nextDue(l.payment_due_day);
+      return {
+        amount: Number(l.installment_amount ?? 0),
+        currency: l.currency ?? baseCurrency,
+        date: d ? localDate(d) : null,
+      };
+    }),
+    subscriptions: (subs ?? []).map((s) => {
+      const d = nextChargeDate(s.billing_cycle as BillingCycle, s.anchor_day);
+      return {
+        amount: Number(s.amount),
+        currency: s.currency,
+        date: d ? localDate(d) : null,
+      };
+    }),
     fxUnconverted,
   });
 

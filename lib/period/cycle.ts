@@ -27,6 +27,16 @@ export function daysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
 }
 
+/** Today as a date-only "YYYY-MM-DD" string in the RUNTIME'S OWN timezone.
+ *  Deliberately not `toISOString().slice(0,10)`, which is UTC: `monthStart()`
+ *  in lib/budgets/month.ts has always derived the current month from local
+ *  getters, and a period boundary that disagreed with it would roll a user
+ *  into the next period hours early — on the 15th, or worse, on the last day
+ *  of the month, where a monthly profile would jump a whole month. */
+export function localDate(d = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 /** `date` shifted by whole days, as a date-only string. Uses UTC so the shift
  *  can never land on a DST-shortened local day and lose an hour into the
  *  previous date. */
