@@ -1,5 +1,6 @@
 import {
   ArrowLeftRight,
+  CreditCard,
   Landmark,
   LayoutDashboard,
   LineChart,
@@ -98,12 +99,27 @@ export default async function HelpPage() {
           >
             <div>
               <ul className="space-y-2 text-sm text-foreground">
+                <li>{t("overviewAvailable")}</li>
                 <li>{t("overviewNetWorth")}</li>
                 <li>{t("overviewStats")}</li>
                 <li>{t("overviewUpcoming")}</li>
                 <li>{t("overviewFxWarning")}</li>
               </ul>
               <p className="mt-3 text-sm text-muted-foreground">{t("overviewZeroState")}</p>
+
+              <h3 className="mt-5 text-sm font-semibold text-foreground">{t("disponibleTitle")}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">{t("disponibleIntro")}</p>
+              <ul className="mt-2 space-y-1.5 text-sm text-foreground">
+                <li>{t("disponibleLiquid")}</li>
+                <li>{t("disponibleCommitted")}</li>
+                <li>{t("disponibleCards")}</li>
+                <li>{t("disponibleLoans")}</li>
+                <li>{t("disponibleSubscriptions")}</li>
+              </ul>
+              <HelpCallout icon={CreditCard} title={t("disponibleZeroCalloutTitle")}>
+                {t("disponibleZeroCalloutBody")}
+              </HelpCallout>
+              <p className="mt-3 text-sm text-muted-foreground">{t("disponiblePeriodNote")}</p>
 
               <h3 className="mt-5 text-sm font-semibold text-foreground">{t("gettingAroundTitle")}</h3>
               <div className="mt-2 grid gap-3 sm:grid-cols-2">
@@ -137,6 +153,14 @@ export default async function HelpPage() {
               <p className="mt-3 text-sm text-muted-foreground">{t("navNote")}</p>
             </div>
             <OverviewMock
+              availableLabel={t("overviewMockAvailable")}
+              availableIfCleared={t("overviewMockAvailableCleared")}
+              liquidLabel={t("overviewMockLiquid")}
+              committedLabel={t("overviewMockCommitted")}
+              cardsLabel={t("overviewMockCards")}
+              cardsNote={t("overviewMockCardsNote")}
+              loansLabel={t("overviewMockLoans")}
+              subscriptionsLabel={t("overviewMockSubscriptions")}
               netWorthLabel={t("overviewMockNetWorth")}
               incomeLabel={t("overviewMockIncome")}
               spentLabel={t("overviewMockSpent")}
@@ -389,6 +413,7 @@ export default async function HelpPage() {
             <div>
               <ul className="space-y-2 text-sm text-foreground">
                 <li>{t("settingsName")}</li>
+                <li>{t("settingsPayCycle")}</li>
                 <li>{t("settingsTheme")}</li>
                 <li>{t("settingsSound")}</li>
                 <li>{t("settingsInstall")}</li>

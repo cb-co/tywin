@@ -220,7 +220,7 @@ issuer's own descriptor and is locked, which makes notes the only place to recor
 
 ### UX-05 · Fix · High — Budgets are calendar-month; Dominican salaries are not
 
-- [ ] Done
+- [x] Done (09 Sep 2026)
 
 Most of the country is paid *quincenal* — the 15th and the 30th. A budget that resets on the 1st
 means a user is "on track" on the 14th while actually broke, and the spending-pace chart paces
@@ -231,9 +231,27 @@ feels wrong to a Dominican user without them being able to say why.
 periods, the spending-pace x-axis, and the "safe to spend" figure in UX-06. Keep the monthly view
 available; make quincenal the default for a DOP base currency.
 
+**Done** — `lib/period/cycle.ts` is the one place a pay-cycle boundary is computed: `PAY_CYCLE_VALUES`,
+`periodFor`, `isWholeMonth`, `nextPayday`, `shiftPeriod`, covering mensual, quincenal and semanal alike.
+The migration behind it (`ed931f1`, `ef3a2f5`) added the profile's `pay_cycle` and anchor-day columns
+and made the SQL functions period-aware without breaking any existing monthly caller — `829a959`
+records why `spending_pace` needed no `_range` wrapper to do it. Budgets resizes to the real period and
+gates its Mes/Quincena toggle on `isWholeMonth`, not on `payCycle` directly, so a monthly profile still
+sees one toggle state (`components/budgets/period-picker.tsx`, `lib/budgets/queries.ts`; commits
+`b2c5a23`, `4c48d2e`). Insights' spending-pace chart paces against that same period for a non-whole-month
+cycle instead of always the calendar month (`lib/insights/queries.ts`; commit `8ef66ef`). The setting
+itself is a Mensual/Quincenal/Semanal segmented control with an anchor-day input in Settings
+(`components/settings/settings-panel.tsx`; commit `0460ee0`), and the help guide's Settings chapter now
+names it (`app/(app)/help/page.tsx`, this change).
+
+**Remaining** —
+- [ ] The live end-to-end browser pass on a quincenal profile in Spanish at a 360px viewport, then
+      again on Mensual to confirm parity with `main` — pending human verification (see the checklist
+      this task handed the controller; not run by an agent in this environment).
+
 ### UX-06 · Build · High — The app computes every input to "safe to spend" and shows none of them together
 
-- [ ] Done
+- [x] Done (09 Sep 2026)
 
 Net worth is the hero figure on Overview. Net worth is the least actionable number in personal
 finance — it moves slowly, it includes a car, and nobody makes a decision with it. The decision people
@@ -246,6 +264,28 @@ remaining.
 **Do this** — Replace the Overview hero with **Disponible hasta el 30** — balance minus committed
 savings, minus cuotas due, minus subscriptions before payday, minus the card minimum. Demote net
 worth to a secondary stat. This one change makes the app a daily open instead of a weekly one.
+
+**Done** — `lib/overview/available.ts` composes the figure from rows Overview already fetches: liquid
+balance, goal commitments, each card clamped to its printed minimum (or its full balance when no
+minimum is printed), loan installments and subscription charges due before the period ends (commits
+`6d6e2ca`, `442a7c6`). `components/overview/available-hero.tsx` renders it as "Disponible hasta el
+`<date>`", with a second "si saldas las tarjetas" figure, a collapsible five-row breakdown, and a basis
+note under every card row explaining minimum-vs-full — net worth demoted to a bordered-off secondary
+stat in the same card rather than removed (commits `f010abc`, `be10fd0`, `31e6b87`). The help guide now
+has a dedicated "Cómo se calcula Disponible" section covering the same five rows, why a $0-printed
+minimum is still subtracted in full, and where the pay cycle behind it is set
+(`app/(app)/help/page.tsx`, `messages/en.json`, `messages/es.json`, this change).
+
+**Remaining** —
+- [ ] The live end-to-end browser pass described under UX-05 — pending human verification.
+- [ ] The spec's ASCII mock for the hero, in `docs/specs/2026-09-08-pay-cycle-safe-to-spend-design.md`,
+      drew net worth with a trailing "▸" implying a tap-through to a net-worth detail view that does
+      not exist anywhere in the app. Corrected in this pass rather than invented — a link to
+      `/insights`, which already carries the net-worth trend, is a plausible future follow-up,
+      deliberately not taken here.
+- [ ] "Balance líquido" (the liquid-balance line in the hero breakdown) reads mildly more technical
+      than this audit's no-finance-jargon voice guideline. Flagged as a human judgment call for a
+      future copy pass, not changed unilaterally here.
 
 ### UX-07 · Fix · High — Insights is eleven cards answering three different clocks
 
@@ -732,7 +772,7 @@ network mark — recognising the bank is what makes the card face land.
 ### Next · 2–3 months — Become Dominican
 
 - [ ] Cuotas tracker (BUILD-01)
-- [ ] Quincena pay cycle + safe-to-spend (UX-05, UX-06)
+- [x] Quincena pay cycle + safe-to-spend (UX-05, UX-06) — built and merged; live end-to-end pass pending
 - [ ] Bank statement import (BUILD-02)
 - [ ] Push notifications (BUILD-03)
 - [ ] Bank & biller catalogue (BUILD-04)

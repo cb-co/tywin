@@ -263,10 +263,11 @@ Disponible hasta el 30 sept
   − Préstamos                  −9,500.00
   − Suscripciones              −4,500.00
 
-  Patrimonio neto  RD$ 312,900  ▸
+  Patrimonio neto  RD$ 312,900
 ```
 
-- Net worth stays a real figure as a secondary stat, one tap from its detail. It is demoted, not cut.
+- Net worth stays a real figure as a secondary stat. It is demoted, not cut — there is no net-worth
+  detail view in the app to tap through to, so the stat renders as plain text, not an affordance.
 - A negative `available` renders in the existing over-budget treatment rather than a new alarm state,
   and the copy stays calm and second-person per the voice in the catalogues. A negative number here
   is information, not a scolding.
@@ -335,10 +336,29 @@ first; `shiftPeriod` round-tripping ±1 across all three cycles.
 repo has no SQL test harness — every existing `*.test.ts` exercises a pure TypeScript function with
 hand-built rows. Adding a TypeScript mirror of the proration rule purely so a test could assert on it
 would re-create the exact duplication §3 exists to avoid. Instead it is verified once, after the push,
-by a read-only query against the linked project (`supabase db query --linked`), recorded in the plan
-as an explicit verification step: a full month must prorate to a factor of exactly 1, both quincenas
-of a 31-day month must sum to the stored monthly amount, and a week spanning two months must prorate
-against each month's own denominator.
+recorded in the plan as an explicit verification step: a full month must prorate to a factor of exactly
+1, both quincenas of a 31-day month must sum to the stored monthly amount, and a week spanning two
+months must prorate against each month's own denominator.
+
+**`supabase db query --linked` carries no JWT.** It connects with no `auth.uid()`, so every
+security-invoker function this feature adds returns zero rows under RLS regardless of what data
+actually exists — a query against real stored budgets through that path is an empty-set trap, not a
+verification. Seeing real rows requires impersonating a specific user id, which means running the
+check inside a transaction that sets `request.jwt.claims` locally and rolls back rather than commits
+(so the impersonation never touches the linked project's data):
+
+```sql
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', '<real-user-uuid>')::text, true);
+select * from category_usage('2026-07-01'::date);
+rollback;
+```
+
+Task 2 took the simpler of the two valid routes instead: it verified the proration factor as pure
+arithmetic through the migration's own `months` CTE fed a synthetic amount, independent of any stored
+data or user session. That is the route to prefer when the question is "does the arithmetic prorate
+correctly" rather than "does this specific user's stored budget prorate correctly" — it needs no
+impersonation and no rollback discipline to get right.
 
 **`lib/overview/available.test.ts`** — each leg in isolation and composed; the minimum clamped to
 `amountDue` when a payment has already taken the balance below the printed minimum; the no-statement

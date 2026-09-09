@@ -113,8 +113,25 @@ export function OnboardingMock({
  * MockPanel wrapper around that composition would double-box the one element
  * on the whole app that is deliberately never boxed twice, so this mock skips
  * it and stacks the real pieces directly, the way the dashboard does.
+ *
+ * The hero itself is a still of `AvailableHero` (Task 6): "Disponible" is the
+ * big figure now, not net worth — the breakdown rows below it (liquid,
+ * committed, cards, loans, subscriptions) mirror that component's own rows,
+ * and the cards row carries a basis note the same way a real $0-minimum card
+ * does, so the guide's screenshot teaches the same thing the callout above it
+ * says in words. Net worth survives as the bordered-off secondary line at the
+ * bottom of the same card, exactly where the real screen keeps it — demoted,
+ * not removed.
  */
 export function OverviewMock({
+  availableLabel,
+  availableIfCleared,
+  liquidLabel,
+  committedLabel,
+  cardsLabel,
+  cardsNote,
+  loansLabel,
+  subscriptionsLabel,
   netWorthLabel,
   incomeLabel,
   spentLabel,
@@ -122,6 +139,14 @@ export function OverviewMock({
   upcomingItem,
   upcomingSubtitle,
 }: {
+  availableLabel: string;
+  availableIfCleared: string;
+  liquidLabel: string;
+  committedLabel: string;
+  cardsLabel: string;
+  cardsNote: string;
+  loansLabel: string;
+  subscriptionsLabel: string;
   netWorthLabel: string;
   incomeLabel: string;
   spentLabel: string;
@@ -132,8 +157,38 @@ export function OverviewMock({
   const budgetPct = 64;
   return (
     <div className="space-y-3">
-      <HeroCard label={netWorthLabel} className="p-5">
-        <MoneyDisplay amount={18430.12} currency="USD" size="stat" />
+      <HeroCard label={availableLabel} className="p-5">
+        <MoneyDisplay amount={1840} currency="USD" size="stat" />
+        <p className="mt-1 text-xs opacity-70">{availableIfCleared}</p>
+
+        <div className="mt-4 space-y-1.5">
+          <div className="flex items-baseline justify-between gap-4 text-xs">
+            <span className="opacity-80">{liquidLabel}</span>
+            <MoneyDisplay amount={3200} currency="USD" size="inline" />
+          </div>
+          <div className="flex items-baseline justify-between gap-4 text-xs">
+            <span className="opacity-80">{committedLabel}</span>
+            <MoneyDisplay amount={-200} currency="USD" size="inline" />
+          </div>
+          <div className="flex items-baseline justify-between gap-4 text-xs">
+            <span className="opacity-80">{cardsLabel}</span>
+            <MoneyDisplay amount={-350} currency="USD" size="inline" />
+          </div>
+          <p className="pl-3 text-[0.65rem] opacity-60">{cardsNote}</p>
+          <div className="flex items-baseline justify-between gap-4 text-xs">
+            <span className="opacity-80">{loansLabel}</span>
+            <MoneyDisplay amount={-180} currency="USD" size="inline" />
+          </div>
+          <div className="flex items-baseline justify-between gap-4 text-xs">
+            <span className="opacity-80">{subscriptionsLabel}</span>
+            <MoneyDisplay amount={-46} currency="USD" size="inline" />
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-baseline justify-between gap-4 border-t border-white/15 pt-3 text-xs">
+          <span className="opacity-80">{netWorthLabel}</span>
+          <MoneyDisplay amount={18430.12} currency="USD" size="inline" />
+        </div>
       </HeroCard>
 
       <Card className="divide-y gap-0 p-0">
