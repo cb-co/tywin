@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   graphql_public: {
     Tables: {
@@ -831,6 +831,8 @@ export type Database = {
           display_name: string | null
           id: string
           onboarded_at: string | null
+          pay_anchor_day: number | null
+          pay_cycle: Database["public"]["Enums"]["pay_cycle"]
           updated_at: string
         }
         Insert: {
@@ -839,6 +841,8 @@ export type Database = {
           display_name?: string | null
           id: string
           onboarded_at?: string | null
+          pay_anchor_day?: number | null
+          pay_cycle?: Database["public"]["Enums"]["pay_cycle"]
           updated_at?: string
         }
         Update: {
@@ -847,6 +851,8 @@ export type Database = {
           display_name?: string | null
           id?: string
           onboarded_at?: string | null
+          pay_anchor_day?: number | null
+          pay_cycle?: Database["public"]["Enums"]["pay_cycle"]
           updated_at?: string
         }
         Relationships: []
@@ -1361,6 +1367,7 @@ export type Database = {
           credit_limit: number | null
           currency: string | null
           latest_due_date: string | null
+          latest_minimum_payment: number | null
           latest_period_end: string | null
           latest_statement_balance: number | null
           owed: number | null
@@ -1680,6 +1687,13 @@ export type Database = {
     }
     Functions: {
       ask_query: { Args: { p_sql: string }; Returns: Json }
+      cashflow_range: {
+        Args: { p_end: string; p_start: string }
+        Returns: {
+          expense: number
+          income: number
+        }[]
+      }
       category_rule_usage: {
         Args: never
         Returns: {
@@ -1691,6 +1705,17 @@ export type Database = {
         Args: { p_month: string }
         Returns: {
           budget: number
+          category_id: string
+          remaining: number
+          status: Database["public"]["Enums"]["budget_status"]
+          used: number
+        }[]
+      }
+      category_usage_range: {
+        Args: { p_end: string; p_start: string }
+        Returns: {
+          budget: number
+          budget_monthly: number
           category_id: string
           remaining: number
           status: Database["public"]["Enums"]["budget_status"]
@@ -1715,6 +1740,13 @@ export type Database = {
           total: number
         }[]
       }
+      spend_distribution_range: {
+        Args: { p_end: string; p_start: string }
+        Returns: {
+          category_id: string
+          total: number
+        }[]
+      }
       spending_pace: {
         Args: { p_month: string }
         Returns: {
@@ -1723,7 +1755,19 @@ export type Database = {
           this_month: number
         }[]
       }
+      spending_pace_range: {
+        Args: { p_end: string; p_start: string }
+        Returns: {
+          day_offset: number
+          last_period: number
+          this_period: number
+        }[]
+      }
       uncategorized_spend: { Args: { p_month: string }; Returns: number }
+      uncategorized_spend_range: {
+        Args: { p_end: string; p_start: string }
+        Returns: number
+      }
     }
     Enums: {
       account_type:
@@ -1736,6 +1780,7 @@ export type Database = {
         | "loan"
       billing_cycle: "weekly" | "monthly" | "yearly" | "custom"
       budget_status: "within" | "approaching" | "over"
+      pay_cycle: "monthly" | "semimonthly" | "weekly"
       statement_line_kind:
         | "purchase"
         | "fee"
@@ -1759,12 +1804,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1788,11 +1833,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1813,11 +1858,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1838,11 +1883,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1855,11 +1900,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1885,6 +1930,7 @@ export const Constants = {
       ],
       billing_cycle: ["weekly", "monthly", "yearly", "custom"],
       budget_status: ["within", "approaching", "over"],
+      pay_cycle: ["monthly", "semimonthly", "weekly"],
       statement_line_kind: [
         "purchase",
         "fee",
