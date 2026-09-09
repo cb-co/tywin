@@ -113,7 +113,7 @@ export function AvailableHero({
         onClick={toggleBreakdown}
         aria-expanded="true"
         aria-controls={breakdownId}
-        className="mt-4 text-sm underline decoration-white/40 underline-offset-4 sm:hidden"
+        className="mt-4 block text-sm underline decoration-white/40 underline-offset-4 sm:hidden"
       >
         {t("availableBreakdownToggle")}
       </button>
