@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { bearerToken } from "./bearer";
 
 const PUBLIC_PATHS = [
   "/",
@@ -80,6 +81,17 @@ export async function updateSession(request: NextRequest) {
   };
 
   let response = withHeaders();
+
+  /* The native app authenticates with `Authorization: Bearer`, not a cookie. The
+     route handler checks that token itself (lib/supabase/server.ts), so a cookie
+     lookup here could only find nothing and 401 a valid request. API paths only:
+     a page route still needs a cookie session, whatever headers it carries. */
+  if (
+    request.nextUrl.pathname.startsWith("/api/") &&
+    bearerToken(request.headers.get("authorization"))
+  ) {
+    return response;
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
