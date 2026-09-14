@@ -12,6 +12,7 @@ import { extractWithLLM, toParsedStatement } from "@/lib/statements/llm/extract"
 import { validateChecksums } from "@/lib/statements/validate";
 import { centsToDecimal } from "@/lib/statements/money";
 import { MAX_STATEMENT_BYTES } from "@/lib/statements/limits";
+import { takeStatementParseToken } from "@/lib/statements/rate-limit";
 import { suggestAccountMappings, type CardAccountOption } from "@/lib/statements/mapping";
 import { cardBackfillFromSection } from "@/lib/statements/backfill";
 import { resolveCategoryId, type CategoryRuleRow } from "@/lib/statements/categorize";
@@ -201,6 +202,12 @@ async function extractAndParse(formData: FormData) {
   const t = await getTranslations("Statements");
   const { supabase, user } = await requireUser();
   if (!user) return { error: (await getTranslations("Common"))("notSignedIn") } as const;
+
+  // Before the file is even read: a refused request should cost nothing and
+  // leave no failed-import row. The copy already says "try again in a minute".
+  if (!takeStatementParseToken(user.id, Date.now())) {
+    return { error: t("llmRateLimited") } as const;
+  }
 
   const file = formData.get("file");
   const password = String(formData.get("password") ?? "") || undefined;
