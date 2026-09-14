@@ -9,14 +9,14 @@
  * module is the reader, which is why the feature ships with history rather than
  * starting from the next import.
  *
- * INTEREST IS EXCLUDED BY CONSTRUCTION, and that is the whole reason this file
+ * INTEREST IS SEPARATED BY CONSTRUCTION, and that is the whole reason this file
  * classifies rather than sums. The prompt puts `interés` in the same bucket as
  * `cargo` and `seguro`, so a naive sum over kind='fee' would fold a finance
- * charge into the cost of owning the card. It would also double-count: Cost of
- * carry already reports what a balance costs, and one surface cannot hold a
- * projection and a realized charge. The exclusion is checked FIRST, so
- * "interés por mora" is excluded too — a misfire in that direction can only
- * under-report ownership cost, never inflate it.
+ * charge into the cost of owning the card. Interest gets its own bucket instead
+ * — what the card report shows as interest paid this year, a realized charge
+ * that sits beside Cost of carry's projection and is never added to it. The
+ * interest test runs FIRST, so "interés por mora" is interest too — a misfire
+ * in that direction can only under-report ownership cost, never inflate it.
  *
  * RECURRING IS THE DEFAULT, and the live data is the argument. `AHORRO MUJER
  * WHITE` was tagged a fee by the model despite matching none of the prompt's
@@ -40,11 +40,13 @@ export type FeeLineRow = {
   posted_on: string;
 };
 
-export type FeeBucket = "recurring" | "incidents" | "excluded";
+export type FeeBucket = "recurring" | "incidents" | "interest";
 
 export type CardFeeTotals = {
   recurring: number;
   incidents: number;
+  /** Finance charges: interest billed on a carried balance, net of reversals. */
+  interest: number;
   /** How many rows actually contributed. This is what lets a caller tell "no
    *  fee lines at all" from "fees that happened to net to zero": the surfaces
    *  omit a card entirely for the former rather than printing a 0.00 the data
@@ -63,7 +65,9 @@ const norm = (s: string) =>
 const has = (text: string, words: readonly string[]) =>
   words.some((w) => new RegExp(`\\b${w}\\b`).test(text));
 
-const INTEREST = ["interes", "interest", "financiamiento"] as const;
+// Plurals spelled out: matching is whole-word, so "interes" alone missed AMEX's
+// INTERESES POR FINANCIAMIENTO and filed it as an ownership charge.
+const INTEREST = ["interes", "intereses", "interest", "financiamiento"] as const;
 
 const INCIDENT = [
   "sobregiro", "overdraft", "mora", "late", "atraso", "tardio",
@@ -81,7 +85,7 @@ const FEE_WORDS = [
  *  the interest note in this file's header. */
 export function classifyFee(description: string): FeeBucket {
   const text = norm(description);
-  if (has(text, INTEREST)) return "excluded";
+  if (has(text, INTEREST)) return "interest";
   if (has(text, INCIDENT)) return "incidents";
   return "recurring";
 }
@@ -100,20 +104,20 @@ export function reversalTarget(description: string): FeeBucket | null {
   const prefix = new RegExp(`^(${REVERSAL.join("|")})\\b`);
   if (!prefix.test(text)) return null;
   const rest = text.replace(prefix, "").trim();
-  if (!has(rest, FEE_WORDS)) return null;
+  if (!has(rest, FEE_WORDS) && !has(rest, INTEREST)) return null;
   return classifyFee(rest);
 }
 
-/** Both subtotals for one card over one calendar year, reversals netted.
+/** Every subtotal for one card over one calendar year, reversals netted.
  *  Credits already carry a negative sign (the extraction schema encodes the
  *  sign on the number), so netting is plain addition. */
 export function summarizeCardFees(rows: FeeLineRow[], year: number): CardFeeTotals {
   const prefix = `${year}-`;
-  const totals: CardFeeTotals = { recurring: 0, incidents: 0, counted: 0 };
+  const totals: CardFeeTotals = { recurring: 0, incidents: 0, interest: 0, counted: 0 };
   for (const r of rows) {
     if (!r.posted_on.startsWith(prefix)) continue;
     const bucket = r.kind === "fee" ? classifyFee(r.description) : reversalTarget(r.description);
-    if (bucket === null || bucket === "excluded") continue;
+    if (bucket === null) continue;
     totals[bucket] += r.amount;
     totals.counted += 1;
   }

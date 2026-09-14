@@ -161,7 +161,7 @@ export default async function AccountDetailPage({
   const spendMonthTotal = spendTotal(spendSlices);
   const cardFees = isCardType
     ? summarizeCardFees(feeLines, feeYear)
-    : { recurring: 0, incidents: 0, counted: 0 };
+    : { recurring: 0, incidents: 0, interest: 0, counted: 0 };
 
   /* What this account has actually paid in transfer tax and network fees this
    * year, on every kind of transaction drawn from it — not just transfers. The

@@ -214,6 +214,8 @@
     "cardReportCarry": "Cost of carry",
     "cardReportCarryDetail": "if you finance · as of {date}",
     "cardReportCarryApr": "{rate}% APR",
+    "cardReportInterest": "Interest paid in {year}",
+    "cardReportInterestRefunded": "Interest refunded in {year}",
     "cardReportCashback": "Cashback in {year}",
     "cardReportOwnership": "Fees & insurance in {year}",
     "cardReportOwnershipRefunded": "Fees & insurance refunded in {year}",
@@ -1098,6 +1100,6 @@
     "budgetGroupsMockFuture": "Future",
     "footerNote": "This guide mirrors the app's own navigation, top to bottom.",
     "insightsDebtCost": "What your debt costs, in two groups never added together: what each card would charge if you financed its balance (from its latest statement), and the interest each loan payment actually went to. Tap a row to open that card or loan.",
-    "accountPageReport": "For credit cards, a card report: cost of carry from the latest statement, cashback and fees & insurance this year, penalty fees, what you paid into the card this month, and welcome-bonus progress. Rows appear only once there's data behind them."
+    "accountPageReport": "For credit cards, a card report: cost of carry from the latest statement, interest paid, cashback and fees & insurance this year, penalty fees, what you paid into the card this month, and welcome-bonus progress. Rows appear only once there's data behind them."
   }
 }

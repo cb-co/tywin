@@ -214,6 +214,8 @@
     "cardReportCarry": "Costo de financiamiento",
     "cardReportCarryDetail": "si financias · al {date}",
     "cardReportCarryApr": "{rate}% anual",
+    "cardReportInterest": "Intereses pagados en {year}",
+    "cardReportInterestRefunded": "Intereses reembolsados en {year}",
     "cardReportCashback": "Cashback en {year}",
     "cardReportOwnership": "Cargos y seguros en {year}",
     "cardReportOwnershipRefunded": "Cargos y seguros reembolsados en {year}",
@@ -1098,6 +1100,6 @@
     "budgetGroupsMockFuture": "Futuro",
     "footerNote": "Esta guía sigue la propia navegación de la app, de principio a fin.",
     "insightsDebtCost": "Lo que te cuesta la deuda, en dos grupos que nunca se suman: lo que cada tarjeta te cobraría si financias el balance (según su último estado de cuenta) y los intereses que realmente se llevó cada pago de préstamo. Toca una fila para abrir esa tarjeta o préstamo.",
-    "accountPageReport": "En tarjetas de crédito, la Boleta de la tarjeta: costo de financiamiento del último estado de cuenta, cashback y cargos y seguros del año, cargos por penalidad, lo que le pagaste a la tarjeta este mes y el progreso del bono de bienvenida. Cada fila aparece solo cuando hay datos detrás."
+    "accountPageReport": "En tarjetas de crédito, la Boleta de la tarjeta: costo de financiamiento del último estado de cuenta, intereses pagados, cashback y cargos y seguros del año, cargos por penalidad, lo que le pagaste a la tarjeta este mes y el progreso del bono de bienvenida. Cada fila aparece solo cuando hay datos detrás."
   }
 }

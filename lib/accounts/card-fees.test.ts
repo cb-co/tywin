@@ -13,16 +13,19 @@ const credit = (description: string, amount: number, posted_on = "2026-07-03"): 
   ({ description, amount, kind: "credit", posted_on });
 
 describe("classifyFee", () => {
-  it("excludes interest, whatever the wording", () => {
-    expect(classifyFee("INTERES FINANCIAMIENTO")).toBe("excluded");
-    expect(classifyFee("Interés")).toBe("excluded");
-    expect(classifyFee("INTEREST CHARGE")).toBe("excluded");
+  it("files interest as interest, whatever the wording", () => {
+    expect(classifyFee("INTERES FINANCIAMIENTO")).toBe("interest");
+    expect(classifyFee("Interés")).toBe("interest");
+    expect(classifyFee("INTEREST CHARGE")).toBe("interest");
+    // The two AMEX Platinum lines of 2026-08-17, which the extraction tagged 'fee'.
+    expect(classifyFee("INTERESES POR FINANCIAMIENTO")).toBe("interest");
+    expect(classifyFee("INTERESES CONSUMOS MES ANTERIOR")).toBe("interest");
   });
 
   // Interest is tested BEFORE the incident list on purpose: late interest is
-  // still interest, and Cost of carry is the surface that owns it.
+  // still interest, and the interest row is the one that owns it.
   it("prefers the interest rule over the incident rule", () => {
-    expect(classifyFee("INTERES POR MORA")).toBe("excluded");
+    expect(classifyFee("INTERES POR MORA")).toBe("interest");
   });
 
   it("files things that happened as incidents", () => {
@@ -58,6 +61,11 @@ describe("reversalTarget", () => {
     expect(reversalTarget("ANULACION CARGO SOBREGIRO")).toBe("incidents");
   });
 
+  it("routes an interest reversal to interest", () => {
+    expect(reversalTarget("REVERSO DE INTERES")).toBe("interest");
+    expect(reversalTarget("REVERSO INTERESES POR FINANCIAMIENTO")).toBe("interest");
+  });
+
   // The guard. Without the fee-word test this would drag an ordinary purchase
   // refund into a card about fees.
   it("ignores a reversal that reverses something other than a fee", () => {
@@ -86,17 +94,28 @@ describe("summarizeCardFees", () => {
     expect(summarizeCardFees(live, 2026)).toEqual({
       recurring: 1650,
       incidents: 500,
+      interest: 0,
       counted: 5,
     });
   });
 
-  it("keeps interest out of both subtotals", () => {
+  it("keeps interest out of both fee subtotals and totals it on its own", () => {
     const rows = [fee("CARGO SEGURO FRAUDE", 350), fee("INTERES FINANCIAMIENTO", 900)];
     expect(summarizeCardFees(rows, 2026)).toEqual({
       recurring: 350,
       incidents: 0,
-      counted: 1,
+      interest: 900,
+      counted: 2,
     });
+  });
+
+  it("sums the AMEX Platinum interest lines and nets an interest reversal", () => {
+    const rows = [
+      fee("INTERESES POR FINANCIAMIENTO", 86.98, "2026-08-17"),
+      fee("INTERESES CONSUMOS MES ANTERIOR", 27.13, "2026-08-17"),
+      credit("REVERSO DE INTERES", -27.13, "2026-09-10"),
+    ];
+    expect(summarizeCardFees(rows, 2026).interest).toBeCloseTo(86.98, 2);
   });
 
   it("ignores rows posted in another year", () => {
@@ -111,7 +130,12 @@ describe("summarizeCardFees", () => {
   // that netted to zero". The former is omitted; a confident 0.00 drawn from
   // silence is a claim the data cannot support.
   it("reports nothing counted when there are no fee rows", () => {
-    expect(summarizeCardFees([], 2026)).toEqual({ recurring: 0, incidents: 0, counted: 0 });
+    expect(summarizeCardFees([], 2026)).toEqual({
+      recurring: 0,
+      incidents: 0,
+      interest: 0,
+      counted: 0,
+    });
     expect(summarizeCardFees([credit("CASHBACK SERVICIOS DEL", -259)], 2026).counted).toBe(0);
   });
 
@@ -120,6 +144,7 @@ describe("summarizeCardFees", () => {
     expect(summarizeCardFees(rows, 2026)).toEqual({
       recurring: 0,
       incidents: 0,
+      interest: 0,
       counted: 2,
     });
   });

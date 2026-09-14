@@ -11,7 +11,7 @@ export type CardReportProps = {
   carry: AccountCostOfCarry | null;
   /** null when no statement this year reported a cashback figure. */
   cashback: number | null;
-  fees: { recurring: number; incidents: number };
+  fees: { recurring: number; incidents: number; interest: number };
   paymentsThisMonth: number;
   bonus: { spent: number; goal: number; goalCurrency: string; dueDate: string } | null;
 };
@@ -30,7 +30,7 @@ function Row({ label, detail, amount }: { label: string; detail?: string; amount
 
 /**
  * Boleta de la tarjeta — the standing facts that let someone judge this card
- * against another one: what financing costs, what it pays back, what it charges
+ * against another one: what financing costs, what interest it has billed, what it pays back, what it charges
  * to hold, what went into it this month, and the welcome bonus still in play.
  *
  * Each row renders only when it has real data. A card with no statement yet
@@ -75,6 +75,16 @@ export function CardReport({
           .filter(Boolean)
           .join(" · ")}
         amount={formatMoney(carry.costOfCarry, currency)}
+      />,
+    );
+  }
+  // Realized, next to carry's projection — never summed with it.
+  if (fees.interest !== 0) {
+    rows.push(
+      <Row
+        key="interest"
+        label={t(fees.interest < 0 ? "cardReportInterestRefunded" : "cardReportInterest", { year: y })}
+        amount={money(fees.interest)}
       />,
     );
   }
