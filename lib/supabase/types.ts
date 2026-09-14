@@ -1687,6 +1687,17 @@ export type Database = {
     }
     Functions: {
       ask_query: { Args: { p_sql: string }; Returns: Json }
+      budget_group_usage_range: {
+        Args: { p_end: string; p_start: string }
+        Returns: {
+          budget: number
+          budget_group_id: string
+          budget_monthly: number
+          remaining: number
+          status: Database["public"]["Enums"]["budget_status"]
+          used: number
+        }[]
+      }
       cashflow_range: {
         Args: { p_end: string; p_start: string }
         Returns: {
@@ -1706,17 +1717,6 @@ export type Database = {
         Returns: {
           budget: number
           category_id: string
-          remaining: number
-          status: Database["public"]["Enums"]["budget_status"]
-          used: number
-        }[]
-      }
-      budget_group_usage_range: {
-        Args: { p_end: string; p_start: string }
-        Returns: {
-          budget: number
-          budget_group_id: string
-          budget_monthly: number
           remaining: number
           status: Database["public"]["Enums"]["budget_status"]
           used: number
