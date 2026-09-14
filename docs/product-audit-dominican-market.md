@@ -289,7 +289,7 @@ minimum is still subtracted in full, and where the pay cycle behind it is set
 
 ### UX-07 · Fix · High — Insights is eleven cards answering three different clocks
 
-- [ ] Done
+- [x] Done (14 Sep 2026)
 
 One page carries net worth (6-month), cash flow (trend), savings goals (cumulative), spending pace
 (month), spend distribution (month), budget bars (month), card payments (month), transfer costs
@@ -302,6 +302,30 @@ what is my debt costing me, is my net worth moving. Move cashback, cost of owner
 and welcome-bonus progress onto a per-card **"Boleta de la tarjeta"** — a report card on the card's
 own page, where a user comparing two cards will actually look for them. Move transfer costs into
 Settings → fees, or cut it.
+
+**Done** — Insights (`app/(app)/insights/page.tsx`) is now three bands, one clock each: net worth and
+cash flow (trend); spending pace, spend distribution and expenses vs budget under the month picker,
+every one of which obeys it; and debt health beside a new **debt cost** card (commit `b8dc10c`).
+That card keeps two groups it never sums — what each card *would* charge to finance its balance, and
+the interest each loan payment actually went to — each row linking to its account
+(`lib/insights/debt-cost.ts`, `components/insights/debt-cost.tsx`; commit `3df8775`). Savings goals,
+card payments, transfer costs, cashback, cost of carry and cost of ownership left the page, and the
+page-wide queries behind the last four went with them. The per-card figures became the **Boleta de
+la tarjeta** on the card's own page — cost of carry, cashback, fees & insurance, penalty fees,
+payments this month and welcome-bonus progress, each row shown only when data backs it
+(`components/accounts/card-report.tsx`, `app/(app)/accounts/[id]/page.tsx`; commits `71d8201`,
+`3956d9e`). Two deliberate departures from the text above: transfer costs moved to the bank or
+investment account's own page rather than a new Settings section, and count fees and tax on *every*
+transaction drawn from the account, not only transfers, because the trigger derives both on any type
+(`lib/accounts/transfer-costs.ts`); and Insights keeps one debt-cost card rather than none, since "what
+is my debt costing me" is one of its four questions. The help guide's Insights and Wallet chapters
+cover both (`app/(app)/help/page.tsx`, `messages/en.json`, `messages/es.json`, this change).
+
+**Remaining** —
+- [ ] The live browser pass — Insights' three bands and month picker, a card's Boleta with and without
+      statements, a checking account's "Paid in" block, in Spanish at 360px — pending.
+- [ ] The cross-card "card payments this month" total is gone from Insights; each card's Boleta shows
+      its own. If someone relied on the combined figure, it has no home now.
 
 ### UX-08 · Fix · Medium — Mobile navigation costs an extra tap on the second-most-used screen
 

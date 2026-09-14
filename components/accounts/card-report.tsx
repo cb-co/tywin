@@ -1,7 +1,6 @@
 import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ImportButton } from "@/components/statements/import-button";
 import { formatDate, formatMoney, formatPercent } from "@/lib/format";
 import type { AccountCostOfCarry } from "@/lib/accounts/queries";
 
@@ -36,8 +35,9 @@ function Row({ label, detail, amount }: { label: string; detail?: string; amount
  * to hold, what went into it this month, and the welcome bonus still in play.
  *
  * Each row renders only when it has real data. A card with no statement yet
- * shows a single line instead of five confident zeros — and the section itself
- * stays, so its absence never reads as a failed load.
+ * shows a single line pointing at the statements panel instead of five
+ * confident zeros — and the section itself stays, so its absence never reads
+ * as a failed load.
  *
  * Costs and cashback sit side by side and are never netted: most of a card's
  * benefits never reach a statement, so a net figure would be wrong in one
@@ -117,10 +117,9 @@ export function CardReport({
     <Card className="gap-0 p-6">
       <h2 className="mb-4 text-lg font-medium text-foreground">{t("cardReportTitle")}</h2>
       {rows.length === 0 && !bonus ? (
-        <div className="flex flex-col items-start gap-3">
-          <p className="text-sm text-muted-foreground">{t("cardReportEmpty")}</p>
-          <ImportButton size="sm" />
-        </div>
+        // No ImportButton here: it is deliberately account-agnostic, and the
+        // statements panel right below already imports into THIS card.
+        <p className="text-sm text-muted-foreground">{t("cardReportEmpty")}</p>
       ) : (
         <div className="space-y-3">
           {rows}

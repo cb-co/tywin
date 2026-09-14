@@ -227,8 +227,7 @@ export default async function HelpPage() {
                 <li>{t("accountPageLines")}</li>
                 <li>{t("accountPageBalance")}</li>
                 <li>{t("accountPageUtilization")}</li>
-                <li>{t("accountPageCashback")}</li>
-                <li>{t("accountPageCostOfOwnership")}</li>
+                <li>{t("accountPageReport")}</li>
                 <li>{t("accountPageSpend")}</li>
                 <li>{t("accountPageAmortization")}</li>
                 <li>{t("accountPageActivity")}</li>
@@ -395,14 +394,11 @@ export default async function HelpPage() {
             intro={t("insightsIntro")}
           >
             <ul className="space-y-2 text-sm text-foreground">
-              <li>{t("insightsSpend")}</li>
-              <li>{t("insightsDebt")}</li>
               <li>{t("insightsCashflow")}</li>
+              <li>{t("insightsSpend")}</li>
               <li>{t("insightsBudget")}</li>
-              <li>{t("insightsCarry")}</li>
-              <li>{t("insightsCashback")}</li>
-              <li>{t("insightsCostOfOwnership")}</li>
-              <li>{t("insightsLoanInterest")}</li>
+              <li>{t("insightsDebt")}</li>
+              <li>{t("insightsDebtCost")}</li>
             </ul>
             <p className="mt-3 text-sm text-muted-foreground">{t("insightsBasis")}</p>
             <InsightsMock
