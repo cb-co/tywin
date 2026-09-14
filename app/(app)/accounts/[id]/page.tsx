@@ -18,7 +18,7 @@ import {
   getAccountTransferCosts,
 } from "@/lib/accounts/queries";
 import { spendTotal } from "@/lib/accounts/card-spend";
-import { monthStart, monthLabel } from "@/lib/budgets/month";
+import { monthStart } from "@/lib/budgets/month";
 import { SpendDonut } from "@/components/insights/lazy-charts";
 import { resolveEffectiveBonus, getWelcomeBonusSpend } from "@/lib/accounts/welcome-bonus";
 import { yearCashback, hasReportedCashback } from "@/lib/accounts/cashback";
@@ -400,7 +400,7 @@ export default async function AccountDetailPage({
       {isCardType ? (
         <Card className="p-6">
           <h2 className="mb-4 text-lg font-medium text-foreground">
-            {t("spendByCategory", { month: monthLabel(spendMonth, locale) })}
+            {t("spendByCategory")}
           </h2>
           {/* Native currency, never converted: every charge here posted to this
               one account. See lib/accounts/card-spend.ts. */}

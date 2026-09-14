@@ -178,7 +178,7 @@
     "estimatedValue": "Valor estimado",
     "derivedFromStarting": "Derivado de un saldo inicial de <amount></amount>.",
     "balanceOverTime": "Saldo a lo largo del tiempo",
-    "spendByCategory": "Gasto por categoría · {month}",
+    "spendByCategory": "Gasto por categoría este mes",
     "uncategorized": "Sin categoría",
     "amortizationSchedule": "Tabla de amortización",
     "transferFees": "Comisiones de transferencia",

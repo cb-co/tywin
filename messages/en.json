@@ -178,7 +178,7 @@
     "estimatedValue": "Estimated value",
     "derivedFromStarting": "Derived from a starting balance of <amount></amount>.",
     "balanceOverTime": "Balance over time",
-    "spendByCategory": "Spend by category · {month}",
+    "spendByCategory": "Spend by category this month",
     "uncategorized": "Uncategorized",
     "amortizationSchedule": "Amortization schedule",
     "transferFees": "Transfer fees",
