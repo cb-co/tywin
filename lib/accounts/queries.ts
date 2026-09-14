@@ -5,6 +5,7 @@ import { addMonths } from "@/lib/budgets/month";
 import { buildCardGroupLines, type CardGroupLine } from "./group-lines";
 import { cardSpendDistribution, type SpendSlice } from "./card-spend";
 import type { FeeLineRow } from "./card-fees";
+import { sumAccountTransferCosts, type TransferCostRow } from "./transfer-costs";
 
 export type { CardGroupLine } from "./group-lines";
 export type { SpendSlice } from "./card-spend";
@@ -206,6 +207,76 @@ export async function getCardSpendByCategory(
     supabase.from("categories").select("id,name,color"),
   ]);
   return cardSpendDistribution(rows ?? [], categories ?? [], uncategorizedLabel);
+}
+
+/**
+ * Fees and tax this account paid in `year`, across every transaction type.
+ *
+ * Not payments only: the trigger that fills fee_amount/tax_amount runs on any
+ * type, so an expense from a checking account carries both.
+ *
+ * Paged because PostgREST caps a request at `max_rows` (1000, see
+ * supabase/config.toml) silently — a busy account would under-report with no
+ * signal that it had.
+ */
+export async function getAccountTransferCosts(
+  accountId: string,
+  year: number,
+): Promise<{ fees: number; tax: number }> {
+  const supabase = await createClient();
+  const PAGE_SIZE = 1000;
+  const rows: TransferCostRow[] = [];
+  let offset = 0;
+  for (;;) {
+    const { data } = await supabase
+      .from("transactions")
+      .select("fee_amount,tax_amount")
+      .eq("account_id", accountId)
+      .gte("occurred_at", `${year}-01-01`)
+      .lt("occurred_at", `${year + 1}-01-01`)
+      .order("id")
+      .range(offset, offset + PAGE_SIZE - 1);
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    offset += PAGE_SIZE;
+  }
+  return sumAccountTransferCosts(rows);
+}
+
+export type AccountCostOfCarry = { periodEnd: string; apr: number | null; costOfCarry: number };
+
+/** This card's cost of carry from its newest statement, or null when there is
+ *  no statement or the statement printed no figure. The view already picks the
+ *  latest statement per line — see card_cost_of_carry. */
+export async function getAccountCostOfCarry(accountId: string): Promise<AccountCostOfCarry | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("card_cost_of_carry")
+    .select("period_end,interest_rate_annual,cost_of_carry")
+    .eq("account_id", accountId)
+    .maybeSingle();
+  if (!data || data.cost_of_carry === null) return null;
+  return {
+    periodEnd: data.period_end ?? "",
+    apr: data.interest_rate_annual === null ? null : Number(data.interest_rate_annual),
+    costOfCarry: Number(data.cost_of_carry),
+  };
+}
+
+/** What was paid INTO this card during `month` (a "YYYY-MM-01" string), in the
+ *  card's own currency — `to_amount` when the payment crossed currencies. */
+export async function getCardPaymentsInMonth(accountId: string, month: string): Promise<number> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("transactions")
+    .select("amount,to_amount")
+    .eq("type", "payment")
+    .eq("to_account_id", accountId)
+    .gte("occurred_at", month)
+    .lt("occurred_at", addMonths(month, 1));
+  const total = (data ?? []).reduce((s, r) => s + Number(r.to_amount ?? r.amount ?? 0), 0);
+  return Math.round(total * 100) / 100;
 }
 
 export type CardGroupSibling = {
