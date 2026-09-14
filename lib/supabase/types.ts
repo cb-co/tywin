@@ -1181,7 +1181,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "q_accounts"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       transactions: {
