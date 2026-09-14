@@ -171,11 +171,6 @@
     "welcomeBonusProgress": "Progreso del bono de bienvenida",
     "welcomeBonusDetail": "{spent} de {goal} gastado, vence el {date}",
     "paymentDueEachMonth": "El pago vence el {day} de cada mes.",
-    "cashbackThisYear": "<amount></amount> de cashback generado en {year}.",
-    "costOfOwnershipThisYear": "<amount></amount> en cargos y seguros cobrados en {year}.",
-    "costOfOwnershipRefundedThisYear": "<amount></amount> en cargos y seguros reembolsados en {year}.",
-    "incidentFeesThisYear": "<amount></amount> en cargos por penalidad cobrados en {year}.",
-    "incidentFeesRefundedThisYear": "<amount></amount> en cargos por penalidad reembolsados en {year}.",
     "outstandingBalance": "Saldo pendiente",
     "installmentsPaidOfTerm": "{paid} de {term} cuotas pagadas",
     "installmentsPaidOnly": "{paid} cuotas pagadas",
@@ -213,7 +208,21 @@
     "addTransaction": "Añadir transacción",
     "transactionDeleted": "Transacción eliminada",
     "noActivityTitle": "Aún no hay actividad",
-    "noActivityDescription": "Registra un gasto, ingreso o pago de esta cuenta para verlo aquí."
+    "noActivityDescription": "Registra un gasto, ingreso o pago de esta cuenta para verlo aquí.",
+    "cardReportTitle": "Boleta de la tarjeta",
+    "cardReportEmpty": "Se va llenando a medida que importas los estados de cuenta de esta tarjeta.",
+    "cardReportCarry": "Costo de financiamiento",
+    "cardReportCarryDetail": "si financias · al {date}",
+    "cardReportCarryApr": "{rate}% anual",
+    "cardReportCashback": "Cashback en {year}",
+    "cardReportOwnership": "Cargos y seguros en {year}",
+    "cardReportOwnershipRefunded": "Cargos y seguros reembolsados en {year}",
+    "cardReportIncidents": "Cargos por penalidad en {year}",
+    "cardReportIncidentsRefunded": "Penalidades reembolsadas en {year}",
+    "cardReportPayments": "Pagado a esta tarjeta en {month}",
+    "transferPaidIn": "Pagado en {year}",
+    "transferPaidFees": "Comisiones",
+    "transferPaidTax": "Impuestos"
   },
   "AccountForm": {
     "addTitleForType": "{type, select, checking {Añadir una cuenta corriente} savings {Añadir una cuenta de ahorros} cash {Añadir efectivo} investment {Añadir una inversión} asset {Añadir un activo} credit_card {Añadir una tarjeta de crédito} loan {Añadir un préstamo} other {Añadir una cuenta}}",
@@ -655,7 +664,7 @@
     "prevMonthAria": "Mes anterior",
     "nextMonthAria": "Mes siguiente",
     "basisWhenCharged": "cuando se carga",
-      "basisWhenPaid": "cuando se paga",
+    "basisWhenPaid": "cuando se paga",
     "cardSpendDistribution": "Distribución del gasto",
     "cardDebtHealth": "Salud de crédito y deudas",
     "cardCashFlow": "Flujo de caja",
@@ -906,7 +915,6 @@
   "Help": {
     "pageTitle": "Cómo funciona Cashly",
     "pageDescription": "Una guía de cada pantalla — desde tu primera cuenta hasta tu análisis mensual.",
-
     "gettingStartedTitle": "Primeros pasos",
     "gettingStartedIntro": "Cashly te da de alta en cuatro pasos breves antes de llevarte al panel principal. Cada paso se guarda al instante, así que si actualizas la página a mitad de camino, retomas donde lo dejaste en vez de empezar de nuevo.",
     "step1Title": "Tu nombre",
@@ -922,7 +930,6 @@
     "onboardingMockLabel": "Paso 3 de 4",
     "onboardingMockAccount": "Cuenta corriente diaria",
     "onboardingMockSubtitle": "Corriente · DOP",
-
     "overviewTitle": "Resumen",
     "overviewIntro": "Resumen es tu punto de partida — la primera pantalla que ves al iniciar sesión. Está pensada para responder \"¿cómo estoy ahora mismo?\" de un vistazo.",
     "overviewAvailable": "Disponible — la cifra principal: lo que aún puedes gastar antes de tu próximo pago, después de todo lo que ya está comprometido.",
@@ -931,7 +938,6 @@
     "overviewUpcoming": "Próximos — lo que se avecina: cargos de suscripciones y pagos de préstamos.",
     "overviewZeroState": "¿Aún no tienes cuentas? Resumen muestra tarjetas de inicio que llevan directo a Cuentas, Presupuestos y Suscripciones en vez de una pantalla vacía.",
     "overviewFxWarning": "Si no se pueden obtener las tasas de cambio, Inicio e Insights lo avisan: los saldos en otras monedas se cuentan 1:1 hasta que vuelvan las tasas, y el aviso indica cuáles monedas están afectadas.",
-
     "disponibleTitle": "Cómo se calcula Disponible",
     "disponibleIntro": "Disponible resta de tu balance líquido todo lo que ya está comprometido antes de tu próximo pago:",
     "disponibleLiquid": "Balance líquido — el saldo de tus cuentas corrientes, de ahorro y efectivo. Las inversiones y otros bienes no cuentan aquí: son patrimonio, no dinero que puedas gastar antes de que llegue tu próxima paga.",
@@ -942,7 +948,6 @@
     "disponibleZeroCalloutTitle": "¿Por qué se resta el total si el mínimo impreso es $0?",
     "disponibleZeroCalloutBody": "Un estado de cuenta que imprime un mínimo de $0 no significa que la tarjeta esté saldada — si no la pagas, de todos modos te cobran el balance completo. Por eso, cuando no hay un mínimo impreso, Disponible resta el total de la tarjeta en vez de cero: la línea existe justamente para avisarte de ese caso.",
     "disponiblePeriodNote": "El período detrás de Disponible — mensual, quincenal o semanal — se define en Configuración → Ciclo de pago, junto con el día en que se ancla.",
-
     "gettingAroundTitle": "Cómo moverte por la app",
     "desktopNavTitle": "Barra lateral (escritorio)",
     "mobileNavTitle": "Barra inferior (móvil)",
@@ -962,7 +967,6 @@
     "overviewMockBudgetUsed": "Presupuesto usado",
     "overviewMockUpcomingItem": "Streamly",
     "overviewMockUpcomingSubtitle": "Suscripción · en 3 días",
-
     "accountsTitle": "Cartera",
     "accountsIntro": "Todo lo que tienes o debes vive aquí, agrupado en cuatro secciones: Cuentas (corriente, ahorro, efectivo, inversión), Tarjetas de crédito, Préstamos y Propiedades y otros bienes.",
     "quickAddCardNote": "¿Necesitas solo una tarjeta, rápido? Usa \"Agregar tarjeta rápido\" junto al encabezado Tarjetas de crédito — solo pide el nombre, la moneda y los últimos 4 dígitos; el límite y las fechas los puedes completar después desde tu primer estado de cuenta.",
@@ -1019,7 +1023,6 @@
     "accountsMockLineCurrent": "USD",
     "accountsMockLineOther": "DOP",
     "accountsMockCardDue": "Vence el 14",
-
     "transactionsTitle": "Transacciones",
     "transactionsIntro": "Tres tipos de movimiento lo cubren todo: Gasto, Ingreso y Pago.",
     "typeExpense": "Gasto — requiere una categoría.",
@@ -1041,7 +1044,6 @@
     "ledgerMockPaycheckAccount": "Cuenta corriente diaria",
     "ledgerMockPayment": "Pago de tarjeta",
     "ledgerMockPaymentAccounts": "Cuenta corriente diaria → Tarjeta Signature",
-
     "budgetsTitle": "Presupuestos",
     "budgetsIntro": "Los presupuestos funcionan mes a mes, una fila por categoría. Navega entre meses y define un importe para cada categoría directamente en la fila.",
     "budgetsCategory": "Crea categorías con un nombre, un emoji y un color",
@@ -1054,7 +1056,6 @@
     "budgetsMockFood": "🍽️ Comida",
     "budgetsMockTransport": "🚗 Transporte",
     "budgetsMockEntertainment": "🎬 Ocio",
-
     "subscriptionsTitle": "Suscripciones",
     "subscriptionsIntro": "Controla los cargos recurrentes — streaming, software, membresías — por separado del gasto puntual.",
     "subName": "Define un nombre, marca, importe y moneda",
@@ -1069,7 +1070,6 @@
     "subscriptionsMockCloud": "Almacenamiento en la nube",
     "subscriptionsMockCloudCycle": "Anual · se cobra el 12 de febrero",
     "subscriptionsMockCloudNext": "Próximo 12 feb. · Cuenta corriente diaria",
-
     "insightsTitle": "Análisis",
     "insightsIntro": "Una vista analítica navegable por mes que convierte tus cuentas y transacciones en un puñado de respuestas.",
     "insightsSpend": "Distribución del gasto — en qué se fue tu dinero, por categoría",
@@ -1087,7 +1087,6 @@
     "legendDiscretionary": "Discrecional",
     "legendSubscriptions": "Suscripciones",
     "legendOther": "Otros",
-
     "askTitle": "Pregunta a Cashly",
     "askIntro": "Un cuadro de texto que responde preguntas sobre tus propios números en lenguaje natural — en inglés o español, el que estés usando. Cashly lee tus datos para responder y te devuelve las cifras reales — una frase cuando es un solo número, una tabla cuando preguntaste por varios movimientos.",
     "askAnswers": "Buenas preguntas: gastos por categoría en cualquier rango de fechas, qué se cargó a una tarjeta específica entre dos fechas, cuál es un saldo ahora, qué vence y cuándo, cómo fue un mes frente a su presupuesto.",
@@ -1096,7 +1095,6 @@
     "askMockQuestion": "¿Cuánto gasté en transporte el mes pasado?",
     "askMockNarration": "Sumando transporte de julio…",
     "askMockAnswer": "RD$8,420 en 14 transacciones — cerca de 12% más que junio.",
-
     "settingsTitle": "Configuración",
     "settingsIntro": "Lo esencial, en un solo lugar.",
     "settingsName": "Nombre para mostrar y moneda base",
@@ -1113,7 +1111,6 @@
     "settingsMockSound": "Sonido",
     "settingsMockInstall": "Instalar app",
     "settingsMockInstallButton": "Instalar",
-
     "budgetGroupsTitle": "Grupos de presupuesto",
     "budgetGroupsIntro": "Una categoría dice qué fue un gasto. Un grupo dice contra qué cuenta. Separar las dos cosas te deja nombrar tus gastos con precisión sin que tu plan mensual se convierta en una lista de cuarenta renglones.",
     "budgetGroupsQualifier": "Categoría: Supermercado, Combustible, Alquiler. Específica, y puedes tener tantas como quieras.",
@@ -1125,7 +1122,6 @@
     "budgetGroupsMockEssentials": "Esenciales",
     "budgetGroupsMockLifestyle": "Estilo de vida",
     "budgetGroupsMockFuture": "Futuro",
-
     "footerNote": "Esta guía sigue la propia navegación de la app, de principio a fin."
   }
 }

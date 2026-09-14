@@ -171,11 +171,6 @@
     "welcomeBonusProgress": "Welcome bonus progress",
     "welcomeBonusDetail": "{spent} of {goal} spent, due {date}",
     "paymentDueEachMonth": "Payment due the {day} each month.",
-    "cashbackThisYear": "<amount></amount> cashback earned in {year}.",
-    "costOfOwnershipThisYear": "<amount></amount> in fees and insurance charged in {year}.",
-    "costOfOwnershipRefundedThisYear": "<amount></amount> in fees and insurance refunded in {year}.",
-    "incidentFeesThisYear": "<amount></amount> in penalty fees charged in {year}.",
-    "incidentFeesRefundedThisYear": "<amount></amount> in penalty fees refunded in {year}.",
     "outstandingBalance": "Outstanding balance",
     "installmentsPaidOfTerm": "{paid} of {term} installments paid",
     "installmentsPaidOnly": "{paid} installments paid",
@@ -213,7 +208,21 @@
     "addTransaction": "Add transaction",
     "transactionDeleted": "Transaction deleted",
     "noActivityTitle": "No activity yet",
-    "noActivityDescription": "Log an expense, income, or payment for this account to see it here."
+    "noActivityDescription": "Log an expense, income, or payment for this account to see it here.",
+    "cardReportTitle": "Card report",
+    "cardReportEmpty": "This fills in as you import this card's statements.",
+    "cardReportCarry": "Cost of carry",
+    "cardReportCarryDetail": "if you finance · as of {date}",
+    "cardReportCarryApr": "{rate}% APR",
+    "cardReportCashback": "Cashback in {year}",
+    "cardReportOwnership": "Fees & insurance in {year}",
+    "cardReportOwnershipRefunded": "Fees & insurance refunded in {year}",
+    "cardReportIncidents": "Penalty fees in {year}",
+    "cardReportIncidentsRefunded": "Penalty fees refunded in {year}",
+    "cardReportPayments": "Paid to this card in {month}",
+    "transferPaidIn": "Paid in {year}",
+    "transferPaidFees": "Fees",
+    "transferPaidTax": "Tax"
   },
   "AccountForm": {
     "addTitleForType": "{type, select, checking {Add a checking account} savings {Add a savings account} cash {Add cash} investment {Add an investment} asset {Add an asset} credit_card {Add a credit card} loan {Add a loan} other {Add an account}}",
@@ -655,7 +664,7 @@
     "prevMonthAria": "Previous month",
     "nextMonthAria": "Next month",
     "basisWhenCharged": "when charged",
-      "basisWhenPaid": "when paid",
+    "basisWhenPaid": "when paid",
     "cardSpendDistribution": "Spend distribution",
     "cardDebtHealth": "Credit & debt health",
     "cardCashFlow": "Cash flow",
@@ -906,7 +915,6 @@
   "Help": {
     "pageTitle": "How Cashly works",
     "pageDescription": "A field guide to every screen — from your first account to your monthly insights.",
-
     "gettingStartedTitle": "Getting started",
     "gettingStartedIntro": "Cashly onboards you in four short steps before dropping you at your dashboard. Every step saves as you go, so if you refresh mid-setup you resume instead of starting over.",
     "step1Title": "Your name",
@@ -922,7 +930,6 @@
     "onboardingMockLabel": "Step 3 of 4",
     "onboardingMockAccount": "Everyday Checking",
     "onboardingMockSubtitle": "Checking · DOP",
-
     "overviewTitle": "Overview",
     "overviewIntro": "Overview is home base — the first screen you land on after signing in. It's built to answer \"where do I stand right now?\" in one glance.",
     "overviewAvailable": "Disponible — the headline figure: what you can still spend before your next payday, after everything already committed.",
@@ -931,7 +938,6 @@
     "overviewUpcoming": "Upcoming — a rail of what's due next: subscription charges and loan payments.",
     "overviewZeroState": "No accounts yet? Overview shows starter cards linking straight to Accounts, Budgets, and Subscriptions instead of an empty page.",
     "overviewFxWarning": "If exchange rates can't be fetched, Overview and Insights say so — foreign holdings are counted 1:1 until rates return, and the warning tells you which currencies are affected.",
-
     "disponibleTitle": "How Disponible is calculated",
     "disponibleIntro": "Disponible subtracts everything already committed before your next payday from your liquid balance:",
     "disponibleLiquid": "Liquid balance — your checking, savings, and cash accounts. Investments and other assets don't count here: they're net worth, not money you can spend before your next paycheck.",
@@ -942,7 +948,6 @@
     "disponibleZeroCalloutTitle": "Why is the full balance subtracted when the printed minimum is $0?",
     "disponibleZeroCalloutBody": "A statement that prints a $0 minimum doesn't mean the card is settled — leave it unpaid, and you're still charged the full balance. That's why, when no minimum is printed, Disponible subtracts the card's full balance instead of zero: the line exists precisely to warn you about that case.",
     "disponiblePeriodNote": "The period behind Disponible — monthly, semimonthly, or weekly — is set in Settings → Pay cycle, along with the day it anchors to.",
-
     "gettingAroundTitle": "Getting around",
     "desktopNavTitle": "Desktop sidebar",
     "mobileNavTitle": "Mobile bottom nav",
@@ -962,7 +967,6 @@
     "overviewMockBudgetUsed": "Budget used",
     "overviewMockUpcomingItem": "Streamly",
     "overviewMockUpcomingSubtitle": "Subscription · in 3 days",
-
     "accountsTitle": "Wallet",
     "accountsIntro": "Everything you own or owe lives here, grouped into four sections: Accounts (checking, savings, cash, investment), Credit cards, Loans, and Property & assets.",
     "quickAddCardNote": "Need just a card, fast? Use \"Quick add card\" next to the Credit cards heading — it only asks for the name, currency, and last 4 digits, and you can fill in the limit and dates later from your first statement.",
@@ -1019,7 +1023,6 @@
     "accountsMockLineCurrent": "USD",
     "accountsMockLineOther": "DOP",
     "accountsMockCardDue": "Due the 14th",
-
     "transactionsTitle": "Transactions",
     "transactionsIntro": "Three kinds of entry cover everything: Expense, Income, and Payment.",
     "typeExpense": "Expense — requires a category.",
@@ -1041,7 +1044,6 @@
     "ledgerMockPaycheckAccount": "Everyday Checking",
     "ledgerMockPayment": "Card payment",
     "ledgerMockPaymentAccounts": "Everyday Checking → Signature Card",
-
     "budgetsTitle": "Budgets",
     "budgetsIntro": "Budgets run month by month, one row per category. Navigate between months, and set an amount for each category inline.",
     "budgetsCategory": "Create categories with a name, emoji, and color",
@@ -1054,7 +1056,6 @@
     "budgetsMockFood": "🍽️ Food",
     "budgetsMockTransport": "🚗 Transport",
     "budgetsMockEntertainment": "🎬 Entertainment",
-
     "subscriptionsTitle": "Subscriptions",
     "subscriptionsIntro": "Track recurring charges — streaming, software, memberships — separately from one-off spending.",
     "subName": "Set a name, brand, amount and currency",
@@ -1069,7 +1070,6 @@
     "subscriptionsMockCloud": "Cloud Storage",
     "subscriptionsMockCloudCycle": "Yearly · bills Feb 12",
     "subscriptionsMockCloudNext": "Next Feb 12 · Everyday Checking",
-
     "insightsTitle": "Insights",
     "insightsIntro": "A month-navigable analytics view that turns your accounts and transactions into a handful of answers.",
     "insightsSpend": "Spend distribution — where your money went, by category",
@@ -1087,7 +1087,6 @@
     "legendDiscretionary": "Discretionary",
     "legendSubscriptions": "Subscriptions",
     "legendOther": "Other",
-
     "askTitle": "Ask Cashly",
     "askIntro": "A text box that answers questions about your own numbers in plain words — English or Spanish, whichever you're using. Cashly reads your data to answer, and writes back the real figures — a sentence for one number, a table when you've asked about a stretch of transactions.",
     "askAnswers": "Good questions: spending by category over any date range, what went on one specific card between two dates, what a balance is now, what's due and when, how a month tracked against its budget.",
@@ -1096,7 +1095,6 @@
     "askMockQuestion": "How much did I spend on transportation last month?",
     "askMockNarration": "Adding up transportation for July…",
     "askMockAnswer": "RD$8,420 across 14 transactions — about 12% more than June.",
-
     "settingsTitle": "Settings",
     "settingsIntro": "The essentials, in one place.",
     "settingsName": "Display name and base currency",
@@ -1113,7 +1111,6 @@
     "settingsMockSound": "Sound",
     "settingsMockInstall": "Install app",
     "settingsMockInstallButton": "Install",
-
     "budgetGroupsTitle": "Budget groups",
     "budgetGroupsIntro": "A category says what an expense was. A group says what it counts against. Keeping the two apart lets you name your spending precisely without your monthly plan turning into a list of forty lines.",
     "budgetGroupsQualifier": "Category: Groceries, Fuel, Rent. Specific, and you can have as many as you like.",
@@ -1125,7 +1122,6 @@
     "budgetGroupsMockEssentials": "Essentials",
     "budgetGroupsMockLifestyle": "Lifestyle",
     "budgetGroupsMockFuture": "Future",
-
     "footerNote": "This guide mirrors the app's own navigation, top to bottom."
   }
 }

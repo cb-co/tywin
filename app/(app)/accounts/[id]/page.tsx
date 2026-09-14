@@ -13,6 +13,9 @@ import {
   getCardGroupLines,
   getCardSpendByCategory,
   getAccountFeeLines,
+  getAccountCostOfCarry,
+  getCardPaymentsInMonth,
+  getAccountTransferCosts,
 } from "@/lib/accounts/queries";
 import { spendTotal } from "@/lib/accounts/card-spend";
 import { monthStart, monthLabel } from "@/lib/budgets/month";
@@ -34,6 +37,7 @@ import { Card } from "@/components/ui/card";
 import { ColorTile } from "@/components/ui/color-tile";
 import { PaymentCard } from "@/components/accounts/payment-card";
 import { CardLineRail } from "@/components/accounts/card-line-rail";
+import { CardReport } from "@/components/accounts/card-report";
 import { inferNetwork, inferLast4 } from "@/lib/accounts/network";
 import { profileLabel } from "@/lib/profile";
 import { Progress } from "@/components/ui/progress";
@@ -121,7 +125,6 @@ export default async function AccountDetailPage({
   const bonusSpent = showBonus
     ? await getWelcomeBonusSpend(supabase, siblings, effectiveBonus!.welcome_bonus_goal_currency!, effectiveBonus!.welcome_bonus_due_date!)
     : 0;
-  const bonusPct = showBonus ? (bonusSpent / effectiveBonus!.welcome_bonus_goal_amount!) * 100 : 0;
 
   /* Cashback earned this calendar year, summed off the statements already
    * loaded above — the anchor rows themselves, so no extra round trip and no
@@ -139,25 +142,34 @@ export default async function AccountDetailPage({
    * Calendar month, not the statement period: it is the window every other
    * spending figure in the app is framed by (the donut, the budget bars, the
    * pace chart), and a card whose statement closes mid-month would otherwise
-   * report a category total that agreed with nothing else on screen. */
-  const spendMonth = monthStart();
-  const spendSlices = isCardType
-    ? await getCardSpendByCategory(id, spendMonth, t("uncategorized"))
-    : [];
-  const spendMonthTotal = spendTotal(spendSlices);
-
-  /* What this card charges you to hold it, this calendar year. A second round
-   * trip for the same reason getCardSpendByCategory is one: the fee lines live
-   * in card_statement_lines, which this page does not otherwise load, and the
-   * query is only worth issuing once `type` says this account is a card.
+   * report a category total that agreed with nothing else on screen.
    *
-   * Costs only — never netted against the cashback line above it. Most of a
-   * card's benefits never appear on a statement, so a net figure would be
-   * built from the costs the app can see and a blank where the benefits are. */
+   * Issued together with the card report's own round trips: what the card
+   * charges you to hold it this calendar year (the fee lines live in
+   * card_statement_lines, which this page does not otherwise load), its cost of
+   * carry off the newest statement, and what was paid into it this month. */
+  const spendMonth = monthStart();
   const feeYear = new Date().getFullYear();
+  const [spendSlices, feeLines, carry, paymentsThisMonth] = isCardType
+    ? await Promise.all([
+        getCardSpendByCategory(id, spendMonth, t("uncategorized")),
+        getAccountFeeLines(id, feeYear),
+        getAccountCostOfCarry(id),
+        getCardPaymentsInMonth(id, spendMonth),
+      ])
+    : [[], [], null, 0];
+  const spendMonthTotal = spendTotal(spendSlices);
   const cardFees = isCardType
-    ? summarizeCardFees(await getAccountFeeLines(id, feeYear), feeYear)
+    ? summarizeCardFees(feeLines, feeYear)
     : { recurring: 0, incidents: 0, counted: 0 };
+
+  /* What this account has actually paid in transfer tax and network fees this
+   * year, on every kind of transaction drawn from it — not just transfers. The
+   * settings card below says what it WOULD charge; this says what it did.
+   * Only issued for the types that can carry the charges at all. */
+  const transferPaid = hasTransferFees(type)
+    ? await getAccountTransferCosts(id, feeYear)
+    : null;
 
   const owed = account.cardStatus?.owed ?? account.current_balance;
   const util = account.cardStatus?.utilization_pct ?? null;
@@ -293,98 +305,9 @@ export default async function AccountDetailPage({
                     <Progress value={Math.min(Math.max(util, 0), 100)} />
                   </div>
                 ) : null}
-                {showBonus ? (
-                  <div className="mt-4 space-y-2">
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>{t("welcomeBonusProgress")}</span>
-                      <span>{formatPercent(bonusPct)}</span>
-                    </div>
-                    <Progress value={Math.min(Math.max(bonusPct, 0), 100)} />
-                    <p className="text-xs text-muted-foreground">
-                      {t("welcomeBonusDetail", {
-                        spent: formatMoney(bonusSpent, effectiveBonus!.welcome_bonus_goal_currency!),
-                        goal: formatMoney(effectiveBonus!.welcome_bonus_goal_amount!, effectiveBonus!.welcome_bonus_goal_currency!),
-                        date: formatDate(effectiveBonus!.welcome_bonus_due_date!, locale),
-                      })}
-                    </p>
-                  </div>
-                ) : null}
                 {account.payment_due_day ? (
                   <p className="mt-3 text-sm text-muted-foreground">
                     {t("paymentDueEachMonth", { day: formatDayOfMonth(account.payment_due_day) })}
-                  </p>
-                ) : null}
-                {/* Cashback earned this year. A line rather than a card of its own:
-                    it is one number, and it belongs to this card, so it reads best
-                    sitting with the card's other standing facts.
-
-                    Shown only once a statement has actually REPORTED a figure —
-                    statements imported before the field existed carry null, and a
-                    confident "RD$0.00 cashback" drawn from silence would be a
-                    claim the data can't support. */}
-                {cashbackReported ? (
-                  <p className="mt-3 text-sm text-muted-foreground">
-                    {t.rich("cashbackThisYear", {
-                      // String, not the number: ICU formats a numeric argument
-                      // through Intl.NumberFormat, which would print "2,026".
-                      year: String(cashbackYear),
-                      amount: () => (
-                        <span className="figure font-medium text-foreground">
-                          {formatMoney(cashbackTotal, currency)}
-                        </span>
-                      ),
-                    })}
-                  </p>
-                ) : null}
-                {/* Standing facts about the card, in the same register as the
-                    cashback line above: one number each, sitting with the
-                    card's other facts rather than in a card of their own.
-
-                    Each line appears only when its own subtotal is non-zero. A
-                    card with no fee lines shows neither — silence rather than a
-                    confident "RD$0.00 in fees", which would be a claim drawn
-                    from the absence of data rather than from data.
-
-                    A subtotal can go negative: summarizeCardFees nets reversals
-                    in with plain addition, so a card whose only counted row
-                    this year is a reversal of a PRIOR year's charge yields a
-                    negative bucket. `formatMoney` would print a bare minus sign
-                    under a "charged" heading, which reads backwards — so the
-                    sign picks the label ("refunded") instead, and the number
-                    always shows the magnitude. Same convention as the Insights
-                    cost-of-ownership card (app/(app)/insights/page.tsx). */}
-                {cardFees.recurring !== 0 ? (
-                  <p className="mt-3 text-sm text-muted-foreground">
-                    {t.rich(
-                      cardFees.recurring < 0
-                        ? "costOfOwnershipRefundedThisYear"
-                        : "costOfOwnershipThisYear",
-                      {
-                        year: String(feeYear),
-                        amount: () => (
-                          <span className="figure font-medium text-foreground">
-                            {formatMoney(Math.abs(cardFees.recurring), currency)}
-                          </span>
-                        ),
-                      },
-                    )}
-                  </p>
-                ) : null}
-                {cardFees.incidents !== 0 ? (
-                  <p className="mt-3 text-sm text-muted-foreground">
-                    {t.rich(
-                      cardFees.incidents < 0
-                        ? "incidentFeesRefundedThisYear"
-                        : "incidentFeesThisYear",
-                      {
-                        year: String(feeYear),
-                        amount: () => (
-                          <span className="figure font-medium text-foreground">
-                            {formatMoney(Math.abs(cardFees.incidents), currency)}
-                          </span>
-                        ),
-                      },
-                    )}
                   </p>
                 ) : null}
               </>
@@ -425,6 +348,34 @@ export default async function AccountDetailPage({
           </div>
         </div>
       </Card>
+
+      {/* Boleta de la tarjeta. Sits right under the hero because it is the
+          card's standing record — what it costs, what it pays back — and comes
+          before what the card was used for this month. These figures used to be
+          split between the hero and cards on Insights; a person comparing two
+          cards opens the cards. */}
+      {isCardType ? (
+        <CardReport
+          currency={currency}
+          locale={locale}
+          year={feeYear}
+          monthLabel={monthLabel(spendMonth, locale)}
+          carry={carry}
+          cashback={cashbackReported ? cashbackTotal : null}
+          fees={cardFees}
+          paymentsThisMonth={paymentsThisMonth}
+          bonus={
+            showBonus
+              ? {
+                  spent: bonusSpent,
+                  goal: effectiveBonus!.welcome_bonus_goal_amount!,
+                  goalCurrency: effectiveBonus!.welcome_bonus_goal_currency!,
+                  dueDate: effectiveBonus!.welcome_bonus_due_date!,
+                }
+              : null
+          }
+        />
+      ) : null}
 
       {!isCardType && !isLoanType ? (
         <Card className="p-6">
@@ -487,23 +438,43 @@ export default async function AccountDetailPage({
           transfer tax or network fee — hidden everywhere else (cards, loans,
           cash, assets). */}
       {hasTransferFees(type) ? (
-      <Card className="p-6">
-        <h2 className="text-lg font-medium">{t("transferFees")}</h2>
-        <dl className="mt-4 grid gap-4 sm:grid-cols-3 text-sm">
-          <div>
-            <dt className="text-muted-foreground">{t("taxRate")}</dt>
-            <dd className="tabular-nums">{formatPercent(account.transfer_tax_rate * 100)}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">{t("networkFee")}</dt>
-            <dd className="tabular-nums">{formatMoney(account.network_fee_amount, currency)}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">{t("feeIs")}</dt>
-            <dd>{account.network_fee_optional ? t("optional") : t("obligatory")}</dd>
-          </div>
-        </dl>
-      </Card>
+        <Card className="p-6">
+          <h2 className="text-lg font-medium">{t("transferFees")}</h2>
+          <dl className="mt-4 grid gap-4 sm:grid-cols-3 text-sm">
+            <div>
+              <dt className="text-muted-foreground">{t("taxRate")}</dt>
+              <dd className="tabular-nums">{formatPercent(account.transfer_tax_rate * 100)}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">{t("networkFee")}</dt>
+              <dd className="tabular-nums">{formatMoney(account.network_fee_amount, currency)}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">{t("feeIs")}</dt>
+              <dd>{account.network_fee_optional ? t("optional") : t("obligatory")}</dd>
+            </div>
+          </dl>
+          {/* Zeros are shown, unlike the card report's silent rows: the trigger
+              derives every fee and tax on write, so a zero here is a real
+              answer rather than missing data. */}
+          {transferPaid ? (
+            <div className="mt-5 border-t pt-4">
+              <p className="text-sm font-medium text-foreground">
+                {t("transferPaidIn", { year: String(feeYear) })}
+              </p>
+              <dl className="mt-3 grid gap-4 text-sm sm:grid-cols-3">
+                <div>
+                  <dt className="text-muted-foreground">{t("transferPaidFees")}</dt>
+                  <dd className="tabular-nums">{formatMoney(transferPaid.fees, currency)}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">{t("transferPaidTax")}</dt>
+                  <dd className="tabular-nums">{formatMoney(transferPaid.tax, currency)}</dd>
+                </div>
+              </dl>
+            </div>
+          ) : null}
+        </Card>
       ) : null}
 
       <AccountActivity accountId={account.id} transactions={activity} data={quickAddData} />
