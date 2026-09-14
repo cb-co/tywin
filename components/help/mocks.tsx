@@ -578,17 +578,18 @@ export function BudgetGroupsMock({
 }
 
 /**
- * Two subscriptions, deliberately showing BOTH marks a person will see.
+ * Two recurring payments, deliberately showing BOTH marks a person will see
+ * and both kinds of template.
  *
- * The first is a service the app recognised — its real logo on its real
- * brand colour. The second is one it did not, wearing the initial on the
- * theme's accent. Drawing only the good case would leave anyone whose gym or
+ * The first is a subscription the app recognised — its real logo on its real
+ * brand colour. The second is a biweekly transfer to savings, which no model
+ * would place, wearing the initial on the theme's accent. Drawing only the good case would leave anyone whose gym or
  * ISP shows a letter thinking something had failed, when that is the
  * finished state.
  *
  * Each is its own Card, not a row in a shared list — the real screen is a
- * grid of subscription cards, each with its own toggle, stat-sized amount,
- * and "Add charge" action, and stacking two of those is truer than a
+ * grid of recurring-payment cards, each with its own toggle, stat-sized
+ * amount, and "Record" action, and stacking two of those is truer than a
  * transaction-style list would be.
  *
  * Spotify by name, because the mark has to be one people actually recognise
@@ -600,17 +601,17 @@ export function SubscriptionsMock({
   streaming,
   streamingCycle,
   streamingNext,
-  cloud,
-  cloudCycle,
-  cloudNext,
+  transfer,
+  transferCycle,
+  transferNext,
   addCharge,
 }: {
   streaming: string;
   streamingCycle: string;
   streamingNext: string;
-  cloud: string;
-  cloudCycle: string;
-  cloudNext: string;
+  transfer: string;
+  transferCycle: string;
+  transferNext: string;
   addCharge: string;
 }) {
   const rows = [
@@ -624,12 +625,12 @@ export function SubscriptionsMock({
       style: { backgroundColor: `#${siSpotify.hex}`, color: readableForeground(`#${siSpotify.hex}`) },
     },
     {
-      name: cloud,
-      cycle: cloudCycle,
-      next: cloudNext,
-      amt: 99,
+      name: transfer,
+      cycle: transferCycle,
+      next: transferNext,
+      amt: 250,
       active: false,
-      mark: "C",
+      mark: transfer[0]?.toUpperCase(),
       style: undefined,
     },
   ];

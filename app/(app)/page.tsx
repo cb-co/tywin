@@ -25,7 +25,7 @@ import { greetingName } from "@/lib/profile";
 const STARTER_CARDS = [
   { href: "/accounts", icon: Wallet, tint: "var(--chart-1)", key: "Accounts" as const },
   { href: "/budgets", icon: PieChart, tint: "var(--chart-2)", key: "Budgets" as const },
-  { href: "/subscriptions", icon: Repeat, tint: "var(--chart-3)", key: "Subscriptions" as const },
+  { href: "/recurring", icon: Repeat, tint: "var(--chart-3)", key: "Recurring" as const },
 ];
 
 export default async function OverviewPage() {

@@ -19,7 +19,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/accounts", key: "accounts", icon: Wallet },
   { href: "/transactions", key: "transactions", icon: ArrowLeftRight },
   { href: "/budgets", key: "budgets", icon: PieChart },
-  { href: "/subscriptions", key: "subscriptions", icon: Repeat },
+  { href: "/recurring", key: "recurring", icon: Repeat },
   { href: "/insights", key: "insights", icon: LineChart },
   { href: "/ask", key: "ask", icon: MessagesSquare },
   { href: "/settings", key: "settings", icon: Settings },
@@ -37,9 +37,9 @@ export type MobileNavItem = NavItem & {
  * Five cells, Overview in the middle.
  *
  * Reads outward from home: what you have -> what moved -> HOME <- what you
- * planned <- what it means. Transactions and Subscriptions share the Activity
+ * planned <- what it means. Transactions and Recurring share the Activity
  * cell, which opens a sheet listing both — a segmented control would have
- * buried Subscriptions one level inside Transactions. Settings is in the
+ * buried Recurring one level inside Transactions. Settings is in the
  * header.
  */
 export const MOBILE_NAV_ITEMS: MobileNavItem[] = [
@@ -48,7 +48,7 @@ export const MOBILE_NAV_ITEMS: MobileNavItem[] = [
     href: "/transactions",
     key: "activity",
     icon: ArrowLeftRight,
-    match: ["/subscriptions"],
+    match: ["/recurring"],
     kind: "sheet",
   },
   { href: "/", key: "overview", icon: LayoutDashboard },
@@ -57,7 +57,7 @@ export const MOBILE_NAV_ITEMS: MobileNavItem[] = [
 ];
 
 /** Routes offered by the Activity sheet, in display order. */
-export const ACTIVITY_ITEMS: NavItem[] = ["/transactions", "/subscriptions"].map(
+export const ACTIVITY_ITEMS: NavItem[] = ["/transactions", "/recurring"].map(
   (href) => NAV_ITEMS.find((i) => i.href === href)!,
 );
 

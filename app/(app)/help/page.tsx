@@ -45,7 +45,7 @@ export default async function HelpPage() {
     { id: "transactions", label: t("transactionsTitle"), icon: <ArrowLeftRight className={navIconClass} /> },
     { id: "budgets", label: t("budgetsTitle"), icon: <PieChart className={navIconClass} /> },
     { id: "budget-groups", label: t("budgetGroupsTitle"), icon: <Layers className={navIconClass} /> },
-    { id: "subscriptions", label: t("subscriptionsTitle"), icon: <Repeat className={navIconClass} /> },
+    { id: "recurring", label: t("subscriptionsTitle"), icon: <Repeat className={navIconClass} /> },
     { id: "insights", label: t("insightsTitle"), icon: <LineChart className={navIconClass} /> },
     { id: "ask", label: t("askTitle"), icon: <MessageCircle className={navIconClass} /> },
     { id: "settings", label: t("settingsTitle"), icon: <Settings className={navIconClass} /> },
@@ -359,7 +359,7 @@ export default async function HelpPage() {
           </HelpChapter>
 
           <HelpChapter
-            id="subscriptions"
+            id="recurring"
             icon={Repeat}
             index={7}
             title={t("subscriptionsTitle")}
@@ -370,6 +370,7 @@ export default async function HelpPage() {
                 <li>{t("subName")}</li>
                 <li>{t("subCycle")}</li>
                 <li>{t("subLink")}</li>
+                <li>{t("subFees")}</li>
                 <li>{t("subViews")}</li>
                 <li>{t("subBrand")}</li>
               </ul>
@@ -379,9 +380,9 @@ export default async function HelpPage() {
               streaming={t("subscriptionsMockStreaming")}
               streamingCycle={t("subscriptionsMockStreamingCycle")}
               streamingNext={t("subscriptionsMockStreamingNext")}
-              cloud={t("subscriptionsMockCloud")}
-              cloudCycle={t("subscriptionsMockCloudCycle")}
-              cloudNext={t("subscriptionsMockCloudNext")}
+              transfer={t("subscriptionsMockTransfer")}
+              transferCycle={t("subscriptionsMockTransferCycle")}
+              transferNext={t("subscriptionsMockTransferNext")}
               addCharge={t("subAddCharge")}
             />
           </HelpChapter>

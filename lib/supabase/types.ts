@@ -1030,51 +1030,63 @@ export type Database = {
         Row: {
           account_id: string | null
           amount: number
+          anchor_date: string | null
           anchor_day: number | null
           billing_cycle: Database["public"]["Enums"]["billing_cycle"]
-          brand: string | null
           category_id: string | null
           color: string | null
           created_at: string
           currency: string
           id: string
+          include_commission: boolean
+          include_tax: boolean
           is_active: boolean
+          kind: Database["public"]["Enums"]["transaction_type"]
           logo_url: string | null
           name: string
+          to_account_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           account_id?: string | null
           amount?: number
+          anchor_date?: string | null
           anchor_day?: number | null
           billing_cycle?: Database["public"]["Enums"]["billing_cycle"]
-          brand?: string | null
           category_id?: string | null
           color?: string | null
           created_at?: string
           currency: string
           id?: string
+          include_commission?: boolean
+          include_tax?: boolean
           is_active?: boolean
+          kind?: Database["public"]["Enums"]["transaction_type"]
           logo_url?: string | null
           name: string
+          to_account_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           account_id?: string | null
           amount?: number
+          anchor_date?: string | null
           anchor_day?: number | null
           billing_cycle?: Database["public"]["Enums"]["billing_cycle"]
-          brand?: string | null
           category_id?: string | null
           color?: string | null
           created_at?: string
           currency?: string
           id?: string
+          include_commission?: boolean
+          include_tax?: boolean
           is_active?: boolean
+          kind?: Database["public"]["Enums"]["transaction_type"]
           logo_url?: string | null
           name?: string
+          to_account_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1128,6 +1140,48 @@ export type Database = {
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "subscriptions_to_account_id_fkey"
+            columns: ["to_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "subscriptions_to_account_id_fkey"
+            columns: ["to_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_to_account_id_fkey"
+            columns: ["to_account_id"]
+            isOneToOne: false
+            referencedRelation: "card_cost_of_carry"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "subscriptions_to_account_id_fkey"
+            columns: ["to_account_id"]
+            isOneToOne: false
+            referencedRelation: "card_status"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "subscriptions_to_account_id_fkey"
+            columns: ["to_account_id"]
+            isOneToOne: false
+            referencedRelation: "loan_status"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "subscriptions_to_account_id_fkey"
+            columns: ["to_account_id"]
+            isOneToOne: false
+            referencedRelation: "q_accounts"
+            referencedColumns: ["id"]
+          }
         ]
       }
       transactions: {
@@ -1789,7 +1843,7 @@ export type Database = {
         | "asset"
         | "credit_card"
         | "loan"
-      billing_cycle: "weekly" | "monthly" | "yearly" | "custom"
+      billing_cycle: "weekly" | "biweekly" | "monthly" | "yearly" | "custom"
       budget_status: "within" | "approaching" | "over"
       pay_cycle: "monthly" | "semimonthly" | "weekly"
       statement_line_kind:
@@ -1939,7 +1993,7 @@ export const Constants = {
         "credit_card",
         "loan",
       ],
-      billing_cycle: ["weekly", "monthly", "yearly", "custom"],
+      billing_cycle: ["weekly", "biweekly", "monthly", "yearly", "custom"],
       budget_status: ["within", "approaching", "over"],
       pay_cycle: ["monthly", "semimonthly", "weekly"],
       statement_line_kind: [

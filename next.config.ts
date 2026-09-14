@@ -66,6 +66,12 @@ const nextConfig: NextConfig = {
     serverActions: { bodySizeLimit: SERVER_ACTION_BODY_LIMIT },
   },
 
+  // Subscriptions grew into recurring payments; keep old bookmarks and the
+  // installed PWA's history working.
+  async redirects() {
+    return [{ source: "/subscriptions", destination: "/recurring", permanent: true }];
+  },
+
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

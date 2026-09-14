@@ -4,8 +4,11 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { subscriptionInput, type SubscriptionInput } from "@/lib/subscriptions/schema";
-import { baseRate, getExchangeRates } from "@/lib/fx";
+import { getExchangeRates } from "@/lib/fx";
 import { settledCharge } from "@/lib/subscriptions/charge";
+import { usesAnchorDate } from "@/lib/subscriptions/cycle";
+import { recordedFlags } from "@/lib/subscriptions/template";
+import { resolveBaseRate } from "@/lib/transactions/money";
 import { hasBrandColor } from "@/lib/subscriptions/brand-color";
 import { inferBrand } from "@/lib/subscriptions/llm/brand";
 import { dbError } from "@/lib/errors";
@@ -22,19 +25,28 @@ async function requireUser() {
 }
 
 function revalidate() {
-  revalidatePath("/subscriptions");
+  revalidatePath("/recurring");
   revalidatePath("/");
 }
 
 function toRow(v: SubscriptionInput) {
+  const payment = v.kind === "payment";
+  const dated = usesAnchorDate(v.billing_cycle);
   return {
+    kind: v.kind,
     name: v.name,
-    brand: v.brand || null,
     amount: v.amount,
     billing_cycle: v.billing_cycle,
-    anchor_day: v.anchor_day ?? null,
+    // One anchor per cycle, never both: a biweekly row keeping an old day
+    // number would read as a second, contradictory schedule.
+    anchor_day: dated ? null : v.anchor_day ?? null,
+    anchor_date: dated ? v.anchor_date || null : null,
     account_id: v.account_id || null,
-    category_id: v.category_id || null,
+    to_account_id: payment ? v.to_account_id || null : null,
+    // A payment moves money to an account; it is not spending in a category.
+    category_id: payment ? null : v.category_id || null,
+    include_tax: v.include_tax,
+    include_commission: v.include_commission,
     is_active: v.is_active,
   };
 }
@@ -187,17 +199,25 @@ export async function setSubscriptionActive(id: string, active: boolean): Promis
   return { id };
 }
 
-/** Log this subscription's charge as an expense transaction linked back to it. */
 /**
- * Record this month's charge against the subscription's account.
+ * Record one occurrence of a recurring payment: the transaction its template
+ * describes, dated now and linked back through `subscription_id`.
  *
- * `settledAmount` is what actually left the account, in the ACCOUNT's currency,
- * and is required exactly when the merchant bills in a different one — see
- * lib/subscriptions/charge. The client offers an estimate; this does not invent
- * one, because writing the billed amount into a differently-denominated account
- * is the bug being fixed (a USD 15.99 sub took 15.99 pesos off a DOP card).
+ * Two figures can only come from the person, never from the template, and each
+ * is required exactly when currencies differ:
+ *
+ *   - `settledAmount`, what actually left the source account in ITS currency,
+ *     when the template bills in another — see lib/subscriptions/charge. The
+ *     client offers an estimate; this does not invent one, because writing the
+ *     billed amount into a differently-denominated account is the bug that
+ *     module fixed (a USD 15.99 sub took 15.99 pesos off a DOP card).
+ *   - `toAmount`, a payment's destination leg, when the two accounts differ in
+ *     currency. Same reason quick-add asks: 1:1 is never a safe assumption.
  */
-export async function addCharge(id: string, settledAmount?: number): Promise<Result> {
+export async function addCharge(
+  id: string,
+  { settledAmount, toAmount }: { settledAmount?: number; toAmount?: number } = {},
+): Promise<Result> {
   const t = await getTranslations("Common");
   const ts = await getTranslations("Subscriptions");
   const { supabase, user } = await requireUser();
@@ -205,14 +225,21 @@ export async function addCharge(id: string, settledAmount?: number): Promise<Res
 
   const { data: sub } = await supabase
     .from("subscriptions")
-    .select("*, account:accounts!subscriptions_account_id_fkey(currency,type)")
+    .select(
+      "*, account:accounts!subscriptions_account_id_fkey(currency,type), to_account:accounts!subscriptions_to_account_id_fkey(currency)",
+    )
     .eq("id", id)
     .maybeSingle();
   if (!sub) return { error: ts("notFound") };
-  // The account supplies the currency, so a subscription without one has
-  // nowhere to charge and no denomination to charge in.
+  // The account supplies the currency, so a template without one has nowhere
+  // to charge and no denomination to charge in.
   const accountCurrency = sub.account?.currency;
   if (!sub.account_id || !accountCurrency) return { error: ts("needsAccount") };
+
+  const payment = sub.kind === "payment";
+  const dstCurrency = payment ? sub.to_account?.currency : null;
+  // The destination can be deleted out from under a template (on delete set null).
+  if (payment && (!sub.to_account_id || !dstCurrency)) return { error: ts("needsToAccount") };
 
   const settled = settledCharge({
     subAmount: sub.amount,
@@ -223,12 +250,15 @@ export async function addCharge(id: string, settledAmount?: number): Promise<Res
   if ("needsSettledAmount" in settled)
     return { error: ts("needsSettledAmount", { currency: accountCurrency }) };
 
-  /* The charge is denominated in the account's currency, so the base rate comes
-     from that — not from the subscription's. Converting the 965 pesos actually
-     paid at market gives a base figure that includes the bank's spread, where
-     the old code recorded 15.99 as though it were pesos and then converted
-     that. (The rate was also hardcoded to 1 before, counting a 1,500 DOP
-     subscription as 1,500 USD in every base-currency total.) */
+  const crossLeg = payment && dstCurrency !== accountCurrency;
+  if (crossLeg && !(toAmount && toAmount > 0))
+    return { error: ts("needsToAmount", { currency: dstCurrency! }) };
+
+  /* The row is denominated in the account's currency, so the base rate comes
+     from that — not from the template's. Converting the 965 pesos actually paid
+     at market gives a base figure that includes the bank's spread. A payment
+     that lands in the base currency uses the person's own rate instead, exactly
+     as quick-add does (see resolveBaseRate). */
   const { data: profile } = await supabase
     .from("profiles")
     .select("base_currency")
@@ -238,21 +268,34 @@ export async function addCharge(id: string, settledAmount?: number): Promise<Res
 
   const { error } = await supabase.from("transactions").insert({
     user_id: user.id,
-    type: "expense",
+    type: payment ? "payment" : "expense",
     account_id: sub.account_id,
-    category_id: sub.category_id,
+    to_account_id: payment ? sub.to_account_id : null,
+    category_id: payment ? null : sub.category_id,
     amount: settled.amount,
+    // Null on a same-currency payment — the DB mirrors `amount`.
+    to_amount: crossLeg ? toAmount! : null,
     currency: accountCurrency,
-    exchange_rate: baseRate(accountCurrency, baseCurrency, rates),
-    include_tax: false,
-    include_commission: false,
+    exchange_rate: resolveBaseRate({
+      currency: accountCurrency,
+      baseCurrency,
+      amount: settled.amount,
+      toCurrency: dstCurrency,
+      toAmount: crossLeg ? toAmount : null,
+      rates,
+    }),
+    ...recordedFlags({
+      kind: payment ? "payment" : "expense",
+      srcType: sub.account?.type,
+      include_tax: sub.include_tax,
+      include_commission: sub.include_commission,
+    }),
     occurred_at: new Date().toISOString(),
     description: sub.name,
     subscription_id: sub.id,
-    exclude_from_budget: sub.account?.type === "credit_card",
   });
   if (error) return { error: await dbError(error, "addCharge") };
-  revalidatePath("/subscriptions");
+  revalidatePath("/recurring");
   revalidatePath("/transactions");
   revalidatePath("/accounts");
   revalidatePath("/");

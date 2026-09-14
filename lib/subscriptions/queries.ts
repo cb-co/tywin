@@ -3,7 +3,7 @@ import { simpleIconSlug } from "@/lib/brand/logo-uri";
 import { brandIcon } from "@/lib/brand/simple-icon";
 
 /**
- * Subscriptions, each carrying its brand mark already resolved.
+ * Recurring payments, each carrying its brand mark already resolved.
  *
  * `logo_url` stores a `simple-icons:` URI, and turning that into artwork means
  * touching the whole 3,450-icon set — server-only, megabytes (see
@@ -20,7 +20,7 @@ export async function getSubscriptions() {
   const { data } = await supabase
     .from("subscriptions")
     .select(
-      "*, account:accounts!subscriptions_account_id_fkey(id,name,currency), category:categories!subscriptions_category_id_fkey(id,name,emoji,color)",
+      "*, account:accounts!subscriptions_account_id_fkey(id,name,currency,type), to_account:accounts!subscriptions_to_account_id_fkey(id,name,currency), category:categories!subscriptions_category_id_fkey(id,name,emoji,color)",
     )
     .order("is_active", { ascending: false })
     .order("name");

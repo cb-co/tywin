@@ -46,7 +46,7 @@ export type Overview = {
 };
 
 function nextDue(day: number | null, from = new Date()): Date | null {
-  return nextChargeDate("monthly", day, from);
+  return nextChargeDate({ cycle: "monthly", anchorDay: day }, from);
 }
 
 type CardRow = {
@@ -137,8 +137,12 @@ export async function getOverview(): Promise<Overview> {
     supabase.from("loan_status").select("account_id,currency,outstanding_balance,installment_amount,payment_due_day"),
     supabase
       .from("subscriptions")
-      .select("id,name,amount,currency,billing_cycle,anchor_day,is_active")
-      .eq("is_active", true),
+      .select("id,name,amount,currency,billing_cycle,anchor_day,anchor_date,is_active")
+      .eq("is_active", true)
+      /* Expenses only. A recurring PAYMENT settles a card or a loan whose due
+         amount card_status and loan_status already put in front of the person
+         — counting the template too would take the same money out twice. */
+      .eq("kind", "expense"),
     // The full set, never scoped to a single account — computeFunding's
     // borrow-back allocation depends on every goal sharing an account. See the
     // same comment in lib/goals/queries.ts:147.
@@ -213,7 +217,7 @@ export async function getOverview(): Promise<Overview> {
       });
   }
   for (const s of subs ?? []) {
-    const d = nextChargeDate(s.billing_cycle as BillingCycle, s.anchor_day);
+    const d = nextChargeDate({ cycle: s.billing_cycle as BillingCycle, anchorDay: s.anchor_day, anchorDate: s.anchor_date });
     if (d)
       upcoming.push({
         key: `sub-${s.id}`,
@@ -277,7 +281,7 @@ export async function getOverview(): Promise<Overview> {
       };
     }),
     subscriptions: (subs ?? []).map((s) => {
-      const d = nextChargeDate(s.billing_cycle as BillingCycle, s.anchor_day);
+      const d = nextChargeDate({ cycle: s.billing_cycle as BillingCycle, anchorDay: s.anchor_day, anchorDate: s.anchor_date });
       return {
         amount: Number(s.amount),
         currency: s.currency,

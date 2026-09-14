@@ -9,7 +9,7 @@ import {
   addCharge,
   deleteSubscription,
   setSubscriptionActive,
-} from "@/app/(app)/subscriptions/actions";
+} from "@/app/(app)/recurring/actions";
 import { CYCLE_LABEL, nextChargeDate, monthlyEquivalent, type BillingCycle } from "@/lib/subscriptions/cycle";
 import { chargeCrossesCurrency } from "@/lib/subscriptions/charge";
 import { hasBrandColor } from "@/lib/subscriptions/brand-color";
@@ -20,7 +20,7 @@ import type { SubscriptionWithRefs } from "@/lib/subscriptions/queries";
 import type { QuickAddData } from "@/lib/transactions/queries";
 import { useUiSound } from "@/components/sound/sound-provider";
 import { SubscriptionFormDialog } from "./subscription-form-dialog";
-import { RecordChargeDialog } from "./record-charge-dialog";
+import { RecordChargeDialog, type RecordAmounts } from "./record-charge-dialog";
 import { Button } from "@/components/ui/button";
 import { MoneyDisplay } from "@/components/ui/money-display";
 import { BrandGlyph } from "@/components/ui/brand-glyph";
@@ -30,8 +30,12 @@ import { EmptyState } from "@/components/empty-state";
 import { cn } from "@/lib/utils";
 
 const dateFmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
-const nextLabel = (cycle: BillingCycle, anchor: number | null) => {
-  const d = nextChargeDate(cycle, anchor);
+const nextLabel = (sub: SubscriptionWithRefs) => {
+  const d = nextChargeDate({
+    cycle: sub.billing_cycle as BillingCycle,
+    anchorDay: sub.anchor_day,
+    anchorDate: sub.anchor_date,
+  });
   return d ? dateFmt.format(d) : "—";
 };
 
@@ -45,6 +49,7 @@ export function SubscriptionsView({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const t = useTranslations("Subscriptions");
+  const tType = useTranslations("TransactionTypes");
   const [view, setView] = useState<"grid" | "table">("grid");
   const { playSuccess, playDelete, playError } = useUiSound();
 
@@ -73,10 +78,10 @@ export function SubscriptionsView({
      failure rather than closing optimistically and taking the amount the person
      typed with it. Wrapped in a promise instead of dropping startTransition,
      which is what drives every button's pending state. */
-  function onAddCharge(id: string, settledAmount?: number): Promise<boolean> {
+  function onAddCharge(id: string, amounts?: RecordAmounts): Promise<boolean> {
     return new Promise((resolve) => {
       startTransition(async () => {
-        const result = await addCharge(id, settledAmount);
+        const result = await addCharge(id, amounts);
         if (result.error) {
           toast.error(result.error);
           playError();
@@ -176,6 +181,7 @@ export function SubscriptionsView({
                   <div className="min-w-0">
                     <p className="truncate font-medium text-foreground">{sub.name}</p>
                     <p className="text-xs text-muted-foreground">
+                      {sub.kind === "payment" ? `${tType("payment")} · ` : ""}
                       {CYCLE_LABEL[sub.billing_cycle as BillingCycle]}
                     </p>
                   </div>
@@ -194,8 +200,8 @@ export function SubscriptionsView({
                 <MoneyDisplay amount={sub.amount} currency={sub.currency} size="stat" />
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {t("nextPrefix", { date: nextLabel(sub.billing_cycle as BillingCycle, sub.anchor_day) })}
-                {sub.account ? ` · ${sub.account.name}` : ""}
+                {t("nextPrefix", { date: nextLabel(sub) })}
+                {accountLine(sub) ? ` · ${accountLine(sub)}` : ""}
               </p>
               <div className="mt-4 flex items-center gap-1">
                 <ChargeButton
@@ -258,8 +264,8 @@ export function SubscriptionsView({
                   <td className="px-4 py-2 font-medium text-foreground">{sub.name}</td>
                   <td className="px-4 py-2 tabular-nums">{formatMoney(sub.amount, sub.currency)}</td>
                   <td className="px-4 py-2">{CYCLE_LABEL[sub.billing_cycle as BillingCycle]}</td>
-                  <td className="px-4 py-2">{nextLabel(sub.billing_cycle as BillingCycle, sub.anchor_day)}</td>
-                  <td className="px-4 py-2 text-muted-foreground">{sub.account?.name ?? "—"}</td>
+                  <td className="px-4 py-2">{nextLabel(sub)}</td>
+                  <td className="px-4 py-2 text-muted-foreground">{accountLine(sub) || "—"}</td>
                   <td className="px-4 py-2">
                     <div className="flex items-center justify-end gap-1">
                       <ChargeButton
@@ -382,13 +388,13 @@ function BrandMark({
 }
 
 /**
- * Add charge, in both the grid and the table.
+ * Record, in both the grid and the table.
  *
- * A charge only needs asking about when the merchant's billing currency differs
- * from the currency its account settles in. Everything else — the gym billed in
- * pesos on a peso card, a dollar sub on a dollar account — records straight
- * through on one tap, exactly as before, because there is nothing to convert and
- * so nothing to ask.
+ * Recording only needs asking about when currencies differ — the template bills
+ * in something other than its account's currency, or a payment's two accounts
+ * hold different ones. Everything else — the gym billed in pesos on a peso
+ * card, a rent transfer between two peso accounts — records straight through on
+ * one tap, because there is nothing to convert and so nothing to ask.
  */
 function ChargeButton({
   sub,
@@ -400,13 +406,15 @@ function ChargeButton({
   sub: SubscriptionWithRefs;
   rates: Record<string, number>;
   pending: boolean;
-  onCharge: (id: string, settledAmount?: number) => Promise<boolean>;
+  onCharge: (id: string, amounts?: RecordAmounts) => Promise<boolean>;
   trigger: React.ReactElement;
 }) {
   const accountCurrency = sub.account?.currency;
+  const dstCurrency = sub.kind === "payment" ? sub.to_account?.currency : null;
+  const crossLeg = !!accountCurrency && !!dstCurrency && dstCurrency !== accountCurrency;
   // Cloned rather than wrapped in a clickable span, so the button stays the only
   // interactive element and keeps its own keyboard behaviour.
-  if (!chargeCrossesCurrency(sub.currency, accountCurrency))
+  if (!chargeCrossesCurrency(sub.currency, accountCurrency) && !crossLeg)
     return cloneElement(trigger as React.ReactElement<{ onClick?: () => void }>, {
       onClick: () => onCharge(sub.id),
     });
@@ -415,10 +423,18 @@ function ChargeButton({
     <RecordChargeDialog
       subscription={sub}
       accountCurrency={accountCurrency!}
+      destinationCurrency={crossLeg ? dstCurrency : null}
       rates={rates}
       pending={pending}
-      onConfirm={(settledAmount) => onCharge(sub.id, settledAmount)}
+      onConfirm={(amounts) => onCharge(sub.id, amounts)}
       trigger={trigger}
     />
   );
+}
+
+/** "Popular Checking", or "Popular Checking → Visa Gold" for a payment. */
+function accountLine(sub: SubscriptionWithRefs): string {
+  if (sub.kind === "payment" && sub.account && sub.to_account)
+    return `${sub.account.name} → ${sub.to_account.name}`;
+  return sub.account?.name ?? "";
 }

@@ -10,7 +10,7 @@ vi.mock("next-intl/server", () => ({
 
 import { inferBrand } from "@/lib/subscriptions/llm/brand";
 import { createClient } from "@/lib/supabase/server";
-import { createSubscription, resolveSubscriptionBrand, updateSubscription } from "./actions";
+import { addCharge, createSubscription, resolveSubscriptionBrand, updateSubscription } from "./actions";
 
 const infer = inferBrand as unknown as Mock;
 
@@ -209,5 +209,182 @@ describe("resolveSubscriptionBrand asks only when there is no colour", () => {
     expect(await resolveSubscriptionBrand("nope")).toEqual({ resolved: false });
     expect(infer).not.toHaveBeenCalled();
     expect(writes).toHaveLength(0);
+  });
+});
+
+/**
+ * Recording turns the template into a transaction. A stub that answers per
+ * table: the template read, the profile read, and the transaction insert.
+ */
+function recordStub(template: Record<string, unknown> | null, baseCurrency = "DOP") {
+  const inserts: Record<string, unknown>[] = [];
+  const reads: Record<string, unknown> = {
+    subscriptions: { data: template, error: null },
+    profiles: { data: { base_currency: baseCurrency }, error: null },
+  };
+  const from = vi.fn((table: string) => {
+    const chain: Record<string, unknown> = {};
+    chain.select = vi.fn(() => chain);
+    chain.eq = vi.fn(() => chain);
+    chain.maybeSingle = vi.fn(async () => reads[table]);
+    chain.insert = vi.fn(async (row: Record<string, unknown>) => {
+      inserts.push(row);
+      return { error: null };
+    });
+    return chain;
+  });
+  (createClient as unknown as Mock).mockResolvedValue({
+    auth: { getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })) },
+    from,
+  });
+  return inserts;
+}
+
+const template = (over: Record<string, unknown> = {}) => ({
+  id: "sub-1",
+  kind: "expense",
+  name: "Gym",
+  amount: 1500,
+  currency: "DOP",
+  account_id: "acct-1",
+  to_account_id: null,
+  category_id: "cat-1",
+  include_tax: true,
+  include_commission: true,
+  account: { currency: "DOP", type: "checking" },
+  to_account: null,
+  ...over,
+});
+
+describe("addCharge records the template", () => {
+  it("writes an expense from a bank with the template's fees", async () => {
+    const inserts = recordStub(template());
+
+    expect(await addCharge("sub-1")).toEqual({ id: "sub-1" });
+    expect(inserts[0]).toMatchObject({
+      type: "expense",
+      account_id: "acct-1",
+      to_account_id: null,
+      category_id: "cat-1",
+      amount: 1500,
+      currency: "DOP",
+      include_tax: true,
+      include_commission: true,
+      exclude_from_budget: false,
+      subscription_id: "sub-1",
+      description: "Gym",
+    });
+  });
+
+  it("keeps a card charge fee-free and off the budget, as before", async () => {
+    const inserts = recordStub(template({ account: { currency: "DOP", type: "credit_card" } }));
+
+    await addCharge("sub-1");
+
+    expect(inserts[0]).toMatchObject({
+      include_tax: false,
+      include_commission: false,
+      exclude_from_budget: true,
+    });
+  });
+
+  it("writes a payment to its destination with no category", async () => {
+    const inserts = recordStub(
+      template({
+        kind: "payment",
+        name: "Savings transfer",
+        to_account_id: "acct-2",
+        to_account: { currency: "DOP" },
+        account: { currency: "DOP", type: "savings" },
+        include_commission: false,
+      }),
+    );
+
+    expect(await addCharge("sub-1")).toEqual({ id: "sub-1" });
+    expect(inserts[0]).toMatchObject({
+      type: "payment",
+      account_id: "acct-1",
+      to_account_id: "acct-2",
+      category_id: null,
+      to_amount: null,
+      include_tax: true,
+      include_commission: false,
+      exclude_from_budget: false,
+    });
+  });
+
+  it("refuses a payment whose destination is gone", async () => {
+    const inserts = recordStub(template({ kind: "payment", to_account_id: null, to_account: null }));
+
+    expect(await addCharge("sub-1")).toEqual({ error: "needsToAccount" });
+    expect(inserts).toHaveLength(0);
+  });
+
+  // 1:1 across currencies is never a safe assumption — the same rule quick-add follows.
+  it("asks for the destination leg across currencies, then writes it", async () => {
+    const payment = template({
+      kind: "payment",
+      to_account_id: "acct-2",
+      to_account: { currency: "USD" },
+    });
+
+    recordStub(payment);
+    expect(await addCharge("sub-1")).toEqual({ error: "needsToAmount" });
+
+    const inserts = recordStub(payment);
+    await addCharge("sub-1", { toAmount: 25 });
+    expect(inserts[0]).toMatchObject({ amount: 1500, to_amount: 25, currency: "DOP" });
+  });
+});
+
+describe("saving a template keeps one schedule and one shape", () => {
+  it("stores a biweekly start date and drops any day number", async () => {
+    const writes = stub();
+
+    await createSubscription({ ...VALID, billing_cycle: "biweekly", anchor_day: 5, anchor_date: "2026-09-04" });
+
+    expect(writes[0]).toMatchObject({ billing_cycle: "biweekly", anchor_day: null, anchor_date: "2026-09-04" });
+  });
+
+  it("rejects a biweekly template with no start date", async () => {
+    const writes = stub();
+
+    expect((await createSubscription({ ...VALID, billing_cycle: "biweekly" })).error).toBeTruthy();
+    expect(writes).toHaveLength(0);
+  });
+
+  it("drops the start date on a day-number cycle", async () => {
+    const writes = stub();
+
+    await createSubscription({ ...VALID, anchor_day: 3, anchor_date: "2026-09-04" });
+
+    expect(writes[0]).toMatchObject({ anchor_day: 3, anchor_date: null });
+  });
+
+  it("stores a payment's destination and clears its category", async () => {
+    const writes = stub();
+    const a = "11111111-1111-4111-8111-111111111111";
+    const b = "22222222-2222-4222-8222-222222222222";
+    const c = "33333333-3333-4333-8333-333333333333";
+
+    await createSubscription({ ...VALID, kind: "payment", account_id: a, to_account_id: b, category_id: c });
+
+    expect(writes[0]).toMatchObject({ kind: "payment", account_id: a, to_account_id: b, category_id: null });
+  });
+
+  it("rejects a payment into the account it comes from", async () => {
+    const writes = stub();
+    const a = "11111111-1111-4111-8111-111111111111";
+
+    expect((await createSubscription({ ...VALID, kind: "payment", account_id: a, to_account_id: a })).error).toBeTruthy();
+    expect(writes).toHaveLength(0);
+  });
+
+  it("never stores a destination on an expense", async () => {
+    const writes = stub();
+
+    await createSubscription({ ...VALID, to_account_id: "22222222-2222-4222-8222-222222222222" });
+
+    expect(writes[0]).toMatchObject({ kind: "expense", to_account_id: null });
   });
 });
