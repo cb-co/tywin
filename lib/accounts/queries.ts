@@ -155,10 +155,9 @@ export async function getPendingTriageCounts(
 /**
  * One card's fee lines for one calendar year, ready for summarizeCardFees.
  *
- * A separate fetch from getCardFees rather than a filter over it: this one is
- * scoped to a single account and needs no FX at all, since the detail page
- * speaks that card's own currency throughout. The classification both share
- * lives in card-fees.ts, which is the part worth keeping DRY.
+ * Scoped to a single account and needs no FX at all, since the detail page
+ * speaks that card's own currency throughout. The classification lives in
+ * card-fees.ts, which keeps it testable without a database.
  *
  * Credits come along only to catch reversals — see reversalTarget.
  */

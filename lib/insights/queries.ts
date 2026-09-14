@@ -1,13 +1,12 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { baseCurrencyOf } from "@/lib/profile";
-import { addMonths, monthEnd, shortMonth } from "@/lib/budgets/month";
+import { monthEnd, shortMonth } from "@/lib/budgets/month";
 import { getBudgetGroupOverview } from "@/lib/budgets/queries";
 import { getExchangeRates, convertToBase } from "@/lib/fx";
 import { CHART_FALLBACK } from "@/lib/chart-series";
 import { splitPayments } from "@/lib/accounts/amortization";
 import { loanPaymentAmounts } from "@/lib/insights/net-worth-history";
-import { summarizeCardFees, type FeeLineRow } from "@/lib/accounts/card-fees";
 import { currentPeriod } from "@/lib/period/profile";
 import { isWholeMonth, type Period } from "@/lib/period/cycle";
 
@@ -24,13 +23,9 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
  *  the next time somebody regenerates. */
 const paceValue = (v: number | null): number | null => (v === null ? null : Number(v));
 
-/** The `"{group} — {name}"` label convention shared by every per-card insights
- *  list, so a card group's multiple currency lines are told apart consistently
- *  across cost-of-carry, cashback and card fees. Takes an already-resolved group
- *  name (or null/undefined for an ungrouped card) rather than a group id: getCostOfCarry
- *  reads its group name off a view column, while getCashbackByCard and getCardFees
- *  resolve it from a lookup map — a resolved-name shape is the one signature both
- *  fit without contortion. */
+/** The `"{group} — {name}"` label for a card's cost-of-carry row, so a card
+ *  group's multiple currency lines are told apart. Takes an already-resolved
+ *  group name (null/undefined for an ungrouped card), read off the view. */
 function cardLabel(groupName: string | null | undefined, accountName: string): string {
   return groupName ? `${groupName} — ${accountName}` : accountName;
 }
@@ -52,8 +47,8 @@ export type Insights = {
 /**
  * Cumulative spend by day into the period, this period against the one
  * before it — the only Insights card that follows the profile's pay-cycle
- * period rather than the calendar month (see the plan's UX-07 framing: the
- * other ten cards stay monthly on purpose).
+ * period rather than the calendar month (the other month-band cards stay
+ * calendar-monthly on purpose).
  *
  * Which RPC gets called is not a free choice. `spending_pace(p_month)` and
  * `spending_pace_range(p_start, p_end)` answer different questions —
@@ -133,7 +128,7 @@ export async function getInsights(month: string): Promise<Insights> {
     supabase.from("accounts").select("id,name"),
     fetchPace(supabase, month, period),
     // The calendar month, not `period`: these bars sit where category_usage's
-    // monthly bars sit (UX-07 keeps every card but pace monthly), and swapping
+    // monthly bars sit (every month-band card but pace is calendar-monthly), and swapping
     // which slice the card shows must not also swap its clock.
     getBudgetGroupOverview({ start: month, end: monthEnd(month) }),
   ]);
@@ -231,76 +226,6 @@ export async function getInsights(month: string): Promise<Insights> {
     loans: loanRows,
     totalSpend: distribution.reduce((s, d) => s + d.value, 0),
     pace,
-  };
-}
-
-export type CardPaymentLine = {
-  accountId: string;
-  name: string;
-  currency: string;
-  amount: number; // native (card currency)
-  baseAmount: number;
-};
-
-export type CardPayments = {
-  baseCurrency: string;
-  lines: CardPaymentLine[];
-  totalBase: number;
-};
-
-/** Sum of payments made *to* credit cards this month — what actually left your
- *  accounts to settle card balances. This totals every payment regardless of
- *  category, independent of category_usage/spend_distribution (which now
- *  count *categorized* card payments toward budget instead of excluding
- *  them; see 20260731130000_card_payment_default_and_cashflow.sql). */
-export async function getCardPayments(month: string): Promise<CardPayments> {
-  const supabase = await createClient();
-  const [{ data: profile }, { data: cards }] = await Promise.all([
-    supabase.from("profiles").select("base_currency").maybeSingle(),
-    supabase.from("accounts").select("id,name,currency").eq("type", "credit_card"),
-  ]);
-
-  const baseCurrency = baseCurrencyOf(profile);
-  const cardIds = (cards ?? []).map((c) => c.id);
-
-  const { data: rows } = cardIds.length
-    ? await supabase
-        .from("transactions")
-        .select("to_account_id,amount,to_amount,base_amount")
-        .eq("type", "payment")
-        .in("to_account_id", cardIds)
-        .gte("occurred_at", month)
-        .lt("occurred_at", addMonths(month, 1))
-    : { data: [] };
-
-  const cardById = new Map((cards ?? []).map((c) => [c.id, c]));
-  const totals = new Map<string, { amount: number; baseAmount: number }>();
-  for (const r of rows ?? []) {
-    const id = r.to_account_id;
-    if (!id) continue;
-    const prev = totals.get(id) ?? { amount: 0, baseAmount: 0 };
-    prev.amount += Number(r.to_amount ?? r.amount ?? 0);
-    prev.baseAmount += Number(r.base_amount ?? 0);
-    totals.set(id, prev);
-  }
-
-  const lines: CardPaymentLine[] = Array.from(totals.entries())
-    .map(([accountId, t]) => {
-      const card = cardById.get(accountId);
-      return {
-        accountId,
-        name: card?.name ?? "Card",
-        currency: card?.currency ?? baseCurrency,
-        amount: t.amount,
-        baseAmount: t.baseAmount,
-      };
-    })
-    .sort((a, b) => b.baseAmount - a.baseAmount);
-
-  return {
-    baseCurrency,
-    lines,
-    totalBase: lines.reduce((s, l) => s + l.baseAmount, 0),
   };
 }
 
@@ -406,8 +331,8 @@ export type LoanInterestInput = {
  *
  * A loan only appears once it has a payment to report and while it still owes
  * something. A paid-off loan costs nothing to carry, and a loan with no logged
- * payment has no interest this app can vouch for — the same reason
- * getCashbackByCard omits cards whose statements never reported a figure.
+ * payment has no interest this app can vouch for — the same reason the card
+ * report omits a cashback row no statement ever reported.
  *
  * Caveat this cannot fix: payments made before the loan was added to the app
  * are not transactions, so `yearInterest` covers the tracked part of the year
@@ -500,8 +425,8 @@ export async function getLoanInterest(): Promise<LoanInterest> {
  * Every payment into these loans, oldest first, ordered the way `loan_status`
  * orders them so the interest split lands on the same balances that view does.
  *
- * Paged rather than fetched in one request, and for a stronger reason than the
- * transfer-costs total: that one merely under-reports when PostgREST silently
+ * Paged rather than fetched in one request, and for a stronger reason than a
+ * plain total would have: a total merely under-reports when PostgREST silently
  * truncates at `max_rows`. Here a missing early payment shifts the balance
  * every later payment is charged on, so a truncated fetch would report wrong
  * interest for the payments it *did* read.
@@ -529,277 +454,4 @@ async function fetchAllLoanPayments(
     offset += PAGE_SIZE;
   }
   return rows;
-}
-
-export type CashbackLine = {
-  accountId: string;
-  name: string;
-  currency: string;
-  total: number;
-};
-export type CashbackByCard = {
-  year: number;
-  lines: CashbackLine[];
-};
-
-/**
- * Cashback earned per credit line, this calendar year.
- *
- * Summed over statements rather than accumulated onto the account, which is
- * what makes a re-uploaded statement harmless: `card_statements` is unique on
- * (account_id, period_end) and the import replaces the row it already has, so
- * the same PDF twice overwrites instead of adding. See lib/accounts/cashback.ts.
- *
- * Totals stay in each card's OWN currency and are never converted. Cashback is
- * money the issuer credited to that specific line — a DOP line's rebate is paid
- * in pesos and a USD line's in dollars — so adding them through today's FX rate
- * would invent a figure no statement ever printed. The card renders one row per
- * line, each labelled with its own currency, and prints no grand total.
- *
- * Cards whose statements never reported a figure are omitted entirely: every
- * statement imported before the column existed carries null, and a row reading
- * "RD$0.00" would state a zero the data cannot vouch for.
- */
-export async function getCashbackByCard(): Promise<CashbackByCard> {
-  const supabase = await createClient();
-  const year = new Date().getFullYear();
-
-  const [{ data: statements }, { data: accounts }, { data: groups }] = await Promise.all([
-    supabase
-      .from("card_statements")
-      .select("account_id,cashback_total")
-      .gte("period_end", `${year}-01-01`)
-      .lte("period_end", `${year}-12-31`)
-      .not("cashback_total", "is", null),
-    supabase
-      .from("accounts")
-      .select("id,name,currency,card_group_id")
-      .eq("type", "credit_card"),
-    supabase.from("card_groups").select("id,name"),
-  ]);
-
-  const groupName = new Map((groups ?? []).map((g) => [g.id, g.name]));
-  const totals = new Map<string, number>();
-  for (const s of statements ?? []) {
-    if (!s.account_id) continue;
-    totals.set(s.account_id, (totals.get(s.account_id) ?? 0) + Number(s.cashback_total ?? 0));
-  }
-
-  const lines: CashbackLine[] = (accounts ?? [])
-    .filter((a) => totals.has(a.id))
-    .map((a) => ({
-      accountId: a.id,
-      // Same label shape the cost-of-carry card uses, so a card group's two
-      // currency lines are told apart the same way on both.
-      name: cardLabel(a.card_group_id ? groupName.get(a.card_group_id) : undefined, a.name),
-      currency: a.currency,
-      total: totals.get(a.id) ?? 0,
-    }))
-    .sort((x, y) => y.total - x.total);
-
-  return { year, lines };
-}
-
-/** Groups cashback lines by currency and sums each group's total — the pure
- *  arithmetic behind the per-currency total rows the insights page renders
- *  under the Cashback card's line list. */
-export function sumCashbackByCurrency(lines: { currency: string; total: number }[]): [string, number][] {
-  return Object.entries(
-    lines.reduce<Record<string, number>>((acc, l) => {
-      acc[l.currency] = (acc[l.currency] ?? 0) + l.total;
-      return acc;
-    }, {}),
-  );
-}
-
-export function sumTransferCosts(
-  rows: { fee_amount: number | null; tax_amount: number | null; exchange_rate: number | null }[],
-): { totalFeesBase: number; totalTaxBase: number } {
-  let totalFeesBase = 0;
-  let totalTaxBase = 0;
-  for (const r of rows) {
-    const rate = Number(r.exchange_rate ?? 1);
-    totalFeesBase += Number(r.fee_amount ?? 0) * rate;
-    totalTaxBase += Number(r.tax_amount ?? 0) * rate;
-  }
-  return {
-    totalFeesBase: Math.round(totalFeesBase * 100) / 100,
-    totalTaxBase: Math.round(totalTaxBase * 100) / 100,
-  };
-}
-
-export type TransferCosts = {
-  year: number;
-  baseCurrency: string;
-  totalFeesBase: number;
-  totalTaxBase: number;
-};
-
-/**
- * Fees and tax paid to move money between your own accounts this calendar
- * year — the `payment`-type transactions' `fee_amount`/`tax_amount`
- * (see transactions_compute_amounts() in
- * supabase/migrations/20260717234227_transactions.sql). Converted to base
- * currency using each transaction's own stored exchange_rate, not today's
- * live rate — the same rate base_amount was derived from, so this doesn't
- * restate history through a rate that didn't apply at the time.
- *
- * fee_amount/tax_amount are populated for `payment`-type transactions — see
- * transactions_compute_amounts() — though other transaction types can carry
- * a fee_amount too when include_commission is set; this card counts only
- * transfers between your own accounts, so the type filter is deliberate,
- * not redundant.
- */
-export async function getTransferCosts(): Promise<TransferCosts> {
-  const supabase = await createClient();
-  const year = new Date().getFullYear();
-
-  const [{ data: profile }, rows] = await Promise.all([
-    supabase.from("profiles").select("base_currency").maybeSingle(),
-    fetchAllTransferRows(supabase, year),
-  ]);
-
-  const baseCurrency = baseCurrencyOf(profile);
-  const { totalFeesBase, totalTaxBase } = sumTransferCosts(rows);
-
-  return { year, baseCurrency, totalFeesBase, totalTaxBase };
-}
-
-/**
- * PostgREST caps any single request at `max_rows` (1000, see
- * supabase/config.toml) — silently, with no error, just a truncated result.
- * A year with more than 1000 qualifying payments would otherwise under-report
- * the fees/tax total without any signal that it happened, so this pages
- * through with `.range()` until a page comes back short of PAGE_SIZE.
- */
-async function fetchAllTransferRows(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  year: number,
-): Promise<Parameters<typeof sumTransferCosts>[0]> {
-  const PAGE_SIZE = 1000;
-  const rows: Parameters<typeof sumTransferCosts>[0] = [];
-  let offset = 0;
-  for (;;) {
-    const { data } = await supabase
-      .from("transactions")
-      .select("fee_amount,tax_amount,exchange_rate")
-      .eq("type", "payment")
-      .gte("occurred_at", `${year}-01-01`)
-      .lt("occurred_at", `${year + 1}-01-01`)
-      .range(offset, offset + PAGE_SIZE - 1);
-    const page = data ?? [];
-    rows.push(...page);
-    if (page.length < PAGE_SIZE) break;
-    offset += PAGE_SIZE;
-  }
-  return rows;
-}
-
-export type CardFeeLine = {
-  accountId: string;
-  name: string;
-  currency: string;
-  recurring: number; // native (card currency)
-  incidents: number; // native
-};
-
-export type CardFees = {
-  year: number;
-  baseCurrency: string;
-  lines: CardFeeLine[];
-  recurringBase: number;
-  incidentsBase: number;
-};
-
-/** The grouping and omission rules, split out from the fetch so they can be
- *  tested without a database. Cards with no counted rows are dropped entirely
- *  rather than rendered at zero — see CardFeeTotals.counted. */
-export function buildCardFeeLines(
-  rowsByAccount: Map<string, FeeLineRow[]>,
-  accounts: { id: string; name: string; currency: string; card_group_id: string | null }[],
-  groupName: Map<string, string>,
-  year: number,
-): CardFeeLine[] {
-  const lines: CardFeeLine[] = [];
-  for (const a of accounts) {
-    const totals = summarizeCardFees(rowsByAccount.get(a.id) ?? [], year);
-    if (totals.counted === 0) continue;
-    lines.push({
-      accountId: a.id,
-      // Same label shape as the cost-of-carry and cashback cards, so a card
-      // group's two currency lines are told apart the same way on all three.
-      name: cardLabel(a.card_group_id ? groupName.get(a.card_group_id) : undefined, a.name),
-      currency: a.currency,
-      recurring: totals.recurring,
-      incidents: totals.incidents,
-    });
-  }
-  return lines.sort((x, y) => y.recurring - x.recurring);
-}
-
-/**
- * What every card charged you to hold it this calendar year.
- *
- * `kind` is queried as ('fee','credit') rather than 'fee' alone, and the credits
- * are there for ONE reason: issuers post a fee reversal as a credit, not as a
- * negative fee. Almost every credit row is cashback or a merchant refund and is
- * discarded by the guard in reversalTarget. The subtotals are still built from
- * fee rows; the credits only ever subtract.
- *
- * Totals convert to base currency, unlike the cashback card which deliberately
- * prints none. The difference is justified: a rebate is credited in the line's
- * own currency and summing those through today's rate would invent a figure no
- * statement printed, whereas "what do my cards cost me a year" is a question
- * whose answer is a single number. Cost of carry and loan interest convert for
- * the same reason.
- */
-export async function getCardFees(): Promise<CardFees> {
-  const supabase = await createClient();
-  const year = new Date().getFullYear();
-
-  const [{ data: profile }, { data: rows }, { data: accounts }, { data: groups }] =
-    await Promise.all([
-      supabase.from("profiles").select("base_currency").maybeSingle(),
-      supabase
-        .from("card_statement_lines")
-        .select("account_id,description,amount,kind,posted_on")
-        .in("kind", ["fee", "credit"])
-        .gte("posted_on", `${year}-01-01`)
-        .lte("posted_on", `${year}-12-31`),
-      supabase.from("accounts").select("id,name,currency,card_group_id").eq("type", "credit_card"),
-      supabase.from("card_groups").select("id,name"),
-    ]);
-
-  const baseCurrency = baseCurrencyOf(profile);
-  const rates = await getExchangeRates(baseCurrency);
-  const groupName = new Map((groups ?? []).map((g) => [g.id, g.name]));
-
-  const rowsByAccount = new Map<string, FeeLineRow[]>();
-  for (const r of rows ?? []) {
-    if (!r.account_id) continue;
-    const list = rowsByAccount.get(r.account_id) ?? [];
-    list.push({
-      description: r.description ?? "",
-      amount: Number(r.amount ?? 0),
-      kind: r.kind as "fee" | "credit",
-      posted_on: r.posted_on ?? "",
-    });
-    rowsByAccount.set(r.account_id, list);
-  }
-
-  const lines = buildCardFeeLines(rowsByAccount, accounts ?? [], groupName, year);
-
-  return {
-    year,
-    baseCurrency,
-    lines,
-    recurringBase: lines.reduce(
-      (s, l) => s + convertToBase(l.recurring, l.currency, baseCurrency, rates),
-      0,
-    ),
-    incidentsBase: lines.reduce(
-      (s, l) => s + convertToBase(l.incidents, l.currency, baseCurrency, rates),
-      0,
-    ),
-  };
 }

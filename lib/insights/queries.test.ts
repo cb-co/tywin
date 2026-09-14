@@ -1,59 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCardFeeLines, buildLoanInterest, sumCashbackByCurrency, sumTransferCosts } from "./queries";
-import type { FeeLineRow } from "@/lib/accounts/card-fees";
-
-describe("sumCashbackByCurrency", () => {
-  it("groups multiple currencies and sums each one separately", () => {
-    const result = sumCashbackByCurrency([
-      { currency: "USD", total: 10 },
-      { currency: "DOP", total: 500 },
-      { currency: "USD", total: 5 },
-    ]);
-    expect(result).toEqual([
-      ["USD", 15],
-      ["DOP", 500],
-    ]);
-  });
-
-  it("returns a single entry when every line shares one currency", () => {
-    const result = sumCashbackByCurrency([
-      { currency: "USD", total: 10 },
-      { currency: "USD", total: 20 },
-    ]);
-    expect(result).toEqual([["USD", 30]]);
-  });
-
-  it("returns an empty array for no lines", () => {
-    expect(sumCashbackByCurrency([])).toEqual([]);
-  });
-});
-
-describe("sumTransferCosts", () => {
-  it("sums fee and tax separately, each weighted by its own row's exchange rate", () => {
-    const result = sumTransferCosts([
-      { fee_amount: 5, tax_amount: 2, exchange_rate: 1 },
-      { fee_amount: 10, tax_amount: 4, exchange_rate: 60 },
-    ]);
-    // 5*1 + 10*60 = 605 ; 2*1 + 4*60 = 242
-    expect(result.totalFeesBase).toBe(605);
-    expect(result.totalTaxBase).toBe(242);
-  });
-
-  it("treats a null fee, tax, or rate as zero fee/tax and a 1:1 rate", () => {
-    const result = sumTransferCosts([{ fee_amount: null, tax_amount: null, exchange_rate: null }]);
-    expect(result).toEqual({ totalFeesBase: 0, totalTaxBase: 0 });
-  });
-
-  it("returns zero for no rows", () => {
-    expect(sumTransferCosts([])).toEqual({ totalFeesBase: 0, totalTaxBase: 0 });
-  });
-
-  it("rounds each total to two decimal places", () => {
-    const result = sumTransferCosts([{ fee_amount: 1, tax_amount: 1, exchange_rate: 1 / 3 }]);
-    expect(result.totalFeesBase).toBe(0.33);
-    expect(result.totalTaxBase).toBe(0.33);
-  });
-});
+import { buildLoanInterest } from "./queries";
 
 describe("buildLoanInterest", () => {
   const loan = (over: Record<string, unknown> = {}) => ({
@@ -151,47 +97,5 @@ describe("buildLoanInterest", () => {
   it("ignores payments made into a different loan", () => {
     const result = build({ payments: [pay("other", 1000, "2026-03-05")] });
     expect(result.lines).toEqual([]);
-  });
-});
-
-describe("buildCardFeeLines", () => {
-  const accounts = [
-    { id: "a1", name: "Visa Infinite", currency: "DOP", card_group_id: null },
-    { id: "a2", name: "USD", currency: "USD", card_group_id: "g1" },
-    { id: "a3", name: "Clean Card", currency: "DOP", card_group_id: null },
-  ];
-  const groupName = new Map([["g1", "Platinum"]]);
-
-  const rows = new Map<string, FeeLineRow[]>([
-    ["a1", [
-      { description: "CARGO SEGURO FRAUDE", amount: 350, kind: "fee", posted_on: "2026-06-26" },
-      { description: "CARGO SOBREGIRO", amount: 500, kind: "fee", posted_on: "2026-06-25" },
-    ]],
-    ["a2", [
-      { description: "ANNUAL FEE", amount: 99, kind: "fee", posted_on: "2026-03-01" },
-    ]],
-  ]);
-
-  it("builds one line per card that was charged something", () => {
-    const lines = buildCardFeeLines(rows, accounts, groupName, 2026);
-    expect(lines).toEqual([
-      { accountId: "a1", name: "Visa Infinite", currency: "DOP", recurring: 350, incidents: 500 },
-      { accountId: "a2", name: "Platinum — USD", currency: "USD", recurring: 99, incidents: 0 },
-    ]);
-  });
-
-  // Silence, not zeros: a3 has no fee rows and must not appear at all.
-  it("omits a card with no fee lines rather than showing it at zero", () => {
-    const lines = buildCardFeeLines(rows, accounts, groupName, 2026);
-    expect(lines.map((l) => l.accountId)).not.toContain("a3");
-  });
-
-  it("sorts by recurring cost, heaviest first", () => {
-    const lines = buildCardFeeLines(rows, accounts, groupName, 2026);
-    expect(lines.map((l) => l.recurring)).toEqual([350, 99]);
-  });
-
-  it("is empty for a year with no charges", () => {
-    expect(buildCardFeeLines(rows, accounts, groupName, 2025)).toEqual([]);
   });
 });

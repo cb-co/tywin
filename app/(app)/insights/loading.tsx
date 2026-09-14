@@ -34,8 +34,7 @@ export default function Loading() {
         <SectionSkeleton nav>
           <div className="skeleton h-72 rounded-xl lg:col-span-2" />
           <div className="skeleton h-72 rounded-xl lg:col-span-2" />
-          <div className="skeleton h-72 rounded-xl" />
-          <div className="skeleton h-72 rounded-xl" />
+          <div className="skeleton h-72 rounded-xl lg:col-span-2" />
         </SectionSkeleton>
         <SectionSkeleton>
           <div className="skeleton h-72 rounded-xl" />
