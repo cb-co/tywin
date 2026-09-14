@@ -8,7 +8,6 @@ export type CardReportProps = {
   currency: string;
   locale: string;
   year: number;
-  monthLabel: string;
   carry: AccountCostOfCarry | null;
   /** null when no statement this year reported a cashback figure. */
   cashback: number | null;
@@ -51,7 +50,6 @@ export function CardReport({
   currency,
   locale,
   year,
-  monthLabel,
   carry,
   cashback,
   fees,
@@ -105,7 +103,7 @@ export function CardReport({
     rows.push(
       <Row
         key="payments"
-        label={t("cardReportPayments", { month: monthLabel })}
+        label={t("cardReportPayments")}
         amount={money(paymentsThisMonth)}
       />,
     );

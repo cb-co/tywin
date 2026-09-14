@@ -359,7 +359,6 @@ export default async function AccountDetailPage({
           currency={currency}
           locale={locale}
           year={feeYear}
-          monthLabel={monthLabel(spendMonth, locale)}
           carry={carry}
           cashback={cashbackReported ? cashbackTotal : null}
           fees={cardFees}

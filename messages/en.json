@@ -219,7 +219,7 @@
     "cardReportOwnershipRefunded": "Fees & insurance refunded in {year}",
     "cardReportIncidents": "Penalty fees in {year}",
     "cardReportIncidentsRefunded": "Penalty fees refunded in {year}",
-    "cardReportPayments": "Paid to this card in {month}",
+    "cardReportPayments": "Paid to this card this month",
     "transferPaidIn": "Paid in {year}",
     "transferPaidFees": "Fees",
     "transferPaidTax": "Tax"

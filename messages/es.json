@@ -219,7 +219,7 @@
     "cardReportOwnershipRefunded": "Cargos y seguros reembolsados en {year}",
     "cardReportIncidents": "Cargos por penalidad en {year}",
     "cardReportIncidentsRefunded": "Penalidades reembolsadas en {year}",
-    "cardReportPayments": "Pagado a esta tarjeta en {month}",
+    "cardReportPayments": "Pagado a esta tarjeta este mes",
     "transferPaidIn": "Pagado en {year}",
     "transferPaidFees": "Comisiones",
     "transferPaidTax": "Impuestos"

@@ -82,7 +82,7 @@ Open Card A's page.
 | **Cashback in 2026** | Shown only if some 2026 statement reported cashback. Matches the sum of the statements' cashback |
 | **Fees & insurance in 2026** | Shown only if non-zero. If the only fee is a reversal of a prior year's charge, the label reads "…refunded…" and the amount has **no minus sign** |
 | **Penalty fees in 2026** | Same rules as above |
-| **Paid to this card in <Month Year>** | Shown only if a payment into this card was logged this calendar month. The amount is in the card's currency, even when paid from a different-currency account |
+| **Paid to this card this month** / **Pagado a esta tarjeta este mes** | Shown only if a payment into this card was logged this calendar month. The amount is in the card's currency, even when paid from a different-currency account |
 | Year prints as `2026` | Not `2,026` |
 | **Welcome bonus** (only if the card, or its group, has an unexpired bonus goal) | Progress bar and "X of Y spent, due <date>" at the bottom of the Boleta, separated by a rule |
 
