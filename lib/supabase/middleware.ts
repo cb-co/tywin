@@ -124,6 +124,10 @@ export async function updateSession(request: NextRequest) {
        the chat client would report a parse failure instead of a signed-out
        session. Route handlers get a status they can act on. */
     if (request.nextUrl.pathname.startsWith("/api/")) {
+      // Not a security boundary for /api routes: any request carrying a Bearer
+      // header skips this whole check via the early return above. Every route
+      // handler under app/api must verify the caller itself (`apiUser()` or
+      // `auth.getUser()`) rather than relying on having reached this point.
       return new NextResponse("Unauthorized", { status: 401 });
     }
     const url = request.nextUrl.clone();

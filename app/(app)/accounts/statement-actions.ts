@@ -203,12 +203,6 @@ async function extractAndParse(formData: FormData) {
   const { supabase, user } = await requireUser();
   if (!user) return { error: (await getTranslations("Common"))("notSignedIn") } as const;
 
-  // Before the file is even read: a refused request should cost nothing and
-  // leave no failed-import row. The copy already says "try again in a minute".
-  if (!takeStatementParseToken(user.id, Date.now())) {
-    return { error: t("llmRateLimited") } as const;
-  }
-
   const file = formData.get("file");
   const password = String(formData.get("password") ?? "") || undefined;
   if (!(file instanceof File)) return { error: t("invalidUpload") } as const;
@@ -225,6 +219,15 @@ async function extractAndParse(formData: FormData) {
     if (extracted.reason === "unreadable") return { error: t("unreadablePdf") } as const;
     if (extracted.reason === "bad_password") return { needsPassword: true, passwordIncorrect: true } as const;
     return { needsPassword: true } as const;
+  }
+
+  // Taken only now that the PDF has opened, right before the model call: a
+  // password prompt or a wrong password doesn't spend it, so the upload
+  // dialog's re-tries for a protected statement don't lock the person out of
+  // their own import. A refused request here still costs nothing and leaves
+  // no failed-import row.
+  if (!takeStatementParseToken(user.id, Date.now())) {
+    return { error: t("llmRateLimited") } as const;
   }
 
   await dumpForDebug("extracted-statement.txt", extracted.text);

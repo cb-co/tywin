@@ -268,13 +268,25 @@ describe("parseStatement", () => {
     expect(result.error).toBe("unreadablePdf");
   });
 
-  it("refuses extraction once the person's parse budget is spent, before reading the PDF", async () => {
+  it("refuses the model call once the person's parse budget is spent", async () => {
+    (extractStatementText as unknown as Mock).mockResolvedValue({ ok: true, text: "x" });
     for (let i = 0; i < STATEMENT_PARSE_MAX_PER_WINDOW; i++) {
       takeStatementParseToken("user-1", Date.now());
     }
     const result = await parseStatement(buildUploadFormData(1024));
     expect(result.error).toBe("llmRateLimited");
-    expect(extractStatementText).not.toHaveBeenCalled();
+    expect(extractWithLLM).not.toHaveBeenCalled();
+  });
+
+  it("does not spend the parse budget on a password prompt", async () => {
+    (extractStatementText as unknown as Mock).mockResolvedValue({
+      ok: false,
+      reason: "password_required",
+    });
+    for (let i = 0; i < STATEMENT_PARSE_MAX_PER_WINDOW + 1; i++) {
+      await parseStatement(buildUploadFormData(1024));
+    }
+    expect(takeStatementParseToken("user-1", Date.now())).toBe(true);
   });
 });
 

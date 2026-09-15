@@ -19,6 +19,9 @@ supabase-js Auth instead.
   other endpoint below does return `{"error":"unauthorized"}` on 401.
 - Everything not listed under the Server lane in the map below goes straight to Supabase with the same
   session (RLS applies).
+- Send the same locale the person chose in the app's settings (the web app stores it in a cookie). Today's
+  take is regenerated whenever the requested locale differs from the stored one, so a phone and a browser
+  disagreeing on the language would regenerate it back and forth, one LLM call per switch.
 
 ## Endpoints
 
