@@ -1,4 +1,6 @@
-export const BILLING_CYCLE_VALUES = ["weekly", "biweekly", "monthly", "yearly", "custom"] as const;
+import { nextPayday } from "@/lib/period/cycle";
+
+export const BILLING_CYCLE_VALUES = ["weekly", "biweekly", "semimonthly", "monthly", "yearly", "custom"] as const;
 export type BillingCycle = (typeof BILLING_CYCLE_VALUES)[number];
 
 export const BILLING_CYCLES: BillingCycle[] = [...BILLING_CYCLE_VALUES];
@@ -6,6 +8,7 @@ export const BILLING_CYCLES: BillingCycle[] = [...BILLING_CYCLE_VALUES];
 export const CYCLE_LABEL: Record<BillingCycle, string> = {
   weekly: "Weekly",
   biweekly: "Biweekly",
+  semimonthly: "Semimonthly",
   monthly: "Monthly",
   yearly: "Yearly",
   custom: "Custom",
@@ -29,6 +32,14 @@ export type ChargeSchedule = {
 /** Whether this cycle is anchored by a start date rather than a day number. */
 export const usesAnchorDate = (cycle: BillingCycle) => cycle === "biweekly";
 
+/** Whether this cycle has an anchor field at all. Semimonthly needs neither a
+ *  day number nor a start date — its two periods are fixed at the 15th and
+ *  the end of the month, the same way profiles.pay_cycle's semimonthly needs
+ *  no anchor. */
+export function hasAnchorField(cycle: BillingCycle): boolean {
+  return cycle !== "semimonthly";
+}
+
 const BIWEEKLY_DAYS = 14;
 
 /** A `YYYY-MM-DD` as a LOCAL calendar date — `new Date("2026-09-01")` is UTC midnight. */
@@ -43,6 +54,14 @@ export function nextChargeDate(
   { cycle, anchorDay = null, anchorDate = null }: ChargeSchedule,
   from = new Date(),
 ): Date | null {
+  if (cycle === "semimonthly") {
+    // No anchor: the next payday is always "the day after the period
+    // containing `from` ends" — the 16th, or the 1st of next month. Reuses
+    // profiles.pay_cycle's own period math rather than re-deriving it.
+    const today = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, "0")}-${String(from.getDate()).padStart(2, "0")}`;
+    return parseLocalDate(nextPayday(today, "semimonthly", null));
+  }
+
   if (usesAnchorDate(cycle)) {
     const start = anchorDate ? parseLocalDate(anchorDate) : null;
     if (!start) return null;
@@ -86,6 +105,8 @@ export function monthlyEquivalent(amount: number, cycle: BillingCycle): number {
       return (amount * 52) / 12;
     case "biweekly":
       return (amount * 26) / 12;
+    case "semimonthly":
+      return amount * 2;
     case "yearly":
       return amount / 12;
     default:

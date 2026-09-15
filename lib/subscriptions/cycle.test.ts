@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { monthlyEquivalent, nextChargeDate } from "./cycle";
+import { hasAnchorField, monthlyEquivalent, nextChargeDate } from "./cycle";
 
 // Local dates throughout: the cycle helpers work on the viewer's calendar.
 const ymd = (d: Date | null) =>
@@ -43,6 +43,23 @@ describe("nextChargeDate", () => {
   test("an unparseable start date gives no date", () => {
     expect(nextChargeDate({ cycle: "biweekly", anchorDate: "soon" }, from)).toBeNull();
   });
+
+  test("semimonthly lands on the 16th when today is on or before the 15th", () => {
+    expect(ymd(nextChargeDate({ cycle: "semimonthly" }, new Date(2026, 8, 14, 10)))).toBe("2026-09-16");
+    expect(ymd(nextChargeDate({ cycle: "semimonthly" }, new Date(2026, 8, 1, 10)))).toBe("2026-09-16");
+    expect(ymd(nextChargeDate({ cycle: "semimonthly" }, new Date(2026, 8, 15, 10)))).toBe("2026-09-16");
+  });
+
+  test("semimonthly lands on the 1st of next month after the 15th", () => {
+    expect(ymd(nextChargeDate({ cycle: "semimonthly" }, new Date(2026, 8, 16, 10)))).toBe("2026-10-01");
+    expect(ymd(nextChargeDate({ cycle: "semimonthly" }, new Date(2026, 8, 30, 10)))).toBe("2026-10-01");
+  });
+
+  test("semimonthly needs no anchor at all", () => {
+    expect(
+      ymd(nextChargeDate({ cycle: "semimonthly", anchorDay: 99, anchorDate: "bogus" }, new Date(2026, 8, 14))),
+    ).toBe("2026-09-16");
+  });
 });
 
 describe("monthlyEquivalent", () => {
@@ -54,5 +71,20 @@ describe("monthlyEquivalent", () => {
     expect(monthlyEquivalent(12, "weekly")).toBeCloseTo(52);
     expect(monthlyEquivalent(120, "yearly")).toBeCloseTo(10);
     expect(monthlyEquivalent(10, "monthly")).toBe(10);
+  });
+
+  test("semimonthly is twice a month", () => {
+    expect(monthlyEquivalent(1000, "semimonthly")).toBe(2000);
+  });
+});
+
+describe("hasAnchorField", () => {
+  test("every cycle but semimonthly has an anchor field", () => {
+    expect(hasAnchorField("weekly")).toBe(true);
+    expect(hasAnchorField("biweekly")).toBe(true);
+    expect(hasAnchorField("monthly")).toBe(true);
+    expect(hasAnchorField("yearly")).toBe(true);
+    expect(hasAnchorField("custom")).toBe(true);
+    expect(hasAnchorField("semimonthly")).toBe(false);
   });
 });
