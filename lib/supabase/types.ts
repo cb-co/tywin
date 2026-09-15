@@ -1843,7 +1843,13 @@ export type Database = {
         | "asset"
         | "credit_card"
         | "loan"
-      billing_cycle: "weekly" | "biweekly" | "monthly" | "yearly" | "custom"
+      billing_cycle:
+        | "weekly"
+        | "biweekly"
+        | "semimonthly"
+        | "monthly"
+        | "yearly"
+        | "custom"
       budget_status: "within" | "approaching" | "over"
       pay_cycle: "monthly" | "semimonthly" | "weekly"
       statement_line_kind:
@@ -1993,7 +1999,14 @@ export const Constants = {
         "credit_card",
         "loan",
       ],
-      billing_cycle: ["weekly", "biweekly", "monthly", "yearly", "custom"],
+      billing_cycle: [
+        "weekly",
+        "biweekly",
+        "semimonthly",
+        "monthly",
+        "yearly",
+        "custom",
+      ],
       budget_status: ["within", "approaching", "over"],
       pay_cycle: ["monthly", "semimonthly", "weekly"],
       statement_line_kind: [
