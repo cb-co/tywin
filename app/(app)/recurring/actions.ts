@@ -6,8 +6,10 @@ import { createClient } from "@/lib/supabase/server";
 import { subscriptionInput, type SubscriptionInput } from "@/lib/subscriptions/schema";
 import { getExchangeRates } from "@/lib/fx";
 import { settledCharge } from "@/lib/subscriptions/charge";
-import { usesAnchorDate } from "@/lib/subscriptions/cycle";
-import { recordedFlags } from "@/lib/subscriptions/template";
+import { hasAnchorField, usesAnchorDate } from "@/lib/subscriptions/cycle";
+import { recordedFlags, type RecurringKind } from "@/lib/subscriptions/template";
+import { mapIncomeCycleToPayCycle } from "@/lib/subscriptions/pay-cycle-sync";
+import { setPayCycle } from "@/app/(app)/settings/actions";
 import { resolveBaseRate } from "@/lib/transactions/money";
 import { hasBrandColor } from "@/lib/subscriptions/brand-color";
 import { inferBrand } from "@/lib/subscriptions/llm/brand";
@@ -32,23 +34,56 @@ function revalidate() {
 function toRow(v: SubscriptionInput) {
   const payment = v.kind === "payment";
   const dated = usesAnchorDate(v.billing_cycle);
+  const anchored = hasAnchorField(v.billing_cycle);
   return {
     kind: v.kind,
     name: v.name,
     amount: v.amount,
     billing_cycle: v.billing_cycle,
-    // One anchor per cycle, never both: a biweekly row keeping an old day
-    // number would read as a second, contradictory schedule.
-    anchor_day: dated ? null : v.anchor_day ?? null,
+    // One anchor per cycle, never both, and none at all for a cycle with no
+    // anchor field (semimonthly): a stale day number left over from a
+    // previous monthly template would read as a second, contradictory
+    // schedule.
+    anchor_day: dated || !anchored ? null : v.anchor_day ?? null,
     anchor_date: dated ? v.anchor_date || null : null,
     account_id: v.account_id || null,
     to_account_id: payment ? v.to_account_id || null : null,
-    // A payment moves money to an account; it is not spending in a category.
-    category_id: payment ? null : v.category_id || null,
+    // A payment moves money to an account, and income arrives in one; neither
+    // is spending in a category. Only an expense is.
+    category_id: v.kind === "expense" ? v.category_id || null : null,
     include_tax: v.include_tax,
     include_commission: v.include_commission,
     is_active: v.is_active,
   };
+}
+
+/**
+ * Mirrors an ACTIVE income template's cycle onto profiles.pay_cycle — but
+ * only when it is the user's SOLE active income template, so a second income
+ * source never silently overrides the first's schedule. Deactivating or
+ * deleting an income template never reverts a previous sync; this function
+ * is only ever called from a successful create/update.
+ *
+ * Best-effort: reuses the existing setPayCycle action (Settings), and any
+ * failure here is swallowed — a save the person already made must never fail
+ * because a courtesy sync could not complete.
+ */
+async function syncPayCycleFromIncome(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  data: Pick<SubscriptionInput, "kind" | "is_active" | "billing_cycle" | "anchor_day">,
+): Promise<void> {
+  if (data.kind !== "income" || !data.is_active) return;
+  const mapping = mapIncomeCycleToPayCycle(data.billing_cycle, data.anchor_day ?? null);
+  if (!mapping) return;
+
+  const { count } = await supabase
+    .from("subscriptions")
+    .select("id", { count: "exact", head: true })
+    .eq("kind", "income")
+    .eq("is_active", true);
+  if (count !== 1) return;
+
+  await setPayCycle({ cycle: mapping.payCycle, anchorDay: mapping.anchorDay });
 }
 
 export async function createSubscription(input: unknown): Promise<Result> {
@@ -63,6 +98,7 @@ export async function createSubscription(input: unknown): Promise<Result> {
     .select("id")
     .single();
   if (error) return { error: await dbError(error, "createSubscription") };
+  await syncPayCycleFromIncome(supabase, parsed.data);
   revalidate();
   return { id: data.id };
 }
@@ -101,6 +137,7 @@ export async function updateSubscription(id: string, input: unknown): Promise<Re
     })
     .eq("id", id);
   if (error) return { error: await dbError(error, "updateSubscription") };
+  await syncPayCycleFromIncome(supabase, parsed.data);
   revalidate();
   return { id };
 }
@@ -236,7 +273,8 @@ export async function addCharge(
   const accountCurrency = sub.account?.currency;
   if (!sub.account_id || !accountCurrency) return { error: ts("needsAccount") };
 
-  const payment = sub.kind === "payment";
+  const kind = sub.kind as RecurringKind;
+  const payment = kind === "payment";
   const dstCurrency = payment ? sub.to_account?.currency : null;
   // The destination can be deleted out from under a template (on delete set null).
   if (payment && (!sub.to_account_id || !dstCurrency)) return { error: ts("needsToAccount") };
@@ -268,10 +306,12 @@ export async function addCharge(
 
   const { error } = await supabase.from("transactions").insert({
     user_id: user.id,
-    type: payment ? "payment" : "expense",
+    type: kind,
     account_id: sub.account_id,
     to_account_id: payment ? sub.to_account_id : null,
-    category_id: payment ? null : sub.category_id,
+    // Only an expense spends into a category — a payment moves money and
+    // income arrives, neither of which counts against one.
+    category_id: kind === "expense" ? sub.category_id : null,
     amount: settled.amount,
     // Null on a same-currency payment — the DB mirrors `amount`.
     to_amount: crossLeg ? toAmount! : null,
@@ -285,7 +325,7 @@ export async function addCharge(
       rates,
     }),
     ...recordedFlags({
-      kind: payment ? "payment" : "expense",
+      kind,
       srcType: sub.account?.type,
       include_tax: sub.include_tax,
       include_commission: sub.include_commission,
