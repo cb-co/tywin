@@ -4,15 +4,20 @@ import { estimateDestinationAmount, recordedFlags, templateAllowsFees } from "./
 const flags = { include_tax: true, include_commission: true };
 
 describe("templateAllowsFees", () => {
-  test("checking and savings carry fees", () => {
-    expect(templateAllowsFees("checking")).toBe(true);
-    expect(templateAllowsFees("savings")).toBe(true);
+  test("checking and savings carry fees on an expense or payment", () => {
+    expect(templateAllowsFees("expense", "checking")).toBe(true);
+    expect(templateAllowsFees("payment", "savings")).toBe(true);
   });
 
   test("a card, cash, or no account does not", () => {
-    expect(templateAllowsFees("credit_card")).toBe(false);
-    expect(templateAllowsFees("cash")).toBe(false);
-    expect(templateAllowsFees(null)).toBe(false);
+    expect(templateAllowsFees("expense", "credit_card")).toBe(false);
+    expect(templateAllowsFees("expense", "cash")).toBe(false);
+    expect(templateAllowsFees("expense", null)).toBe(false);
+  });
+
+  test("income never carries fees, even from a bank account", () => {
+    expect(templateAllowsFees("income", "checking")).toBe(false);
+    expect(templateAllowsFees("income", "savings")).toBe(false);
   });
 });
 
@@ -50,6 +55,14 @@ describe("recordedFlags", () => {
 
   test("a payment from a card carries no fees", () => {
     expect(recordedFlags({ kind: "payment", srcType: "credit_card", ...flags })).toEqual({
+      include_tax: false,
+      include_commission: false,
+      exclude_from_budget: false,
+    });
+  });
+
+  test("income carries no fees and never sets the budget flag", () => {
+    expect(recordedFlags({ kind: "income", srcType: "checking", ...flags })).toEqual({
       include_tax: false,
       include_commission: false,
       exclude_from_budget: false,

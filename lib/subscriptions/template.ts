@@ -7,7 +7,7 @@
 import { crossRate } from "@/lib/fx";
 import { isBankAccount, type AccountType } from "@/lib/accounts/meta";
 
-export const RECURRING_KINDS = ["expense", "payment"] as const;
+export const RECURRING_KINDS = ["expense", "payment", "income"] as const;
 export type RecurringKind = (typeof RECURRING_KINDS)[number];
 
 /**
@@ -16,12 +16,17 @@ export type RecurringKind = (typeof RECURRING_KINDS)[number];
  *
  * Those are bank debit charges, so they follow the SOURCE, the same rule
  * quick-add's resolveFeeDefaults applies: a card swipe or a cash payment is
- * never taxed. The form hides the toggles for anything else, and
- * {@link recordedFlags} drops them even if a stale template still has them set
- * — say, one whose account was switched from checking to a card.
+ * never taxed. Income is a flat no regardless of account — the same rule
+ * manual income transactions already follow (lib/transactions/defaults.ts).
+ * The form hides the toggles for anything else, and {@link recordedFlags}
+ * drops them even if a stale template still has them set — say, one whose
+ * account was switched from checking to a card.
  */
-export function templateAllowsFees(srcType: string | null | undefined): boolean {
-  return !!srcType && isBankAccount(srcType as AccountType);
+export function templateAllowsFees(
+  kind: RecurringKind,
+  srcType: string | null | undefined,
+): boolean {
+  return kind !== "income" && !!srcType && isBankAccount(srcType as AccountType);
 }
 
 /** The fee and budget flags the recorded transaction is written with. */
@@ -36,7 +41,7 @@ export function recordedFlags({
   include_tax: boolean;
   include_commission: boolean;
 }): { include_tax: boolean; include_commission: boolean; exclude_from_budget: boolean } {
-  const fees = templateAllowsFees(srcType);
+  const fees = templateAllowsFees(kind, srcType);
   return {
     include_tax: fees && include_tax,
     include_commission: fees && include_commission,

@@ -169,7 +169,7 @@ export function SubscriptionFormDialog({
   const payment = kind === "payment";
   // Bank debits only; a card or cash template records fee-free (see
   // lib/subscriptions/template), so the toggles would only mislead there.
-  const showFees = templateAllowsFees(byId(accountId)?.type);
+  const showFees = templateAllowsFees(kind, byId(accountId)?.type);
 
   /* Where the fee toggles start, re-derived whenever what decides them changes —
      the same rule quick-add follows. Only on a person's own change, never on
