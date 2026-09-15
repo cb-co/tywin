@@ -122,16 +122,26 @@ export function RecordChargeDialog({
                   account: subscription.account?.name ?? "",
                   to: subscription.to_account?.name ?? "",
                 })
-              : t("billedLine", {
-                  amount: formatMoney(subscription.amount, subscription.currency),
-                  account: subscription.account?.name ?? "",
-                  currency: accountCurrency,
-                })}
+              : subscription.kind === "income"
+                ? t("incomeLine", {
+                    amount: formatMoney(subscription.amount, subscription.currency),
+                    account: subscription.account?.name ?? "",
+                    currency: accountCurrency,
+                  })
+                : t("billedLine", {
+                    amount: formatMoney(subscription.amount, subscription.currency),
+                    account: subscription.account?.name ?? "",
+                    currency: accountCurrency,
+                  })}
           </p>
 
           {asksSettled ? (
             <div className="space-y-2">
-              <Label htmlFor="settled_amount">{t("chargedLabel")}</Label>
+              <Label htmlFor="settled_amount">
+                {subscription.kind === "income"
+                  ? t("receivedLabel", { account: subscription.account?.name ?? "" })
+                  : t("chargedLabel")}
+              </Label>
               <CurrencyInput
                 id="settled_amount"
                 currency={accountCurrency}

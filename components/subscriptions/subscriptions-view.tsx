@@ -181,7 +181,7 @@ export function SubscriptionsView({
                   <div className="min-w-0">
                     <p className="truncate font-medium text-foreground">{sub.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {sub.kind === "payment" ? `${tType("payment")} · ` : ""}
+                      {sub.kind !== "expense" ? `${tType(sub.kind)} · ` : ""}
                       {CYCLE_LABEL[sub.billing_cycle as BillingCycle]}
                     </p>
                   </div>
