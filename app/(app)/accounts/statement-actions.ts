@@ -12,6 +12,7 @@ import { extractWithLLM, toParsedStatement } from "@/lib/statements/llm/extract"
 import { validateChecksums } from "@/lib/statements/validate";
 import { centsToDecimal } from "@/lib/statements/money";
 import { MAX_STATEMENT_BYTES } from "@/lib/statements/limits";
+import { takeStatementParseToken } from "@/lib/statements/rate-limit";
 import { suggestAccountMappings, type CardAccountOption } from "@/lib/statements/mapping";
 import { cardBackfillFromSection } from "@/lib/statements/backfill";
 import { resolveCategoryId, type CategoryRuleRow } from "@/lib/statements/categorize";
@@ -218,6 +219,15 @@ async function extractAndParse(formData: FormData) {
     if (extracted.reason === "unreadable") return { error: t("unreadablePdf") } as const;
     if (extracted.reason === "bad_password") return { needsPassword: true, passwordIncorrect: true } as const;
     return { needsPassword: true } as const;
+  }
+
+  // Taken only now that the PDF has opened, right before the model call: a
+  // password prompt or a wrong password doesn't spend it, so the upload
+  // dialog's re-tries for a protected statement don't lock the person out of
+  // their own import. A refused request here still costs nothing and leaves
+  // no failed-import row.
+  if (!takeStatementParseToken(user.id, Date.now())) {
+    return { error: t("llmRateLimited") } as const;
   }
 
   await dumpForDebug("extracted-statement.txt", extracted.text);

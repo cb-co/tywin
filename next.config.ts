@@ -52,9 +52,12 @@ const nextConfig: NextConfig = {
   // createRequire above. Untraced, the .md is absent from the deployed function
   // and /api/ask throws ENOENT on the first question — while passing every test
   // locally, where the repo is the filesystem. The file is read rather than
-  // imported on purpose: fixing a wrong answer should be a prose edit.
+  // imported on purpose: fixing a wrong answer should be a prose edit. Each
+  // route entry is traced separately, so /api/v1/ask — its own deployed
+  // function, even though it re-exports /api/ask's handler — needs its own entry.
   outputFileTracingIncludes: {
     "/api/ask": ["./lib/ask/schema-doc.md"],
+    "/api/v1/ask": ["./lib/ask/schema-doc.md"],
   },
 
   experimental: {

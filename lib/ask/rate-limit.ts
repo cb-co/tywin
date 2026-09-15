@@ -1,3 +1,5 @@
+import { createRateLimiter } from "@/lib/rate-limit";
+
 /**
  * A per-process cap on how often one person may ask.
  *
@@ -23,8 +25,7 @@
 export const ASK_MAX_PER_WINDOW = 20;
 export const ASK_WINDOW_MS = 5 * 60_000;
 
-/** userId -> timestamps of accepted requests inside the window. */
-const hits = new Map<string, number[]>();
+const limiter = createRateLimiter({ max: ASK_MAX_PER_WINDOW, windowMs: ASK_WINDOW_MS });
 
 /**
  * Records one request and reports whether it is allowed.
@@ -33,30 +34,10 @@ const hits = new Map<string, number[]>();
  * tested without waiting five minutes for it.
  */
 export function takeAskToken(userId: string, now: number): boolean {
-  const cutoff = now - ASK_WINDOW_MS;
-  const recent = (hits.get(userId) ?? []).filter((t) => t > cutoff);
-
-  if (recent.length >= ASK_MAX_PER_WINDOW) {
-    hits.set(userId, recent);
-    return false;
-  }
-
-  recent.push(now);
-  hits.set(userId, recent);
-
-  /* Nothing else prunes this map, and an instance can outlive many sessions.
-     Cheap enough to sweep whenever it grows past a size no real single instance
-     reaches honestly. */
-  if (hits.size > 5_000) {
-    for (const [key, times] of hits) {
-      if (times.every((t) => t <= cutoff)) hits.delete(key);
-    }
-  }
-
-  return true;
+  return limiter.take(userId, now);
 }
 
 /** Test seam: forget every recorded request. */
 export function resetAskRateLimit(): void {
-  hits.clear();
+  limiter.reset();
 }

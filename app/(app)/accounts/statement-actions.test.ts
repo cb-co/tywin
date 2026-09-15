@@ -30,6 +30,11 @@ import { extractWithLLM } from "@/lib/statements/llm/extract";
 import { createClient } from "@/lib/supabase/server";
 import { confirmStatementImport, listImportTargets, parseStatement } from "./statement-actions";
 import { MAX_STATEMENT_BYTES } from "@/lib/statements/limits";
+import {
+  resetStatementParseRateLimit,
+  STATEMENT_PARSE_MAX_PER_WINDOW,
+  takeStatementParseToken,
+} from "@/lib/statements/rate-limit";
 import { collapseImportTargets } from "@/lib/statements/import-targets";
 import type { ParsedStatement } from "@/lib/statements/types";
 
@@ -237,6 +242,7 @@ describe("confirmStatementImport", () => {
 describe("parseStatement", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetStatementParseRateLimit();
     (createClient as unknown as Mock).mockResolvedValue(makeSupabaseStub());
   });
 
@@ -260,6 +266,27 @@ describe("parseStatement", () => {
     const result = await parseStatement(buildUploadFormData(MAX_STATEMENT_BYTES));
     expect(extractStatementText).toHaveBeenCalled();
     expect(result.error).toBe("unreadablePdf");
+  });
+
+  it("refuses the model call once the person's parse budget is spent", async () => {
+    (extractStatementText as unknown as Mock).mockResolvedValue({ ok: true, text: "x" });
+    for (let i = 0; i < STATEMENT_PARSE_MAX_PER_WINDOW; i++) {
+      takeStatementParseToken("user-1", Date.now());
+    }
+    const result = await parseStatement(buildUploadFormData(1024));
+    expect(result.error).toBe("llmRateLimited");
+    expect(extractWithLLM).not.toHaveBeenCalled();
+  });
+
+  it("does not spend the parse budget on a password prompt", async () => {
+    (extractStatementText as unknown as Mock).mockResolvedValue({
+      ok: false,
+      reason: "password_required",
+    });
+    for (let i = 0; i < STATEMENT_PARSE_MAX_PER_WINDOW + 1; i++) {
+      await parseStatement(buildUploadFormData(1024));
+    }
+    expect(takeStatementParseToken("user-1", Date.now())).toBe(true);
   });
 });
 

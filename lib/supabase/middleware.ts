@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { bearerToken } from "./bearer";
 
 const PUBLIC_PATHS = [
   "/",
@@ -81,6 +82,17 @@ export async function updateSession(request: NextRequest) {
 
   let response = withHeaders();
 
+  /* The native app authenticates with `Authorization: Bearer`, not a cookie. The
+     route handler checks that token itself (lib/supabase/server.ts), so a cookie
+     lookup here could only find nothing and 401 a valid request. API paths only:
+     a page route still needs a cookie session, whatever headers it carries. */
+  if (
+    request.nextUrl.pathname.startsWith("/api/") &&
+    bearerToken(request.headers.get("authorization"))
+  ) {
+    return response;
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
@@ -112,6 +124,10 @@ export async function updateSession(request: NextRequest) {
        the chat client would report a parse failure instead of a signed-out
        session. Route handlers get a status they can act on. */
     if (request.nextUrl.pathname.startsWith("/api/")) {
+      // Not a security boundary for /api routes: any request carrying a Bearer
+      // header skips this whole check via the early return above. Every route
+      // handler under app/api must verify the caller itself (`apiUser()` or
+      // `auth.getUser()`) rather than relying on having reached this point.
       return new NextResponse("Unauthorized", { status: 401 });
     }
     const url = request.nextUrl.clone();
