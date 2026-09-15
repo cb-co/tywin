@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl";
 import {
   BILLING_CYCLES,
   CYCLE_LABEL,
+  hasAnchorField,
   usesAnchorDate,
   type BillingCycle,
 } from "@/lib/subscriptions/cycle";
@@ -167,6 +168,7 @@ export function SubscriptionFormDialog({
   const accountId = useWatch({ control, name: "account_id" });
   const byId = (id: string) => accounts.find((a) => a.id === id) ?? null;
   const payment = kind === "payment";
+  const income = kind === "income";
   // Bank debits only; a card or cash template records fee-free (see
   // lib/subscriptions/template), so the toggles would only mislead there.
   const showFees = templateAllowsFees(kind, byId(accountId)?.type);
@@ -245,7 +247,7 @@ export function SubscriptionFormDialog({
             control={control}
             name="kind"
             render={({ field }) => (
-              <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+              <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
                 {RECURRING_KINDS.map((k) => (
                   <button
                     key={k}
@@ -274,7 +276,9 @@ export function SubscriptionFormDialog({
               <Label htmlFor="name" required>{t("nameLabel")}</Label>
               <Input
                 id="name"
-                placeholder={payment ? t("namePlaceholderPayment") : t("namePlaceholder")}
+                placeholder={
+                  payment ? t("namePlaceholderPayment") : income ? t("namePlaceholderIncome") : t("namePlaceholder")
+                }
                 aria-invalid={!!errors.name}
                 {...register("name")}
                 required
@@ -353,14 +357,16 @@ export function SubscriptionFormDialog({
                 </p>
                 <FieldError message={errors.anchor_date?.message} />
               </div>
-            ) : (
+            ) : hasAnchorField(cycle) ? (
               <div className="space-y-2">
                 <Label htmlFor="anchor_day">{t("chargeDayLabel")}</Label>
                 <Input id="anchor_day" type="number" min="1" max="31" placeholder={t("chargeDayPlaceholder")} {...register("anchor_day")} />
               </div>
-            )}
+            ) : null}
             <div className="space-y-2">
-              <Label required={payment}>{payment ? t("fromAccountLabel") : t("chargeAccountLabel")}</Label>
+              <Label required={payment}>
+                {payment ? t("fromAccountLabel") : income ? t("depositAccountLabel") : t("chargeAccountLabel")}
+              </Label>
               <Controller
                 control={control}
                 name="account_id"
@@ -403,7 +409,7 @@ export function SubscriptionFormDialog({
                 />
                 <FieldError message={errors.to_account_id?.message} />
               </div>
-            ) : (
+            ) : income ? null : (
               <div className="space-y-2">
                 <Label>{t("categoryLabel")}</Label>
                 <Controller
