@@ -40,7 +40,7 @@
   "Activity": {
     "title": "Activity",
     "transactionsDesc": "One-off income and spending",
-    "recurringDesc": "Bills, transfers and payments that repeat"
+    "recurringDesc": "Bills, transfers, payments, and income that repeat"
   },
   "QuickAdd": {
     "title": "Quick add"
@@ -604,14 +604,14 @@
     "budgetGroupOverrideHint": "The expense keeps its category; only where it counts in the plan changes."
   },
   "Subscriptions": {
-    "pageTitle": "Recurring payments",
-    "pageDescription": "Expenses and payments you repeat, their next dates, and your monthly total.",
+    "pageTitle": "Recurring",
+    "pageDescription": "Expenses, payments, and income you repeat, their next dates, and your monthly total.",
     "monthlyRecurring": "Monthly recurring",
     "gridViewAria": "Grid view",
     "tableViewAria": "Table view",
     "addSubscription": "Add recurring",
-    "emptyTitle": "No recurring payments yet",
-    "emptyDescription": "Save a subscription, a bill, or a transfer you make every cycle, then record it in one tap each time it happens.",
+    "emptyTitle": "No recurring items yet",
+    "emptyDescription": "Save a subscription, a bill, a transfer, or your paycheck — anything you repeat every cycle — then record it in one tap each time it happens.",
     "activeAria": "Active",
     "nextPrefix": "Next {date}",
     "addCharge": "Record",
@@ -635,6 +635,7 @@
   "RecordCharge": {
     "title": "Record {name}",
     "billedLine": "Billed {amount}, charged to {account} in {currency}.",
+    "incomeLine": "Expected {amount}, deposited to {account} in {currency}.",
     "chargedLabel": "Amount charged to the account",
     "estimateHint": "Estimated from the market rate plus about {percent}%, roughly what your bank adds. The posted amount only appears a few days after the authorisation — replace this once you see the real figure.",
     "noEstimateHint": "Enter what this charge cost in {currency}. No rate is available for this pair right now, so there is nothing to estimate from.",
@@ -644,8 +645,8 @@
     "receivedHint": "Estimated at the market rate. Replace it with what actually arrived."
   },
   "SubscriptionForm": {
-    "addTitle": "New recurring payment",
-    "editTitle": "Edit recurring payment",
+    "addTitle": "New recurring",
+    "editTitle": "Edit recurring",
     "nameLabel": "Name",
     "namePlaceholder": "Netflix",
     "amountLabel": "Amount",
@@ -655,13 +656,15 @@
     "chargeAccountLabel": "Paid from",
     "categoryLabel": "Category",
     "activeLabel": "Active",
-    "addButton": "Add recurring payment",
+    "addButton": "Add recurring",
     "saveChangesButton": "Save changes",
-    "toastAdded": "Recurring payment added",
-    "toastUpdated": "Recurring payment updated",
+    "toastAdded": "Recurring added",
+    "toastUpdated": "Recurring updated",
     "namePlaceholderPayment": "Savings transfer",
+    "namePlaceholderIncome": "Paycheck",
     "fromAccountLabel": "From",
     "toAccountLabel": "To",
+    "depositAccountLabel": "Deposited to",
     "startDateLabel": "First date",
     "startDateHint": "Repeats every 14 days from this date."
   },

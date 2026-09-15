@@ -40,7 +40,7 @@
   "Activity": {
     "title": "Actividad",
     "transactionsDesc": "Ingresos y gastos puntuales",
-    "recurringDesc": "Facturas, transferencias y pagos que se repiten"
+    "recurringDesc": "Facturas, transferencias, pagos e ingresos que se repiten"
   },
   "QuickAdd": {
     "title": "Agregar rápido"
@@ -604,14 +604,14 @@
     "budgetGroupOverrideHint": "El gasto conserva su categoría; solo cambia dónde cuenta en el plan."
   },
   "Subscriptions": {
-    "pageTitle": "Pagos recurrentes",
-    "pageDescription": "Gastos y pagos que repites, sus próximas fechas y tu total mensual.",
+    "pageTitle": "Recurrentes",
+    "pageDescription": "Gastos, pagos e ingresos que repites, sus próximas fechas y tu total mensual.",
     "monthlyRecurring": "Recurrente mensual",
     "gridViewAria": "Vista de cuadrícula",
     "tableViewAria": "Vista de tabla",
     "addSubscription": "Añadir recurrente",
-    "emptyTitle": "Aún no hay pagos recurrentes",
-    "emptyDescription": "Guarda una suscripción, una factura o una transferencia que haces cada ciclo y regístrala con un toque cada vez que ocurra.",
+    "emptyTitle": "Aún no hay recurrentes",
+    "emptyDescription": "Guarda una suscripción, una factura, una transferencia o tu sueldo — cualquier cosa que se repita cada ciclo — y regístralo con un toque cada vez que ocurra.",
     "activeAria": "Activa",
     "nextPrefix": "Próximo {date}",
     "addCharge": "Registrar",
@@ -635,6 +635,7 @@
   "RecordCharge": {
     "title": "Registrar {name}",
     "billedLine": "Facturado {amount}, cargado a {account} en {currency}.",
+    "incomeLine": "Esperado {amount}, depositado a {account} en {currency}.",
     "chargedLabel": "Monto cargado a la cuenta",
     "estimateHint": "Estimado a partir de la tasa del mercado más un {percent}% aproximado, más o menos lo que agrega tu banco. El monto publicado aparece unos días después de la autorización — reemplázalo cuando veas la cifra real.",
     "noEstimateHint": "Indica cuánto costó este cargo en {currency}. No hay una tasa disponible para este par ahora mismo, así que no hay de dónde estimar.",
@@ -644,8 +645,8 @@
     "receivedHint": "Estimado a la tasa del mercado. Reemplázalo por lo que realmente llegó."
   },
   "SubscriptionForm": {
-    "addTitle": "Nuevo pago recurrente",
-    "editTitle": "Editar pago recurrente",
+    "addTitle": "Nuevo recurrente",
+    "editTitle": "Editar recurrente",
     "nameLabel": "Nombre",
     "namePlaceholder": "Netflix",
     "amountLabel": "Monto",
@@ -655,13 +656,15 @@
     "chargeAccountLabel": "Pagado desde",
     "categoryLabel": "Categoría",
     "activeLabel": "Activo",
-    "addButton": "Añadir pago recurrente",
+    "addButton": "Añadir recurrente",
     "saveChangesButton": "Guardar cambios",
-    "toastAdded": "Pago recurrente añadido",
-    "toastUpdated": "Pago recurrente actualizado",
+    "toastAdded": "Recurrente añadido",
+    "toastUpdated": "Recurrente actualizado",
     "namePlaceholderPayment": "Transferencia a ahorros",
+    "namePlaceholderIncome": "Sueldo",
     "fromAccountLabel": "Desde",
     "toAccountLabel": "Hacia",
+    "depositAccountLabel": "Depositado en",
     "startDateLabel": "Primera fecha",
     "startDateHint": "Se repite cada 14 días desde esta fecha."
   },
