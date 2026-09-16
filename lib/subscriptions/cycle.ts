@@ -5,14 +5,6 @@ export type BillingCycle = (typeof BILLING_CYCLE_VALUES)[number];
 
 export const BILLING_CYCLES: BillingCycle[] = [...BILLING_CYCLE_VALUES];
 
-export const CYCLE_LABEL: Record<BillingCycle, string> = {
-  weekly: "Weekly",
-  biweekly: "Biweekly",
-  semimonthly: "Semimonthly",
-  monthly: "Monthly",
-  yearly: "Yearly",
-  custom: "Custom",
-};
 
 /**
  * When a recurring payment falls.

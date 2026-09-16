@@ -644,6 +644,14 @@
     "receivedLabel": "Monto que recibió {account}",
     "receivedHint": "Estimado a la tasa del mercado. Reemplázalo por lo que realmente llegó."
   },
+  "BillingCycles": {
+    "weekly": "Semanal",
+    "biweekly": "Cada 2 semanas",
+    "semimonthly": "Quincenal",
+    "monthly": "Mensual",
+    "yearly": "Anual",
+    "custom": "Personalizado"
+  },
   "SubscriptionForm": {
     "addTitle": "Nuevo recurrente",
     "editTitle": "Editar recurrente",

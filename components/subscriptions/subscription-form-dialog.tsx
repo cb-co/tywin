@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import {
   BILLING_CYCLES,
-  CYCLE_LABEL,
   hasAnchorField,
   usesAnchorDate,
   type BillingCycle,
@@ -117,6 +116,7 @@ export function SubscriptionFormDialog({
   const router = useRouter();
   const t = useTranslations("SubscriptionForm");
   const tType = useTranslations("TransactionTypes");
+  const tCycle = useTranslations("BillingCycles");
   const tTxn = useTranslations("TransactionForm");
   const tc = useTranslations("Common");
   const { playSuccess, playError } = useUiSound();
@@ -124,7 +124,9 @@ export function SubscriptionFormDialog({
   /* Value→label maps for the closed trigger. Base UI's `<Select.Value>`
      renders the raw value unless `items` is given on the root, which showed
      bare UUIDs and raw cycle keys. Sentinels ("none") need an entry too. */
-  const cycleItems: Record<string, string> = CYCLE_LABEL;
+  const cycleItems: Record<string, string> = Object.fromEntries(
+    BILLING_CYCLES.map((c) => [c, tCycle(c)]),
+  );
   // Label happens to equal the value today; declared anyway so enriching the
   // option text later cannot silently reintroduce a raw-value trigger.
   const currencyItems: Record<string, string> = Object.fromEntries(
@@ -332,7 +334,7 @@ export function SubscriptionFormDialog({
                     <SelectContent>
                       {BILLING_CYCLES.map((c) => (
                         <SelectItem key={c} value={c}>
-                          {CYCLE_LABEL[c]}
+                          {tCycle(c)}
                         </SelectItem>
                       ))}
                     </SelectContent>

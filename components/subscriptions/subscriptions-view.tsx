@@ -10,7 +10,7 @@ import {
   deleteSubscription,
   setSubscriptionActive,
 } from "@/app/(app)/recurring/actions";
-import { CYCLE_LABEL, nextChargeDate, monthlyEquivalent, type BillingCycle } from "@/lib/subscriptions/cycle";
+import { nextChargeDate, monthlyEquivalent, type BillingCycle } from "@/lib/subscriptions/cycle";
 import { chargeCrossesCurrency } from "@/lib/subscriptions/charge";
 import { hasBrandColor } from "@/lib/subscriptions/brand-color";
 import { convertToBase } from "@/lib/fx";
@@ -50,16 +50,20 @@ export function SubscriptionsView({
   const [pending, startTransition] = useTransition();
   const t = useTranslations("Subscriptions");
   const tType = useTranslations("TransactionTypes");
+  const tCycle = useTranslations("BillingCycles");
   const [view, setView] = useState<"grid" | "table">("grid");
   const { playSuccess, playDelete, playError } = useUiSound();
 
   /* Converted before summing, since this renders as a single base-currency
      figure. It used to add the raw amounts across currencies, so a DOP 1,500 gym
-     membership and a USD 15.99 sub totalled "US$1,515.99 a month". */
+     membership and a USD 15.99 sub totalled "US$1,515.99 a month".
+     Income is excluded: this figure is what recurs OUT (bills and payments),
+     and summing a paycheck into it would net income against expenses into one
+     number that answers neither question. */
   const monthlyTotal = useMemo(
     () =>
       subscriptions
-        .filter((s) => s.is_active)
+        .filter((s) => s.is_active && s.kind !== "income")
         .reduce(
           (sum, s) =>
             sum +
@@ -182,7 +186,7 @@ export function SubscriptionsView({
                     <p className="truncate font-medium text-foreground">{sub.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {sub.kind !== "expense" ? `${tType(sub.kind)} · ` : ""}
-                      {CYCLE_LABEL[sub.billing_cycle as BillingCycle]}
+                      {tCycle(sub.billing_cycle as BillingCycle)}
                     </p>
                   </div>
                 </div>
@@ -263,7 +267,7 @@ export function SubscriptionsView({
                 <tr key={sub.id} className={cn(!sub.is_active && "opacity-60")}>
                   <td className="px-4 py-2 font-medium text-foreground">{sub.name}</td>
                   <td className="px-4 py-2 tabular-nums">{formatMoney(sub.amount, sub.currency)}</td>
-                  <td className="px-4 py-2">{CYCLE_LABEL[sub.billing_cycle as BillingCycle]}</td>
+                  <td className="px-4 py-2">{tCycle(sub.billing_cycle as BillingCycle)}</td>
                   <td className="px-4 py-2">{nextLabel(sub)}</td>
                   <td className="px-4 py-2 text-muted-foreground">{accountLine(sub) || "—"}</td>
                   <td className="px-4 py-2">

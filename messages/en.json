@@ -644,6 +644,14 @@
     "receivedLabel": "Amount {account} received",
     "receivedHint": "Estimated at the market rate. Replace it with what actually arrived."
   },
+  "BillingCycles": {
+    "weekly": "Weekly",
+    "biweekly": "Biweekly",
+    "semimonthly": "Semimonthly",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "custom": "Custom"
+  },
   "SubscriptionForm": {
     "addTitle": "New recurring",
     "editTitle": "Edit recurring",
