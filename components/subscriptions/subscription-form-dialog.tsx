@@ -273,6 +273,17 @@ export function SubscriptionFormDialog({
             )}
           />
 
+          {/* Income only, and a full-width row rather than a note under the
+              amount field: "Amount" reads unambiguously on an expense — it is
+              what the charge costs — but a salary has two honest answers, and
+              the gross one is the number people know by heart. What the template
+              records is a deposit, so it has to be the net, and that has to be
+              said before the number is typed rather than after the balance comes
+              out wrong. */}
+          {income ? (
+            <p className="text-xs text-muted-foreground">{t("amountHintIncome")}</p>
+          ) : null}
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="name" required>{t("nameLabel")}</Label>
@@ -366,7 +377,11 @@ export function SubscriptionFormDialog({
               </div>
             ) : null}
             <div className="space-y-2">
-              <Label required={payment}>
+              {/* Required wherever the account is a DESTINATION — the account a
+                  payment comes from, and the one income lands in. An expense's
+                  "charged from" stays optional, the one case where a template is
+                  still useful before you have decided where it is billed. */}
+              <Label required={payment || income}>
                 {payment ? t("fromAccountLabel") : income ? t("depositAccountLabel") : t("chargeAccountLabel")}
               </Label>
               <Controller
@@ -388,6 +403,11 @@ export function SubscriptionFormDialog({
               />
               <FieldError message={errors.account_id?.message} />
             </div>
+            {/* Two independent questions, not a choice between them. These used
+                to share one ternary, so a payment showed its destination INSTEAD
+                of a category and could never carry one — while the same payment
+                typed into quick-add could. A payment answers both: where the
+                money goes, and what it counts as. */}
             {payment ? (
               <div className="space-y-2">
                 <Label required>{t("toAccountLabel")}</Label>
@@ -411,9 +431,16 @@ export function SubscriptionFormDialog({
                 />
                 <FieldError message={errors.to_account_id?.message} />
               </div>
-            ) : income ? null : (
+            ) : null}
+            {income ? null : (
               <div className="space-y-2">
-                <Label>{t("categoryLabel")}</Label>
+                {/* Optional on a payment, exactly as quick-add marks it — the
+                    car loan transfer that is worth filing under Transport and
+                    the one that is worth filing under nothing are both normal. */}
+                <Label>
+                  {t("categoryLabel")}
+                  {payment ? tTxn("categoryOptionalSuffix") : ""}
+                </Label>
                 <Controller
                   control={control}
                   name="category_id"

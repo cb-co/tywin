@@ -27,6 +27,11 @@ export const subscriptionInput = z
     // the day-number cycles merely show no next date.
     if (usesAnchorDate(v.billing_cycle) && !v.anchor_date)
       ctx.addIssue({ code: "custom", path: ["anchor_date"], message: "Pick a start date" });
+    // Income has to land somewhere: the deposit account is what gives the
+    // recorded transaction its currency, so a template without one can be saved
+    // but never recorded (addCharge fails with needsAccount). Better to ask now.
+    if (v.kind === "income" && !v.account_id)
+      ctx.addIssue({ code: "custom", path: ["account_id"], message: "Pick the account it's deposited into" });
     if (v.kind === "payment") {
       if (!v.account_id)
         ctx.addIssue({ code: "custom", path: ["account_id"], message: "Pick the account it's paid from" });

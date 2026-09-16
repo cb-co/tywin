@@ -11,9 +11,9 @@ import {
   setSubscriptionActive,
 } from "@/app/(app)/recurring/actions";
 import { nextChargeDate, monthlyEquivalent, type BillingCycle } from "@/lib/subscriptions/cycle";
+import { recurringTotals } from "@/lib/subscriptions/totals";
 import { chargeCrossesCurrency } from "@/lib/subscriptions/charge";
 import { hasBrandColor } from "@/lib/subscriptions/brand-color";
-import { convertToBase } from "@/lib/fx";
 import { readableForeground } from "@/lib/color";
 import { formatMoney } from "@/lib/format";
 import type { SubscriptionWithRefs } from "@/lib/subscriptions/queries";
@@ -23,6 +23,7 @@ import { SubscriptionFormDialog } from "./subscription-form-dialog";
 import { RecordChargeDialog, type RecordAmounts } from "./record-charge-dialog";
 import { Button } from "@/components/ui/button";
 import { MoneyDisplay } from "@/components/ui/money-display";
+import { MaskedMoney } from "@/components/figure-mask/masked-money";
 import { BrandGlyph } from "@/components/ui/brand-glyph";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
@@ -54,27 +55,11 @@ export function SubscriptionsView({
   const [view, setView] = useState<"grid" | "table">("grid");
   const { playSuccess, playDelete, playError } = useUiSound();
 
-  /* Converted before summing, since this renders as a single base-currency
-     figure. It used to add the raw amounts across currencies, so a DOP 1,500 gym
-     membership and a USD 15.99 sub totalled "US$1,515.99 a month".
-     Income is excluded: this figure is what recurs OUT (bills and payments),
-     and summing a paycheck into it would net income against expenses into one
-     number that answers neither question. */
-  const monthlyTotal = useMemo(
-    () =>
-      subscriptions
-        .filter((s) => s.is_active && s.kind !== "income")
-        .reduce(
-          (sum, s) =>
-            sum +
-            convertToBase(
-              monthlyEquivalent(s.amount, s.billing_cycle as BillingCycle),
-              s.currency,
-              data.baseCurrency,
-              data.rates,
-            ),
-          0,
-        ),
+  /* Two base-currency figures, both converted before summing — see
+     lib/subscriptions/totals, which owns the arithmetic and the reasoning for
+     keeping income out of the outgoing figure rather than netting the two. */
+  const totals = useMemo(
+    () => recurringTotals(subscriptions, data.baseCurrency, data.rates),
     [subscriptions, data.baseCurrency, data.rates],
   );
 
@@ -140,7 +125,9 @@ export function SubscriptionsView({
     </Button>
   );
 
-  const renderCard = (sub: SubscriptionWithRefs) => (
+  const renderCard = (sub: SubscriptionWithRefs) => {
+    const monthly = monthlyEquivalent(sub.amount, sub.billing_cycle as BillingCycle);
+    return (
     <Card key={sub.id} className={cn("gap-0 p-5", !sub.is_active && "opacity-60")}>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
@@ -166,6 +153,22 @@ export function SubscriptionsView({
       <p className="mt-4 leading-none">
         <MoneyDisplay amount={sub.amount} currency={sub.currency} size="stat" />
       </p>
+      {/* The cycle normalised to a month, so a biweekly 1,200 and a monthly
+          2,600 can be compared without doing the arithmetic in your head. Stays
+          in the template's OWN currency — this is a cycle conversion, not an FX
+          one; the base-currency figures are the two totals up top.
+
+          Shown only when it differs from the figure directly above it, which
+          silently covers "custom" as well as "monthly": monthlyEquivalent treats
+          both as already-monthly, and restating the same number would read as a
+          rendering fault rather than as information. */}
+      {monthly !== sub.amount ? (
+        <p className="mt-1.5 text-xs text-muted-foreground tabular-nums">
+          {t.rich("monthlyEquivalent", {
+            amount: () => <MaskedMoney amount={monthly} currency={sub.currency} />,
+          })}
+        </p>
+      ) : null}
       <p className="mt-1 text-xs text-muted-foreground">
         {t("nextPrefix", { date: nextLabel(sub) })}
         {accountLine(sub) ? ` · ${accountLine(sub)}` : ""}
@@ -210,7 +213,8 @@ export function SubscriptionsView({
         </Button>
       </div>
     </Card>
-  );
+    );
+  };
 
   const renderRow = (sub: SubscriptionWithRefs) => (
     <tr key={sub.id} className={cn(!sub.is_active && "opacity-60")}>
@@ -261,11 +265,31 @@ export function SubscriptionsView({
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 rounded-xl border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs text-muted-foreground">{t("monthlyRecurring")}</p>
-          <p className="mt-1 leading-none text-foreground">
-            <MoneyDisplay amount={monthlyTotal} currency={data.baseCurrency} size="feature" />
-          </p>
+        {/* Peers, not a figure and a footnote: money out and money in are two
+            answers a person wants at the same size. The income figure appears
+            whenever income templates exist at all, on the same condition as the
+            income band — so pausing your only paycheck dims its card and takes
+            the total to zero rather than making a whole figure disappear. */}
+        <div className="flex flex-wrap items-start gap-x-10 gap-y-4">
+          <div>
+            <p className="text-xs text-muted-foreground">{t("monthlyRecurring")}</p>
+            <p className="mt-1 leading-none text-foreground">
+              <MoneyDisplay amount={totals.outgoing} currency={data.baseCurrency} size="feature" />
+            </p>
+          </div>
+          {incomeSubs.length > 0 && (
+            <div>
+              <p className="text-xs text-muted-foreground">{t("monthlyIncome")}</p>
+              <p className="mt-1 leading-none">
+                <MoneyDisplay
+                  amount={totals.income}
+                  currency={data.baseCurrency}
+                  size="feature"
+                  className="text-success"
+                />
+              </p>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <div className="flex rounded-lg bg-muted p-1">

@@ -27,6 +27,13 @@ const VALID = {
   is_active: true,
 };
 
+/** Income has to name the account it lands in — see lib/subscriptions/schema. */
+const VALID_INCOME = {
+  ...VALID,
+  kind: "income" as const,
+  account_id: "44444444-4444-4444-8444-444444444444",
+};
+
 type Row = { name?: string; color?: string | null; logo_url?: string | null };
 
 /**
@@ -295,7 +302,7 @@ describe("addCharge records the template", () => {
     });
   });
 
-  it("writes a payment to its destination with no category", async () => {
+  it("carries a payment's category through to the recorded transaction", async () => {
     const inserts = recordStub(
       template({
         kind: "payment",
@@ -312,7 +319,7 @@ describe("addCharge records the template", () => {
       type: "payment",
       account_id: "acct-1",
       to_account_id: "acct-2",
-      category_id: null,
+      category_id: "cat-1",
       to_amount: null,
       include_tax: true,
       include_commission: false,
@@ -387,7 +394,7 @@ describe("saving a template keeps one schedule and one shape", () => {
     expect(writes[0]).toMatchObject({ anchor_day: 3, anchor_date: null });
   });
 
-  it("stores a payment's destination and clears its category", async () => {
+  it("stores a payment's destination and keeps its category", async () => {
     const writes = stub();
     const a = "11111111-1111-4111-8111-111111111111";
     const b = "22222222-2222-4222-8222-222222222222";
@@ -395,7 +402,19 @@ describe("saving a template keeps one schedule and one shape", () => {
 
     await createSubscription({ ...VALID, kind: "payment", account_id: a, to_account_id: b, category_id: c });
 
-    expect(writes[0]).toMatchObject({ kind: "payment", account_id: a, to_account_id: b, category_id: null });
+    expect(writes[0]).toMatchObject({ kind: "payment", account_id: a, to_account_id: b, category_id: c });
+  });
+
+  it("leaves a payment's category null when none was picked", async () => {
+    const writes = stub();
+    const a = "11111111-1111-4111-8111-111111111111";
+    const b = "22222222-2222-4222-8222-222222222222";
+
+    // Optional, not required: the empty string the Select's "none" resolves to
+    // must land as null rather than as a category id of "".
+    await createSubscription({ ...VALID, kind: "payment", account_id: a, to_account_id: b, category_id: "" });
+
+    expect(writes[0]).toMatchObject({ kind: "payment", category_id: null });
   });
 
   it("rejects a payment into the account it comes from", async () => {
@@ -414,12 +433,21 @@ describe("saving a template keeps one schedule and one shape", () => {
     expect(writes[0]).toMatchObject({ kind: "expense", to_account_id: null });
   });
 
+  it("rejects an income template with no deposit account", async () => {
+    const writes = stub();
+
+    // "" is what the account Select's "none" submits. It could be saved before,
+    // then failed at record time with needsAccount — the account is what gives
+    // the recorded deposit its currency.
+    expect((await createSubscription({ ...VALID_INCOME, account_id: "" })).error).toBeTruthy();
+    expect(writes).toHaveLength(0);
+  });
+
   it("never stores a category or destination on an income template", async () => {
     const writes = stub();
 
     await createSubscription({
-      ...VALID,
-      kind: "income",
+      ...VALID_INCOME,
       category_id: "22222222-2222-4222-8222-222222222222",
       to_account_id: "33333333-3333-4333-8333-333333333333",
     });
@@ -432,7 +460,7 @@ describe("saving an active income template syncs the pay cycle", () => {
   it("maps a monthly income template onto pay_cycle when it's the only one", async () => {
     const writes = stub(undefined, { count: 1 });
 
-    await createSubscription({ ...VALID, kind: "income", billing_cycle: "monthly", anchor_day: 15 });
+    await createSubscription({ ...VALID_INCOME, billing_cycle: "monthly", anchor_day: 15 });
 
     expect(writes).toHaveLength(2);
     expect(writes[1]).toMatchObject({ pay_cycle: "monthly", pay_anchor_day: 15 });
@@ -441,7 +469,7 @@ describe("saving an active income template syncs the pay cycle", () => {
   it("remaps a weekly income template's anchor day to ISO", async () => {
     const writes = stub(undefined, { count: 1 });
 
-    await createSubscription({ ...VALID, kind: "income", billing_cycle: "weekly", anchor_day: 6 });
+    await createSubscription({ ...VALID_INCOME, billing_cycle: "weekly", anchor_day: 6 });
 
     expect(writes[1]).toMatchObject({ pay_cycle: "weekly", pay_anchor_day: 5 });
   });
@@ -449,7 +477,7 @@ describe("saving an active income template syncs the pay cycle", () => {
   it("does not sync when a second active income template already exists", async () => {
     const writes = stub(undefined, { count: 2 });
 
-    await createSubscription({ ...VALID, kind: "income", billing_cycle: "monthly", anchor_day: 15 });
+    await createSubscription({ ...VALID_INCOME, billing_cycle: "monthly", anchor_day: 15 });
 
     expect(writes).toHaveLength(1);
   });
@@ -457,7 +485,7 @@ describe("saving an active income template syncs the pay cycle", () => {
   it("does not sync an inactive income template", async () => {
     const writes = stub(undefined, { count: 1 });
 
-    await createSubscription({ ...VALID, kind: "income", billing_cycle: "monthly", is_active: false });
+    await createSubscription({ ...VALID_INCOME, billing_cycle: "monthly", is_active: false });
 
     expect(writes).toHaveLength(1);
   });
@@ -474,8 +502,7 @@ describe("saving an active income template syncs the pay cycle", () => {
     const writes = stub(undefined, { count: 1 });
 
     await createSubscription({
-      ...VALID,
-      kind: "income",
+      ...VALID_INCOME,
       billing_cycle: "biweekly",
       anchor_date: "2026-09-04",
     });
@@ -486,7 +513,7 @@ describe("saving an active income template syncs the pay cycle", () => {
   it("also syncs on update, not just create", async () => {
     const writes = stub({ data: { name: "Netflix" } }, { count: 1 });
 
-    await updateSubscription("sub-1", { ...VALID, kind: "income", billing_cycle: "monthly", anchor_day: 1 });
+    await updateSubscription("sub-1", { ...VALID_INCOME, billing_cycle: "monthly", anchor_day: 1 });
 
     expect(writes).toHaveLength(2);
     expect(writes[1]).toMatchObject({ pay_cycle: "monthly", pay_anchor_day: 1 });

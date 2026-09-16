@@ -48,9 +48,12 @@ function toRow(v: SubscriptionInput) {
     anchor_date: dated ? v.anchor_date || null : null,
     account_id: v.account_id || null,
     to_account_id: payment ? v.to_account_id || null : null,
-    // A payment moves money to an account, and income arrives in one; neither
-    // is spending in a category. Only an expense is.
-    category_id: v.kind === "expense" ? v.category_id || null : null,
+    /* Income arrives rather than being spent, so it never counts against a
+       category — the same rule manual income transactions follow. A payment
+       may carry one: moving money to a car loan is still worth filing under
+       Transport if the person wants it there, and quick-add has always let a
+       payment be categorised. Optional there, optional here. */
+    category_id: v.kind === "income" ? null : v.category_id || null,
     include_tax: v.include_tax,
     include_commission: v.include_commission,
     is_active: v.is_active,
@@ -309,9 +312,9 @@ export async function addCharge(
     type: kind,
     account_id: sub.account_id,
     to_account_id: payment ? sub.to_account_id : null,
-    // Only an expense spends into a category — a payment moves money and
-    // income arrives, neither of which counts against one.
-    category_id: kind === "expense" ? sub.category_id : null,
+    // Carried through from the template, so a categorised payment records as
+    // one. Income never has a category to carry.
+    category_id: kind === "income" ? null : sub.category_id,
     amount: settled.amount,
     // Null on a same-currency payment — the DB mirrors `amount`.
     to_amount: crossLeg ? toAmount! : null,
