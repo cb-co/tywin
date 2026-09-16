@@ -78,6 +78,15 @@ export function SubscriptionsView({
     [subscriptions, data.baseCurrency, data.rates],
   );
 
+  /* Income and everything else render as two separate bands rather than one
+     mixed list — a paycheck sorted alphabetically next to a Netflix bill
+     reads as noise, not information. Only worth the extra headings when both
+     groups actually exist: a user with no income templates yet, or one whose
+     list is all income, sees the same flat list as before. */
+  const incomeSubs = subscriptions.filter((s) => s.kind === "income");
+  const otherSubs = subscriptions.filter((s) => s.kind !== "income");
+  const showBands = incomeSubs.length > 0 && otherSubs.length > 0;
+
   /* Resolves to whether the charge saved, so RecordChargeDialog can stay open on
      failure rather than closing optimistically and taking the amount the person
      typed with it. Wrapped in a promise instead of dropping startTransition,
@@ -131,6 +140,124 @@ export function SubscriptionsView({
     </Button>
   );
 
+  const renderCard = (sub: SubscriptionWithRefs) => (
+    <Card key={sub.id} className={cn("gap-0 p-5", !sub.is_active && "opacity-60")}>
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <BrandMark name={sub.name} color={sub.color} logoPath={sub.logoPath} />
+          <div className="min-w-0">
+            <p className="truncate font-medium text-foreground">{sub.name}</p>
+            <p className="text-xs text-muted-foreground">
+              {sub.kind !== "expense" ? `${tType(sub.kind)} · ` : ""}
+              {tCycle(sub.billing_cycle as BillingCycle)}
+            </p>
+          </div>
+        </div>
+        <Switch
+          checked={sub.is_active}
+          onCheckedChange={(v) => onToggle(sub.id, v)}
+          aria-label={t("activeAria")}
+        />
+      </div>
+      {/* Same treatment as a budget card's figure: MoneyDisplay's
+          `stat` size, cents de-emphasised, and mask-aware — the raw
+          formatMoney that used to sit here kept showing real digits
+          while figure masking was on. */}
+      <p className="mt-4 leading-none">
+        <MoneyDisplay amount={sub.amount} currency={sub.currency} size="stat" />
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {t("nextPrefix", { date: nextLabel(sub) })}
+        {accountLine(sub) ? ` · ${accountLine(sub)}` : ""}
+      </p>
+      <div className="mt-4 flex items-center gap-1">
+        <ChargeButton
+          sub={sub}
+          rates={data.rates}
+          pending={pending}
+          onCharge={onAddCharge}
+          /* Deliberately not the primary variant: with one of these per
+             card plus the active toggle, a grid of solid black CTAs
+             drowned out the "add subscription" button that is meant to be
+             the one high-contrast action on the page. */
+          trigger={
+            <Button size="sm" variant="secondary" disabled={pending} isLoading={pending}>
+              <Receipt className="size-4" />
+              {t("addCharge")}
+            </Button>
+          }
+        />
+        <SubscriptionFormDialog
+          mode="edit"
+          subscription={sub}
+          data={data}
+          trigger={
+            <Button variant="ghost" size="icon-sm" aria-label={t("editAria")}>
+              <Pencil className="size-4" />
+            </Button>
+          }
+        />
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={t("deleteAria")}
+          className="text-muted-foreground hover:text-destructive"
+          onClick={() => onDelete(sub.id)}
+          disabled={pending}
+          isLoading={pending}
+        >
+          {pending ? null : <Trash2 className="size-4" />}
+        </Button>
+      </div>
+    </Card>
+  );
+
+  const renderRow = (sub: SubscriptionWithRefs) => (
+    <tr key={sub.id} className={cn(!sub.is_active && "opacity-60")}>
+      <td className="px-4 py-2 font-medium text-foreground">{sub.name}</td>
+      <td className="px-4 py-2 tabular-nums">{formatMoney(sub.amount, sub.currency)}</td>
+      <td className="px-4 py-2">{tCycle(sub.billing_cycle as BillingCycle)}</td>
+      <td className="px-4 py-2">{nextLabel(sub)}</td>
+      <td className="px-4 py-2 text-muted-foreground">{accountLine(sub) || "—"}</td>
+      <td className="px-4 py-2">
+        <div className="flex items-center justify-end gap-1">
+          <ChargeButton
+            sub={sub}
+            rates={data.rates}
+            pending={pending}
+            onCharge={onAddCharge}
+            trigger={
+              <Button size="sm" variant="secondary" disabled={pending} isLoading={pending}>
+                {t("chargeShort")}
+              </Button>
+            }
+          />
+          <SubscriptionFormDialog
+            mode="edit"
+            subscription={sub}
+            data={data}
+            trigger={
+              <Button variant="ghost" size="icon-sm" aria-label={t("editAria")}>
+                <Pencil className="size-4" />
+              </Button>
+            }
+          />
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t("deleteAria")}
+            className="text-muted-foreground hover:text-destructive"
+            onClick={() => onDelete(sub.id)}
+            disabled={pending}
+            isLoading={pending}
+          >
+            {pending ? null : <Trash2 className="size-4" />}
+          </Button>
+        </div>
+      </td>
+    </tr>
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 rounded-xl border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -176,78 +303,19 @@ export function SubscriptionsView({
           description={t("emptyDescription")}
         />
       ) : view === "grid" ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {subscriptions.map((sub) => (
-            <Card key={sub.id} className={cn("gap-0 p-5", !sub.is_active && "opacity-60")}>
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <BrandMark name={sub.name} color={sub.color} logoPath={sub.logoPath} />
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-foreground">{sub.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {sub.kind !== "expense" ? `${tType(sub.kind)} · ` : ""}
-                      {tCycle(sub.billing_cycle as BillingCycle)}
-                    </p>
-                  </div>
-                </div>
-                <Switch
-                  checked={sub.is_active}
-                  onCheckedChange={(v) => onToggle(sub.id, v)}
-                  aria-label={t("activeAria")}
-                />
-              </div>
-              {/* Same treatment as a budget card's figure: MoneyDisplay's
-                  `stat` size, cents de-emphasised, and mask-aware — the raw
-                  formatMoney that used to sit here kept showing real digits
-                  while figure masking was on. */}
-              <p className="mt-4 leading-none">
-                <MoneyDisplay amount={sub.amount} currency={sub.currency} size="stat" />
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {t("nextPrefix", { date: nextLabel(sub) })}
-                {accountLine(sub) ? ` · ${accountLine(sub)}` : ""}
-              </p>
-              <div className="mt-4 flex items-center gap-1">
-                <ChargeButton
-                  sub={sub}
-                  rates={data.rates}
-                  pending={pending}
-                  onCharge={onAddCharge}
-                  /* Deliberately not the primary variant: with one of these per
-                     card plus the active toggle, a grid of solid black CTAs
-                     drowned out the "add subscription" button that is meant to be
-                     the one high-contrast action on the page. */
-                  trigger={
-                    <Button size="sm" variant="secondary" disabled={pending} isLoading={pending}>
-                      <Receipt className="size-4" />
-                      {t("addCharge")}
-                    </Button>
-                  }
-                />
-                <SubscriptionFormDialog
-                  mode="edit"
-                  subscription={sub}
-                  data={data}
-                  trigger={
-                    <Button variant="ghost" size="icon-sm" aria-label={t("editAria")}>
-                      <Pencil className="size-4" />
-                    </Button>
-                  }
-                />
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={t("deleteAria")}
-                  className="text-muted-foreground hover:text-destructive"
-                  onClick={() => onDelete(sub.id)}
-                  disabled={pending}
-                  isLoading={pending}
-                >
-                  {pending ? null : <Trash2 className="size-4" />}
-                </Button>
-              </div>
-            </Card>
-          ))}
+        <div className="space-y-6">
+          {showBands && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-foreground">{t("sectionIncome")}</h3>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{incomeSubs.map(renderCard)}</div>
+            </div>
+          )}
+          <div className={showBands ? "space-y-3" : undefined}>
+            {showBands && <h3 className="text-sm font-medium text-foreground">{t("sectionOther")}</h3>}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {(showBands ? otherSubs : subscriptions).map(renderCard)}
+            </div>
+          </div>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border">
@@ -263,51 +331,24 @@ export function SubscriptionsView({
               </tr>
             </thead>
             <tbody className="divide-y">
-              {subscriptions.map((sub) => (
-                <tr key={sub.id} className={cn(!sub.is_active && "opacity-60")}>
-                  <td className="px-4 py-2 font-medium text-foreground">{sub.name}</td>
-                  <td className="px-4 py-2 tabular-nums">{formatMoney(sub.amount, sub.currency)}</td>
-                  <td className="px-4 py-2">{tCycle(sub.billing_cycle as BillingCycle)}</td>
-                  <td className="px-4 py-2">{nextLabel(sub)}</td>
-                  <td className="px-4 py-2 text-muted-foreground">{accountLine(sub) || "—"}</td>
-                  <td className="px-4 py-2">
-                    <div className="flex items-center justify-end gap-1">
-                      <ChargeButton
-                        sub={sub}
-                        rates={data.rates}
-                        pending={pending}
-                        onCharge={onAddCharge}
-                        trigger={
-                          <Button size="sm" variant="secondary" disabled={pending} isLoading={pending}>
-                            {t("chargeShort")}
-                          </Button>
-                        }
-                      />
-                      <SubscriptionFormDialog
-                        mode="edit"
-                        subscription={sub}
-                        data={data}
-                        trigger={
-                          <Button variant="ghost" size="icon-sm" aria-label={t("editAria")}>
-                            <Pencil className="size-4" />
-                          </Button>
-                        }
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label={t("deleteAria")}
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={() => onDelete(sub.id)}
-                        disabled={pending}
-                        isLoading={pending}
-                      >
-                        {pending ? null : <Trash2 className="size-4" />}
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {showBands ? (
+                <>
+                  <tr>
+                    <td colSpan={6} className="bg-muted/40 px-4 py-1.5 text-xs font-medium text-muted-foreground">
+                      {t("sectionIncome")}
+                    </td>
+                  </tr>
+                  {incomeSubs.map(renderRow)}
+                  <tr>
+                    <td colSpan={6} className="bg-muted/40 px-4 py-1.5 text-xs font-medium text-muted-foreground">
+                      {t("sectionOther")}
+                    </td>
+                  </tr>
+                  {otherSubs.map(renderRow)}
+                </>
+              ) : (
+                subscriptions.map(renderRow)
+              )}
             </tbody>
           </table>
         </div>

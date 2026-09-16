@@ -610,6 +610,8 @@
     "gridViewAria": "Vista de cuadrícula",
     "tableViewAria": "Vista de tabla",
     "addSubscription": "Añadir recurrente",
+    "sectionIncome": "Ingresos",
+    "sectionOther": "Gastos y pagos",
     "emptyTitle": "Aún no hay recurrentes",
     "emptyDescription": "Guarda una suscripción, una factura, una transferencia o tu sueldo — cualquier cosa que se repita cada ciclo — y regístralo con un toque cada vez que ocurra.",
     "activeAria": "Activa",

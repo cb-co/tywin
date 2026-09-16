@@ -610,6 +610,8 @@
     "gridViewAria": "Grid view",
     "tableViewAria": "Table view",
     "addSubscription": "Add recurring",
+    "sectionIncome": "Income",
+    "sectionOther": "Expenses & payments",
     "emptyTitle": "No recurring items yet",
     "emptyDescription": "Save a subscription, a bill, a transfer, or your paycheck — anything you repeat every cycle — then record it in one tap each time it happens.",
     "activeAria": "Active",
