@@ -50,10 +50,14 @@ export default async function OverviewPage() {
     return (
       <div className="mx-auto max-w-5xl space-y-8">
         <div className="rise">
+          {/* Desktop only. On a phone the greeting is most of the line on its
+              own, and ImportCallout right below is always rendered for a user
+              with no accounts (importPromptState returns "never" on an empty
+              card list), so the action is one scroll-free tap away regardless. */}
           <PageHeader
             title={emptyHeading}
             description={t("greetingDescription")}
-            actions={<ImportButton />}
+            actions={<ImportButton className="max-sm:hidden" />}
           />
         </div>
         <div className="rise" style={{ "--i": 1 } as React.CSSProperties}>
@@ -118,7 +122,14 @@ export default async function OverviewPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-8">
       <div className="rise">
-        <PageHeader title={heading} description={t("description")} actions={<ImportButton />} />
+        {/* Desktop only — below `sm` it moves down to the "Este período"
+            heading, which is a row this page now draws anyway and which is
+            exactly the band a fresh statement updates. */}
+        <PageHeader
+          title={heading}
+          description={t("description")}
+          actions={<ImportButton className="max-sm:hidden" />}
+        />
       </div>
 
       {/* "Disponible hasta el <payday>" hero — what you can spend before the
@@ -138,42 +149,85 @@ export default async function OverviewPage() {
         </div>
       ) : null}
 
-      {/* Stat cards */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card className="rise p-5" style={{ "--i": 3 } as React.CSSProperties}>
-          <div className="flex items-center gap-3">
-            <ColorTile color="var(--success)" icon={ArrowDownLeft} />
-            <p className="text-xs text-muted-foreground">{t("incomeThisPeriod")}</p>
-          </div>
-          <MoneyDisplay amount={o.monthIncome} currency={o.baseCurrency} size="stat" animate className="mt-2 text-success" />
-        </Card>
-        <Card className="rise p-5" style={{ "--i": 4 } as React.CSSProperties}>
-          <div className="flex items-center gap-3">
-            <ColorTile color={null} icon={ArrowUpRight} />
-            <p className="text-xs text-muted-foreground">{t("spendingThisPeriod")}</p>
-          </div>
-          <MoneyDisplay amount={o.monthExpense} currency={o.baseCurrency} size="stat" animate className="mt-2 text-foreground" />
-        </Card>
-        <Card className="rise p-5" style={{ "--i": 5 } as React.CSSProperties}>
-          <div className="flex items-center gap-3">
-            <ColorTile color="var(--brand)" icon={PieChart} />
-            <p className="text-xs text-muted-foreground">{t("budgetUsed")}</p>
-          </div>
-          <div className="mt-2 flex items-end justify-between gap-2">
-            <MoneyDisplay amount={o.totalUsed} currency={o.baseCurrency} size="stat" animate className="text-foreground" />
-            <StatPill tone={budgetPct >= 100 ? "destructive" : "neutral"}>
-              {o.totalBudget > 0 ? formatPercent(budgetPct) : "—"}
-            </StatPill>
-          </div>
-          {/* The bar grows to its measured share so the proportion registers
-              as a quantity arriving rather than a pre-drawn block. */}
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-            <div
-              className="bar-fill h-full rounded-full bg-brand"
-              style={{ width: `${budgetPct}%`, "--i": 5 } as React.CSSProperties}
+      {/* Stat cards.
+
+          Labelled from `sm` down, because the three figures are all scoped to
+          the current period and the hero above them is not — stacked full-width
+          on a phone they read as three more facts about the hero. The heading
+          row doubles as the import button's mobile home; the two share a line,
+          so the band costs nothing the page was not already spending.
+
+          Two columns below `sm`: income and spending are the same shape and
+          belong side by side, which halves the scroll. Budget keeps the full
+          width because it carries a percentage pill and a progress bar as well
+          as its figure, and none of the three survive a half-width card. */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3 sm:hidden">
+          <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            {t("thisPeriod")}
+          </h2>
+          <ImportButton variant="outline" size="sm" />
+        </div>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        {/* The two half-width tiles below `sm` trade the inline icon/label row
+            for a stacked one and drop a step of padding and a step of type
+            scale: at ~130px of interior width a label like "Ingresos este
+            período" beside a 36px disc has nowhere to go, and a five-figure
+            amount at `stat` runs past the card's edge. Both revert at `sm`,
+            where the tile is a third of a wide page and neither is tight. */}
+          <Card className="rise p-4 sm:p-5" style={{ "--i": 3 } as React.CSSProperties}>
+            <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <ColorTile color="var(--success)" icon={ArrowDownLeft} />
+              <p className="text-xs text-muted-foreground">{t("incomeThisPeriod")}</p>
+            </div>
+            <MoneyDisplay
+              amount={o.monthIncome}
+              currency={o.baseCurrency}
+              size="stat"
+              animate
+              className="mt-2 text-xl text-success sm:text-2xl"
             />
-          </div>
-        </Card>
+          </Card>
+          <Card className="rise p-4 sm:p-5" style={{ "--i": 4 } as React.CSSProperties}>
+            <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <ColorTile color={null} icon={ArrowUpRight} />
+              <p className="text-xs text-muted-foreground">{t("spendingThisPeriod")}</p>
+            </div>
+            <MoneyDisplay
+              amount={o.monthExpense}
+              currency={o.baseCurrency}
+              size="stat"
+              animate
+              className="mt-2 text-xl text-foreground sm:text-2xl"
+            />
+          </Card>
+          {/* Spans the row below `sm`. It carries a percentage pill and a
+              progress bar as well as a figure, and none of the three read at
+              half width. */}
+          <Card
+            className="rise col-span-2 p-5 sm:col-span-1"
+            style={{ "--i": 5 } as React.CSSProperties}
+          >
+            <div className="flex items-center gap-3">
+              <ColorTile color="var(--brand)" icon={PieChart} />
+              <p className="text-xs text-muted-foreground">{t("budgetUsed")}</p>
+            </div>
+            <div className="mt-2 flex items-end justify-between gap-2">
+              <MoneyDisplay amount={o.totalUsed} currency={o.baseCurrency} size="stat" animate className="text-foreground" />
+              <StatPill tone={budgetPct >= 100 ? "destructive" : "neutral"}>
+                {o.totalBudget > 0 ? formatPercent(budgetPct) : "—"}
+              </StatPill>
+            </div>
+            {/* The bar grows to its measured share so the proportion registers
+                as a quantity arriving rather than a pre-drawn block. */}
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+              <div
+                className="bar-fill h-full rounded-full bg-brand"
+                style={{ width: `${budgetPct}%`, "--i": 5 } as React.CSSProperties}
+              />
+            </div>
+          </Card>
+        </div>
       </div>
 
       {/* Coaching, after the figures it is about. */}

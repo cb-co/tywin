@@ -1,10 +1,10 @@
 "use client";
 
-import { cloneElement, useMemo, useState, useTransition } from "react";
+import { cloneElement, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { Plus, Repeat, Pencil, Trash2, Receipt, LayoutGrid, Table as TableIcon } from "lucide-react";
+import { Plus, Repeat, Pencil, Trash2, Receipt } from "lucide-react";
 import {
   addCharge,
   deleteSubscription,
@@ -15,7 +15,6 @@ import { recurringTotals } from "@/lib/subscriptions/totals";
 import { chargeCrossesCurrency } from "@/lib/subscriptions/charge";
 import { hasBrandColor } from "@/lib/subscriptions/brand-color";
 import { readableForeground } from "@/lib/color";
-import { formatMoney } from "@/lib/format";
 import type { SubscriptionWithRefs } from "@/lib/subscriptions/queries";
 import type { QuickAddData } from "@/lib/transactions/queries";
 import { useUiSound } from "@/components/sound/sound-provider";
@@ -40,6 +39,34 @@ const nextLabel = (sub: SubscriptionWithRefs) => {
   return d ? dateFmt.format(d) : "—";
 };
 
+/**
+ * "Añadir recurrente", on its own, so the page header can hold it. It was in
+ * the totals card's own toolbar, which on a phone meant a third band of chrome
+ * above the first card — the header's title line had room for it and nothing
+ * else in it.
+ */
+export function AddSubscriptionControl({
+  data,
+  className,
+}: {
+  data: QuickAddData;
+  className?: string;
+}) {
+  const t = useTranslations("Subscriptions");
+  return (
+    <SubscriptionFormDialog
+      mode="create"
+      data={data}
+      trigger={
+        <Button className={className}>
+          <Plus className="size-4" />
+          {t("addSubscription")}
+        </Button>
+      }
+    />
+  );
+}
+
 export function SubscriptionsView({
   subscriptions,
   data,
@@ -52,7 +79,6 @@ export function SubscriptionsView({
   const t = useTranslations("Subscriptions");
   const tType = useTranslations("TransactionTypes");
   const tCycle = useTranslations("BillingCycles");
-  const [view, setView] = useState<"grid" | "table">("grid");
   const { playSuccess, playDelete, playError } = useUiSound();
 
   /* Two base-currency figures, both converted before summing — see
@@ -118,33 +144,22 @@ export function SubscriptionsView({
     });
   }
 
-  const addTrigger = (
-    <Button>
-      <Plus className="size-4" />
-      {t("addSubscription")}
-    </Button>
-  );
-
   const renderCard = (sub: SubscriptionWithRefs) => {
     const monthly = monthlyEquivalent(sub.amount, sub.billing_cycle as BillingCycle);
     return (
     <Card key={sub.id} className={cn("gap-0 p-5", !sub.is_active && "opacity-60")}>
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <BrandMark name={sub.name} color={sub.color} logoPath={sub.logoPath} />
-          <div className="min-w-0">
-            <p className="truncate font-medium text-foreground">{sub.name}</p>
-            <p className="text-xs text-muted-foreground">
-              {sub.kind !== "expense" ? `${tType(sub.kind)} · ` : ""}
-              {tCycle(sub.billing_cycle as BillingCycle)}
-            </p>
-          </div>
+      {/* Identity only. The active switch used to sit at this row's right edge
+          and has moved down into the control row, so the name gets the full
+          width and every control on the card lives on one line. */}
+      <div className="flex items-center gap-3">
+        <BrandMark name={sub.name} color={sub.color} logoPath={sub.logoPath} />
+        <div className="min-w-0">
+          <p className="truncate font-medium text-foreground">{sub.name}</p>
+          <p className="text-xs text-muted-foreground">
+            {sub.kind !== "expense" ? `${tType(sub.kind)} · ` : ""}
+            {tCycle(sub.billing_cycle as BillingCycle)}
+          </p>
         </div>
-        <Switch
-          checked={sub.is_active}
-          onCheckedChange={(v) => onToggle(sub.id, v)}
-          aria-label={t("activeAria")}
-        />
       </div>
       {/* Same treatment as a budget card's figure: MoneyDisplay's
           `stat` size, cents de-emphasised, and mask-aware — the raw
@@ -173,68 +188,19 @@ export function SubscriptionsView({
         {t("nextPrefix", { date: nextLabel(sub) })}
         {accountLine(sub) ? ` · ${accountLine(sub)}` : ""}
       </p>
-      <div className="mt-4 flex items-center gap-1">
-        <ChargeButton
-          sub={sub}
-          rates={data.rates}
-          pending={pending}
-          onCharge={onAddCharge}
-          /* Deliberately not the primary variant: with one of these per
-             card plus the active toggle, a grid of solid black CTAs
-             drowned out the "add subscription" button that is meant to be
-             the one high-contrast action on the page. */
-          trigger={
-            <Button size="sm" variant="secondary" disabled={pending} isLoading={pending}>
-              <Receipt className="size-4" />
-              {t("addCharge")}
-            </Button>
-          }
-        />
-        <SubscriptionFormDialog
-          mode="edit"
-          subscription={sub}
-          data={data}
-          trigger={
-            <Button variant="ghost" size="icon-sm" aria-label={t("editAria")}>
-              <Pencil className="size-4" />
-            </Button>
-          }
-        />
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label={t("deleteAria")}
-          className="text-muted-foreground hover:text-destructive"
-          onClick={() => onDelete(sub.id)}
-          disabled={pending}
-          isLoading={pending}
-        >
-          {pending ? null : <Trash2 className="size-4" />}
-        </Button>
-      </div>
-    </Card>
-    );
-  };
-
-  const renderRow = (sub: SubscriptionWithRefs) => (
-    <tr key={sub.id} className={cn(!sub.is_active && "opacity-60")}>
-      <td className="px-4 py-2 font-medium text-foreground">{sub.name}</td>
-      <td className="px-4 py-2 tabular-nums">{formatMoney(sub.amount, sub.currency)}</td>
-      <td className="px-4 py-2">{tCycle(sub.billing_cycle as BillingCycle)}</td>
-      <td className="px-4 py-2">{nextLabel(sub)}</td>
-      <td className="px-4 py-2 text-muted-foreground">{accountLine(sub) || "—"}</td>
-      <td className="px-4 py-2">
-        <div className="flex items-center justify-end gap-1">
-          <ChargeButton
-            sub={sub}
-            rates={data.rates}
-            pending={pending}
-            onCharge={onAddCharge}
-            trigger={
-              <Button size="sm" variant="secondary" disabled={pending} isLoading={pending}>
-                {t("chargeShort")}
-              </Button>
-            }
+      {/* Settings on the left, the act on the right. "Registrar" is the one
+          thing anybody comes to this card to do, so it sits at the card's right
+          edge where a right thumb already rests; pause, edit and delete are
+          occasional and keep the far corner, which is also the hardest place to
+          hit by accident. The switch moved down from the title row to make this
+          one balanced line rather than two half-empty ones. */}
+      <div className="mt-4 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1">
+          <Switch
+            checked={sub.is_active}
+            onCheckedChange={(v) => onToggle(sub.id, v)}
+            aria-label={t("activeAria")}
+            className="mr-1"
           />
           <SubscriptionFormDialog
             mode="edit"
@@ -258,13 +224,30 @@ export function SubscriptionsView({
             {pending ? null : <Trash2 className="size-4" />}
           </Button>
         </div>
-      </td>
-    </tr>
-  );
+        <ChargeButton
+          sub={sub}
+          rates={data.rates}
+          pending={pending}
+          onCharge={onAddCharge}
+          /* Deliberately not the primary variant: with one of these per card
+             plus the active toggle, a grid of solid black CTAs drowned out the
+             "add recurring" button that is meant to be the one high-contrast
+             action on the page. */
+          trigger={
+            <Button size="sm" variant="secondary" disabled={pending} isLoading={pending}>
+              <Receipt className="size-4" />
+              {t("addCharge")}
+            </Button>
+          }
+        />
+      </div>
+    </Card>
+    );
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-xl border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="rounded-xl border bg-card p-5">
         {/* Peers, not a figure and a footnote: money out and money in are two
             answers a person wants at the same size. The income figure appears
             whenever income templates exist at all, on the same condition as the
@@ -291,33 +274,6 @@ export function SubscriptionsView({
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <div className="flex rounded-lg bg-muted p-1">
-            <button
-              type="button"
-              onClick={() => setView("grid")}
-              aria-label={t("gridViewAria")}
-              className={cn(
-                "rounded-md p-1.5 transition-colors",
-                view === "grid" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground",
-              )}
-            >
-              <LayoutGrid className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("table")}
-              aria-label={t("tableViewAria")}
-              className={cn(
-                "rounded-md p-1.5 transition-colors",
-                view === "table" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground",
-              )}
-            >
-              <TableIcon className="size-4" />
-            </button>
-          </div>
-          <SubscriptionFormDialog mode="create" data={data} trigger={addTrigger} />
-        </div>
       </div>
 
       {subscriptions.length === 0 ? (
@@ -326,7 +282,7 @@ export function SubscriptionsView({
           title={t("emptyTitle")}
           description={t("emptyDescription")}
         />
-      ) : view === "grid" ? (
+      ) : (
         <div className="space-y-6">
           {showBands && (
             <div className="space-y-3">
@@ -340,41 +296,6 @@ export function SubscriptionsView({
               {(showBands ? otherSubs : subscriptions).map(renderCard)}
             </div>
           </div>
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-xl border">
-          <table className="w-full min-w-[36rem] text-sm">
-            <thead>
-              <tr className="border-b bg-muted/40 text-left text-xs text-muted-foreground">
-                <th className="px-4 py-2 font-medium">{t("tableColName")}</th>
-                <th className="px-4 py-2 font-medium">{t("tableColAmount")}</th>
-                <th className="px-4 py-2 font-medium">{t("tableColCycle")}</th>
-                <th className="px-4 py-2 font-medium">{t("tableColNext")}</th>
-                <th className="px-4 py-2 font-medium">{t("tableColAccount")}</th>
-                <th className="px-4 py-2 text-right font-medium">{t("tableColActions")}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {showBands ? (
-                <>
-                  <tr>
-                    <td colSpan={6} className="bg-muted/40 px-4 py-1.5 text-xs font-medium text-muted-foreground">
-                      {t("sectionIncome")}
-                    </td>
-                  </tr>
-                  {incomeSubs.map(renderRow)}
-                  <tr>
-                    <td colSpan={6} className="bg-muted/40 px-4 py-1.5 text-xs font-medium text-muted-foreground">
-                      {t("sectionOther")}
-                    </td>
-                  </tr>
-                  {otherSubs.map(renderRow)}
-                </>
-              ) : (
-                subscriptions.map(renderRow)
-              )}
-            </tbody>
-          </table>
         </div>
       )}
     </div>

@@ -237,6 +237,7 @@ export function AccountGallery({
                         artColor={cardGroup.art_color}
                         holder={holder}
                         accounts={cluster.items}
+                        baseCurrency={baseCurrency}
                       />
                     ) : (
                       <AccountCard key={cluster.key} account={cluster.items[0]} holder={holder} />

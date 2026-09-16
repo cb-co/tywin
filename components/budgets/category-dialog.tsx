@@ -41,13 +41,27 @@ export function CategoryDialog({
      have always opened. */
   groups = [],
   trigger,
+  /* Optional controlled open, for the one caller that has no trigger of its
+     own: AddBudgetControl's picker IS the trigger, and it lives outside this
+     component. Every other caller passes a `trigger` and leaves these alone,
+     keeping its own uncontrolled behaviour. */
+  open: openProp,
+  onOpenChange: onOpenChangeProp,
 }: {
   mode?: "create" | "edit";
   category?: BudgetRow;
   groups?: BudgetGroupRow[];
-  trigger: React.ReactNode;
+  trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const controlled = openProp !== undefined;
+  const open = controlled ? openProp : openState;
+  const setOpen = (next: boolean) => {
+    if (!controlled) setOpenState(next);
+    onOpenChangeProp?.(next);
+  };
   const [pending, startTransition] = useTransition();
   const [color, setColor] = useState<string>(category?.color ?? SWATCHES[0]);
   const [groupId, setGroupId] = useState<string>(category?.budget_group_id ?? NO_GROUP);
@@ -92,7 +106,7 @@ export function CategoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger render={trigger as React.ReactElement} />
+      {trigger ? <DialogTrigger render={trigger as React.ReactElement} /> : null}
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle className="text-xl">

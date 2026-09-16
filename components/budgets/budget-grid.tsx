@@ -5,15 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
 import { useUiSound } from "@/components/sound/sound-provider";
-import {
-  Plus,
-  Trash2,
-  CopyPlus,
-  Pencil,
-  FolderPlus,
-  LayoutGrid,
-  Table as TableIcon,
-} from "lucide-react";
+import { Trash2, CopyPlus, Pencil } from "lucide-react";
 import { setBudget, deleteCategory, copyPreviousMonth } from "@/app/(app)/budgets/actions";
 import { normalizeMonth } from "@/lib/budgets/month";
 import { formatPercent } from "@/lib/format";
@@ -22,7 +14,6 @@ import { STATUS_COLOR, barPct } from "@/lib/budgets/bar";
 import { budgetLabelParts } from "@/lib/budgets/label";
 import type { Period, PayCycle } from "@/lib/period/cycle";
 import { CategoryDialog } from "./category-dialog";
-import { GroupDialog } from "./group-dialog";
 import { PeriodPicker } from "./period-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,14 +52,12 @@ export function BudgetGrid({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [navPending, startNavTransition] = useTransition();
-  const [view, setView] = useState<"grid" | "table">("grid");
   // Tracks which row's delete is in flight, separate from the shared `pending`
   // above — that one also covers the budget-amount save and "Copy last month",
   // so keying delete off it would disable every row's Trash2 button the
   // moment any one of them starts deleting.
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const t = useTranslations("Budgets");
-  const tg = useTranslations("BudgetGroups");
   const locale = useLocale();
   const maskedFormatMoney = useMaskedFormatMoney();
   const { playSuccess, playDelete, playError } = useUiSound();
@@ -136,55 +125,11 @@ export function BudgetGrid({
     });
   }
 
-  /* The page's two "add" actions, mounted in two places, with width deciding
-     which mount is visible — both are rendered, and the hidden one is inert.
-     Called as a plain function rather than declared as a component so the two
-     stay one definition. Below 450px the toolbar cannot hold three controls
-     without wrapping (in Spanish, "Copiar mes anterior" and "Añadir categoría"
-     together overrun a 375px screen on their own), so they move up beside the
-     section heading, where GoalGrid keeps its own "add goal" button. Above
-     450px they stay in the toolbar.
-
-     They travel together rather than splitting across the two rows because
-     they are the same kind of act — naming a new bucket — and a person who has
-     just decided to make a group should not have to find it somewhere the
-     category button is not. */
-  const addTriggers = (className: string) => (
-    <div className={cn("flex items-center gap-2", className)}>
-      {/* The feature's entire entry point, and deliberately the quieter of the
-          two buttons. Someone who wants groups finds it because it sits where
-          they already are; someone who does not never has to learn the concept
-          exists. There is no wizard and no nag anywhere else — the old budget
-          system keeps working untouched, so there is no deadline to push
-          anyone toward. */}
-      <GroupDialog
-        trigger={
-          <Button variant="outline" size="sm">
-            <FolderPlus className="size-4" />
-            {tg("addGroup")}
-          </Button>
-        }
-      />
-      <CategoryDialog
-        groups={groups}
-        trigger={
-          <Button size="sm">
-            <Plus className="size-4" />
-            {t("addCategory")}
-          </Button>
-        }
-      />
-    </div>
-  );
-
   return (
     <section className="space-y-4">
-      <div className="flex  items-center justify-between gap-4">
-        <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          {t("sectionTitle")}
-        </h2>
-        {addTriggers("min-[450px]:hidden")}
-      </div>
+      <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        {t("sectionTitle")}
+      </h2>
 
       {/* Month switcher + totals.
 
@@ -238,13 +183,10 @@ export function BudgetGrid({
         )}
       </div>
 
-      {/* Two controls below 450px, three above, which is what keeps this on
-          one line at every width. It still wraps rather than clips if a
-          translation is longer than any we ship. `ms-auto` holds the right
-          group against the right edge if that happens — `justify-between`
-          justifies each wrapped line on its own, and a line holding a single
-          item would otherwise send it left. */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      {/* Both "add" actions now live in the page header, behind one pill
+          (AddBudgetControl), at every width — so this row is down to the one
+          control that is neither an add nor a period change. */}
+      <div>
         <Button
           variant="outline"
           size="sm"
@@ -255,33 +197,6 @@ export function BudgetGrid({
           <CopyPlus className="size-4" />
           {t("copyLastMonth")}
         </Button>
-        <div className="ms-auto flex items-center gap-2">
-          <div className="flex rounded-lg bg-muted p-1">
-            <button
-              type="button"
-              onClick={() => setView("grid")}
-              aria-label={t("gridViewAria")}
-              className={cn(
-                "rounded-md p-1.5 transition-colors",
-                view === "grid" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground",
-              )}
-            >
-              <LayoutGrid className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("table")}
-              aria-label={t("tableViewAria")}
-              className={cn(
-                "rounded-md p-1.5 transition-colors",
-                view === "table" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground",
-              )}
-            >
-              <TableIcon className="size-4" />
-            </button>
-          </div>
-          {addTriggers("max-[450px]:hidden")}
-        </div>
       </div>
 
       {!navPending && overview.uncategorized > 0 ? (
@@ -298,26 +213,18 @@ export function BudgetGrid({
       ) : null}
 
       {navPending ? (
-        view === "grid" ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {[0, 1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="skeleton h-36 rounded-xl" />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <div key={i} className="skeleton h-14 rounded-lg" />
-            ))}
-          </div>
-        )
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="skeleton h-36 rounded-xl" />
+          ))}
+        </div>
       ) : rows.length === 0 ? (
         <EmptyState
           icon={<PieChart className="size-6" />}
           title={t("emptyTitle")}
           description={t("emptyDescription")}
         />
-      ) : view === "grid" ? (
+      ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((row) => {
             // null `prorated` means "one figure" — a whole calendar month, or
@@ -403,100 +310,6 @@ export function BudgetGrid({
                   </Button>
                 </div>
               </Card>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="divide-y">
-          {rows.map((row) => {
-            const parts = budgetLabelParts(period, row.budget_monthly, row.budget);
-            return (
-              <div
-                key={row.category_id}
-                className="group -mx-3 flex items-center gap-4 rounded-lg px-3 py-4"
-              >
-                <ColorTile color={row.color} emoji={row.emoji} name={row.name} size="md" />
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="truncate text-sm font-medium text-foreground">{row.name}</p>
-                    <StatPill tone={row.status === "over" ? "destructive" : "neutral"}>
-                      {formatPercent(barPct(row.used, row.budget))}
-                    </StatPill>
-                  </div>
-                  <div className="mt-1 flex items-baseline justify-between gap-2">
-                    <MoneyDisplay amount={row.used} currency={baseCurrency} size="stat" />
-                    <p className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                      {t("amountOfBudget", {
-                        used: maskedFormatMoney(row.used, baseCurrency),
-                        budget: maskedFormatMoney(row.budget, baseCurrency),
-                      })}
-                    </p>
-                  </div>
-                  {parts.prorated !== null ? (
-                    <p className="text-right text-xs text-muted-foreground tabular-nums">
-                      {t(payCycle === "weekly" ? "budgetProratedWeekly" : "budgetProrated", {
-                        monthly: maskedFormatMoney(parts.monthly, baseCurrency),
-                        prorated: maskedFormatMoney(parts.prorated, baseCurrency),
-                      })}
-                    </p>
-                  ) : null}
-                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{
-                        width: `${barPct(row.used, row.budget)}%`,
-                        backgroundColor: STATUS_COLOR[row.status],
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1">
-                  <Input
-                    key={`${row.category_id}-${row.budget_monthly}`}
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    defaultValue={row.budget_monthly || ""}
-                    placeholder={t("amountPlaceholder")}
-                    aria-label={t("budgetForAria", { name: row.name })}
-                    className="h-8 w-24 text-right tabular-nums"
-                    onBlur={(e) => onSaveBudget(row.category_id, e.target.value, row.budget_monthly)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                    }}
-                  />
-                  <div className="flex items-center">
-                    <CategoryDialog
-                      mode="edit"
-                      category={row}
-                      groups={groups}
-                      trigger={
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          aria-label={t("editAria", { name: row.name })}
-                          className={cn("text-muted-foreground", TOUCH_TARGET)}
-                        >
-                          <Pencil className="size-4" />
-                        </Button>
-                      }
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      aria-label={t("deleteAria", { name: row.name })}
-                      className={cn("text-muted-foreground hover:text-destructive", TOUCH_TARGET)}
-                      onClick={() => onDelete(row.category_id)}
-                      disabled={deletingId === row.category_id}
-                      isLoading={deletingId === row.category_id}
-                    >
-                      {deletingId === row.category_id ? null : <Trash2 className="size-4" />}
-                    </Button>
-                  </div>
-                </div>
-              </div>
             );
           })}
         </div>

@@ -5,6 +5,7 @@ import { nextChargeDate, monthlyEquivalent, type BillingCycle } from "@/lib/subs
 import { getExchangeRates, convertToBase, unconvertedCurrencies } from "@/lib/fx";
 import { cardAmountDue, dayAfter } from "./card-due";
 import { importPromptState, type ImportPrompt } from "./import-prompt";
+import { isOutgoing } from "./outgoing";
 import { currentPeriod } from "@/lib/period/profile";
 import { localDate, type Period } from "@/lib/period/cycle";
 import { computeAvailable, type Available } from "./available";
@@ -137,12 +138,14 @@ export async function getOverview(): Promise<Overview> {
     supabase.from("loan_status").select("account_id,currency,outstanding_balance,installment_amount,payment_due_day"),
     supabase
       .from("subscriptions")
-      .select("id,name,amount,currency,billing_cycle,anchor_day,anchor_date,is_active")
+      .select(
+        "id,name,amount,currency,billing_cycle,anchor_day,anchor_date,is_active,kind,account_id,to_account_id",
+      )
       .eq("is_active", true)
-      /* Expenses only. A recurring PAYMENT settles a card or a loan whose due
-         amount card_status and loan_status already put in front of the person
-         — counting the template too would take the same money out twice. */
-      .eq("kind", "expense"),
+      /* Income never leaves; the two outgoing kinds are sorted out below, once
+         the destination account's TYPE is known — which is not something this
+         query can ask. See `outgoing`. */
+      .in("kind", ["expense", "payment"]),
     // The full set, never scoped to a single account — computeFunding's
     // borrow-back allocation depends on every goal sharing an account. See the
     // same comment in lib/goals/queries.ts:147.
@@ -159,6 +162,17 @@ export async function getOverview(): Promise<Overview> {
     statementPaymentsByCard(supabase, cards ?? []),
   ]);
   const toBase = (amount: number, currency: string) => convertToBase(amount, currency, baseCurrency, rates);
+
+  const acctById = new Map((accounts ?? []).map((a) => [a.id, a]));
+
+  /* The recurring templates that are real money leaving, and the ONE list
+     `upcoming`, `computeAvailable` and `monthlySubscriptions` all read — they
+     have to agree, or the hero figure and the list under it describe different
+     months. The rule itself lives in ./outgoing, where it is testable. */
+  const outgoing = (subs ?? []).filter((s) =>
+    isOutgoing(s, (id) => acctById.get(id)?.type),
+  );
+
   // Only the rows that actually feed a base-currency total: `upcoming` shows
   // each amount in its own currency, so a missing rate costs it nothing.
   const fxUnconverted = unconvertedCurrencies(
@@ -166,14 +180,13 @@ export async function getOverview(): Promise<Overview> {
       ...(balances ?? []).map((b) => b.currency),
       ...(cards ?? []).map((c) => c.currency),
       ...(loans ?? []).map((l) => l.currency),
-      ...(subs ?? []).map((s) => s.currency),
+      ...outgoing.map((s) => s.currency),
     ],
     baseCurrency,
     rates,
   );
   const t = await getTranslations("Overview");
 
-  const acctById = new Map((accounts ?? []).map((a) => [a.id, a]));
   const usageRows = usage ?? [];
 
   const netWorth =
@@ -216,7 +229,7 @@ export async function getOverview(): Promise<Overview> {
         currency: l.currency ?? acct.currency,
       });
   }
-  for (const s of subs ?? []) {
+  for (const s of outgoing) {
     const d = nextChargeDate({ cycle: s.billing_cycle as BillingCycle, anchorDay: s.anchor_day, anchorDate: s.anchor_date });
     if (d)
       upcoming.push({
@@ -280,7 +293,7 @@ export async function getOverview(): Promise<Overview> {
         date: d ? localDate(d) : null,
       };
     }),
-    subscriptions: (subs ?? []).map((s) => {
+    subscriptions: outgoing.map((s) => {
       const d = nextChargeDate({ cycle: s.billing_cycle as BillingCycle, anchorDay: s.anchor_day, anchorDate: s.anchor_date });
       return {
         amount: Number(s.amount),
@@ -300,7 +313,11 @@ export async function getOverview(): Promise<Overview> {
     monthExpense: Number(cashflow?.expense ?? 0),
     totalBudget: usageRows.reduce((s, u) => s + Number(u.budget ?? 0), 0),
     totalUsed: usageRows.reduce((s, u) => s + Number(u.used ?? 0), 0),
-    monthlySubscriptions: (subs ?? []).reduce(
+    // `outgoing`, not every template: this figure feeds the recommendation
+    // snapshot as "what recurring costs you a month", and a transfer between two
+    // of your own accounts costs you nothing. Same list the hero and the
+    // upcoming rail read, for the same reason.
+    monthlySubscriptions: outgoing.reduce(
       (s, sub) => s + monthlyEquivalent(toBase(Number(sub.amount), sub.currency), sub.billing_cycle as BillingCycle),
       0,
     ),

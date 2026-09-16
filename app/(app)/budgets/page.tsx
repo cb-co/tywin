@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/page-header";
 import { BudgetGrid } from "@/components/budgets/budget-grid";
 import { GroupGrid } from "@/components/budgets/group-grid";
+import { AddBudgetControl } from "@/components/budgets/add-budget-control";
 import { GoalGrid } from "@/components/goals/goal-grid";
 import { Separator } from "@/components/ui/separator";
 import { getBudgetOverview, getBudgetGroupOverview } from "@/lib/budgets/queries";
@@ -67,7 +68,12 @@ export default async function BudgetsPage({
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
-      <PageHeader title={t("pageTitle")} description={t("pageDescription")} />
+      {/* Both "add" actions, behind one pill — the page's only header action. */}
+      <PageHeader
+        title={t("pageTitle")}
+        description={t("pageDescription")}
+        actions={<AddBudgetControl groups={groupOverview.rows} />}
+      />
 
       {/* Two bands, because they answer to different clocks. Budgets are scoped
           to a period and goals are cumulative, so an unlabelled picker at

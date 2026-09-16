@@ -122,8 +122,12 @@ export function PeriodPicker({
   // is only true by eye.
   if (!showsPeriodToggle(period, payCycle, payAnchor)) return arrows;
 
+  /* `justify-between` below `sm`, where the parent card stretches this row to
+     its full width: the toggle goes to the right edge, under the thumb, instead
+     of sitting packed against the month arrows with dead space beside it. From
+     `sm` up the row is one flex item among several and packs left as before. */
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center justify-between gap-2 sm:justify-start">
       {arrows}
       <div className="flex rounded-lg bg-muted p-1">
         <button

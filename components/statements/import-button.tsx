@@ -17,9 +17,12 @@ import { StatementImportDialog } from "@/components/statements/statement-import-
 export function ImportButton({
   variant = "outline",
   size = "default",
+  className,
 }: {
   variant?: "default" | "outline";
   size?: "default" | "sm";
+  /** For hosts that mount it twice and let width pick the visible one. */
+  className?: string;
 }) {
   const t = useTranslations("Statements");
   const router = useRouter();
@@ -27,7 +30,7 @@ export function ImportButton({
 
   return (
     <>
-      <Button variant={variant} size={size} onClick={() => setOpen(true)}>
+      <Button variant={variant} size={size} className={className} onClick={() => setOpen(true)}>
         <Upload className="mr-1.5 size-4" />
         {t("importButton")}
       </Button>

@@ -35,12 +35,23 @@ export function GroupDialog({
   mode = "create",
   group,
   trigger,
+  /* Optional controlled open — see CategoryDialog's own note. */
+  open: openProp,
+  onOpenChange: onOpenChangeProp,
 }: {
   mode?: "create" | "edit";
   group?: BudgetGroupRow;
-  trigger: React.ReactNode;
+  trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const controlled = openProp !== undefined;
+  const open = controlled ? openProp : openState;
+  const setOpen = (next: boolean) => {
+    if (!controlled) setOpenState(next);
+    onOpenChangeProp?.(next);
+  };
   const [pending, startTransition] = useTransition();
   const [color, setColor] = useState<string>(group?.color ?? SWATCHES[0]);
   const router = useRouter();
@@ -80,7 +91,7 @@ export function GroupDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger render={trigger as React.ReactElement} />
+      {trigger ? <DialogTrigger render={trigger as React.ReactElement} /> : null}
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle className="text-xl">

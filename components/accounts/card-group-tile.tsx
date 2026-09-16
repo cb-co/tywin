@@ -27,12 +27,15 @@ export function CardGroupTile({
   artColor,
   holder,
   accounts,
+  baseCurrency,
 }: {
   name: string;
   brand: string | null;
   artColor: string | null;
   holder: string;
   accounts: AccountWithStatus[];
+  /** Decides which line the tile itself opens — see `primary` below. */
+  baseCurrency: string;
 }) {
   const t = useTranslations("Accounts");
   const network = inferNetwork(name, brand);
@@ -45,19 +48,48 @@ export function CardGroupTile({
   const resolvedLast4 =
     accounts.map((a) => inferLast4(a.name, a.last4)).find((v) => v !== null) ??
     inferLast4(name);
+  // The line the tile as a whole opens. A solo card tile is one link to one
+  // account and this one has to behave the same way, so it needs a default —
+  // and the default anybody means is the line they actually spend on, which is
+  // the one in their own currency. Falls back to the first line for a card with
+  // no base-currency line at all (a USD-only pair of revolving + installments).
+  const primary = accounts.find((a) => a.currency === baseCurrency) ?? accounts[0];
   // The face carries no figure at all now, which also retires the cross-currency
   // question this used to have to answer: a group is usually a USD line plus a
   // DOP line on one physical card, there is no FX conversion here to unify them,
   // and the per-line rows below already report each one in its own currency.
   return (
-    <Card className="h-full gap-0 p-5">
+    /* `relative` + `lift` so the whole tile is one clickable surface, exactly
+       like AccountCard's — which is a `<Link>` wrapping its whole Card. It
+       cannot be a wrapping link here, because the currency rows below are links
+       too and an anchor inside an anchor is invalid. The stretched overlay
+       below does the same job: it covers the tile, the rows sit above it, so
+       the face and the padding open the primary line while each row still opens
+       its own. */
+    <Card className="lift relative h-full gap-0 p-5">
+      {/* Positioned, so it paints over the static face beneath it; the rows are
+          positioned too and carry a higher z-index, which is what keeps them
+          clickable through it. The card's name is the accessible name — an
+          overlay with no text is an unlabelled link to a screen reader. */}
+      <Link
+        href={`/accounts/${primary.id}`}
+        aria-label={name}
+        className="absolute inset-0 z-0 rounded-2xl"
+      />
+      {/* `pointer-events-none` so clicks and the pointer cursor fall through to
+          the overlay above. The face's root is `relative`, and a positioned
+          element paints over a z-0 one that precedes it in the DOM — so without
+          this it sat on top of the link, swallowing the hover and leaving the
+          default arrow over the one part of the tile that looks most clickable.
+          It is pure decoration here; the tile it sits in owns the navigation. */}
       <PaymentCard
         holder={holder}
         last4={resolvedLast4}
         network={network}
         color={artColor}
+        className="pointer-events-none"
       />
-      <div className="mt-4 divide-y">
+      <div className="relative z-10 mt-4 divide-y">
         {accounts.map((a) => {
           const lineOwed = a.cardStatus?.owed ?? a.current_balance;
           const util = a.cardStatus?.utilization_pct ?? null;
