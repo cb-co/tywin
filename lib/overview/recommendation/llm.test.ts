@@ -25,6 +25,14 @@ const snapshot: RecommendationSnapshot = {
   loans: [],
   goals: [],
   upcoming: [],
+  trend: {
+    monthToDate: { income: 4201, expense: 2811 },
+    lastMonthSamePoint: { income: 4000, expense: 2300 },
+    lastMonthExpense: 6900,
+    projectedMonthExpense: 7922,
+    savingsRatePct: 33,
+  },
+  topCategories: [{ category: "Dining", used: 320, lastMonthUsed: 211 }],
 };
 
 const mockReturn = (object: unknown) =>
@@ -119,6 +127,34 @@ describe("inferRecommendation call shape", () => {
     mockReturn({ headline: "Steady month", body: "Nothing needs attention.", tone: "good" });
     await inferRecommendation(snapshot, "en");
     expect(lastCall().prompt).toContain("Dining");
+  });
+});
+
+describe("inferRecommendation recent history", () => {
+  const recent = [
+    { headline: "Dining is running hot", body: "You are 80% through it." },
+    { headline: "Savings on pace", body: "The trip fund is on track." },
+  ];
+
+  beforeEach(() => {
+    mockReturn({ headline: "Steady month", body: "Nothing needs attention.", tone: "good" });
+  });
+
+  it("sends the recent recommendations alongside the snapshot", async () => {
+    await inferRecommendation(snapshot, "en", null, recent);
+    const prompt = JSON.parse(lastCall().prompt);
+    expect(prompt.snapshot.baseCurrency).toBe("USD");
+    expect(prompt.recentRecommendations).toEqual(recent);
+  });
+
+  it("tells the model not to repeat them", async () => {
+    await inferRecommendation(snapshot, "en", null, recent);
+    expect(lastCall().system).toMatch(/recentRecommendations/);
+  });
+
+  it("sends an empty list when there is no history yet", async () => {
+    await inferRecommendation(snapshot, "en");
+    expect(JSON.parse(lastCall().prompt).recentRecommendations).toEqual([]);
   });
 });
 

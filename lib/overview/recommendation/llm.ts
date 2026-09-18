@@ -5,6 +5,7 @@ import { DEFERRED_INFERENCE_BUDGET_MS, inferenceSignal } from "@/lib/llm/budget"
 import { modelForUser } from "@/lib/llm/owner";
 import { asTone, type Tone } from "./tone";
 import type { RecommendationSnapshot } from "./snapshot";
+import type { RecentRecommendation } from "./history";
 
 /**
  * One short piece of coaching about a person's own numbers.
@@ -62,6 +63,9 @@ Rules:
 - Amounts are in baseCurrency unless the line names its own currency.
 - monthlyRecurringExpenses, monthlyRecurringCardPayments and monthlyRecurringIncome are per-month totals of what the person saved as recurring. They are recurring expenses and payments — rent, bills, streaming, a card payment — NOT subscriptions, so never call them "subscriptions". Say "recurring expenses" or "recurring payments". Compare them with monthlyRecurringIncome when it is above zero (for example, the share of recurring income they take). Only suggest reviewing them when they are a large share of income or the month is tight; card payments settle spending already made, so do not suggest cutting them.
 - upcoming items of kind "recurring" are those recurring expenses and payments coming due.
+- trend compares the calendar month so far with the same point last month (lastMonthSamePoint), and gives last month's full expense (lastMonthExpense), a projectedMonthExpense for this month, and savingsRatePct (null until income lands). Use it to say whether things are better or worse than last month, but only when the gap is meaningful.
+- topCategories are the biggest spending categories this month, including ones with no budget; lastMonthUsed is the same category at the same point last month.
+- recentRecommendations are what this person was already told, newest first. Do not repeat their topic or their phrasing. Choose a different notable thing from the snapshot. Return to a recent topic only when the figures have clearly changed since, and then say what changed.
 
 The snapshot contains no names — not the person's, not their bank's, not their recurring payments'. Do not ask for them and do not pretend to know them.`;
 }
@@ -73,6 +77,10 @@ The snapshot contains no names — not the person's, not their bank's, not their
  * safe default: a good headline and body should not be thrown away over a word
  * the CHECK constraint would refuse. `headline` and `body` have no such default
  * — an empty card is worse than no card — so an empty one is null.
+ *
+ * `recent` is what the person was already shown, so the next one can say
+ * something else. It is model-written text from a name-free snapshot, so it
+ * carries no names either.
  *
  * `email` only picks the model — see lib/llm/owner.ts. It is not sent anywhere:
  * the snapshot is the whole prompt, and it deliberately contains no names.
@@ -86,13 +94,14 @@ export async function inferRecommendation(
   snapshot: RecommendationSnapshot,
   locale: string,
   email?: string | null,
+  recent: RecentRecommendation[] = [],
 ): Promise<Recommendation | null> {
   try {
     const { object } = await generateObject({
       model: google(modelForUser(email, process.env.GOOGLE_MODEL ?? "gemini-3.5-flash-lite")),
       schema: RecommendationSchema,
       system: systemPrompt(LANGUAGE[locale] ?? LANGUAGE.en),
-      prompt: JSON.stringify(snapshot),
+      prompt: JSON.stringify({ snapshot, recentRecommendations: recent }),
       abortSignal: inferenceSignal(DEFERRED_INFERENCE_BUDGET_MS),
     });
 

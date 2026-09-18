@@ -708,6 +708,7 @@ export type Database = {
           generated_at: string
           headline: string
           locale: string
+          recent: Json
           tone: string
           user_id: string
         }
@@ -716,6 +717,7 @@ export type Database = {
           generated_at?: string
           headline: string
           locale: string
+          recent?: Json
           tone: string
           user_id: string
         }
@@ -724,6 +726,7 @@ export type Database = {
           generated_at?: string
           headline?: string
           locale?: string
+          recent?: Json
           tone?: string
           user_id?: string
         }

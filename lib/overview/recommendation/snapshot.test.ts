@@ -114,6 +114,15 @@ const rows: SnapshotRows = {
     { id: "a2", name: "Banco Popular Ahorros", type: "savings", currency: "USD", balance: 4000 },
   ],
   loans: [{ currency: "USD", outstanding: 8200, installment: 310 }],
+  calendar: {
+    thisMonth: { income: 4200.5, expense: 2810.75 },
+    lastMonthSamePoint: { income: 4000, expense: 2300.4 },
+    lastMonth: { income: 4100, expense: 6900.2 },
+  },
+  lastMonthUsedByCategory: new Map([
+    ["c1", 210.6],
+    ["c2", 90],
+  ]),
 };
 
 describe("buildSnapshot shape", () => {
@@ -181,6 +190,72 @@ describe("buildSnapshot shape", () => {
     expect(overdue.upcoming).toEqual([
       { kind: "loan_installment", amount: 310, currency: "USD", dueInDays: 0 },
     ]);
+  });
+});
+
+describe("buildSnapshot trend", () => {
+  it("compares this month so far with the same point last month", () => {
+    const { trend } = buildSnapshot(rows);
+    expect(trend.monthToDate).toEqual({ income: 4201, expense: 2811 });
+    expect(trend.lastMonthSamePoint).toEqual({ income: 4000, expense: 2300 });
+    expect(trend.lastMonthExpense).toBe(6900);
+  });
+
+  // 2810.75 spent over 11 of 31 days. The model is told to use only the numbers it
+  // is given, so the extrapolation has to be done here rather than by it.
+  it("projects month-end expense from the daily pace", () => {
+    expect(buildSnapshot(rows).trend.projectedMonthExpense).toBe(7921);
+  });
+
+  it("reports the savings rate as a whole percentage of income", () => {
+    expect(buildSnapshot(rows).trend.savingsRatePct).toBe(33);
+  });
+
+  it("has no savings rate before any income lands", () => {
+    const s = buildSnapshot({
+      ...rows,
+      calendar: { ...rows.calendar, thisMonth: { income: 0, expense: 120 } },
+    });
+    expect(s.trend.savingsRatePct).toBeNull();
+  });
+
+  it("goes negative when spending outruns income", () => {
+    const s = buildSnapshot({
+      ...rows,
+      calendar: { ...rows.calendar, thisMonth: { income: 1000, expense: 1500 } },
+    });
+    expect(s.trend.savingsRatePct).toBe(-50);
+  });
+});
+
+describe("buildSnapshot topCategories", () => {
+  it("ranks by spend, unbudgeted categories included, with last month's figure", () => {
+    const s = buildSnapshot({
+      ...rows,
+      budgets: [
+        ...rows.budgets.slice(0, 2),
+        { ...rows.budgets[2], used: 500 }, // Gifts: no budget, biggest spend
+      ],
+      lastMonthUsedByCategory: new Map([["c1", 210.6]]),
+    });
+    expect(s.topCategories).toEqual([
+      { category: "Gifts", used: 500, lastMonthUsed: 0 },
+      { category: "Dining", used: 320, lastMonthUsed: 211 },
+      { category: "Transport", used: 60, lastMonthUsed: 0 },
+    ]);
+  });
+
+  it("skips categories with no spend and caps the list at five", () => {
+    const many = Array.from({ length: 8 }, (_, i) => ({
+      ...rows.budgets[0],
+      category_id: `x${i}`,
+      name: `Cat${i}`,
+      used: i === 0 ? 0 : 100 + i,
+    }));
+    const s = buildSnapshot({ ...rows, budgets: many });
+    expect(s.topCategories).toHaveLength(5);
+    expect(s.topCategories.map((c) => c.category)).not.toContain("Cat0");
+    expect(s.topCategories[0].category).toBe("Cat7");
   });
 });
 

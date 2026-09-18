@@ -16,6 +16,10 @@ type UpcomingKind = "card_payment" | "loan_installment" | "recurring" | "other";
  * Amounts are rounded to whole currency units. Coaching does not need cents, and
  * false precision spends tokens to make the model sound like a ledger.
  */
+export type Cashflow = { income: number; expense: number };
+
+const TOP_CATEGORY_LIMIT = 5;
+
 export type RecommendationSnapshot = {
   asOf: string;
   dayOfMonth: number;
@@ -36,6 +40,22 @@ export type RecommendationSnapshot = {
   loans: { currency: string; outstanding: number; installment: number }[];
   goals: { target: number; saved: number; targetDate: string | null }[];
   upcoming: { kind: UpcomingKind; amount: number; currency: string; dueInDays: number }[];
+  /* Always the CALENDAR month, unlike monthIncome/monthExpense above, which
+     follow the person's pay period. "Same point last month" only means
+     something against a fixed month, and dayOfMonth is a calendar day. */
+  trend: {
+    monthToDate: Cashflow;
+    lastMonthSamePoint: Cashflow;
+    lastMonthExpense: number;
+    /* Extrapolated here, not left to the model: it is told to use only the
+       numbers it is given, and multiplying is where it would go wrong. */
+    projectedMonthExpense: number;
+    /* Null before any income has landed. Negative when spending outruns it. */
+    savingsRatePct: number | null;
+  };
+  /* Biggest spending categories so far this month, budgeted or not — `budgets`
+     only sees the ones with a limit. lastMonthUsed is the same point last month. */
+  topCategories: { category: string; used: number; lastMonthUsed: number }[];
 };
 
 export type SnapshotRows = {
@@ -45,6 +65,9 @@ export type SnapshotRows = {
   goals: GoalCardRow[];
   accounts: { id: string; name: string; type: string; currency: string; balance: number }[];
   loans: { currency: string; outstanding: number; installment: number }[];
+  calendar: { thisMonth: Cashflow; lastMonthSamePoint: Cashflow; lastMonth: Cashflow };
+  /** Spend per category id over the same point of last month. */
+  lastMonthUsedByCategory: Map<string, number>;
 };
 
 /* `UpcomingItem.key` is the only place the kind survives — `title` and
@@ -81,6 +104,9 @@ function daysLeftInMonth(now: Date): number {
 export function buildSnapshot(rows: SnapshotRows): RecommendationSnapshot {
   const { now, overview: o } = rows;
   const r = Math.round;
+  const { thisMonth } = rows.calendar;
+  const dayOfMonth = now.getUTCDate();
+  const daysInMonth = dayOfMonth + daysLeftInMonth(now);
 
   return {
     asOf: isoDate(now),
@@ -119,5 +145,25 @@ export function buildSnapshot(rows: SnapshotRows): RecommendationSnapshot {
       currency: u.currency,
       dueInDays: dueInDays(u.date, now),
     })),
+    trend: {
+      monthToDate: { income: r(thisMonth.income), expense: r(thisMonth.expense) },
+      lastMonthSamePoint: {
+        income: r(rows.calendar.lastMonthSamePoint.income),
+        expense: r(rows.calendar.lastMonthSamePoint.expense),
+      },
+      lastMonthExpense: r(rows.calendar.lastMonth.expense),
+      projectedMonthExpense: r((thisMonth.expense / dayOfMonth) * daysInMonth),
+      savingsRatePct:
+        thisMonth.income > 0 ? r(((thisMonth.income - thisMonth.expense) / thisMonth.income) * 100) : null,
+    },
+    topCategories: rows.budgets
+      .filter((b) => b.used > 0)
+      .sort((a, b) => b.used - a.used)
+      .slice(0, TOP_CATEGORY_LIMIT)
+      .map((b) => ({
+        category: b.name,
+        used: r(b.used),
+        lastMonthUsed: r(rows.lastMonthUsedByCategory.get(b.category_id) ?? 0),
+      })),
   };
 }

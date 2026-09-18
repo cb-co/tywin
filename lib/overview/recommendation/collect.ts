@@ -2,8 +2,17 @@ import { createClient } from "@/lib/supabase/server";
 import { getOverview } from "@/lib/overview/queries";
 import { getBudgetOverview } from "@/lib/budgets/queries";
 import { getGoalsOverview } from "@/lib/goals/queries";
-import { monthStart, monthEnd } from "@/lib/budgets/month";
-import { buildSnapshot, type RecommendationSnapshot } from "./snapshot";
+import { monthStart, monthEnd, addMonths } from "@/lib/budgets/month";
+import { buildSnapshot, type Cashflow, type RecommendationSnapshot } from "./snapshot";
+
+/** The same day-of-month last month, clipped to that month's length — on the
+ *  31st, March compares against all of February rather than a day that is not
+ *  there. */
+function sameDayLastMonth(thisStart: string, lastStart: string, day: number): string {
+  const lastEnd = monthEnd(lastStart);
+  const target = `${lastStart.slice(0, 8)}${String(day).padStart(2, "0")}`;
+  return target < lastEnd ? target : lastEnd;
+}
 
 /**
  * Gathers everything the model is shown, and hands it to `buildSnapshot` to be
@@ -20,7 +29,22 @@ import { buildSnapshot, type RecommendationSnapshot } from "./snapshot";
 export async function collectSnapshot(now = new Date()): Promise<RecommendationSnapshot | null> {
   const supabase = await createClient();
 
-  const [overview, budgets, goals, { data: accounts }, { data: balances }, { data: cards }, { data: loans }] =
+  // Local calendar, to agree with monthStart(); the trend is about calendar
+  // months, whatever pay period the overview itself is showing.
+  const thisStart = monthStart(now);
+  const lastStart = addMonths(thisStart, -1);
+  const today = `${thisStart.slice(0, 8)}${String(now.getDate()).padStart(2, "0")}`;
+  const lastSamePoint = sameDayLastMonth(thisStart, lastStart, now.getDate());
+  const lastEnd = monthEnd(lastStart);
+
+  const cashflow = async (start: string, end: string): Promise<Cashflow> => {
+    const { data } = await supabase.rpc("cashflow_range", { p_start: start, p_end: end });
+    const row = (data ?? [])[0];
+    return { income: Number(row?.income ?? 0), expense: Number(row?.expense ?? 0) };
+  };
+
+  const [overview, budgets, goals, { data: accounts }, { data: balances }, { data: cards }, { data: loans },
+    thisMonth, lastMonthSamePoint, lastMonth, { data: lastUsage }] =
     await Promise.all([
       getOverview(),
       // Deliberately the calendar month, not overview.period: getBudgetOverview
@@ -35,6 +59,11 @@ export async function collectSnapshot(now = new Date()): Promise<RecommendationS
       supabase.from("account_balances").select("account_id,balance"),
       supabase.from("card_status").select("account_id,owed"),
       supabase.from("loan_status").select("currency,outstanding_balance,installment_amount"),
+      cashflow(thisStart, today),
+      cashflow(lastStart, lastSamePoint),
+      cashflow(lastStart, lastEnd),
+      // Every category, budgeted or not, so an unbudgeted one can be compared.
+      supabase.rpc("category_usage_range", { p_start: lastStart, p_end: lastSamePoint }),
     ]);
 
   if (!overview.hasAccounts) return null;
@@ -51,6 +80,8 @@ export async function collectSnapshot(now = new Date()): Promise<RecommendationS
     overview,
     budgets: budgets.rows,
     goals: goals.goals,
+    calendar: { thisMonth, lastMonthSamePoint, lastMonth },
+    lastMonthUsedByCategory: new Map((lastUsage ?? []).map((u) => [u.category_id, Number(u.used ?? 0)])),
     accounts: (accounts ?? []).map((a) => ({
       id: a.id,
       name: a.name,
