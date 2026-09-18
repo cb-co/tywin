@@ -33,7 +33,9 @@ const rows: SnapshotRows = {
     monthExpense: 2810.75,
     totalBudget: 3000,
     totalUsed: 2400,
-    monthlySubscriptions: 64.99,
+    monthlyRecurringExpenses: 64.99,
+    monthlyRecurringCardPayments: 200.4,
+    monthlyRecurringIncome: 3000.5,
     upcoming: [
       {
         key: "card-6f1c2b7e-1111-4aaa-bbbb-000000000001",
@@ -124,7 +126,9 @@ describe("buildSnapshot shape", () => {
       netWorth: 12480,
       monthIncome: 4201,
       monthExpense: 2811,
-      monthlySubscriptions: 65,
+      monthlyRecurringExpenses: 65,
+      monthlyRecurringCardPayments: 200,
+      monthlyRecurringIncome: 3001,
     });
   });
 
@@ -138,7 +142,7 @@ describe("buildSnapshot shape", () => {
   it("reduces upcoming items to a kind and a countdown", () => {
     expect(buildSnapshot(rows).upcoming).toEqual([
       { kind: "card_payment", amount: 340, currency: "USD", dueInDays: 6 },
-      { kind: "subscription", amount: 16, currency: "USD", dueInDays: 11 },
+      { kind: "recurring", amount: 16, currency: "USD", dueInDays: 11 },
     ]);
   });
 

@@ -2,7 +2,7 @@ import type { Overview, UpcomingItem } from "@/lib/overview/queries";
 import type { BudgetRow } from "@/lib/budgets/queries";
 import type { GoalCardRow } from "@/lib/goals/queries";
 
-type UpcomingKind = "card_payment" | "loan_installment" | "subscription" | "other";
+type UpcomingKind = "card_payment" | "loan_installment" | "recurring" | "other";
 
 /**
  * What one person's finances look like to the model.
@@ -24,7 +24,13 @@ export type RecommendationSnapshot = {
   netWorth: number;
   monthIncome: number;
   monthExpense: number;
-  monthlySubscriptions: number;
+  /* Per-month equivalents of the person's saved recurring templates. Kept
+     apart because "rent and streaming" and "the card payment" call for
+     different advice, and income is what they are weighed against. Transfers to
+     their own accounts and loan payments are in none of them. */
+  monthlyRecurringExpenses: number;
+  monthlyRecurringCardPayments: number;
+  monthlyRecurringIncome: number;
   budgets: { category: string; budget: number; used: number }[];
   accounts: { type: string; currency: string; balance: number }[];
   loans: { currency: string; outstanding: number; installment: number }[];
@@ -47,7 +53,7 @@ export type SnapshotRows = {
 const KIND_BY_PREFIX: Record<string, UpcomingKind> = {
   card: "card_payment",
   loan: "loan_installment",
-  sub: "subscription",
+  sub: "recurring",
 };
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -84,7 +90,9 @@ export function buildSnapshot(rows: SnapshotRows): RecommendationSnapshot {
     netWorth: r(o.netWorth),
     monthIncome: r(o.monthIncome),
     monthExpense: r(o.monthExpense),
-    monthlySubscriptions: r(o.monthlySubscriptions),
+    monthlyRecurringExpenses: r(o.monthlyRecurringExpenses),
+    monthlyRecurringCardPayments: r(o.monthlyRecurringCardPayments),
+    monthlyRecurringIncome: r(o.monthlyRecurringIncome),
     // Categories with no limit set are dropped: nothing can be over, under or
     // approaching a budget of zero, so they are pure prompt noise.
     budgets: rows.budgets

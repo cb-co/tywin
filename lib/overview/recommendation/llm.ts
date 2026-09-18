@@ -60,8 +60,10 @@ Rules:
 - Say something worth reading even on a quiet day: a goal on pace, a month tracking under budget, a card that is nearly paid off are all worth naming.
 - Do not greet, do not sign off, do not ask questions, do not explain yourself.
 - Amounts are in baseCurrency unless the line names its own currency.
+- monthlyRecurringExpenses, monthlyRecurringCardPayments and monthlyRecurringIncome are per-month totals of what the person saved as recurring. They are recurring expenses and payments — rent, bills, streaming, a card payment — NOT subscriptions, so never call them "subscriptions". Say "recurring expenses" or "recurring payments". Compare them with monthlyRecurringIncome when it is above zero (for example, the share of recurring income they take). Only suggest reviewing them when they are a large share of income or the month is tight; card payments settle spending already made, so do not suggest cutting them.
+- upcoming items of kind "recurring" are those recurring expenses and payments coming due.
 
-The snapshot contains no names — not the person's, not their bank's, not their subscriptions'. Do not ask for them and do not pretend to know them.`;
+The snapshot contains no names — not the person's, not their bank's, not their recurring payments'. Do not ask for them and do not pretend to know them.`;
 }
 
 /**

@@ -29,7 +29,13 @@ export type Overview = {
   monthExpense: number;
   totalBudget: number;
   totalUsed: number;
-  monthlySubscriptions: number;
+  /** Monthly-equivalent totals of the active recurring templates, base currency,
+   *  split by what they are. Expenses (rent, streaming, utilities) and card
+   *  payments are different things to coach on, and income is what they are
+   *  weighed against. Transfers and loan payments are in none of them. */
+  monthlyRecurringExpenses: number;
+  monthlyRecurringCardPayments: number;
+  monthlyRecurringIncome: number;
   upcoming: UpcomingItem[];
   importPrompt: ImportPrompt;
   /** Currencies that went into the totals above at a 1:1 fallback rate because
@@ -142,10 +148,11 @@ export async function getOverview(): Promise<Overview> {
         "id,name,amount,currency,billing_cycle,anchor_day,anchor_date,is_active,kind,account_id,to_account_id",
       )
       .eq("is_active", true)
-      /* Income never leaves; the two outgoing kinds are sorted out below, once
-         the destination account's TYPE is known — which is not something this
-         query can ask. See `outgoing`. */
-      .in("kind", ["expense", "payment"]),
+      /* Income is read only for the monthly recurring-income total; the
+         outgoing kinds are sorted out below, once the destination account's
+         TYPE is known — which is not something this query can ask. See
+         `outgoing`. */
+      .in("kind", ["expense", "payment", "income"]),
     // The full set, never scoped to a single account — computeFunding's
     // borrow-back allocation depends on every goal sharing an account. See the
     // same comment in lib/goals/queries.ts:147.
@@ -166,7 +173,7 @@ export async function getOverview(): Promise<Overview> {
   const acctById = new Map((accounts ?? []).map((a) => [a.id, a]));
 
   /* The recurring templates that are real money leaving, and the ONE list
-     `upcoming`, `computeAvailable` and `monthlySubscriptions` all read — they
+     `upcoming`, `computeAvailable` and the monthly recurring totals all read — they
      have to agree, or the hero figure and the list under it describe different
      months. The rule itself lives in ./outgoing, where it is testable. */
   const outgoing = (subs ?? []).filter((s) =>
@@ -194,6 +201,12 @@ export async function getOverview(): Promise<Overview> {
     (cards ?? []).reduce((s, c) => s + toBase(Number(c.owed ?? 0), c.currency ?? baseCurrency), 0) -
     (loans ?? []).reduce(
       (s, l) => s + toBase(Number(l.outstanding_balance ?? 0), l.currency ?? baseCurrency),
+      0,
+    );
+
+  const monthlyTotal = (rows: NonNullable<typeof subs>) =>
+    rows.reduce(
+      (s, sub) => s + monthlyEquivalent(toBase(Number(sub.amount), sub.currency), sub.billing_cycle as BillingCycle),
       0,
     );
 
@@ -313,14 +326,11 @@ export async function getOverview(): Promise<Overview> {
     monthExpense: Number(cashflow?.expense ?? 0),
     totalBudget: usageRows.reduce((s, u) => s + Number(u.budget ?? 0), 0),
     totalUsed: usageRows.reduce((s, u) => s + Number(u.used ?? 0), 0),
-    // `outgoing`, not every template: this figure feeds the recommendation
-    // snapshot as "what recurring costs you a month", and a transfer between two
-    // of your own accounts costs you nothing. Same list the hero and the
-    // upcoming rail read, for the same reason.
-    monthlySubscriptions: outgoing.reduce(
-      (s, sub) => s + monthlyEquivalent(toBase(Number(sub.amount), sub.currency), sub.billing_cycle as BillingCycle),
-      0,
-    ),
+    // `outgoing`, not every template: a transfer between two of your own
+    // accounts costs you nothing. Same list the hero and the upcoming rail read.
+    monthlyRecurringExpenses: monthlyTotal(outgoing.filter((s) => s.kind === "expense")),
+    monthlyRecurringCardPayments: monthlyTotal(outgoing.filter((s) => s.kind === "payment")),
+    monthlyRecurringIncome: monthlyTotal((subs ?? []).filter((s) => s.kind === "income")),
     upcoming: upcoming.slice(0, 6),
     importPrompt: importPromptState(cards ?? []),
     fxUnconverted,
