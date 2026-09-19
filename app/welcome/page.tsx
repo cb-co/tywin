@@ -7,6 +7,7 @@ import { resumeStep, STEPS } from "@/lib/onboarding/resume";
 import { isLocale, DEFAULT_LOCALE } from "@/lib/i18n/locale";
 import { WelcomeFlow, type WelcomeData } from "@/components/onboarding/welcome-flow";
 import { Logo, Wordmark } from "@/components/brand/logo";
+import { FigureMaskProvider } from "@/components/figure-mask/figure-mask-provider";
 import { SoundProvider } from "@/components/sound/sound-provider";
 
 export default async function WelcomePage() {
@@ -18,7 +19,7 @@ export default async function WelcomePage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, base_currency, onboarded_at, pay_cycle")
+    .select("display_name, base_currency, onboarded_at, pay_cycle, pay_anchor_day")
     .maybeSingle();
 
   // Already set up: never show the flow again.
@@ -66,6 +67,7 @@ export default async function WelcomePage() {
     bills: subs.filter((s) => s.kind === "expense"),
     categories: categoriesRes.data ?? [],
     payCycle: profile?.pay_cycle ?? "semimonthly",
+    payAnchorDay: profile?.pay_anchor_day ?? null,
   };
 
   const initialStep = resumeStep({
@@ -92,21 +94,24 @@ export default async function WelcomePage() {
 
       <div className="flex flex-1 items-start justify-center px-6 pb-16 pt-4 sm:items-center sm:pt-0">
         {/* Welcome renders outside AppShell, which is where the rest of the app
-            gets its sound context. The card step mounts the same statement
-            import flow the app uses, and that flow plays the success and error
-            cues, so the provider has to exist here too. */}
-        <SoundProvider>
-          <WelcomeFlow
-            currencies={currencies}
-            initialName={profile?.display_name ?? ""}
-            initialCurrency={baseCurrencyOf(profile)}
-            initialStep={initialStep}
-            locale={isLocale(locale) ? locale : DEFAULT_LOCALE}
-            email={user.email ?? ""}
-            data={data}
-            stepLabels={STEPS.map((s) => t(stepLabelKey[s]))}
-          />
-        </SoundProvider>
+            gets these contexts. The card step mounts the same statement import
+            flow the app uses, which plays the success and error cues; the
+            income, loans and bills steps list saved amounts through
+            MoneyDisplay, which reads the figure-masking preference. */}
+        <FigureMaskProvider>
+          <SoundProvider>
+            <WelcomeFlow
+              currencies={currencies}
+              initialName={profile?.display_name ?? ""}
+              initialCurrency={baseCurrencyOf(profile)}
+              initialStep={initialStep}
+              locale={isLocale(locale) ? locale : DEFAULT_LOCALE}
+              email={user.email ?? ""}
+              data={data}
+              stepLabels={STEPS.map((s) => t(stepLabelKey[s]))}
+            />
+          </SoundProvider>
+        </FigureMaskProvider>
       </div>
     </main>
   );

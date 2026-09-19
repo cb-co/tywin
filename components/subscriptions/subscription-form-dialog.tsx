@@ -8,10 +8,10 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import {
   BILLING_CYCLES,
-  hasAnchorField,
   usesAnchorDate,
   type BillingCycle,
 } from "@/lib/subscriptions/cycle";
+import { SEMIMONTHLY_MAX_ANCHOR, semimonthlyStarts } from "@/lib/period/cycle";
 import { subscriptionInput } from "@/lib/subscriptions/schema";
 import { RECURRING_KINDS, templateAllowsFees, type RecurringKind } from "@/lib/subscriptions/template";
 import { resolveFeeDefaults } from "@/lib/transactions/defaults";
@@ -167,6 +167,9 @@ export function SubscriptionFormDialog({
 
   const kind = useWatch({ control, name: "kind" });
   const cycle = useWatch({ control, name: "billing_cycle" });
+  const anchorDay = Number(useWatch({ control, name: "anchor_day" }));
+  const firstPaydayValid =
+    Number.isInteger(anchorDay) && anchorDay >= 1 && anchorDay <= SEMIMONTHLY_MAX_ANCHOR;
   const accountId = useWatch({ control, name: "account_id" });
   const byId = (id: string) => accounts.find((a) => a.id === id) ?? null;
   const payment = kind === "payment";
@@ -370,12 +373,32 @@ export function SubscriptionFormDialog({
                 </p>
                 <FieldError message={errors.anchor_date?.message} />
               </div>
-            ) : hasAnchorField(cycle) ? (
+            ) : cycle === "semimonthly" ? (
+              <div className="space-y-2">
+                <Label htmlFor="anchor_day">{t("semimonthlyDayLabel")}</Label>
+                <Input
+                  id="anchor_day"
+                  type="number"
+                  min="1"
+                  max={SEMIMONTHLY_MAX_ANCHOR}
+                  placeholder="1"
+                  aria-invalid={!!errors.anchor_day}
+                  aria-describedby="anchor_day_hint"
+                  {...register("anchor_day")}
+                />
+                <p id="anchor_day_hint" className="text-xs text-muted-foreground">
+                  {firstPaydayValid
+                    ? t("semimonthlyDayHint", { second: semimonthlyStarts(anchorDay)[1] })
+                    : t("semimonthlyDayRange")}
+                </p>
+                <FieldError message={errors.anchor_day?.message} />
+              </div>
+            ) : (
               <div className="space-y-2">
                 <Label htmlFor="anchor_day">{t("chargeDayLabel")}</Label>
                 <Input id="anchor_day" type="number" min="1" max="31" placeholder={t("chargeDayPlaceholder")} {...register("anchor_day")} />
               </div>
-            ) : null}
+            )}
             <div className="space-y-2">
               {/* Required wherever the account is a DESTINATION — the account a
                   payment comes from, and the one income lands in. An expense's

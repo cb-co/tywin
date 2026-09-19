@@ -112,14 +112,18 @@ export function CurrencySelect({
   value,
   onChange,
   currencies,
+  compact = false,
 }: {
   id: string;
   value: string;
   onChange: (code: string) => void;
   currencies: CurrencyRow[];
+  /** Closed, shows only the code — for a narrow column where "DOP · Dominican
+   *  Peso" would be cut off. The open list still names each currency. */
+  compact?: boolean;
 }) {
   const items: Record<string, string> = Object.fromEntries(
-    currencies.map((c) => [c.code, `${c.code} · ${c.name}`]),
+    currencies.map((c) => [c.code, compact ? c.code : `${c.code} · ${c.name}`]),
   );
   return (
     <Select value={value} onValueChange={(v) => onChange(v ?? value)} items={items}>

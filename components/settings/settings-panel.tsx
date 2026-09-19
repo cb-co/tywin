@@ -12,7 +12,12 @@ import {
   updateDisplayName,
 } from "@/app/(app)/settings/actions";
 import type { CurrencyRow } from "@/lib/accounts/queries";
-import { PAY_CYCLE_VALUES, type PayCycle } from "@/lib/period/cycle";
+import {
+  PAY_CYCLE_VALUES,
+  SEMIMONTHLY_MAX_ANCHOR,
+  semimonthlyStarts,
+  type PayCycle,
+} from "@/lib/period/cycle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { InstallAppRow } from "@/components/pwa/install-app-row";
@@ -20,6 +25,7 @@ import { Row } from "@/components/settings/row";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUiSound } from "@/components/sound/sound-provider";
@@ -103,6 +109,9 @@ export function SettingsPanel({
   const [weeklyAnchor, setWeeklyAnchor] = useState(
     payCycle === "weekly" && payAnchorDay ? payAnchorDay : 1,
   );
+  const [semimonthlyAnchor, setSemimonthlyAnchor] = useState(
+    payCycle === "semimonthly" && payAnchorDay ? payAnchorDay : 1,
+  );
   const [payCyclePending, startPayCycleTransition] = useTransition();
   const t = useTranslations("Settings");
   const tc = useTranslations("Common");
@@ -116,10 +125,13 @@ export function SettingsPanel({
   const weeklyAnchorItems: Record<string, string> = Object.fromEntries(
     WEEKDAYS.map((day) => [String(day), t(WEEKDAY_KEYS[day])]),
   );
+  const [semiFirst, semiSecond] = semimonthlyStarts(semimonthlyAnchor);
+  // What is typed, kept apart from the saved anchor so a half-typed "1" on the
+  // way to "15" is not saved.
+  const [semimonthlyDraft, setSemimonthlyDraft] = useState(String(semimonthlyAnchor));
 
-  function savePayCycle(nextCycle: PayCycle, nextMonthlyAnchor: number, nextWeeklyAnchor: number) {
-    const anchorDay =
-      nextCycle === "monthly" ? nextMonthlyAnchor : nextCycle === "weekly" ? nextWeeklyAnchor : null;
+  function savePayCycle(nextCycle: PayCycle, anchors: Record<PayCycle, number>) {
+    const anchorDay = anchors[nextCycle];
     startPayCycleTransition(async () => {
       const result = await setPayCycle({ cycle: nextCycle, anchorDay });
       if (result.error) {
@@ -130,6 +142,9 @@ export function SettingsPanel({
         setCycle(payCycle);
         setMonthlyAnchor(payCycle === "monthly" && payAnchorDay ? payAnchorDay : 1);
         setWeeklyAnchor(payCycle === "weekly" && payAnchorDay ? payAnchorDay : 1);
+        const savedSemimonthly = payCycle === "semimonthly" && payAnchorDay ? payAnchorDay : 1;
+        setSemimonthlyAnchor(savedSemimonthly);
+        setSemimonthlyDraft(String(savedSemimonthly));
         return;
       }
       toast.success(t("toastPayCycleUpdated"));
@@ -138,20 +153,38 @@ export function SettingsPanel({
     });
   }
 
+  const anchors: Record<PayCycle, number> = {
+    monthly: monthlyAnchor,
+    weekly: weeklyAnchor,
+    semimonthly: semimonthlyAnchor,
+  };
+
   function onCycle(next: PayCycle) {
     if (next === cycle) return;
     setCycle(next);
-    savePayCycle(next, monthlyAnchor, weeklyAnchor);
+    savePayCycle(next, anchors);
   }
 
   function onMonthlyAnchor(day: number) {
     setMonthlyAnchor(day);
-    savePayCycle(cycle, day, weeklyAnchor);
+    savePayCycle(cycle, { ...anchors, monthly: day });
   }
 
   function onWeeklyAnchor(day: number) {
     setWeeklyAnchor(day);
-    savePayCycle(cycle, monthlyAnchor, day);
+    savePayCycle(cycle, { ...anchors, weekly: day });
+  }
+
+  /** Saves on blur or Enter. Anything outside 1..15 snaps back to the saved day. */
+  function commitSemimonthlyDraft() {
+    const day = Number(semimonthlyDraft);
+    if (!Number.isInteger(day) || day < 1 || day > SEMIMONTHLY_MAX_ANCHOR) {
+      setSemimonthlyDraft(String(semimonthlyAnchor));
+      return;
+    }
+    if (day === semimonthlyAnchor) return;
+    setSemimonthlyAnchor(day);
+    savePayCycle(cycle, { ...anchors, semimonthly: day });
   }
 
   /* Without `items`, Base UI's `<Select.Value>` shows the raw value, so the
@@ -315,6 +348,30 @@ export function SettingsPanel({
               </Select>
             )}
 
+            {cycle === "semimonthly" && (
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="pay-semimonthly-day"
+                  className="text-xs font-normal text-muted-foreground"
+                >
+                  {t("payCycleSemimonthlyAnchorLabel")}
+                </Label>
+                <Input
+                  id="pay-semimonthly-day"
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={SEMIMONTHLY_MAX_ANCHOR}
+                  className="h-8 w-16"
+                  value={semimonthlyDraft}
+                  disabled={payCyclePending}
+                  onChange={(e) => setSemimonthlyDraft(e.target.value)}
+                  onBlur={commitSemimonthlyDraft}
+                  onKeyDown={(e) => e.key === "Enter" && commitSemimonthlyDraft()}
+                />
+              </div>
+            )}
+
             {cycle === "weekly" && (
               <Select
                 value={String(weeklyAnchor)}
@@ -340,7 +397,7 @@ export function SettingsPanel({
             )}
 
             <p className="text-right text-xs text-muted-foreground">
-              {t(PAY_CYCLE_HELP_KEY[cycle])}
+              {t(PAY_CYCLE_HELP_KEY[cycle], { first: semiFirst, second: semiSecond })}
             </p>
           </div>
         </Row>
@@ -365,25 +422,16 @@ export function SettingsPanel({
           />
         </Row>
 
-        <Row index={7} title={t("sessionTitle")} description={t("sessionDescription")}>
-          <form action="/auth/signout" method="post">
-            <Button type="submit" variant="outline" size="sm">
-              <LogOut className="size-4" />
-              {t("signOutButton")}
-            </Button>
-          </form>
-        </Row>
+        <InstallAppRow index={7} />
 
-        <InstallAppRow index={8} />
-
-        <Row index={9} title={t("helpTitle")} description={t("helpDescription")}>
+        <Row index={8} title={t("helpTitle")} description={t("helpDescription")}>
           <Button variant="outline" size="sm" render={<a href="/help" />} nativeButton={false}>
             <CircleHelp className="size-4" />
             {t("helpButton")}
           </Button>
         </Row>
 
-        <Row index={10} title={t("rulesTitle")} description={t("rulesDescription")}>
+        <Row index={9} title={t("rulesTitle")} description={t("rulesDescription")}>
           <Button
             variant="outline"
             size="sm"
@@ -393,6 +441,15 @@ export function SettingsPanel({
             <Tag className="size-4" />
             {t("rulesLink")}
           </Button>
+        </Row>
+
+        <Row index={10} title={t("sessionTitle")} description={t("sessionDescription")}>
+          <form action="/auth/signout" method="post">
+            <Button type="submit" variant="outline" size="sm">
+              <LogOut className="size-4" />
+              {t("signOutButton")}
+            </Button>
+          </form>
         </Row>
       </Card>
 

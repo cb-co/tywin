@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SEMIMONTHLY_MAX_ANCHOR, semimonthlyStarts } from "@/lib/period/cycle";
 import { cn } from "@/lib/utils";
 import { AccountSelect, SavedRow, StepFooter, StepHeading } from "./parts";
 import { isMainAccount, type StepProps } from "./types";
@@ -62,6 +63,12 @@ export function StepIncome({ data, onNext, onBack }: StepProps) {
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
   const [day, setDay] = useState("30");
   const [weekday, setWeekday] = useState(6);
+  // The 15th and the 30th: how most quincenas are paid here.
+  const [firstPayday, setFirstPayday] = useState(String(SEMIMONTHLY_MAX_ANCHOR));
+  const firstPaydayValid =
+    Number.isInteger(Number(firstPayday)) &&
+    Number(firstPayday) >= 1 &&
+    Number(firstPayday) <= SEMIMONTHLY_MAX_ANCHOR;
 
   const cycleLabel = (cycle: string) =>
     cycle === "semimonthly"
@@ -79,7 +86,8 @@ export function StepIncome({ data, onNext, onBack }: StepProps) {
     choice === "irregular" ||
     (Number(amount) > 0 &&
       !!account &&
-      (choice !== "monthly" || (Number(day) >= 1 && Number(day) <= 31)));
+      (choice !== "monthly" || (Number(day) >= 1 && Number(day) <= 31)) &&
+      (choice !== "semimonthly" || firstPaydayValid));
 
   function submit() {
     if (existing) return onNext();
@@ -95,7 +103,11 @@ export function StepIncome({ data, onNext, onBack }: StepProps) {
               currency: account!.currency,
               billing_cycle: choice,
               anchor_day:
-                choice === "monthly" ? Number(day) : choice === "weekly" ? weekday : undefined,
+                choice === "monthly"
+                  ? Number(day)
+                  : choice === "weekly"
+                    ? weekday
+                    : Number(firstPayday),
               account_id: account!.id,
               is_active: true,
             });
@@ -199,6 +211,25 @@ export function StepIncome({ data, onNext, onBack }: StepProps) {
                     value={day}
                     onChange={(e) => setDay(e.target.value)}
                   />
+                </div>
+              ) : choice === "semimonthly" ? (
+                <div className="space-y-2">
+                  <Label htmlFor="wf-income-paydays">{t("incomePaydaysLabel")}</Label>
+                  <Input
+                    id="wf-income-paydays"
+                    type="number"
+                    min="1"
+                    max={SEMIMONTHLY_MAX_ANCHOR}
+                    inputMode="numeric"
+                    value={firstPayday}
+                    aria-describedby="wf-income-paydays-hint"
+                    onChange={(e) => setFirstPayday(e.target.value)}
+                  />
+                  <p id="wf-income-paydays-hint" className="text-xs text-muted-foreground">
+                    {firstPaydayValid
+                      ? t("incomeSecondPayday", { second: semimonthlyStarts(Number(firstPayday))[1] })
+                      : tSettings("payCycleSemimonthlyRange")}
+                  </p>
                 </div>
               ) : choice === "weekly" ? (
                 <div className="min-w-0 space-y-2">

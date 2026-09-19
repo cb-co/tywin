@@ -52,6 +52,19 @@ export function isoWeekday(date: string): number {
   return dow === 0 ? 7 : dow;
 }
 
+/** The largest first payday a semimonthly cycle takes: its second payday is
+ *  15 days later, and a first payday of 16 would put that past every month. */
+export const SEMIMONTHLY_MAX_ANCHOR = 15;
+
+/** The two days a semimonthly period starts on, as written on the calendar
+ *  (before any end-of-month clamp). A null or out-of-range anchor is the 1st,
+ *  which is the 1st/16th split every semimonthly profile had before the
+ *  anchor existed. */
+export function semimonthlyStarts(anchor: number | null): [number, number] {
+  const first = anchor && anchor >= 1 && anchor <= SEMIMONTHLY_MAX_ANCHOR ? anchor : 1;
+  return [first, first + 15];
+}
+
 /** The anchor day as it lands in a given month: a 31st anchor becomes the 30th
  *  in September rather than rolling into October. */
 function anchorInMonth(year: number, month: number, anchor: number): number {
@@ -62,11 +75,21 @@ export function periodFor(date: string, cycle: PayCycle, anchor: number | null):
   const [y, m, d] = parse(date);
 
   if (cycle === "semimonthly") {
-    // "The 15th and the end of the month", not "the 15th and the 30th" — which
-    // is what makes February and the 31-day months fall out of one expression.
-    return d <= 15
-      ? { start: iso(y, m, 1), end: iso(y, m, 15) }
-      : { start: iso(y, m, 16), end: iso(y, m, daysInMonth(y, m)) };
+    // Two periods a month, starting on the anchor and 15 days after it: 1 -> the
+    // 1st and 16th (the null default), 5 -> the 5th and 20th, 15 -> the 15th
+    // and the 30th — clamped to the month's last day, so February's second
+    // quincena still starts inside February.
+    const [first, second] = semimonthlyStarts(anchor);
+    const secondIn = (yy: number, mm: number) => anchorInMonth(yy, mm, second);
+    const [py, pm] = m === 1 ? [y - 1, 12] : [y, m - 1];
+    const [ny, nm] = m === 12 ? [y + 1, 1] : [y, m + 1];
+    if (d >= secondIn(y, m)) {
+      return { start: iso(y, m, secondIn(y, m)), end: addDays(iso(ny, nm, first), -1) };
+    }
+    if (d >= first) {
+      return { start: iso(y, m, first), end: iso(y, m, secondIn(y, m) - 1) };
+    }
+    return { start: iso(py, pm, secondIn(py, pm)), end: iso(y, m, first - 1) };
   }
 
   if (cycle === "weekly") {

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { BILLING_CYCLE_VALUES, usesAnchorDate } from "./cycle";
 import { RECURRING_KINDS } from "./template";
+import { SEMIMONTHLY_MAX_ANCHOR } from "@/lib/period/cycle";
 
 export const subscriptionInput = z
   .object({
@@ -25,6 +26,9 @@ export const subscriptionInput = z
   .superRefine((v, ctx) => {
     // Without a start date a biweekly payment has no occurrences at all, where
     // the day-number cycles merely show no next date.
+    // Its second payday is 15 days after the first, so the first stops at 15.
+    if (v.billing_cycle === "semimonthly" && v.anchor_day != null && v.anchor_day > SEMIMONTHLY_MAX_ANCHOR)
+      ctx.addIssue({ code: "custom", path: ["anchor_day"], message: "Pick a day from 1 to 15" });
     if (usesAnchorDate(v.billing_cycle) && !v.anchor_date)
       ctx.addIssue({ code: "custom", path: ["anchor_date"], message: "Pick a start date" });
     // Income has to land somewhere: the deposit account is what gives the

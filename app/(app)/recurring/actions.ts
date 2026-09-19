@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { subscriptionInput, type SubscriptionInput } from "@/lib/subscriptions/schema";
 import { getExchangeRates } from "@/lib/fx";
 import { settledCharge } from "@/lib/subscriptions/charge";
-import { hasAnchorField, usesAnchorDate } from "@/lib/subscriptions/cycle";
+import { usesAnchorDate } from "@/lib/subscriptions/cycle";
 import { recordedFlags, type RecurringKind } from "@/lib/subscriptions/template";
 import { mapIncomeCycleToPayCycle } from "@/lib/subscriptions/pay-cycle-sync";
 import { setPayCycle } from "@/app/(app)/settings/actions";
@@ -34,17 +34,15 @@ function revalidate() {
 function toRow(v: SubscriptionInput) {
   const payment = v.kind === "payment";
   const dated = usesAnchorDate(v.billing_cycle);
-  const anchored = hasAnchorField(v.billing_cycle);
   return {
     kind: v.kind,
     name: v.name,
     amount: v.amount,
     billing_cycle: v.billing_cycle,
-    // One anchor per cycle, never both, and none at all for a cycle with no
-    // anchor field (semimonthly): a stale day number left over from a
+    // One anchor per cycle, never both: a stale day number left over from a
     // previous monthly template would read as a second, contradictory
     // schedule.
-    anchor_day: dated || !anchored ? null : v.anchor_day ?? null,
+    anchor_day: dated ? null : v.anchor_day ?? null,
     anchor_date: dated ? v.anchor_date || null : null,
     account_id: v.account_id || null,
     to_account_id: payment ? v.to_account_id || null : null,

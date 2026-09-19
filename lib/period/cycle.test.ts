@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { periodFor, nextPayday, shiftPeriod, isWholeMonth, localDate } from "./cycle";
+import { periodFor, nextPayday, shiftPeriod, isWholeMonth, localDate, addDays } from "./cycle";
 
 describe("periodFor · semimonthly", () => {
   it("puts the 1st through the 15th in the first half", () => {
@@ -35,6 +35,45 @@ describe("periodFor · semimonthly", () => {
       start: "2026-08-16",
       end: "2026-08-31",
     });
+  });
+});
+
+describe("periodFor · semimonthly with an anchor", () => {
+  it("splits a 5/20 month into 5-19 and 20-4", () => {
+    expect(periodFor("2026-09-10", "semimonthly", 5)).toEqual({ start: "2026-09-05", end: "2026-09-19" });
+    expect(periodFor("2026-09-25", "semimonthly", 5)).toEqual({ start: "2026-09-20", end: "2026-10-04" });
+  });
+
+  it("puts the days before the first payday in last month's second period", () => {
+    expect(periodFor("2026-09-03", "semimonthly", 5)).toEqual({ start: "2026-08-20", end: "2026-09-04" });
+  });
+
+  it("wraps across the year", () => {
+    expect(periodFor("2027-01-02", "semimonthly", 5)).toEqual({ start: "2026-12-20", end: "2027-01-04" });
+  });
+
+  it("clamps a 15/30 split to February's last day", () => {
+    expect(periodFor("2026-02-20", "semimonthly", 15)).toEqual({ start: "2026-02-15", end: "2026-02-27" });
+    expect(periodFor("2026-02-28", "semimonthly", 15)).toEqual({ start: "2026-02-28", end: "2026-03-14" });
+    expect(periodFor("2026-03-31", "semimonthly", 15)).toEqual({ start: "2026-03-30", end: "2026-04-14" });
+  });
+
+  it("treats 1 the same as no anchor", () => {
+    expect(periodFor("2026-09-20", "semimonthly", 1)).toEqual(periodFor("2026-09-20", "semimonthly", null));
+  });
+
+  it("falls back to the 1st for an anchor past 15", () => {
+    expect(periodFor("2026-09-20", "semimonthly", 20)).toEqual({ start: "2026-09-16", end: "2026-09-30" });
+  });
+
+  it("steps period to period with no gaps or overlaps", () => {
+    let p = periodFor("2026-01-01", "semimonthly", 12);
+    for (let i = 0; i < 30; i++) {
+      const next = shiftPeriod(p, "semimonthly", 12, 1);
+      expect(next.start).toBe(addDays(p.end, 1));
+      expect(shiftPeriod(next, "semimonthly", 12, -1)).toEqual(p);
+      p = next;
+    }
   });
 });
 

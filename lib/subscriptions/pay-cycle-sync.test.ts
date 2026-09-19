@@ -22,7 +22,8 @@ describe("mapIncomeCycleToPayCycle", () => {
     expect(mapIncomeCycleToPayCycle("weekly", null)).toEqual({ payCycle: "weekly", anchorDay: null });
   });
 
-  test("semimonthly has no anchor", () => {
+  test("semimonthly carries its first payday, null meaning the 1st/16th", () => {
+    expect(mapIncomeCycleToPayCycle("semimonthly", 5)).toEqual({ payCycle: "semimonthly", anchorDay: 5 });
     expect(mapIncomeCycleToPayCycle("semimonthly", null)).toEqual({ payCycle: "semimonthly", anchorDay: null });
   });
 

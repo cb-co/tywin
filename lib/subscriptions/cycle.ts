@@ -24,14 +24,6 @@ export type ChargeSchedule = {
 /** Whether this cycle is anchored by a start date rather than a day number. */
 export const usesAnchorDate = (cycle: BillingCycle) => cycle === "biweekly";
 
-/** Whether this cycle has an anchor field at all. Semimonthly needs neither a
- *  day number nor a start date — its two periods are fixed at the 15th and
- *  the end of the month, the same way profiles.pay_cycle's semimonthly needs
- *  no anchor. */
-export function hasAnchorField(cycle: BillingCycle): boolean {
-  return cycle !== "semimonthly";
-}
-
 const BIWEEKLY_DAYS = 14;
 
 /** A `YYYY-MM-DD` as a LOCAL calendar date — `new Date("2026-09-01")` is UTC midnight. */
@@ -47,11 +39,11 @@ export function nextChargeDate(
   from = new Date(),
 ): Date | null {
   if (cycle === "semimonthly") {
-    // No anchor: the next payday is always "the day after the period
-    // containing `from` ends" — the 16th, or the 1st of next month. Reuses
+    // The next payday is "the day after the period containing `from` ends" —
+    // with no anchor, the 16th or the 1st of next month. Reuses
     // profiles.pay_cycle's own period math rather than re-deriving it.
     const today = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, "0")}-${String(from.getDate()).padStart(2, "0")}`;
-    return parseLocalDate(nextPayday(today, "semimonthly", null));
+    return parseLocalDate(nextPayday(today, "semimonthly", anchorDay));
   }
 
   if (usesAnchorDate(cycle)) {

@@ -670,7 +670,10 @@
     "toAccountLabel": "To",
     "depositAccountLabel": "Deposited to",
     "startDateLabel": "First date",
-    "startDateHint": "Repeats every 14 days from this date."
+    "startDateHint": "Repeats every 14 days from this date.",
+    "semimonthlyDayLabel": "First payday of the month",
+    "semimonthlyDayHint": "The second is the {second}.",
+    "semimonthlyDayRange": "1 to 15 — the second is 15 days later."
   },
   "Insights": {
     "pageTitle": "Insights",
@@ -745,7 +748,7 @@
     "payCycleAnchorWeekdayLabel": "Day of week",
     "payCycleDayOption": "Day {day}",
     "payCycleHelpMonthly": "Your period runs a full month, starting on the day you pick.",
-    "payCycleHelpSemimonthly": "Your period runs from the 1st to the 15th, and from the 16th to the end of the month.",
+    "payCycleHelpSemimonthly": "Your periods start on the {first} and the {second} of each month.",
     "payCycleHelpWeekly": "Your period runs 7 days, starting on the weekday you pick.",
     "toastPayCycleUpdated": "Pay cycle updated",
     "invalidPayCycle": "Pick a valid pay cycle.",
@@ -785,7 +788,9 @@
     "helpButton": "Open guide",
     "rulesTitle": "Category rules",
     "rulesDescription": "Edit or delete the rules Cashly learned from your statements.",
-    "rulesLink": "Category rules"
+    "rulesLink": "Category rules",
+    "payCycleSemimonthlyAnchorLabel": "First payday of the month",
+    "payCycleSemimonthlyRange": "Pick a day from 1 to 15."
   },
   "Rules": {
     "pageTitle": "Category rules",
@@ -869,7 +874,7 @@
     "incomeTitle": "When do you get paid?",
     "incomeBody": "Your budgets reset on payday, and \"safe to spend\" counts down to the next one.",
     "incomeSemimonthly": "Quincenal",
-    "incomeSemimonthlyHint": "15th and end of month",
+    "incomeSemimonthlyHint": "Twice a month",
     "incomeMonthly": "Monthly",
     "incomeMonthlyHint": "Once a month",
     "incomeWeekly": "Weekly",
@@ -894,7 +899,7 @@
     "loanDueDayLabel": "Payment day",
     "loanMoreDetails": "More details",
     "loanRateLabel": "Annual interest rate (%)",
-    "loanRateHint": "Optional. With it, each payment is split into interest and principal.",
+    "loanRateHint": "With the rate we work out how many installments are left. Don't know it? Enter the count under More details.",
     "loanAdd": "Add loan",
     "loanAddAnother": "Add another loan",
     "loanSummary": "{count, plural, one {# installment left} other {# installments left}}",
@@ -925,7 +930,7 @@
     "doneLoans": "{count, plural, =0 {No loans} one {# loan} other {# loans}}",
     "doneBills": "{count, plural, =0 {No fixed bills} one {# fixed bill} other {# fixed bills}}",
     "doneChange": "Change",
-    "doneCycleSemimonthly": "quincenal (15th and end of month)",
+    "doneCycleSemimonthly": "quincenal (the {first} and {second})",
     "doneCycleMonthly": "monthly",
     "doneCycleWeekly": "weekly",
     "finishButton": "Go to my dashboard",
@@ -935,7 +940,12 @@
     "toastReady": "You are all set",
     "errorNoAccount": "Add an account before finishing setup.",
     "billsSaveFailed": "Some bills weren't saved. Check the ones still open and try again.",
-    "donePeriod": "Budgets run {cycle}"
+    "donePeriod": "Budgets run {cycle}",
+    "incomePaydaysLabel": "First payday of the month",
+    "incomeSecondPayday": "The second is the {second}.",
+    "loanRemainingEstimate": "{count, plural, one {≈ # installment left} other {≈ # installments left}}",
+    "loanNeverPaysOff": "At this rate the installment doesn't cover the monthly interest. Check the rate and the installment.",
+    "loanRemainingHint": "If you know how many are left, enter it; it replaces the estimate."
   },
   "Legal": {
     "back": "Back",
@@ -1191,7 +1201,7 @@
     "subscriptionsMockTransferCycle": "Payment · Biweekly",
     "subscriptionsMockTransferNext": "Next Aug 8 · Everyday Checking → Savings",
     "step5Title": "Loans (optional)",
-    "step5Body": "Describe each loan as it stands today: what you owe, the installment, how many are left and the payment day. Each becomes a loan account whose installments show up in upcoming payments.",
+    "step5Body": "Describe each loan as it stands today: what you owe, the installment, the annual rate and the payment day. The installments left are worked out from the rate; if you don't know it, enter the count under More details. Each becomes a loan account whose installments show up in upcoming payments.",
     "step6Title": "Fixed bills (optional)",
     "step6Body": "Tap the bills you pay every month — rent, electricity, water, internet, phone, insurance — and give each an amount and day. They're subtracted from \"safe to spend\" before they're due."
   }

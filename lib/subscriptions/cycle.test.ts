@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { hasAnchorField, monthlyEquivalent, nextChargeDate } from "./cycle";
+import { monthlyEquivalent, nextChargeDate } from "./cycle";
 
 // Local dates throughout: the cycle helpers work on the viewer's calendar.
 const ymd = (d: Date | null) =>
@@ -55,7 +55,13 @@ describe("nextChargeDate", () => {
     expect(ymd(nextChargeDate({ cycle: "semimonthly" }, new Date(2026, 8, 30, 10)))).toBe("2026-10-01");
   });
 
-  test("semimonthly needs no anchor at all", () => {
+  test("semimonthly counts from its first payday", () => {
+    expect(ymd(nextChargeDate({ cycle: "semimonthly", anchorDay: 5 }, new Date(2026, 8, 3)))).toBe("2026-09-05");
+    expect(ymd(nextChargeDate({ cycle: "semimonthly", anchorDay: 5 }, new Date(2026, 8, 10)))).toBe("2026-09-20");
+    expect(ymd(nextChargeDate({ cycle: "semimonthly", anchorDay: 5 }, new Date(2026, 8, 25)))).toBe("2026-10-05");
+  });
+
+  test("semimonthly treats an anchor past 15 as the 1st/16th", () => {
     expect(
       ymd(nextChargeDate({ cycle: "semimonthly", anchorDay: 99, anchorDate: "bogus" }, new Date(2026, 8, 14))),
     ).toBe("2026-09-16");
@@ -78,13 +84,3 @@ describe("monthlyEquivalent", () => {
   });
 });
 
-describe("hasAnchorField", () => {
-  test("every cycle but semimonthly has an anchor field", () => {
-    expect(hasAnchorField("weekly")).toBe(true);
-    expect(hasAnchorField("biweekly")).toBe(true);
-    expect(hasAnchorField("monthly")).toBe(true);
-    expect(hasAnchorField("yearly")).toBe(true);
-    expect(hasAnchorField("custom")).toBe(true);
-    expect(hasAnchorField("semimonthly")).toBe(false);
-  });
-});

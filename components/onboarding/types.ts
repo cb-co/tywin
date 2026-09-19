@@ -18,6 +18,7 @@ export type WelcomeData = {
   bills: { id: string; name: string; amount: number; currency: string }[];
   categories: { id: string; name: string }[];
   payCycle: string;
+  payAnchorDay: number | null;
 };
 
 /** Props every step receives from the flow. */

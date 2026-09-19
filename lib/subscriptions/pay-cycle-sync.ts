@@ -32,7 +32,7 @@ export function mapIncomeCycleToPayCycle(
     case "weekly":
       return { payCycle: "weekly", anchorDay: anchorDay != null ? weeklyAnchorToIso(anchorDay) : null };
     case "semimonthly":
-      return { payCycle: "semimonthly", anchorDay: null };
+      return { payCycle: "semimonthly", anchorDay };
     default:
       return null;
   }

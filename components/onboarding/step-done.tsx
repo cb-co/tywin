@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { StepFooter, StepHeading } from "./parts";
 import { isMainAccount, type StepProps } from "./types";
 import type { Step } from "@/lib/onboarding/resume";
+import { semimonthlyStarts } from "@/lib/period/cycle";
 
 /**
  * What the flow set up, one row per step, each with a way back to change it.
@@ -29,7 +30,11 @@ export function StepDone({ data, onBack, goTo }: StepProps & { goTo: (step: Step
     monthly: "doneCycleMonthly",
     weekly: "doneCycleWeekly",
   } as const;
-  const cycle = t(cycleKey[data.payCycle as keyof typeof cycleKey] ?? "doneCycleMonthly");
+  const [first, second] = semimonthlyStarts(data.payAnchorDay);
+  const cycle = t(cycleKey[data.payCycle as keyof typeof cycleKey] ?? "doneCycleMonthly", {
+    first,
+    second,
+  });
 
   const rows: { step: Step; icon: LucideIcon; title: string; subtitle?: string }[] = [
     {

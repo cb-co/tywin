@@ -7,7 +7,12 @@ import { toast } from "sonner";
 import { ChevronDown, Plus } from "lucide-react";
 import { createAccount } from "@/app/(app)/accounts/actions";
 import { ACCOUNT_TYPE_META } from "@/lib/accounts/meta";
-import { loanAccountFromOnboarding, type OnboardingLoan } from "@/lib/onboarding/loan";
+import {
+  estimateRemainingInstallments,
+  loanAccountFromOnboarding,
+  remainingInstallmentsOf,
+  type OnboardingLoan,
+} from "@/lib/onboarding/loan";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,9 +31,12 @@ const blank = (currency: string): OnboardingLoan => ({
 });
 
 /**
- * Loans as real accounts, from six questions a borrower can answer without
- * their contract: what they owe today, the installment, how many are left and
- * the day it is due. See lib/onboarding/loan.ts for why "as of today" is exact.
+ * Loans as real accounts, from questions a borrower can answer without their
+ * contract: what they owe today, the installment, the rate and the day it is
+ * due. Installments left are derived from the rate — people know their rate
+ * far more often than their count — and can be typed instead, under "more
+ * details", when the rate is unknown or the estimate is off. See
+ * lib/onboarding/loan.ts for why "as of today" is exact.
  * The full loan form, with origination details, stays on Accounts.
  */
 export function StepLoans({ data, currencies, baseCurrency, onNext, onBack }: StepProps) {
@@ -42,11 +50,20 @@ export function StepLoans({ data, currencies, baseCurrency, onNext, onBack }: St
   const meta = ACCOUNT_TYPE_META.loan;
 
   const set = (k: keyof OnboardingLoan) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const estimate =
+    form.annualRatePercent.trim() === ""
+      ? null
+      : estimateRemainingInstallments(
+          Number(form.owedToday),
+          Number(form.installment),
+          Number(form.annualRatePercent),
+        );
+  const overridden = form.remainingInstallments.trim() !== "";
   const valid =
     !!form.name.trim() &&
     Number(form.owedToday) > 0 &&
     Number(form.installment) > 0 &&
-    Number(form.remainingInstallments) >= 1;
+    (remainingInstallmentsOf(form) ?? 0) >= 1;
 
   function add() {
     if (!valid || pending) return;
@@ -130,26 +147,44 @@ export function StepLoans({ data, currencies, baseCurrency, onNext, onBack }: St
                   value={form.currency}
                   onChange={set("currency")}
                   currencies={currencies}
+                  compact
                 />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {field("owedToday", t("loanOwedLabel"), { step: "0.01" })}
               {field("installment", t("loanInstallmentLabel"), { step: "0.01" })}
-              {field("remainingInstallments", t("loanRemainingLabel"), { step: "1", min: "1", inputMode: "numeric" })}
+              {field("annualRatePercent", t("loanRateLabel"), { step: "0.01", max: "100" })}
               {field("dueDay", t("loanDueDayLabel"), { step: "1", min: "1", max: "31", inputMode: "numeric" })}
             </div>
 
+            {/* What the rate implies, as the person types. Hidden once they
+                type a count themselves: that count is what gets saved. */}
+            {overridden ? null : estimate === "never" ? (
+              <p className="text-xs text-destructive">{t("loanNeverPaysOff")}</p>
+            ) : typeof estimate === "number" ? (
+              <p className="text-xs text-muted-foreground">
+                {t("loanRemainingEstimate", { count: estimate })}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">{t("loanRateHint")}</p>
+            )}
+
             {more ? (
               <div className="space-y-2">
-                {field("annualRatePercent", t("loanRateLabel"), { step: "0.01", max: "100" })}
-                <p className="text-xs text-muted-foreground">{t("loanRateHint")}</p>
+                {field("remainingInstallments", t("loanRemainingLabel"), {
+                  step: "1",
+                  min: "1",
+                  inputMode: "numeric",
+                  placeholder: typeof estimate === "number" ? String(estimate) : undefined,
+                })}
+                <p className="text-xs text-muted-foreground">{t("loanRemainingHint")}</p>
               </div>
             ) : (
               <button
                 type="button"
                 onClick={() => setMore(true)}
-                className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
               >
                 <ChevronDown className="size-3.5" />
                 {t("loanMoreDetails")}

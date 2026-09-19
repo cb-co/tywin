@@ -670,7 +670,10 @@
     "toAccountLabel": "Hacia",
     "depositAccountLabel": "Depositado en",
     "startDateLabel": "Primera fecha",
-    "startDateHint": "Se repite cada 14 días desde esta fecha."
+    "startDateHint": "Se repite cada 14 días desde esta fecha.",
+    "semimonthlyDayLabel": "Primer día de pago del mes",
+    "semimonthlyDayHint": "El segundo es el {second}.",
+    "semimonthlyDayRange": "Del 1 al 15 — el segundo cae 15 días después."
   },
   "Insights": {
     "pageTitle": "Análisis",
@@ -745,7 +748,7 @@
     "payCycleAnchorWeekdayLabel": "Día de la semana",
     "payCycleDayOption": "Día {day}",
     "payCycleHelpMonthly": "Tu período dura un mes completo, empezando en el día que elijas.",
-    "payCycleHelpSemimonthly": "Tu período va del 1 al 15, y del 16 al fin de mes.",
+    "payCycleHelpSemimonthly": "Tus períodos empiezan el {first} y el {second} de cada mes.",
     "payCycleHelpWeekly": "Tu período dura 7 días, empezando en el día de la semana que elijas.",
     "toastPayCycleUpdated": "Ciclo de pago actualizado",
     "invalidPayCycle": "Elige un ciclo de pago válido.",
@@ -785,7 +788,9 @@
     "helpButton": "Abrir guía",
     "rulesTitle": "Reglas de categorías",
     "rulesDescription": "Edita o elimina las reglas que Cashly aprendió de tus estados de cuenta.",
-    "rulesLink": "Reglas de categorías"
+    "rulesLink": "Reglas de categorías",
+    "payCycleSemimonthlyAnchorLabel": "Primer día de pago del mes",
+    "payCycleSemimonthlyRange": "Elige un día del 1 al 15."
   },
   "Rules": {
     "pageTitle": "Reglas de categorías",
@@ -869,7 +874,7 @@
     "incomeTitle": "¿Cuándo te pagan?",
     "incomeBody": "Tus presupuestos se reinician el día de pago, y «disponible» cuenta hasta el próximo.",
     "incomeSemimonthly": "Quincenal",
-    "incomeSemimonthlyHint": "El 15 y fin de mes",
+    "incomeSemimonthlyHint": "Dos veces al mes",
     "incomeMonthly": "Mensual",
     "incomeMonthlyHint": "Una vez al mes",
     "incomeWeekly": "Semanal",
@@ -894,7 +899,7 @@
     "loanDueDayLabel": "Día de pago",
     "loanMoreDetails": "Más detalles",
     "loanRateLabel": "Tasa anual (%)",
-    "loanRateHint": "Opcional. Con ella, cada pago se divide en interés y capital.",
+    "loanRateHint": "Con la tasa calculamos cuántas cuotas te quedan. ¿No la sabes? Pon las cuotas restantes en Más detalles.",
     "loanAdd": "Añadir préstamo",
     "loanAddAnother": "Añadir otro préstamo",
     "loanSummary": "{count, plural, one {Queda # cuota} other {Quedan # cuotas}}",
@@ -925,7 +930,7 @@
     "doneLoans": "{count, plural, =0 {Sin préstamos} one {# préstamo} other {# préstamos}}",
     "doneBills": "{count, plural, =0 {Sin gastos fijos} one {# gasto fijo} other {# gastos fijos}}",
     "doneChange": "Cambiar",
-    "doneCycleSemimonthly": "quincenales (el 15 y fin de mes)",
+    "doneCycleSemimonthly": "quincenales (el {first} y el {second})",
     "doneCycleMonthly": "mensuales",
     "doneCycleWeekly": "semanales",
     "finishButton": "Ir a mi panel",
@@ -935,7 +940,12 @@
     "toastReady": "Todo listo",
     "errorNoAccount": "Añade una cuenta antes de finalizar.",
     "billsSaveFailed": "Algunos gastos no se guardaron. Revisa los que siguen abiertos e inténtalo de nuevo.",
-    "donePeriod": "Presupuestos {cycle}"
+    "donePeriod": "Presupuestos {cycle}",
+    "incomePaydaysLabel": "Primer día de pago del mes",
+    "incomeSecondPayday": "El segundo es el {second}.",
+    "loanRemainingEstimate": "{count, plural, one {≈ Queda # cuota} other {≈ Quedan # cuotas}}",
+    "loanNeverPaysOff": "Con esta tasa, la cuota no cubre el interés del mes. Revisa la tasa y la cuota.",
+    "loanRemainingHint": "Si sabes cuántas te quedan, ponlo aquí; reemplaza el cálculo."
   },
   "Legal": {
     "back": "Atrás",
@@ -1191,7 +1201,7 @@
     "subscriptionsMockTransferCycle": "Pago · Quincenal",
     "subscriptionsMockTransferNext": "Próximo 8 ago. · Cuenta corriente diaria → Ahorros",
     "step5Title": "Préstamos (opcional)",
-    "step5Body": "Describe cada préstamo como está hoy: cuánto debes, la cuota, cuántas quedan y el día de pago. Cada uno se vuelve una cuenta de préstamo cuyas cuotas aparecen en tus próximos pagos.",
+    "step5Body": "Describe cada préstamo como está hoy: cuánto debes, la cuota, la tasa anual y el día de pago. Las cuotas restantes se calculan con la tasa; si no la sabes, pon cuántas quedan en Más detalles. Cada uno se vuelve una cuenta de préstamo cuyas cuotas aparecen en tus próximos pagos.",
     "step6Title": "Gastos fijos (opcional)",
     "step6Body": "Toca los gastos que pagas cada mes — alquiler, luz, agua, internet, teléfono, seguro — y ponle monto y día a cada uno. Se restan de «disponible» antes de que venzan."
   }
