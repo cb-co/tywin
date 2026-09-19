@@ -5,7 +5,7 @@
  * never disagree about what net worth means.
  */
 export function netWorthTotal(
-  balances: { balance: number | string; currency: string | null }[],
+  balances: { balance: number | string | null; currency: string | null }[],
   cards: { owed: number | string | null; currency: string | null }[],
   loans: { outstanding_balance: number | string | null; currency: string | null }[],
   baseCurrency: string,

@@ -197,13 +197,7 @@ export async function getOverview(): Promise<Overview> {
 
   const usageRows = usage ?? [];
 
-  const netWorth = netWorthTotal(
-    (balances ?? []) as Parameters<typeof netWorthTotal>[0],
-    (cards ?? []) as Parameters<typeof netWorthTotal>[1],
-    (loans ?? []) as Parameters<typeof netWorthTotal>[2],
-    baseCurrency,
-    toBase,
-  );
+  const netWorth = netWorthTotal(balances ?? [], cards ?? [], loans ?? [], baseCurrency, toBase);
 
   const monthlyTotal = (rows: NonNullable<typeof subs>) =>
     rows.reduce(
