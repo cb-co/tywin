@@ -33,7 +33,7 @@ export function AmortizationTable({
     <div className="overflow-x-auto">
       <table className="w-full min-w-[28rem] text-sm">
         <thead>
-          <tr className="border-b text-left text-xs text-muted-foreground">
+          <tr className="legend border-b border-(--paper-line) text-left text-[11px] text-muted-foreground">
             <th className="w-10 py-2 pr-3 font-medium">{t("columnNumber")}</th>
             <th className="py-2 pr-4 font-medium">{t("columnPayment")}</th>
             <th className="py-2 pr-4 font-medium">{t("columnInterest")}</th>
@@ -46,16 +46,16 @@ export function AmortizationTable({
             const paid = row.n <= installmentsPaid;
             return (
               <tr key={row.n} className={cn(paid && "text-muted-foreground")}>
-                <td className="py-2 pr-3 tabular-nums">
+                <td className="py-2 pr-3 figure">
                   <span className="inline-flex items-center gap-1">
                     {paid ? <Check className="size-3 text-success" /> : null}
                     {row.n}
                   </span>
                 </td>
-                <td className="py-2 pr-4 tabular-nums">{formatMoney(row.payment, currency)}</td>
-                <td className="py-2 pr-4 tabular-nums">{formatMoney(row.interest, currency)}</td>
-                <td className="py-2 pr-4 tabular-nums">{formatMoney(row.principal, currency)}</td>
-                <td className="py-2 text-right tabular-nums">{formatMoney(row.balance, currency)}</td>
+                <td className="py-2 pr-4 figure">{formatMoney(row.payment, currency)}</td>
+                <td className="py-2 pr-4 figure">{formatMoney(row.interest, currency)}</td>
+                <td className="py-2 pr-4 figure">{formatMoney(row.principal, currency)}</td>
+                <td className="py-2 text-right figure">{formatMoney(row.balance, currency)}</td>
               </tr>
             );
           })}
