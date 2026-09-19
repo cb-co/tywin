@@ -170,7 +170,9 @@ function LoanBody({
         </p>
         <p className="mt-1 text-xs text-muted-foreground">{t("outstanding")}</p>
       </div>
-      {term ? <Perforation total={term} paid={paid} label={t("paidOfTerm", { paid, term })} /> : null}
+      {term ? (
+        <Perforation total={term} paid={paid} label={t("paidOfTerm", { paid, term })} decorative />
+      ) : null}
       <div className="flex justify-between text-xs text-muted-foreground">
         <span>{term ? t("paidOfTerm", { paid, term }) : t("paidOnly", { paid })}</span>
         {installment ? <span>{t("perMonth", { amount: formatMoney(installment, currency) })}</span> : null}

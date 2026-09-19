@@ -9,6 +9,7 @@ import { sumAccountTransferCosts, type TransferCostRow } from "./transfer-costs"
 import { getExchangeRates, convertToBase } from "@/lib/fx";
 import { netWorthTotal } from "./net-worth";
 import { accountsNeedingAttention, type AttentionItem } from "./attention";
+import { localDate } from "@/lib/period/cycle";
 
 export type { CardGroupLine } from "./group-lines";
 export type { SpendSlice } from "./card-spend";
@@ -347,7 +348,14 @@ export async function getCardGroupLines(accountId: string): Promise<CardGroupLin
   return buildCardGroupLines(rows, account.card_groups?.name ?? "", accountId);
 }
 
-/** Net worth in `baseCurrency`, computed the same way Overview computes it. */
+/** Net worth in `baseCurrency`, computed the same way Overview computes it.
+ *
+ * Deliberately re-fetches `account_balances`/`card_status`/`loan_status`
+ * rather than reusing `getAccountsWithStatus`'s own fetch of the same views:
+ * the net-worth formula intentionally includes archived-account handling
+ * that differs from `getAccountsWithStatus`'s filter, so the two cannot
+ * share one fetch without changing the net-worth number. Do not "simplify"
+ * this into one shared query. */
 export async function getNetWorth(baseCurrency: string): Promise<number> {
   const supabase = await createClient();
   const [{ data: balances }, { data: cards }, { data: loans }, rates] = await Promise.all([
@@ -392,8 +400,13 @@ export async function getAccountsAttention(): Promise<AttentionItem[]> {
 
   // Pending triage, scoped to statements that actually have an import — same
   // guard getPendingTriageCounts uses, same reason (a hand-added statement
-  // has no import to triage).
-  const importedStatementIds = (statements ?? []).filter((s) => s.import_id !== null).map((s) => s.id);
+  // has no import to triage). Only the newest statement per account: that is
+  // the only one `triageCountByStatement` is ever read for below, so fetching
+  // every historical statement's lines here would join thousands of rows on
+  // an account with years of history to use a small fraction of them.
+  const importedStatementIds = [...newestByAccount.values()]
+    .filter((s) => s.import_id !== null)
+    .map((s) => s.id);
   const { data: lines } = importedStatementIds.length
     ? await supabase
         .from("card_statement_lines")
@@ -408,7 +421,12 @@ export async function getAccountsAttention(): Promise<AttentionItem[]> {
     }
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  // Local date, not UTC: the Dominican Republic is UTC-4, so in the evening
+  // (UTC has already rolled to tomorrow) a card due literally today could
+  // silently fail the dueDate >= today check below and drop off the ledger
+  // on the exact day it matters. Same reasoning as lib/period/cycle.ts's own
+  // doc comment on localDate, used the same way by lib/overview/queries.ts.
+  const today = localDate();
   const inputs = accounts.map((a) => {
     const statement = newestByAccount.get(a.id);
     return {

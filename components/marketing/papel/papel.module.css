@@ -919,9 +919,11 @@
   padding-bottom: 1rem;
 }
 .cardGold {
+  grid-area: 1 / 1;
   rotate: -5deg;
 }
 .cardBlack {
+  grid-area: 1 / 1;
   rotate: 4deg;
   margin: 5.5rem 0 0 min(28%, 9rem);
 }

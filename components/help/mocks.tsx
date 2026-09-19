@@ -288,7 +288,7 @@ export function AccountsMock({
     <SpecimenFrame className="mt-4">
       <div className="space-y-5">
         <div className="space-y-1">
-          <h2 className="legend text-[11px] text-muted-foreground">{attentionTitle}</h2>
+          <MockLabel>{attentionTitle}</MockLabel>
           <div className="rounded-[4px] border border-(--paper-line)">
             <LedgerRow
               lead={<Stamp color="#1B4B8F" name={cardName} size="sm" />}

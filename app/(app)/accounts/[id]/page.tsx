@@ -323,7 +323,11 @@ export default async function AccountDetailPage({
                       total={progressTerm}
                       paid={progressPaid}
                       label={t("installmentsPaidOfTerm", { paid: progressPaid, term: progressTerm })}
+                      decorative
                     />
+                    <p className="text-sm text-muted-foreground">
+                      {t("installmentsPaidOfTerm", { paid: progressPaid, term: progressTerm })}
+                    </p>
                   </div>
                 ) : (
                   <p className="mt-3 text-sm text-muted-foreground">

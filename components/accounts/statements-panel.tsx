@@ -122,10 +122,11 @@ export function StatementsPanel({
       {statements.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("historyEmpty")}</p>
       ) : (
-        <div className="rounded-[4px] border border-(--paper-line)">
+        <ul role="list" className="rounded-[4px] border border-(--paper-line)">
           {statements.map((s) => (
-            <div key={s.id}>
+            <li key={s.id} className="border-b border-(--paper-line) last:border-b-0">
               <LedgerRow
+                className="border-b-0"
                 lead={
                   triageCounts[s.id] ? (
                     <a
@@ -224,9 +225,9 @@ export function StatementsPanel({
                   )}
                 </div>
               ) : null}
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
       <StatementImportDialog

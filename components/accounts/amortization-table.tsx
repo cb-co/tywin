@@ -41,7 +41,7 @@ export function AmortizationTable({
             <th className="py-2 text-right font-medium">{t("columnBalance")}</th>
           </tr>
         </thead>
-        <tbody className="divide-y">
+        <tbody className="divide-y divide-(--paper-line)">
           {rows.map((row) => {
             const paid = row.n <= installmentsPaid;
             return (
