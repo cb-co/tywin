@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Card } from "@/components/ui/card";
+import { ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SpotIllustration } from "@/components/brand/spot-illustration";
+import { MoneyDisplay } from "@/components/ui/money-display";
+import { Note } from "@/components/papel/note";
 import { StatementImportDialog } from "@/components/statements/statement-import-dialog";
 
 /**
@@ -25,22 +27,53 @@ export function ImportCallout({ state }: { state: "never" | "overdue" }) {
 
   return (
     <>
-      <Card className="relative overflow-hidden p-5">
-        {/* Decorative only — same absolute-corner treatment the empty-state
-            HeroCard above uses for `scene="chart"`. */}
-        <SpotIllustration
-          scene="chart"
-          className="pointer-events-none absolute -right-4 -top-8 size-36 opacity-10"
-        />
-        <div className="relative min-w-0 max-w-md">
-          <p className="text-lg font-medium text-foreground">{t(titleKey)}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{t(bodyKey)}</p>
-          <Button className="mt-4" onClick={() => setOpen(true)}>
-            {t("importCalloutCta")}
-          </Button>
-        </div>
-      </Card>
+      <div className="border-l-2 border-(--ink) pl-4">
+        <p className="text-base font-medium text-foreground">{t(titleKey)}</p>
+        <p className="mt-1 max-w-md text-sm text-muted-foreground">{t(bodyKey)}</p>
+        <Button className="mt-3" onClick={() => setOpen(true)}>
+          {t("importCalloutCta")}
+        </Button>
+      </div>
 
+      <StatementImportDialog open={open} onOpenChange={setOpen} onImported={() => router.refresh()} />
+    </>
+  );
+}
+
+/** The empty Overview's one Note. Statement import comes first (PRODUCT.md
+ *  principle 2); adding an account by hand is the quiet second action. */
+export function EmptyOverviewNote({ currency }: { currency: string }) {
+  const t = useTranslations("Overview");
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Note
+        tone="violet"
+        label={t("netWorth")}
+        action={
+          <>
+            <Button
+              className="border-(--note-ink) bg-(--note-ink) text-(--note) hover:bg-(--note-ink)/90 focus-visible:outline-(--note-ink)"
+              onClick={() => setOpen(true)}
+            >
+              {t("importCalloutCta")}
+            </Button>
+            <Button
+              variant="outline"
+              className="border-(--note-ink) bg-transparent text-(--note-ink) hover:bg-transparent focus-visible:outline-(--note-ink)"
+              nativeButton={false}
+              render={<Link href="/accounts" />}
+            >
+              {t("addAccount")}
+              <ArrowUpRight className="size-4" />
+            </Button>
+          </>
+        }
+      >
+        <MoneyDisplay amount={0} currency={currency} size="hero" className="[font-stretch:125%] font-extrabold" />
+        <p className="mt-3 max-w-md text-sm opacity-85">{t("netWorthEmptyBody")}</p>
+      </Note>
       <StatementImportDialog open={open} onOpenChange={setOpen} onImported={() => router.refresh()} />
     </>
   );
