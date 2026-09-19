@@ -3,6 +3,7 @@ import { ArrowRight, Check } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Logo } from "@/components/brand/logo";
 import { archivo } from "./papel/fonts";
+import { CardFace } from "@/components/papel/card-face";
 import { Guilloche } from "@/components/papel/guilloche";
 import { LocaleToggle } from "./papel/locale-toggle";
 import { Microprint, Serial } from "@/components/papel/microprint";
@@ -213,18 +214,20 @@ export async function MarketingHome() {
         <section className={s.paper} aria-labelledby="cards-title">
           <div className={`${s.wrap} ${s.cardsGrid}`}>
             <div className={s.wallet} aria-hidden>
-              <div className={`${s.card} ${s.cardGold}`}>
-                <Guilloche className={s.cardRosette} lineWidth={0.5} />
-                <span className={s.cardName}>Visa Oro</span>
-                <span className={s.cardNumber}>•••• 4417</span>
-                <span className={s.cardNet}>VISA</span>
-              </div>
-              <div className={`${s.card} ${s.cardBlack}`}>
-                <Guilloche className={s.cardRosette} lineWidth={0.5} />
-                <span className={s.cardName}>Mastercard Black</span>
-                <span className={s.cardNumber}>•••• 0932</span>
-                <span className={s.cardNet}>MASTERCARD</span>
-              </div>
+              <CardFace
+                name="Visa Oro"
+                last4="4417"
+                network="visa"
+                accent="#e4b64a"
+                className={s.cardGold}
+              />
+              <CardFace
+                name="Mastercard Black"
+                last4="0932"
+                network="mastercard"
+                accent="#2a2733"
+                className={s.cardBlack}
+              />
               <p className={s.sampleTag}>{t("cardsTyped")}</p>
             </div>
 

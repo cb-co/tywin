@@ -918,61 +918,12 @@
   display: grid;
   padding-bottom: 1rem;
 }
-.card {
-  grid-area: 1 / 1;
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-  width: min(100%, 25rem);
-  aspect-ratio: 1.7;
-  border-radius: 18px;
-  padding: 1.3rem 1.4rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  box-shadow:
-    0 1px 0 rgb(255 255 255 / 0.25) inset,
-    0 26px 50px -24px rgb(20 10 40 / 0.7);
-}
 .cardGold {
-  background: linear-gradient(135deg, #e4b64a, #b98320);
-  color: #2b1c02;
   rotate: -5deg;
 }
 .cardBlack {
-  background: linear-gradient(135deg, #2a2733, #0f0d14);
-  color: #f1edf9;
   rotate: 4deg;
   margin: 5.5rem 0 0 min(28%, 9rem);
-}
-.cardRosette {
-  position: absolute;
-  z-index: -1;
-  width: 150%;
-  aspect-ratio: 1;
-  right: -95%;
-  top: -75%;
-  opacity: 0.35;
-  color: currentColor;
-}
-.cardName {
-  font-stretch: 112%;
-  font-weight: 800;
-  font-size: 1.1rem;
-}
-.cardNumber {
-  font-weight: 600;
-  letter-spacing: 0.14em;
-}
-.cardNet {
-  position: absolute;
-  right: 1.4rem;
-  bottom: 1.2rem;
-  font-stretch: 125%;
-  font-weight: 900;
-  font-style: italic;
-  font-size: 0.95rem;
-  letter-spacing: 0.04em;
 }
 .wallet .sampleTag {
   color: var(--ink-soft);
