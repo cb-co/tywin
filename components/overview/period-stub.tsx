@@ -19,12 +19,15 @@ export function PeriodStub({
 }: { income: number; spending: number; used: number; budget: number; currency: string }) {
   const t = useTranslations("Overview");
   const over = budget > 0 && used > budget;
-  const pct = budget > 0 ? Math.min(Math.max((used / budget) * 100, 0), 100) : 0;
+  // The true percent prints; RuleMeter clamps its own fill, so a 160% spend
+  // reads "160%" instead of a capped "100%".
+  const pct = budget > 0 ? Math.max((used / budget) * 100, 0) : 0;
 
   return (
     <div>
       <div aria-hidden className="mx-2 border-t-2 border-dashed border-(--ink-soft)" />
       <Card className="gap-0 rounded-t-none border-t-0 p-0">
+        <h2 className="legend px-4 pt-3 pb-1 text-[11px] text-muted-foreground">{t("thisPeriod")}</h2>
         <LedgerRow
           lead={<ArrowDownLeft aria-hidden className={glyph} />}
           title={t("incomeThisPeriod")}
@@ -49,8 +52,8 @@ export function PeriodStub({
         {/* The meter is a block element, so it sits in its own row rather than
             inside LedgerRow's subtitle <p>. */}
         <div className="px-4 pb-3">
-          <RuleMeter used={used} total={budget} label={t("budgetUsed")} />
-          {over ? <ProofMark tone="flag" className="mt-1.5">{formatPercent(pct)}</ProofMark> : null}
+          <RuleMeter used={used} total={budget} label={t("budgetUsed")} overLabel={t("budgetOverLabel")} />
+          {over ? <ProofMark tone="flag" className="mt-1.5">{t("budgetOverBy", { pct: formatPercent(pct) })}</ProofMark> : null}
         </div>
       </Card>
     </div>

@@ -142,34 +142,34 @@ export function OverviewMock({
               size="hero"
               className="text-3xl sm:text-3xl font-extrabold [font-stretch:125%]"
             />
-            <p className="mt-1 text-sm opacity-70">{availableIfCleared}</p>
+            <p className="mt-1 text-sm opacity-90">{availableIfCleared}</p>
 
             <div className="mt-6 space-y-1.5">
               <div className={rowClass}>
-                <span className="opacity-80">{liquidLabel}</span>
+                <span className="opacity-90">{liquidLabel}</span>
                 <MoneyDisplay amount={3200} currency="USD" size="inline" />
               </div>
               <div className={rowClass}>
-                <span className="opacity-80">{committedLabel}</span>
+                <span className="opacity-90">{committedLabel}</span>
                 <MoneyDisplay amount={-200} currency="USD" size="inline" />
               </div>
               <div className={rowClass}>
-                <span className="opacity-80">{cardsLabel}</span>
+                <span className="opacity-90">{cardsLabel}</span>
                 <MoneyDisplay amount={-350} currency="USD" size="inline" />
               </div>
-              <p className="pl-3 text-xs opacity-60">{cardsNote}</p>
+              <p className="pl-3 text-xs opacity-90">{cardsNote}</p>
               <div className={rowClass}>
-                <span className="opacity-80">{loansLabel}</span>
+                <span className="opacity-90">{loansLabel}</span>
                 <MoneyDisplay amount={-180} currency="USD" size="inline" />
               </div>
               <div className={rowClass}>
-                <span className="opacity-80">{subscriptionsLabel}</span>
+                <span className="opacity-90">{subscriptionsLabel}</span>
                 <MoneyDisplay amount={-46} currency="USD" size="inline" />
               </div>
             </div>
 
             <div className="mt-6 flex items-baseline justify-between gap-4 border-t border-current/20 pt-4 text-sm">
-              <span className="opacity-80">{netWorthLabel}</span>
+              <span className="opacity-90">{netWorthLabel}</span>
               <MoneyDisplay amount={18430.12} currency="USD" size="stat" />
             </div>
 

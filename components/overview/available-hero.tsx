@@ -29,7 +29,7 @@ function Row({
   if (amount === 0) return null;
   return (
     <div className="flex items-baseline justify-between gap-4 text-sm">
-      <span className="opacity-80">{label}</span>
+      <span className="opacity-90">{label}</span>
       <MoneyDisplay amount={negate ? -amount : amount} currency={currency} size="inline" />
     </div>
   );
@@ -117,7 +117,7 @@ export function AvailableHero({
           each other after FX conversion, and printing that twice reads as a
           rendering bug rather than a real second number. */}
       {Math.abs(a.cardsFull - a.cardsMinimum) >= 0.01 ? (
-        <p className="mt-1 text-sm opacity-70">
+        <p className="mt-1 text-sm opacity-90">
           {t.rich("availableIfCleared", {
             amount: () => (
               <MoneyDisplay amount={a.availableIfCardsCleared} currency={currency} size="inline" />
@@ -139,7 +139,7 @@ export function AvailableHero({
 
       <div id={breakdownId} ref={breakdownRef} className="mt-6 space-y-1.5">
         <div className="flex items-baseline justify-between gap-4 text-sm">
-          <span className="opacity-80">{t("availableLiquid")}</span>
+          <span className="opacity-90">{t("availableLiquid")}</span>
           <MoneyDisplay amount={a.liquid} currency={currency} size="inline" />
         </div>
         <Row label={t("availableCommitted")} amount={a.committed} currency={currency} />
@@ -153,11 +153,11 @@ export function AvailableHero({
         {a.cardBasis.length > 0 ? (
           <>
             <div className="flex items-baseline justify-between gap-4 text-sm">
-              <span className="opacity-80">{t("availableCards")}</span>
+              <span className="opacity-90">{t("availableCards")}</span>
               <MoneyDisplay amount={-a.cardsMinimum} currency={currency} size="inline" />
             </div>
             {a.cardBasis.map((c) => (
-              <p key={c.accountId} className="pl-3 text-xs opacity-60">
+              <p key={c.accountId} className="pl-3 text-xs opacity-90">
                 {t(c.basis === "minimum" ? "availableBasisMinimum" : "availableBasisFull", {
                   name: c.name,
                 })}
@@ -173,7 +173,7 @@ export function AvailableHero({
           is demoted, not removed, and must stay visible at every width — the
           returning user's anchor while the hero above it changes meaning. */}
       <div className="mt-6 flex items-baseline justify-between gap-4 border-t border-current/20 pt-4 text-sm">
-        <span className="opacity-80">{t("netWorthSecondary")}</span>
+        <span className="opacity-90">{t("netWorthSecondary")}</span>
         <MoneyDisplay amount={netWorth} currency={currency} size="stat" />
       </div>
 

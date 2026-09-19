@@ -37,4 +37,19 @@ describe("PeriodStub", () => {
     expect(out).toContain("—");
     expect(out).not.toContain("text-(--red)");
   });
+  it("prints the true percent and a worded flag when over budget", () => {
+    const out = html(1600, 1000);
+    expect(out).toContain("160%");
+    expect(out).toContain("160% of budget, over");
+    expect(out).not.toContain("100.0%");
+  });
+  it("gives the meter an over-budget reading", () => {
+    expect(html(1600, 1000)).toMatch(/aria-valuetext="[^"]*Over budget/);
+  });
+  it("opens the stub with the period caption under the perforation", () => {
+    const out = html(500, 1000);
+    expect(out).toContain("This period");
+    expect(out.indexOf("border-dashed")).toBeLessThan(out.indexOf("This period"));
+    expect(out).not.toContain("of budget, over");
+  });
 });

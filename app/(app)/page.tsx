@@ -84,9 +84,7 @@ export default async function OverviewPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-8">
       <div className="rise">
-        {/* Desktop only — below `sm` it moves down to the "Este período"
-            heading, which is a row this page draws anyway and which is
-            exactly the band a fresh statement updates. */}
+        {/* Desktop only — below `sm` the button sits in its own row above the note. */}
         <PageHeader
           title={heading}
           description={t("description")}
@@ -94,6 +92,13 @@ export default async function OverviewPage() {
         />
       </div>
 
+      {/* Mobile only: the desktop header above already carries the button. */}
+      <div className="rise -mt-4 flex justify-end sm:hidden">
+        <ImportButton variant="outline" size="sm" />
+      </div>
+
+      {/* One issued document: the note, then the stub torn along the
+          perforation, with nothing between them but the FX notice. */}
       <div className="rise" style={{ "--i": 1 } as React.CSSProperties}>
         <AvailableHero
           available={o.available}
@@ -102,16 +107,7 @@ export default async function OverviewPage() {
           period={o.period}
           today={localDate()}
         />
-      </div>
-
-      {/* Directly under the note it qualifies. */}
-      <FxDegradedNotice currencies={o.fxUnconverted} base={o.baseCurrency} className="rise" />
-
-      <div className="rise space-y-2" style={{ "--i": 2 } as React.CSSProperties}>
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="legend text-[11px] text-muted-foreground">{t("thisPeriod")}</h2>
-          <ImportButton variant="outline" size="sm" className="sm:hidden" />
-        </div>
+        <FxDegradedNotice currencies={o.fxUnconverted} base={o.baseCurrency} className="my-3" />
         <PeriodStub
           income={o.monthIncome}
           spending={o.monthExpense}

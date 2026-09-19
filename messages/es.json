@@ -133,6 +133,8 @@
     "incomeThisPeriod": "Ingresos este período",
     "spendingThisPeriod": "Pagado este período",
     "budgetUsed": "Presupuesto usado",
+    "budgetOverBy": "{pct} del presupuesto, excedido",
+    "budgetOverLabel": "Presupuesto excedido",
     "availableLabel": "Disponible hasta el {date}",
     "availableIfCleared": "<amount></amount> si saldas las tarjetas",
     "availableLiquid": "Balance líquido",

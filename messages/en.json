@@ -133,6 +133,8 @@
     "incomeThisPeriod": "Income this period",
     "spendingThisPeriod": "Paid out this period",
     "budgetUsed": "Budget used",
+    "budgetOverBy": "{pct} of budget, over",
+    "budgetOverLabel": "Over budget",
     "availableLabel": "Available until {date}",
     "availableIfCleared": "<amount></amount> if you clear your cards",
     "availableLiquid": "Liquid balance",
