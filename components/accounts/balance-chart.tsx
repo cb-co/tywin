@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useTranslations } from "next-intl";
 import { formatMoney } from "@/lib/format";
 import type { TransactionWithRefs } from "@/lib/transactions/queries";
@@ -58,17 +58,11 @@ export function BalanceChart({
     // logs a width(-1)/height(-1) warning on the render before its
     // ResizeObserver measures. One fixed dimension satisfies the check.
     <ResponsiveContainer width="100%" height={224}>
-      <AreaChart data={series} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-        <defs>
-          <linearGradient id="balanceFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.28} />
-            <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-        <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} minTickGap={24} />
+      <LineChart data={series} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--paper-line)" vertical={false} />
+        <XAxis dataKey="date" stroke="var(--ink-soft)" fontSize={12} tickLine={false} axisLine={false} minTickGap={24} />
         <YAxis
-          stroke="var(--muted-foreground)"
+          stroke="var(--ink-soft)"
           fontSize={12}
           tickLine={false}
           axisLine={false}
@@ -77,21 +71,15 @@ export function BalanceChart({
         />
         <Tooltip
           contentStyle={{
-            background: "var(--popover)",
-            border: "1px solid var(--border)",
-            borderRadius: 8,
+            background: "var(--paper-2)",
+            border: "1px solid var(--paper-line)",
+            borderRadius: 4,
             fontSize: 12,
           }}
           formatter={(value) => formatMoney(Number(value), currency)}
         />
-        <Area
-          dataKey="balance"
-          stroke="var(--chart-1)"
-          strokeWidth={2}
-          fill="url(#balanceFill)"
-          dot={false}
-        />
-      </AreaChart>
+        <Line dataKey="balance" stroke="var(--ink)" strokeWidth={1.5} dot={false} />
+      </LineChart>
     </ResponsiveContainer>
   );
 }
