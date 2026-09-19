@@ -1,4 +1,5 @@
 import { Guilloche } from "./guilloche";
+import { NetworkMark } from "./network-mark";
 import { cardForeground, gradientFrom } from "@/lib/color";
 import { DEFAULT_CARD_ACCENT, HEX6 } from "@/lib/accounts/card-art";
 import type { CardNetwork } from "@/lib/accounts/network";
@@ -24,12 +25,15 @@ export function CardFace({
   last4,
   network,
   accent,
+  mark = "logo",
   className,
 }: {
   name: string;
   last4: string | null;
   network: CardNetwork | null;
   accent: string | null;
+  /** In-app faces print the drawn network logo; the marketing page keeps its wordmark. */
+  mark?: "logo" | "wordmark";
   className?: string;
 }) {
   const base = accent && HEX6.test(accent) ? accent : DEFAULT_CARD_ACCENT;
@@ -50,9 +54,17 @@ export function CardFace({
       <span className="truncate text-[1.1rem] font-extrabold [font-stretch:112%]">{name}</span>
       <span className="figure font-semibold tracking-[0.14em]">•••• {last4 ?? "····"}</span>
       {network ? (
-        <span className="absolute bottom-[1.2rem] right-[1.4rem] text-[0.95rem] font-black italic tracking-[0.04em] [font-stretch:125%]">
-          {NETWORK_WORDMARK[network]}
-        </span>
+        mark === "logo" ? (
+          <NetworkMark
+            network={network}
+            foreground={fg}
+            className="absolute bottom-[1.2rem] right-[1.4rem]"
+          />
+        ) : (
+          <span className="absolute bottom-[1.2rem] right-[1.4rem] text-[0.95rem] font-black italic tracking-[0.04em] [font-stretch:125%]">
+            {NETWORK_WORDMARK[network]}
+          </span>
+        )
       ) : null}
     </div>
   );

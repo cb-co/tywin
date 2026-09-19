@@ -219,6 +219,7 @@ export async function MarketingHome() {
                 last4="4417"
                 network="visa"
                 accent="#e4b64a"
+                mark="wordmark"
                 className={s.cardGold}
               />
               <CardFace
@@ -226,6 +227,7 @@ export async function MarketingHome() {
                 last4="0932"
                 network="mastercard"
                 accent="#2a2733"
+                mark="wordmark"
                 className={s.cardBlack}
               />
               <p className={s.sampleTag}>{t("cardsTyped")}</p>

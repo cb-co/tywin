@@ -215,8 +215,7 @@
     "attentionTitle": "Necesita revisión",
     "attentionOverdue": "Atrasada",
     "attentionDueSoon": "Vence {date}",
-    "attentionUntriaged": "{count} sin categorizar",
-    "netWorthLabel": "Patrimonio neto"
+    "attentionUntriaged": "{count} sin categorizar"
   },
   "AccountDetail": {
     "backLink": "Cuentas",
@@ -1107,7 +1106,6 @@
     "accountsTitle": "Cartera",
     "accountsIntro": "Todo lo que tienes o debes vive aquí, agrupado en cuatro secciones: Cuentas (corriente, ahorro, efectivo, inversión), Tarjetas de crédito, Préstamos y Propiedades y otros bienes.",
     "accountsAttention": "\"Necesita revisión\" va encima de todo lo demás — tarjetas atrasadas, tarjetas por vencer e importaciones sin clasificar, impresas como un pequeño libro. Si no hay nada que señalar, la sección entera desaparece, ni siquiera su encabezado queda.",
-    "accountsNetWorth": "El patrimonio neto se imprime en su propio billete violeta, justo debajo de Necesita revisión: todo lo que tienes menos todo lo que debes, en tu moneda base. Solo aparece cuando tienes al menos una cuenta.",
     "accountsCards": "Cada tarjeta se dibuja como el objeto físico — el diseño, la marca de red, los últimos cuatro dígitos — la misma cara en cualquier lugar donde aparezca. Una tarjeta con más de una línea de moneda (por ejemplo, un saldo en USD y otro en DOP en la misma tarjeta física) muestra esa cara una sola vez, con cada línea listada debajo como su propia fila en vez de como una segunda tarjeta.",
     "accountsLoans": "Los préstamos y cuotas muestran el saldo pendiente arriba, y luego cuántas cuotas están pagadas dibujadas como una tira de marcas perforadas — tinta sólida para una cuota pagada, contorno punteado para una que aún se debe.",
     "quickAddCardNote": "¿Necesitas solo una tarjeta, rápido? Usa \"Agregar tarjeta rápido\" junto al encabezado Tarjetas de crédito — solo pide el nombre, la moneda y los últimos 4 dígitos; el límite y las fechas los puedes completar después desde tu primer estado de cuenta.",
@@ -1156,7 +1154,6 @@
     "triageMockMerchantTwoCount": "5 consumos",
     "accountsMockAttentionTitle": "Necesita revisión",
     "accountsMockAttentionOverdue": "Atrasada",
-    "accountsMockNetWorth": "Patrimonio neto",
     "accountsMockLineCurrent": "USD",
     "accountsMockLineCurrentUtil": "74% usado",
     "accountsMockLineOther": "DOP",

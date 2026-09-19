@@ -257,7 +257,6 @@ export function OverviewMock({
 export function AccountsMock({
   attentionTitle,
   attentionOverdue,
-  netWorthLabel,
   lineCurrent,
   lineCurrentUtil,
   lineOther,
@@ -267,7 +266,6 @@ export function AccountsMock({
 }: {
   attentionTitle: string;
   attentionOverdue: string;
-  netWorthLabel: string;
   /** The two currency lines of the mocked card group. */
   lineCurrent: string;
   lineCurrentUtil: string;
@@ -297,10 +295,6 @@ export function AccountsMock({
             />
           </div>
         </div>
-
-        <Note tone="violet" label={netWorthLabel}>
-          <MoneyDisplay amount={18430.12} currency="USD" size="hero" />
-        </Note>
 
         <div className="mx-auto max-w-[15rem]">
           <CardFace name={cardName} last4="4821" network="visa" accent="#1B4B8F" />

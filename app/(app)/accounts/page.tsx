@@ -3,14 +3,11 @@ import { PageHeader } from "@/components/page-header";
 import { AccountGallery, AddAccountControl } from "@/components/accounts/account-gallery";
 import { CardArtBackfill } from "@/components/accounts/card-art-backfill";
 import { AttentionLedger } from "@/components/accounts/attention-ledger";
-import { Note } from "@/components/papel/note";
-import { MoneyDisplay } from "@/components/ui/money-display";
 import {
   getAccountsWithStatus,
   getCurrencies,
   getCardGroups,
   getBanks,
-  getNetWorth,
   getAccountsAttention,
 } from "@/lib/accounts/queries";
 import { hasCardAccent } from "@/lib/accounts/card-art";
@@ -25,12 +22,11 @@ export default async function AccountsPage() {
     .maybeSingle();
   const baseCurrency = baseCurrencyOf(profile);
 
-  const [accounts, currencies, cardGroups, banks, netWorth, attention] = await Promise.all([
+  const [accounts, currencies, cardGroups, banks, attention] = await Promise.all([
     getAccountsWithStatus(),
     getCurrencies(),
     getCardGroups(),
     getBanks(),
-    getNetWorth(baseCurrency),
     getAccountsAttention(),
   ]);
   const t = await getTranslations("Accounts");
@@ -59,11 +55,6 @@ export default async function AccountsPage() {
         }
       />
       <AttentionLedger items={attention} />
-      {accounts.length > 0 ? (
-        <Note tone="violet" label={t("netWorthLabel")}>
-          <MoneyDisplay amount={netWorth} currency={baseCurrency} size="hero" />
-        </Note>
-      ) : null}
       <AccountGallery
         accounts={accounts}
         currencies={currencies}

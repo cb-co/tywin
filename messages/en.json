@@ -215,8 +215,7 @@
     "attentionTitle": "Needs a look",
     "attentionOverdue": "Overdue",
     "attentionDueSoon": "Due {date}",
-    "attentionUntriaged": "{count} uncategorized",
-    "netWorthLabel": "Net worth"
+    "attentionUntriaged": "{count} uncategorized"
   },
   "AccountDetail": {
     "backLink": "Accounts",
@@ -1107,7 +1106,6 @@
     "accountsTitle": "Wallet",
     "accountsIntro": "Everything you own or owe lives here, grouped into four sections: Accounts (checking, savings, cash, investment), Credit cards, Loans, and Property & assets.",
     "accountsAttention": "\"Needs a look\" sits above everything else — overdue cards, cards due soon, and imports still waiting to be sorted, printed as a short ledger. Nothing to flag, and the whole section disappears, not even its heading.",
-    "accountsNetWorth": "Net worth prints on its own violet note, right under Needs a look: everything you own minus everything you owe, in your base currency. It only appears once you have at least one account.",
     "accountsCards": "Every card is drawn as the physical object — art, network mark, last four digits — the same face wherever it appears. A card carrying more than one currency line (say a USD and a DOP balance on one physical card) shows that face once, with each line listed underneath as its own row rather than as a second card.",
     "accountsLoans": "Loans and cuotas show the outstanding balance up top, then how many installments are paid drawn as a strip of perforated marks — solid ink for a paid cuota, a dashed outline for one still owed.",
     "quickAddCardNote": "Need just a card, fast? Use \"Quick add card\" next to the Credit cards heading — it only asks for the name, currency, and last 4 digits, and you can fill in the limit and dates later from your first statement.",
@@ -1156,7 +1154,6 @@
     "triageMockMerchantTwoCount": "5 transactions",
     "accountsMockAttentionTitle": "Needs a look",
     "accountsMockAttentionOverdue": "Overdue",
-    "accountsMockNetWorth": "Net worth",
     "accountsMockLineCurrent": "USD",
     "accountsMockLineCurrentUtil": "74% used",
     "accountsMockLineOther": "DOP",

@@ -186,7 +186,6 @@ export default async function HelpPage() {
             <div>
               <ul className="space-y-2 text-sm text-foreground">
                 <li>{t("accountsAttention")}</li>
-                <li>{t("accountsNetWorth")}</li>
                 <li>{t("accountsCards")}</li>
                 <li>{t("accountsLoans")}</li>
               </ul>
@@ -251,7 +250,6 @@ export default async function HelpPage() {
               <AccountsMock
                 attentionTitle={t("accountsMockAttentionTitle")}
                 attentionOverdue={t("accountsMockAttentionOverdue")}
-                netWorthLabel={t("accountsMockNetWorth")}
                 lineCurrent={t("accountsMockLineCurrent")}
                 lineCurrentUtil={t("accountsMockLineCurrentUtil")}
                 lineOther={t("accountsMockLineOther")}

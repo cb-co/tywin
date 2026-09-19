@@ -8,12 +8,18 @@ const html = (props: Partial<React.ComponentProps<typeof CardFace>> = {}) =>
   );
 
 describe("CardFace", () => {
-  it("prints the network wordmark", () => {
-    expect(html()).toContain(NETWORK_WORDMARK.visa);
+  it("prints the drawn network logo in the app", () => {
+    const out = html();
+    expect(out).toContain("<svg");
+    expect(out).not.toContain(NETWORK_WORDMARK.visa);
   });
 
-  it("renders no wordmark when the network is null", () => {
-    const out = html({ network: null });
+  it("prints the wordmark when asked (marketing)", () => {
+    expect(html({ mark: "wordmark" })).toContain(NETWORK_WORDMARK.visa);
+  });
+
+  it("renders no mark when the network is null", () => {
+    const out = html({ network: null, mark: "wordmark" });
     expect(out).not.toContain(NETWORK_WORDMARK.visa);
     expect(out).not.toContain(NETWORK_WORDMARK.mastercard);
   });
