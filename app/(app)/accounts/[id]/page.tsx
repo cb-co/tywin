@@ -40,6 +40,7 @@ import { CardLineRail } from "@/components/accounts/card-line-rail";
 import { CardReport } from "@/components/accounts/card-report";
 import { inferNetwork, inferLast4 } from "@/lib/accounts/network";
 import { Progress } from "@/components/ui/progress";
+import { Perforation } from "@/components/papel/perforation";
 import { MaskedMoney } from "@/components/figure-mask/masked-money";
 
 function todayISO(): string {
@@ -318,10 +319,11 @@ export default async function AccountDetailPage({
                 </p>
                 {progressTerm ? (
                   <div className="mt-4 max-w-sm space-y-2">
-                    <Progress value={Math.min(Math.max((progressPaid / progressTerm) * 100, 0), 100)} />
-                    <p className="text-sm text-muted-foreground">
-                      {t("installmentsPaidOfTerm", { paid: progressPaid, term: progressTerm })}
-                    </p>
+                    <Perforation
+                      total={progressTerm}
+                      paid={progressPaid}
+                      label={t("installmentsPaidOfTerm", { paid: progressPaid, term: progressTerm })}
+                    />
                   </div>
                 ) : (
                   <p className="mt-3 text-sm text-muted-foreground">

@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Perforation } from "@/components/papel/perforation";
 import { ColorTile } from "@/components/ui/color-tile";
 import { MoneyDisplay } from "@/components/ui/money-display";
 import { CardFace } from "@/components/papel/card-face";
@@ -161,7 +162,6 @@ function LoanBody({
   currency: string;
 }) {
   const t = useTranslations("Accounts");
-  const pct = term && term > 0 ? Math.min(Math.max((paid / term) * 100, 0), 100) : 0;
   return (
     <div className="mt-5 space-y-3">
       <div>
@@ -170,7 +170,7 @@ function LoanBody({
         </p>
         <p className="mt-1 text-xs text-muted-foreground">{t("outstanding")}</p>
       </div>
-      {term ? <Progress value={pct} /> : null}
+      {term ? <Perforation total={term} paid={paid} label={t("paidOfTerm", { paid, term })} /> : null}
       <div className="flex justify-between text-xs text-muted-foreground">
         <span>{term ? t("paidOfTerm", { paid, term }) : t("paidOnly", { paid })}</span>
         {installment ? <span>{t("perMonth", { amount: formatMoney(installment, currency) })}</span> : null}
