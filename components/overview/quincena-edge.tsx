@@ -30,13 +30,13 @@ export function QuincenaEdge({ start, end, today }: { start: string; end: string
         ))}
         <i className="absolute bottom-0 h-5 w-0.5 bg-current" style={{ left: `${pos * 100}%` }} />
       </div>
-      <div aria-hidden className="legend mt-1.5 flex justify-between text-[10px]">
+      <div aria-hidden className="legend mt-1.5 flex justify-between text-[11px]">
         <span>{short(start)}</span>
         <span>{short(end)}</span>
       </div>
       <span
         aria-hidden
-        className={`legend absolute top-0 text-[10px] leading-[14px] ${align}`}
+        className={`legend absolute top-0 text-[11px] leading-[14px] ${align}`}
         style={{ left: `${pos * 100}%` }}
       >
         {t("quincenaToday")}
