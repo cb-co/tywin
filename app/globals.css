@@ -278,6 +278,15 @@
     font-weight: inherit;
   }
 
+  /* A slip torn from a pad: a row of punched holes along the top edge.
+     Pure CSS mask; no raster. */
+  .perforated-top {
+    --hole: 5px;
+    mask:
+      radial-gradient(circle at 50% 0, transparent calc(var(--hole) / 2), #000 calc(var(--hole) / 2 + 0.5px)) top / 14px 8px repeat-x,
+      linear-gradient(#000, #000) 0 8px / 100% calc(100% - 8px) no-repeat;
+  }
+
   /* Engraved legend: the banknote's wide caps. */
   .legend {
     font-stretch: 125%;
