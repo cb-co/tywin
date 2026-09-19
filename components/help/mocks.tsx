@@ -140,7 +140,7 @@ export function OverviewMock({
               amount={1840}
               currency="USD"
               size="hero"
-              className="text-3xl font-extrabold [font-stretch:125%]"
+              className="text-3xl sm:text-3xl font-extrabold [font-stretch:125%]"
             />
             <p className="mt-1 text-sm opacity-70">{availableIfCleared}</p>
 
