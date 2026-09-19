@@ -73,9 +73,9 @@ export function RecommendationCard({
     return (
       <aside className="border-l-2 border-(--paper-line) pl-4" aria-busy aria-label={t("recommendationLoading")}>
         <div className="bg-(--paper-line) h-3 w-24 rounded" />
-        <div className="skeleton mt-2 h-4 w-40 rounded" />
-        <div className="skeleton mt-2 h-3 w-full rounded" />
-        <div className="skeleton mt-1.5 h-3 w-2/3 rounded" />
+        <div className="bg-(--paper-line) mt-2 h-4 w-40 rounded" />
+        <div className="bg-(--paper-line) mt-2 h-3 w-full rounded" />
+        <div className="bg-(--paper-line) mt-1.5 h-3 w-2/3 rounded" />
       </aside>
     );
   }
