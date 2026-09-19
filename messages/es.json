@@ -1251,5 +1251,8 @@
     "step5Body": "Describe cada préstamo como está hoy: cuánto debes, la cuota, la tasa anual y el día de pago. Las cuotas restantes se calculan con la tasa; si no la sabes, pon cuántas quedan en Más detalles. Cada uno se vuelve una cuenta de préstamo cuyas cuotas aparecen en tus próximos pagos.",
     "step6Title": "Gastos fijos (opcional)",
     "step6Body": "Toca los gastos que pagas cada mes — alquiler, luz, agua, internet, teléfono, seguro — y ponle monto y día a cada uno. Se restan de «disponible» antes de que venzan."
+  },
+  "Papel": {
+    "specimen": "Ejemplo · Muestra"
   }
 }

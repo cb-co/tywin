@@ -1251,5 +1251,8 @@
     "step5Body": "Describe each loan as it stands today: what you owe, the installment, the annual rate and the payment day. The installments left are worked out from the rate; if you don't know it, enter the count under More details. Each becomes a loan account whose installments show up in upcoming payments.",
     "step6Title": "Fixed bills (optional)",
     "step6Body": "Tap the bills you pay every month — rent, electricity, water, internet, phone, insurance — and give each an amount and day. They're subtracted from \"safe to spend\" before they're due."
+  },
+  "Papel": {
+    "specimen": "Ejemplo · Specimen"
   }
 }
