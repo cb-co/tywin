@@ -3,28 +3,21 @@ import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Perforation } from "@/components/papel/perforation";
 import { ColorTile } from "@/components/ui/color-tile";
 import { MoneyDisplay } from "@/components/ui/money-display";
-import { PaymentCard } from "./payment-card";
+import { CardFace } from "@/components/papel/card-face";
+import { ProofMark } from "@/components/papel/proof-mark";
 import { inferNetwork, inferLast4 } from "@/lib/accounts/network";
 import { formatMoney, formatPercent, formatDayOfMonth } from "@/lib/format";
 import { accountTypeMeta, type AccountType } from "@/lib/accounts/meta";
 import type { AccountWithStatus } from "@/lib/accounts/queries";
-import { cn } from "@/lib/utils";
 import { MaskedMoney } from "@/components/figure-mask/masked-money";
-
-function utilizationTone(pct: number) {
-  if (pct >= 80) return "text-destructive";
-  if (pct >= 50) return "text-warning";
-  return "text-muted-foreground";
-}
 
 export function AccountCard({
   account,
-  holder,
 }: {
   account: AccountWithStatus;
-  holder: string;
 }) {
   const t = useTranslations("Accounts");
   const tType = useTranslations("AccountTypes");
@@ -44,13 +37,11 @@ export function AccountCard({
           isn't drawn. */}
       <Card className="lift h-full gap-0 p-5 group-hover:shadow-(--shadow-card-hover)">
         {isStandaloneCard ? (
-          <PaymentCard
-            holder={holder}
-            // A stored value beats name inference; inferLast4 already falls
-            // back when it is null or malformed.
+          <CardFace
+            name={account.name}
             last4={inferLast4(account.name, account.last4)}
             network={inferNetwork(account.name, account.brand)}
-            color={account.color}
+            accent={account.color}
           />
         ) : (
           <div className="flex items-start justify-between">
@@ -143,9 +134,9 @@ function CardBody({
           <p className="mt-1 text-xs text-muted-foreground">{t("owed")}</p>
         </div>
         {util !== null ? (
-          <span className={cn("text-sm font-medium", utilizationTone(util))}>
+          <ProofMark tone={util >= 80 ? "flag" : "neutral"} className="text-sm">
             {formatPercent(util)}
-          </span>
+          </ProofMark>
         ) : null}
       </div>
       {util !== null ? <Progress value={Math.min(Math.max(util, 0), 100)} /> : null}
@@ -171,7 +162,6 @@ function LoanBody({
   currency: string;
 }) {
   const t = useTranslations("Accounts");
-  const pct = term && term > 0 ? Math.min(Math.max((paid / term) * 100, 0), 100) : 0;
   return (
     <div className="mt-5 space-y-3">
       <div>
@@ -180,7 +170,9 @@ function LoanBody({
         </p>
         <p className="mt-1 text-xs text-muted-foreground">{t("outstanding")}</p>
       </div>
-      {term ? <Progress value={pct} /> : null}
+      {term ? (
+        <Perforation total={term} paid={paid} label={t("paidOfTerm", { paid, term })} decorative />
+      ) : null}
       <div className="flex justify-between text-xs text-muted-foreground">
         <span>{term ? t("paidOfTerm", { paid, term }) : t("paidOnly", { paid })}</span>
         {installment ? <span>{t("perMonth", { amount: formatMoney(installment, currency) })}</span> : null}

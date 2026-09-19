@@ -184,7 +184,13 @@ export default async function HelpPage() {
             intro={t("accountsIntro")}
           >
             <div>
-              <p className="text-sm text-muted-foreground">{t("quickAddCardNote")}</p>
+              <ul className="space-y-2 text-sm text-foreground">
+                <li>{t("accountsAttention")}</li>
+                <li>{t("accountsNetWorth")}</li>
+                <li>{t("accountsCards")}</li>
+                <li>{t("accountsLoans")}</li>
+              </ul>
+              <p className="mt-3 text-sm text-muted-foreground">{t("quickAddCardNote")}</p>
 
               <h3 className="mt-4 text-sm font-semibold text-foreground">{t("commonFieldsTitle")}</h3>
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -243,14 +249,15 @@ export default async function HelpPage() {
             </div>
             <div className="space-y-4">
               <AccountsMock
-                checking={t("accountsMockChecking")}
-                checkingType={t("accountsMockCheckingType")}
-                owedLabel={t("accountsMockOwedLabel")}
-                cardLimit={t("accountsMockLimit")}
-                cardDue={t("accountsMockCardDue")}
-                holder={t("accountsMockHolder")}
+                attentionTitle={t("accountsMockAttentionTitle")}
+                attentionOverdue={t("accountsMockAttentionOverdue")}
+                netWorthLabel={t("accountsMockNetWorth")}
                 lineCurrent={t("accountsMockLineCurrent")}
+                lineCurrentUtil={t("accountsMockLineCurrentUtil")}
                 lineOther={t("accountsMockLineOther")}
+                lineOtherUtil={t("accountsMockLineOtherUtil")}
+                loanOutstandingLabel={t("accountsMockLoanOutstanding")}
+                loanProgress={t("accountsMockLoanProgress")}
               />
               <TriageMock
                 summary={t("triageMockSummary")}

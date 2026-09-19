@@ -5,7 +5,8 @@ import { useTranslations } from "next-intl";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ColorTile } from "@/components/ui/color-tile";
+import { LedgerRow } from "@/components/papel/ledger-row";
+import { Stamp } from "@/components/papel/stamp";
 import {
   Select,
   SelectContent,
@@ -96,13 +97,8 @@ export function SavedRow({
   trailing?: ReactNode;
 }) {
   return (
-    <li className="flex items-center gap-3 rounded-lg border bg-card p-3">
-      <ColorTile color={color} icon={icon} size="sm" />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-foreground">{title}</p>
-        {subtitle ? <p className="text-xs text-muted-foreground">{subtitle}</p> : null}
-      </div>
-      {trailing}
+    <li className="rounded-[4px] border border-(--paper-line)">
+      <LedgerRow lead={<Stamp color={color} icon={icon} size="sm" />} title={title} subtitle={subtitle} meta={trailing} />
     </li>
   );
 }

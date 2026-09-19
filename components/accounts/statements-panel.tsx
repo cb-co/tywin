@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
-import { Upload, Trash2, FileText, ChevronDown, ChevronRight } from "lucide-react";
+import { Upload, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 import {
   deleteCardStatement,
   getStatementLineDetail,
@@ -16,6 +16,8 @@ import { useUiSound } from "@/components/sound/sound-provider";
 import { StatementImportDialog } from "@/components/statements/statement-import-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { LedgerRow } from "@/components/papel/ledger-row";
+import { ProofMark } from "@/components/papel/proof-mark";
 import {
   Dialog,
   DialogContent,
@@ -120,67 +122,70 @@ export function StatementsPanel({
       {statements.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("historyEmpty")}</p>
       ) : (
-        <ul className="space-y-2">
+        <ul role="list" className="rounded-[4px] border border-(--paper-line)">
           {statements.map((s) => (
-            <li key={s.id} className="rounded-lg border p-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <FileText className="size-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">
-                      {formatDate(s.period_end, locale)}
-                      <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                        {s.source === "import" ? t("sourceImport") : t("sourceManual")}
-                      </span>
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {s.due_date ? t("dueLabel", { date: formatDate(s.due_date, locale) }) : null}
-                      {s.minimum_payment != null
-                        ? ` · ${t("minimumLabel", { amount: formatMoney(Number(s.minimum_payment), currency) })}`
-                        : null}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <p className="figure text-sm">{formatMoney(Number(s.total_balance), currency)}</p>
-                  {triageCounts[s.id] ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      render={<a href={`/imports/${triageCounts[s.id].importId}`} />}
-                      nativeButton={false}
+            <li key={s.id} className="border-b border-(--paper-line) last:border-b-0">
+              <LedgerRow
+                className="border-b-0"
+                lead={
+                  triageCounts[s.id] ? (
+                    <a
+                      href={`/imports/${triageCounts[s.id].importId}`}
+                      className="rounded-[4px] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
                     >
-                      {t("categorizeCount", { count: triageCounts[s.id].count })}
+                      <ProofMark tone="flag">{t("categorizeCount", { count: triageCounts[s.id].count })}</ProofMark>
+                    </a>
+                  ) : (
+                    <ProofMark tone="ok">{tc("done")}</ProofMark>
+                  )
+                }
+                title={
+                  <>
+                    {formatDate(s.period_end, locale)}
+                    <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {s.source === "import" ? t("sourceImport") : t("sourceManual")}
+                    </span>
+                  </>
+                }
+                subtitle={
+                  <>
+                    {s.due_date ? t("dueLabel", { date: formatDate(s.due_date, locale) }) : null}
+                    {s.minimum_payment != null
+                      ? ` · ${t("minimumLabel", { amount: formatMoney(Number(s.minimum_payment), currency) })}`
+                      : null}
+                  </>
+                }
+                amount={<span className="figure text-sm">{formatMoney(Number(s.total_balance), currency)}</span>}
+                meta={
+                  <span className="mt-1 flex items-center justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={pending}
+                      isLoading={busyId === s.id}
+                      aria-label={expanded === s.id ? t("hideLinesAria") : t("viewLinesAria")}
+                      onClick={() => onToggleLines(s.id)}
+                    >
+                      {busyId === s.id ? null : expanded === s.id ? (
+                        <ChevronDown className="size-4" />
+                      ) : (
+                        <ChevronRight className="size-4" />
+                      )}
                     </Button>
-                  ) : null}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    disabled={pending}
-                    isLoading={busyId === s.id}
-                    aria-label={expanded === s.id ? t("hideLinesAria") : t("viewLinesAria")}
-                    onClick={() => onToggleLines(s.id)}
-                  >
-                    {busyId === s.id ? null : expanded === s.id ? (
-                      <ChevronDown className="size-4" />
-                    ) : (
-                      <ChevronRight className="size-4" />
-                    )}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    disabled={pending}
-                    isLoading={busyId === s.id}
-                    onClick={() => setDeleteTarget(s.id)}
-                  >
-                    {busyId === s.id ? null : <Trash2 className="size-4" />}
-                  </Button>
-                </div>
-              </div>
-
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={pending}
+                      isLoading={busyId === s.id}
+                      onClick={() => setDeleteTarget(s.id)}
+                    >
+                      {busyId === s.id ? null : <Trash2 className="size-4" />}
+                    </Button>
+                  </span>
+                }
+              />
               {expanded === s.id ? (
-                <div className="mt-3 space-y-1.5 border-t pt-3">
+                <div className="border-b border-(--paper-line) px-4 pb-3 pt-1 space-y-1.5">
                   {lines[s.id] === undefined ? (
                     <p className="text-xs text-muted-foreground">{t("linesLoading")}</p>
                   ) : lines[s.id].length === 0 ? (

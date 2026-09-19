@@ -2,36 +2,38 @@ import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/page-header";
 import { AccountGallery, AddAccountControl } from "@/components/accounts/account-gallery";
 import { CardArtBackfill } from "@/components/accounts/card-art-backfill";
+import { AttentionLedger } from "@/components/accounts/attention-ledger";
+import { Note } from "@/components/papel/note";
+import { MoneyDisplay } from "@/components/ui/money-display";
 import {
   getAccountsWithStatus,
   getCurrencies,
   getCardGroups,
   getBanks,
+  getNetWorth,
+  getAccountsAttention,
 } from "@/lib/accounts/queries";
 import { hasCardAccent } from "@/lib/accounts/card-art";
-import { baseCurrencyOf, profileLabel } from "@/lib/profile";
+import { baseCurrencyOf } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AccountsPage() {
-  const [accounts, currencies, cardGroups, banks] = await Promise.all([
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("base_currency")
+    .maybeSingle();
+  const baseCurrency = baseCurrencyOf(profile);
+
+  const [accounts, currencies, cardGroups, banks, netWorth, attention] = await Promise.all([
     getAccountsWithStatus(),
     getCurrencies(),
     getCardGroups(),
     getBanks(),
+    getNetWorth(baseCurrency),
+    getAccountsAttention(),
   ]);
   const t = await getTranslations("Accounts");
-
-  const supabase = await createClient();
-  const [{ data: profile }, { data: auth }] = await Promise.all([
-    supabase.from("profiles").select("base_currency, display_name").maybeSingle(),
-    supabase.auth.getUser(),
-  ]);
-  const baseCurrency = baseCurrencyOf(profile);
-
-  // The name embossed on every card face. Falls back through the same chain the
-  // rest of the shell uses, then to a neutral label — a card face with an empty
-  // name line looks broken, and an email address there looks worse.
-  const holder = profileLabel(profile?.display_name, auth.user?.email) || t("cardholder");
 
   // Counted here rather than inside the client component so the backfill stays
   // inert on every visit after the first successful pass.
@@ -56,13 +58,18 @@ export default async function AccountsPage() {
           ) : undefined
         }
       />
+      <AttentionLedger items={attention} />
+      {accounts.length > 0 ? (
+        <Note tone="violet" label={t("netWorthLabel")}>
+          <MoneyDisplay amount={netWorth} currency={baseCurrency} size="hero" />
+        </Note>
+      ) : null}
       <AccountGallery
         accounts={accounts}
         currencies={currencies}
         cardGroups={cardGroups}
         banks={banks}
         baseCurrency={baseCurrency}
-        holder={holder}
       />
       <CardArtBackfill pending={pendingArt} />
     </div>

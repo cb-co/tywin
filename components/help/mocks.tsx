@@ -15,13 +15,15 @@ import { Button } from "@/components/ui/button";
 import { ColorTile } from "@/components/ui/color-tile";
 import { Note } from "@/components/papel/note";
 import { LedgerRow } from "@/components/papel/ledger-row";
+import { ProofMark } from "@/components/papel/proof-mark";
+import { Stamp } from "@/components/papel/stamp";
+import { Perforation } from "@/components/papel/perforation";
 import { RuleMeter } from "@/components/papel/rule-meter";
 import { SpecimenFrame } from "@/components/papel/specimen-frame";
 import { QuincenaEdge } from "@/components/overview/quincena-edge";
 import { MoneyDisplay } from "@/components/ui/money-display";
-import { Progress } from "@/components/ui/progress";
 import { StatPill } from "@/components/ui/stat-pill";
-import { PaymentCard } from "@/components/accounts/payment-card";
+import { CardFace } from "@/components/papel/card-face";
 import { BrandGlyph } from "@/components/ui/brand-glyph";
 import { ACCOUNT_TYPE_META } from "@/lib/accounts/meta";
 import { SWATCHES } from "@/lib/palette";
@@ -222,91 +224,107 @@ export function OverviewMock({
 }
 
 /**
- * The accounts screen, led by the thing that actually distinguishes it.
+ * The accounts screen, led by Attention First — the same order the real page
+ * composes itself in: what needs a decision, then what you're worth, then
+ * the accounts themselves.
  *
- * This drew a credit card as a generic tile with a CreditCard icon, which was
- * true when it was written and is not now — cards are rendered as the physical
- * object, and a guide that shows a tile teaches someone to look for the wrong
- * thing. The real PaymentCard is used rather than an imitation of it, so this
- * cannot drift from the screen again: any change to the face shows up here.
+ * Needs a look is a real `LedgerRow` in a real `AttentionLedger` box: a
+ * `Stamp` lead, the account's name, and a `ProofMark` carrying the reason
+ * (here, overdue). On the real screen the whole section — heading included —
+ * renders nothing at all once there's nothing to flag; this specimen only
+ * ever shows the "something needs a look" state, since a guide has nothing
+ * to gain from illustrating a section that draws no pixels.
  *
- * The face sits FIRST and the chequing row second, inverting the old order.
- * That is the hierarchy of the real screen — cards are the objects people
- * recognise at a glance, and a row of text is what everything else looks like.
+ * Net worth sits on its own violet `Note` underneath, the same tone and the
+ * same component `AccountsPage` prints its own net-worth figure on — never
+ * the peso tone, which is reserved for the "what you can still spend" figure
+ * on Overview.
  *
- * The owed figure, utilization, real Progress bar, and limit/due line below
- * the face mirror CardBody in account-card.tsx exactly — that block is the
- * ONLY place a standalone card tile shows its balance, so leaving it out
- * here would draw a card that never says how much is owed on it.
+ * The card face is the real `CardFace`, not an imitation of one — a generic
+ * tile would teach someone to look for the wrong thing once cards render as
+ * the physical object. "BHD Visa Platino" is a fixed, static, illustrative
+ * name, never a person's name (see CardFace's own doc comment on why the
+ * face shows the card's own name only). Its two currency lines print as real
+ * `LedgerRow`s under a `border-t-2 border-(--rule)` — the exact rule weight
+ * and token `CardGroupTile` draws its own lines under — rather than a second
+ * card.
  *
- * A sober navy rather than a real product's colour: the labels around it are
- * generic ("Credit card"), and dressing it as somebody's Amex would promise a
- * specific card the copy never names.
+ * The cuota strip closes it out: an outstanding balance, then a real
+ * `Perforation` for how many installments are paid — solid cells for paid,
+ * dashed outlines for what's left — the same component `AccountCard`'s loan
+ * body draws.
  */
 export function AccountsMock({
-  checking,
-  checkingType,
-  owedLabel,
-  cardLimit,
-  cardDue,
-  holder,
+  attentionTitle,
+  attentionOverdue,
+  netWorthLabel,
   lineCurrent,
+  lineCurrentUtil,
   lineOther,
+  lineOtherUtil,
+  loanOutstandingLabel,
+  loanProgress,
 }: {
-  checking: string;
-  checkingType: string;
-  owedLabel: string;
-  cardLimit: string;
-  cardDue: string;
-  /** The name embossed on the face, as the real one takes from the profile. */
-  holder: string;
-  /** The two currency lines of the mocked card group, for the line rail. */
+  attentionTitle: string;
+  attentionOverdue: string;
+  netWorthLabel: string;
+  /** The two currency lines of the mocked card group. */
   lineCurrent: string;
+  lineCurrentUtil: string;
   lineOther: string;
+  lineOtherUtil: string;
+  loanOutstandingLabel: string;
+  /** The accessible reading for the Perforation strip ("5 / 12 paid"). */
+  loanProgress: string;
 }) {
-  const checkingMeta = ACCOUNT_TYPE_META.checking;
+  // A static, illustrative card name — the same convention the marketing
+  // home page's two specimens use (components/marketing/marketing-home.tsx,
+  // "Visa Oro" / "Mastercard Black") — never a person's name; see CardFace's
+  // own doc comment on why the face shows the card's own name only. Reused
+  // for the attention row's Stamp so the specimen reads as one wallet, not
+  // several unrelated illustrations.
+  const cardName = "BHD Visa Platino";
   return (
-    <MockPanel>
-      <div className="mx-auto max-w-[15rem]">
-        <PaymentCard holder={holder} last4="4821" network="visa" color="#1B4B8F" />
-        {/* A still of `CardLineRail`, not the component itself: its segments are
-            links to real accounts, and the help guide has no accounts to point
-            at. Hand-built the same way this file hand-builds the owed block
-            below rather than reusing AccountCard. */}
-        <div aria-hidden className="mt-3 flex overflow-hidden rounded-lg border divide-x">
-          <span className="flex-1 truncate bg-muted px-3 py-2 text-center text-xs font-medium text-foreground">
-            {lineCurrent}
-          </span>
-          <span className="flex-1 truncate px-3 py-2 text-center text-xs text-muted-foreground">
-            {lineOther}
-          </span>
-        </div>
-      </div>
-
-      <div className="mt-5 space-y-3">
-        <div className="flex items-end justify-between gap-2">
-          <div>
-            <MoneyDisplay amount={1120.4} currency="USD" size="stat" />
-            <p className="mt-1 text-xs text-muted-foreground">{owedLabel}</p>
+    <SpecimenFrame className="mt-4">
+      <div className="space-y-5">
+        <div className="space-y-1">
+          <MockLabel>{attentionTitle}</MockLabel>
+          <div className="rounded-[4px] border border-(--paper-line)">
+            <LedgerRow
+              lead={<Stamp color="#1B4B8F" name={cardName} size="sm" />}
+              title={cardName}
+              amount={<ProofMark tone="flag">{attentionOverdue}</ProofMark>}
+            />
           </div>
-          <span className="text-sm font-medium text-warning">74%</span>
         </div>
-        <Progress value={74} />
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>{cardLimit}</span>
-          <span>{cardDue}</span>
-        </div>
-      </div>
 
-      <div className="mt-5 flex items-center gap-3 rounded-lg border bg-background p-3">
-        <ColorTile color={checkingMeta.color} icon={checkingMeta.icon} size="sm" />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-foreground">{checking}</p>
-          <p className="truncate text-xs text-muted-foreground">{checkingType}</p>
+        <Note tone="violet" label={netWorthLabel}>
+          <MoneyDisplay amount={18430.12} currency="USD" size="hero" />
+        </Note>
+
+        <div className="mx-auto max-w-[15rem]">
+          <CardFace name={cardName} last4="4821" network="visa" accent="#1B4B8F" />
+          <div className="mt-4 border-t-2 border-(--rule)">
+            <LedgerRow
+              title={lineCurrent}
+              subtitle={lineCurrentUtil}
+              amount={<MoneyDisplay amount={1120.4} currency="USD" size="inline" className="text-foreground" />}
+            />
+            <LedgerRow
+              title={lineOther}
+              subtitle={lineOtherUtil}
+              amount={<MoneyDisplay amount={35800} currency="DOP" size="inline" className="text-foreground" />}
+            />
+          </div>
         </div>
-        <MoneyDisplay amount={4382.1} currency="USD" size="inline" className="text-foreground" />
+
+        <Card className="p-3">
+          <MoneyDisplay amount={82500} currency="DOP" size="stat" />
+          <p className="mt-1 text-xs text-muted-foreground">{loanOutstandingLabel}</p>
+          <Perforation total={12} paid={5} label={loanProgress} className="mt-3" />
+        </Card>
       </div>
-    </MockPanel>
+    </SpecimenFrame>
   );
 }
 
@@ -319,7 +337,8 @@ export function AccountsMock({
  * screen shows only on the redirect straight out of an import.
  *
  * Both merchant strings are raw bank text, not translated — the same reason
- * `AccountsMock`'s `holder` prop is a fixed name — and the first one keeps
+ * `AccountsMock`'s card name is a fixed, hardcoded string rather than a prop
+ * — and the first one keeps
  * its branch tail on purpose, the same location text a real rule pattern
  * would keep unless a person shortens it on the rules screen.
  */
@@ -594,8 +613,8 @@ export function BudgetGroupsMock({
  *
  * Spotify by name, because the mark has to be one people actually recognise
  * for the row to make its point. The glyph is a static import, so only this
- * one path ships — see components/accounts/network-mark for why slug lookups
- * may not happen in a client bundle.
+ * one path ships — see lib/brand/simple-icon for why a slug lookup at
+ * runtime may not happen in a client bundle.
  */
 export function SubscriptionsMock({
   streaming,
