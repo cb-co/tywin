@@ -2,11 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { Card } from "@/components/ui/card";
-import { ColorTile } from "@/components/ui/color-tile";
-import { toneColor } from "@/lib/overview/recommendation/tone";
 import type { Recommendation } from "@/lib/overview/recommendation/llm";
 import { refreshRecommendation } from "@/app/(app)/actions";
 
@@ -65,31 +61,22 @@ export function RecommendationCard({
 
   if (rec) {
     return (
-      <Card className="p-5">
-        <div className="flex items-start gap-3">
-          <ColorTile color={toneColor(rec.tone)} icon={Sparkles} size="md" />
-          <div className="min-w-0">
-            <p className="text-xs text-muted-foreground">{t("recommendationTitle")}</p>
-            <p className="mt-0.5 font-medium text-foreground">{rec.headline}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{rec.body}</p>
-          </div>
-        </div>
-      </Card>
+      <aside className="border-l-2 border-(--ink) pl-4">
+        <p className="legend text-[10px] text-muted-foreground">{t("recommendationTitle")}</p>
+        <p className="mt-1 font-medium text-foreground">{rec.headline}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{rec.body}</p>
+      </aside>
     );
   }
 
   if (pending) {
     return (
-      <Card className="p-5" aria-busy aria-label={t("recommendationLoading")}>
-        <div className="flex items-start gap-3">
-          <div className="skeleton size-11 shrink-0 rounded-full" />
-          <div className="min-w-0 flex-1 space-y-2">
-            <div className="skeleton h-4 w-40 rounded" />
-            <div className="skeleton h-3 w-full rounded" />
-            <div className="skeleton h-3 w-2/3 rounded" />
-          </div>
-        </div>
-      </Card>
+      <aside className="border-l-2 border-(--paper-line) pl-4" aria-busy aria-label={t("recommendationLoading")}>
+        <div className="skeleton h-3 w-24 rounded" />
+        <div className="skeleton mt-2 h-4 w-40 rounded" />
+        <div className="skeleton mt-2 h-3 w-full rounded" />
+        <div className="skeleton mt-1.5 h-3 w-2/3 rounded" />
+      </aside>
     );
   }
 
