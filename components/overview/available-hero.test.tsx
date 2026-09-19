@@ -12,7 +12,7 @@ const base: Available = {
 };
 const html = (available: Partial<Available>) =>
   renderToStaticMarkup(
-    <NextIntlClientProvider locale="en" messages={messages}>
+    <NextIntlClientProvider locale="en" messages={messages} timeZone="UTC">
       <FigureMaskProvider>
         <AvailableHero
           available={{ ...base, ...available }}
