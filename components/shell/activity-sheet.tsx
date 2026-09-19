@@ -51,8 +51,6 @@ export function ActivitySheet() {
             "duration-200 data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:slide-out-to-bottom",
           )}
         >
-          {/* Grab handle. Purely a signal that the surface came from the
-              bottom edge and dismisses downward. */}
           <DialogPrimitive.Title className="px-1 pb-2 font-heading text-base font-medium">
             {tActivity("title")}
           </DialogPrimitive.Title>
@@ -75,11 +73,12 @@ export function ActivitySheet() {
                       alone. */}
                   <LedgerRow
                     className={cn(
-                      "px-1",
-                      current && "border-l-[3px] border-l-foreground pl-3",
+                      "border-l-[3px] border-l-transparent px-1 pl-3",
+                      current && "border-l-foreground",
                     )}
                     lead={<sub.icon className="size-5 shrink-0" />}
                     title={t(sub.key)}
+                    wrapSubtitle
                     subtitle={tActivity(`${sub.key}Desc`)}
                     amount={<ChevronRight className="size-4 text-muted-foreground" />}
                   />

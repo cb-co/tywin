@@ -11,6 +11,7 @@ export function LedgerRow({
   subtitle,
   amount,
   meta,
+  wrapSubtitle,
   className,
   ...props
 }: {
@@ -19,6 +20,8 @@ export function LedgerRow({
   subtitle?: React.ReactNode;
   amount?: React.ReactNode;
   meta?: React.ReactNode;
+  /** Let the subtitle wrap instead of truncating (default: truncate). */
+  wrapSubtitle?: boolean;
 } & Omit<React.ComponentProps<"div">, "title">) {
   return (
     <div
@@ -28,7 +31,7 @@ export function LedgerRow({
       {lead}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-foreground">{title}</p>
-        {subtitle ? <p className="truncate text-xs text-muted-foreground">{subtitle}</p> : null}
+        {subtitle ? <p className={cn("text-xs text-muted-foreground", !wrapSubtitle && "truncate")}>{subtitle}</p> : null}
       </div>
       {amount || meta ? (
         <div className="figure shrink-0 text-right">

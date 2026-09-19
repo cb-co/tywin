@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { TOPBAR_DARK, TOPBAR_LIGHT, topbarThemeColor } from "./theme-color";
+import { TOPBAR_DARK, TOPBAR_LIGHT, applyThemeColor, topbarThemeColor } from "./theme-color";
 
 test("returns the light topbar color for the light theme", () => {
   expect(topbarThemeColor("light")).toBe(TOPBAR_LIGHT);
@@ -19,4 +19,20 @@ test("returns null for an unresolved or unrecognized theme", () => {
 test("matches components/shell/mobile-header.tsx's bg-background in each theme", () => {
   expect(TOPBAR_LIGHT).toBe("#eeebf5");
   expect(TOPBAR_DARK).toBe("#15111f");
+});
+
+test("applyThemeColor updates every theme-color meta (light/dark media pair)", () => {
+  const metas = [0, 1].map(() => ({
+    content: "",
+    setAttribute(name: string, value: string) {
+      if (name === "content") this.content = value;
+    },
+  }));
+  let selector = "";
+  applyThemeColor(
+    { querySelectorAll: (s) => ((selector = s), metas) },
+    TOPBAR_LIGHT,
+  );
+  expect(selector).toBe('meta[name="theme-color"]');
+  expect(metas.map((m) => m.content)).toEqual([TOPBAR_LIGHT, TOPBAR_LIGHT]);
 });

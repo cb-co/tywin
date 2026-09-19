@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useTheme } from "next-themes";
-import { topbarThemeColor } from "@/lib/pwa/theme-color";
+import { applyThemeColor, topbarThemeColor } from "@/lib/pwa/theme-color";
 
 /**
  * Keeps the mobile browser/PWA chrome color matching the in-app topbar.
@@ -17,7 +17,7 @@ export function ThemeColorSync() {
   useEffect(() => {
     const color = topbarThemeColor(resolvedTheme);
     if (!color) return;
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", color);
+    applyThemeColor(document, color);
   }, [resolvedTheme]);
 
   return null;
