@@ -3,7 +3,7 @@ import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
 import { MoneyDisplay } from "@/components/ui/money-display";
-import { PaymentCard } from "./payment-card";
+import { CardFace } from "@/components/papel/card-face";
 import { inferNetwork, inferLast4 } from "@/lib/accounts/network";
 import { formatPercent } from "@/lib/format";
 import type { AccountWithStatus } from "@/lib/accounts/queries";
@@ -25,14 +25,12 @@ export function CardGroupTile({
   name,
   brand,
   artColor,
-  holder,
   accounts,
   baseCurrency,
 }: {
   name: string;
   brand: string | null;
   artColor: string | null;
-  holder: string;
   accounts: AccountWithStatus[];
   /** Decides which line the tile itself opens — see `primary` below. */
   baseCurrency: string;
@@ -82,11 +80,11 @@ export function CardGroupTile({
           this it sat on top of the link, swallowing the hover and leaving the
           default arrow over the one part of the tile that looks most clickable.
           It is pure decoration here; the tile it sits in owns the navigation. */}
-      <PaymentCard
-        holder={holder}
+      <CardFace
+        name={name}
         last4={resolvedLast4}
         network={network}
-        color={artColor}
+        accent={artColor}
         className="pointer-events-none"
       />
       <div className="relative z-10 mt-4 divide-y">

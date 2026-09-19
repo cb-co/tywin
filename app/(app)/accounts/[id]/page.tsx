@@ -35,11 +35,10 @@ import { StatementsPanel } from "@/components/accounts/statements-panel";
 import { AmortizationTable } from "@/components/accounts/amortization-table";
 import { Card } from "@/components/ui/card";
 import { ColorTile } from "@/components/ui/color-tile";
-import { PaymentCard } from "@/components/accounts/payment-card";
+import { CardFace } from "@/components/papel/card-face";
 import { CardLineRail } from "@/components/accounts/card-line-rail";
 import { CardReport } from "@/components/accounts/card-report";
 import { inferNetwork, inferLast4 } from "@/lib/accounts/network";
-import { profileLabel } from "@/lib/profile";
 import { Progress } from "@/components/ui/progress";
 import { MaskedMoney } from "@/components/figure-mask/masked-money";
 
@@ -83,10 +82,10 @@ export default async function AccountDetailPage({
   const tType = await getTranslations("AccountTypes");
 
   const supabase = await createClient();
-  const [{ data: profile }, { data: auth }] = await Promise.all([
-    supabase.from("profiles").select("base_currency, display_name").maybeSingle(),
-    supabase.auth.getUser(),
-  ]);
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("base_currency")
+    .maybeSingle();
   const baseCurrency = baseCurrencyOf(profile);
 
   const type = account.type as AccountType;
@@ -112,10 +111,10 @@ export default async function AccountDetailPage({
     : null;
   const face = isCardType
     ? {
-        holder: profileLabel(profile?.display_name, auth.user?.email) || t("cardholder"),
+        name: cardGroup ? cardGroup.name : account.name,
         last4: inferLast4(account.name, account.last4),
         network: inferNetwork(cardGroup?.name ?? account.name, cardGroup?.brand ?? account.brand),
-        color: cardGroup ? cardGroup.art_color : account.color,
+        accent: cardGroup ? cardGroup.art_color : account.color,
       }
     : null;
 
@@ -273,7 +272,7 @@ export default async function AccountDetailPage({
                of being a third flex child that could end up beside the figures
                when the panel reflows. */
             <div className="w-88 max-w-full shrink-0">
-              <PaymentCard {...face} />
+              <CardFace {...face} />
               <CardLineRail lines={cardLines} />
             </div>
           ) : null}

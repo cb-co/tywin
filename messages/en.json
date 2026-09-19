@@ -185,7 +185,6 @@
   },
   "Accounts": {
     "pageTitle": "Wallet",
-    "cardholder": "Cardholder",
     "pageDescription": "Bank accounts, credit cards, loans, and assets.",
     "addAccount": "Add account",
     "addFirstAccount": "Add your first account",
@@ -215,7 +214,6 @@
     "availableCommitted": "<available></available> available · <committed></committed> committed"
   },
   "AccountDetail": {
-    "cardholder": "Cardholder",
     "backLink": "Accounts",
     "cardLinesLabel": "Lines on this card",
     "archived": "Archived",
@@ -1150,7 +1148,6 @@
     "accountsMockCheckingType": "Checking · DOP",
     "accountsMockOwedLabel": "Owed",
     "accountsMockLimit": "Limit $3,000.00",
-    "accountsMockHolder": "ANA GARCÍA",
     "accountsMockLineCurrent": "USD",
     "accountsMockLineOther": "DOP",
     "accountsMockCardDue": "Due the 14th",

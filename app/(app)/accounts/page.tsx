@@ -9,7 +9,7 @@ import {
   getBanks,
 } from "@/lib/accounts/queries";
 import { hasCardAccent } from "@/lib/accounts/card-art";
-import { baseCurrencyOf, profileLabel } from "@/lib/profile";
+import { baseCurrencyOf } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AccountsPage() {
@@ -22,16 +22,11 @@ export default async function AccountsPage() {
   const t = await getTranslations("Accounts");
 
   const supabase = await createClient();
-  const [{ data: profile }, { data: auth }] = await Promise.all([
-    supabase.from("profiles").select("base_currency, display_name").maybeSingle(),
-    supabase.auth.getUser(),
-  ]);
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("base_currency")
+    .maybeSingle();
   const baseCurrency = baseCurrencyOf(profile);
-
-  // The name embossed on every card face. Falls back through the same chain the
-  // rest of the shell uses, then to a neutral label — a card face with an empty
-  // name line looks broken, and an email address there looks worse.
-  const holder = profileLabel(profile?.display_name, auth.user?.email) || t("cardholder");
 
   // Counted here rather than inside the client component so the backfill stays
   // inert on every visit after the first successful pass.
@@ -62,7 +57,6 @@ export default async function AccountsPage() {
         cardGroups={cardGroups}
         banks={banks}
         baseCurrency={baseCurrency}
-        holder={holder}
       />
       <CardArtBackfill pending={pendingArt} />
     </div>

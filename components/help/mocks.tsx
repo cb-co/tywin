@@ -21,7 +21,7 @@ import { QuincenaEdge } from "@/components/overview/quincena-edge";
 import { MoneyDisplay } from "@/components/ui/money-display";
 import { Progress } from "@/components/ui/progress";
 import { StatPill } from "@/components/ui/stat-pill";
-import { PaymentCard } from "@/components/accounts/payment-card";
+import { CardFace } from "@/components/papel/card-face";
 import { BrandGlyph } from "@/components/ui/brand-glyph";
 import { ACCOUNT_TYPE_META } from "@/lib/accounts/meta";
 import { SWATCHES } from "@/lib/palette";
@@ -227,7 +227,7 @@ export function OverviewMock({
  * This drew a credit card as a generic tile with a CreditCard icon, which was
  * true when it was written and is not now — cards are rendered as the physical
  * object, and a guide that shows a tile teaches someone to look for the wrong
- * thing. The real PaymentCard is used rather than an imitation of it, so this
+ * thing. The real CardFace is used rather than an imitation of it, so this
  * cannot drift from the screen again: any change to the face shows up here.
  *
  * The face sits FIRST and the chequing row second, inverting the old order.
@@ -249,7 +249,6 @@ export function AccountsMock({
   owedLabel,
   cardLimit,
   cardDue,
-  holder,
   lineCurrent,
   lineOther,
 }: {
@@ -258,8 +257,6 @@ export function AccountsMock({
   owedLabel: string;
   cardLimit: string;
   cardDue: string;
-  /** The name embossed on the face, as the real one takes from the profile. */
-  holder: string;
   /** The two currency lines of the mocked card group, for the line rail. */
   lineCurrent: string;
   lineOther: string;
@@ -268,7 +265,11 @@ export function AccountsMock({
   return (
     <MockPanel>
       <div className="mx-auto max-w-[15rem]">
-        <PaymentCard holder={holder} last4="4821" network="visa" color="#1B4B8F" />
+        {/* A static, illustrative card name — the same convention the marketing
+            home page's two specimens use (components/marketing/marketing-home.tsx,
+            "Visa Oro" / "Mastercard Black") — never a person's name; see CardFace's
+            own doc comment on why the face shows the card's own name only. */}
+        <CardFace name="BHD Visa Platino" last4="4821" network="visa" accent="#1B4B8F" />
         {/* A still of `CardLineRail`, not the component itself: its segments are
             links to real accounts, and the help guide has no accounts to point
             at. Hand-built the same way this file hand-builds the owed block
@@ -594,8 +595,8 @@ export function BudgetGroupsMock({
  *
  * Spotify by name, because the mark has to be one people actually recognise
  * for the row to make its point. The glyph is a static import, so only this
- * one path ships — see components/accounts/network-mark for why slug lookups
- * may not happen in a client bundle.
+ * one path ships — see lib/brand/simple-icon for why a slug lookup at
+ * runtime may not happen in a client bundle.
  */
 export function SubscriptionsMock({
   streaming,

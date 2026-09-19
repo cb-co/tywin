@@ -185,7 +185,6 @@
   },
   "Accounts": {
     "pageTitle": "Cartera",
-    "cardholder": "Titular",
     "pageDescription": "Cuentas bancarias, tarjetas de crédito, préstamos y activos.",
     "addAccount": "Añadir cuenta",
     "addFirstAccount": "Añade tu primera cuenta",
@@ -215,7 +214,6 @@
     "availableCommitted": "<available></available> disponible · <committed></committed> comprometido"
   },
   "AccountDetail": {
-    "cardholder": "Titular",
     "backLink": "Cuentas",
     "cardLinesLabel": "Líneas de esta tarjeta",
     "archived": "Archivada",
@@ -1150,7 +1148,6 @@
     "accountsMockCheckingType": "Corriente · DOP",
     "accountsMockOwedLabel": "Adeudado",
     "accountsMockLimit": "Límite $3,000.00",
-    "accountsMockHolder": "ANA GARCÍA",
     "accountsMockLineCurrent": "USD",
     "accountsMockLineOther": "DOP",
     "accountsMockCardDue": "Vence el 14",

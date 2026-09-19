@@ -248,7 +248,6 @@ export default async function HelpPage() {
                 owedLabel={t("accountsMockOwedLabel")}
                 cardLimit={t("accountsMockLimit")}
                 cardDue={t("accountsMockCardDue")}
-                holder={t("accountsMockHolder")}
                 lineCurrent={t("accountsMockLineCurrent")}
                 lineOther={t("accountsMockLineOther")}
               />
