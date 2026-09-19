@@ -62,7 +62,7 @@ export function RecommendationCard({
   if (rec) {
     return (
       <aside className="border-l-2 border-(--ink) pl-4">
-        <p className="legend text-[10px] text-muted-foreground">{t("recommendationTitle")}</p>
+        <p className="legend text-[11px] text-muted-foreground">{t("recommendationTitle")}</p>
         <p className="mt-1 font-medium text-foreground">{rec.headline}</p>
         <p className="mt-1 text-sm text-muted-foreground">{rec.body}</p>
       </aside>
