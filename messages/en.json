@@ -167,7 +167,10 @@
     "importCalloutNeverBody": "Upload your card's PDF and Cashly logs the charges, balance, and due date for you.",
     "importCalloutOverdueTitle": "Your last statement is overdue",
     "importCalloutOverdueBody": "It's been over a month since your last import. Upload the latest PDF to keep your balances current.",
-    "importCalloutCta": "Import statement"
+    "importCalloutCta": "Import statement",
+    "quincenaEdgeLabel": "Day {day} of {total}, payday {date}",
+    "quincenaToday": "Today",
+    "availableOver": "Committed beyond your balance"
   },
   "AccountTypes": {
     "checking": "Checking",

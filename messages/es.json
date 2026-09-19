@@ -167,7 +167,10 @@
     "importCalloutNeverBody": "Sube el PDF de tu tarjeta y Cashly registra los movimientos, el saldo y la fecha de pago por ti.",
     "importCalloutOverdueTitle": "Tu último estado de cuenta ya venció",
     "importCalloutOverdueBody": "Ya pasó más de un mes desde tu última importación. Sube el PDF más reciente para mantener tus saldos al día.",
-    "importCalloutCta": "Importar estado de cuenta"
+    "importCalloutCta": "Importar estado de cuenta",
+    "quincenaEdgeLabel": "Día {day} de {total}, día de pago {date}",
+    "quincenaToday": "Hoy",
+    "availableOver": "Comprometido por encima de tu saldo"
   },
   "AccountTypes": {
     "checking": "Cuenta corriente",
