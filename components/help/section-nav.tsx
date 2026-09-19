@@ -35,8 +35,8 @@ export function SectionNav({ sections }: { sections: HelpSection[] }) {
   return (
     <nav
       className={cn(
-        "sticky top-4 z-10 -mx-1 flex gap-1 overflow-x-auto px-1 pb-2",
-        "md:top-8 md:mx-0 md:flex-col md:overflow-visible md:px-0 md:pb-0",
+        "sticky top-4 z-10 flex gap-1 overflow-x-auto px-1 pb-2",
+        "md:top-8 md:flex-col md:overflow-visible md:px-0 md:pb-0",
       )}
       aria-label="Guide sections"
     >

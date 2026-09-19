@@ -1,84 +1,257 @@
-# Design: Papel Moneda (public pages)
+---
+name: Cashly (Papel Moneda)
+description: Money's own print language. Your statement, re-issued as a checked, sorted banknote-and-ledger document, on cool lilac security paper in intaglio ink.
+colors:
+  note: "#4a1f8c"
+  note-deep: "#2b1157"
+  note-line: "#a488ec"
+  note-ink: "#f8f5ff"
+  note-ink-soft: "#d9ccfa"
+  peso: "#e0661c"
+  peso-line: "#ffb27a"
+  peso-ink: "#1f0e22"
+  peso-ink-soft: "#4a2410"
+  paper: "#eeebf5"
+  paper-2: "#ffffff"
+  paper-line: "#cdc3e3"
+  ink: "#1b1530"
+  ink-soft: "#544a6c"
+  rule: "#1b1530"
+  teal: "#0e6e60"
+  red: "#b3302a"
+  paper-night: "#15111f"
+  paper-2-night: "#1d1829"
+  paper-line-night: "#3b3252"
+  ink-night: "#efebf8"
+  ink-soft-night: "#b2a8c9"
+  teal-night: "#4fc2ae"
+  red-night: "#f0766c"
+typography:
+  legend:
+    fontFamily: "Archivo, system-ui, sans-serif"
+    fontSize: "11px"
+    fontWeight: 700
+    letterSpacing: "0.12em"
+  body:
+    fontFamily: "Archivo, system-ui, sans-serif"
+    fontSize: "14px"
+    fontWeight: 400
+  figure:
+    fontFamily: "Archivo, system-ui, sans-serif"
+    fontWeight: 600
+    letterSpacing: "0"
+rounded:
+  sheet: "4px"
+  control-sm: "3px"
+  note: "6px"
+spacing:
+  card: "16px"
+  card-sm: "12px"
+components:
+  button-primary:
+    backgroundColor: "{colors.note}"
+    textColor: "{colors.note-ink}"
+    rounded: "{rounded.sheet}"
+    height: "40px"
+    padding: "0 20px"
+  button-primary-hover:
+    backgroundColor: "{colors.note-deep}"
+  button-outline:
+    backgroundColor: "transparent"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.sheet}"
+    height: "40px"
+  sheet:
+    backgroundColor: "{colors.paper-2}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.sheet}"
+    padding: "16px 0"
+  note-violet:
+    backgroundColor: "{colors.note}"
+    textColor: "{colors.note-ink}"
+    rounded: "{rounded.note}"
+    padding: "24px"
+  note-peso:
+    backgroundColor: "{colors.peso}"
+    textColor: "{colors.peso-ink}"
+    rounded: "{rounded.note}"
+    padding: "24px"
+  input:
+    backgroundColor: "transparent"
+    textColor: "{colors.ink}"
+    height: "32px"
+---
 
-Scope: the signed-out home page (`components/marketing/marketing-home.tsx`) and
-`/login` (`app/login/page.tsx`, `components/auth/login-form.tsx`). The signed-in
-app keeps its own system; this one is deliberately separate and lives in
-`components/marketing/papel/`.
+# Design System: Cashly (Papel Moneda)
 
-## Thesis
+## Overview
 
-Money's own print language. A bank statement is re-issued as an engraved,
-checkable document. It refuses the headline + phone mockup + feature-card grid.
-Direction: banknote security print (form candidate 3 of 7, seed `101aa86f`).
+**Creative North Star: "Your statement, re-issued"**
 
-## Story
+Cashly is printed like a Dominican banknote and kept like a checked ledger. Every screen is a sheet of cool lilac security paper (never cream, never sepia) printed in intaglio ink. The one figure a screen exists to answer is printed as a small banknote, the *note*, the way a bill prints its denomination. Everything else is ledger: rows under hairline rules, tabular amounts, one face. It refuses the category default of a gradient hero slab over a grid of white rounded cards with coloured icon discs.
 
-A Dominican visitor sees their own *estado de cuenta* become a sorted ledger
-with cuotas and one *Disponible* figure, believes Cashly reads the bank PDF
-without typing, and creates a free account.
+The register differs by surface. The public pages (`/`, `/login`) persuade: a full-bleed violet note in a microprint frame, a statement sheet printing into a ledger. The signed-in app operates: glance, import, fix. There the brand lives in precise details (type, rules, stamps, one note per screen), never in decoration that would slow a 30-second session on a phone in daylight. `/help` and legal are Read mode. Light is the default (paper by day); dark is first-class (paper goes ink-dark).
 
-## Tokens (`papel.module.css`, `.page`)
+Product truth is rendered as printed fact, not marketing: statement-anchored balances, locked FX rates, checksums that must match ("cuadra"), cuotas, quincena periods. State is ink density, rule weight or a glyph, never colour alone.
 
-| Role | Token | Value |
-| --- | --- | --- |
-| Note field (violet) | `--note` / `--note-deep` / `--note-line` | `#4a1f8c` / `#2b1157` / `#a488ec` |
-| Text on note | `--note-ink` / `--note-ink-soft` | `#f8f5ff` / `#d9ccfa` |
-| Peso orange | `--peso` / `--peso-line` | `#e0661c` / `#ffb27a` |
-| Text on peso | `--peso-ink` / `--peso-ink-soft` | `#1f0e22` / `#4a2410` |
-| Security paper | `--paper` / `--paper-2` / `--paper-line` | `#eeebf5` / `#ffffff` / `#cdc3e3` |
-| Ink | `--ink` / `--ink-soft` / `--rule` | `#1b1530` / `#544a6c` / `#1b1530` |
-| State | `--teal` (matches) / `--red` (error) | `#0e6e60` / `#b3302a` |
-| Motion | `--ease-press` | `cubic-bezier(0.16, 1, 0.3, 1)` |
+**Key Characteristics:**
+- Two things invert with the theme: paper and ink. The note fields (violet, peso) never do.
+- At most one note per screen; guilloche, microprint and serials live only on notes, the splash and empty states.
+- One family, Archivo, on its width axis: expanded cut for legends and denomination numerals, normal cut for body.
+- Engraved, not rounded: 3-6px corners, hairline frames, no drop shadows on paper.
+- User colour is data and prints as ink stamps; it is never assumed to be a shipped swatch and text is never set in it.
+- All ornament is generated (canvas or SVG line work), never raster or clip-art.
 
-The violet and peso fields never invert. Paper sections go ink-dark at night.
+## Colors
 
-## Type
+A cool-violet-and-orange banknote palette on lilac paper, with teal and red as the only status colours. Tokens live in `design/tokens.json` (source of truth, shared with the Expo app) and `app/globals.css`; `design/tokens.test.ts` fails the build if they drift. Night values are the `-night` entries in the frontmatter.
 
-One family: Archivo with the width axis (`fonts.ts`). The expanded cut carries
-legends, the display headline and denomination numerals; the normal cut is
-body. Tabular numerals for every amount (`.num`). No second family, no second
-numeral system.
+### Primary
+- **Note Violet** (`note`): the note field, the primary action (a primary button is a small piece of note), the FAB seal, the splash. `--primary` is note violet in both themes.
+- **Deep Note Violet** (`note-deep`): primary hover, the splash-adjacent shadow, the darker leg of the flat legacy `--hero`.
+- **Violet Line** (`note-line`): microprint, guilloche and edge strokes on violet; in dark it is also the ring and the badge/brand ink, and the edge that keeps a primary button above 3:1 on dark paper.
 
-## Ornament
+### Secondary
+- **Peso Orange** (`peso`): the second note field, used for the Overview Disponible note and the period total. Amber attention (`--warning`, `--gold`) is the peso family, darkened in light (#a14a0f) and `peso-line` in dark.
+- **Peso Line** (`peso-line`): serial numbers and line work on orange.
 
-All ornament is generated, never clip-art (`guilloche.tsx`): rosettes are
-stacked hypotrochoids, fields are interfering sine waves, drawn on a canvas in
-`currentColor`. They "cut" themselves in over ~1.8s; under
-`prefers-reduced-motion` the finished plate is drawn in one frame. Bilingual
-microprint frames (`microprint.tsx`, copy in `Marketing.microprint`) and serial
-numbers (`CL 2026 000417 A`) frame the note. Ornament is `aria-hidden` and
-never carries content.
+### Neutral
+- **Security Paper** (`paper` / `paper-2`): page background and raised sheet (`--background`, `--card`). Night: `paper-night`, `paper-2-night`.
+- **Paper Line** (`paper-line`): hairline frame, ruled separators, toast and dialog edge (`--border`).
+- **Ink** (`ink`) and **Soft Ink** (`ink-soft`): text, primary rules, active state; soft ink is underprint (secondary text, inactive nav, projected figures).
+- **Rule** (`rule`): equals ink; the heavy rule on the shell (sidebar edge, mobile header, bottom band).
+- **Note ink** (`note-ink`, `note-ink-soft`) and **peso ink** (`peso-ink`, `peso-ink-soft`): text on the two fields; both clear 4.5:1.
+- **Matches Teal** (`teal`) and **Error Red** (`red`): in/out, cuadra/no cuadra, over budget. Always paired with a glyph or rule.
+
+### Named Rules
+**The Two Inverters Rule.** Only paper and ink change with the theme. A note never goes dark, and `--primary` stays violet in both themes.
+**The Stored Hex Rule.** Category and account colour is user data (`lib/palette.ts`). Nothing in CSS may assume one of the sixteen swatches, and text is never set in a user hex; it prints as a stamp.
+**The Not Colour Alone Rule.** State reads through ink density, rule weight or a glyph first; teal and red only reinforce.
+**The Ladder Rule.** In dark, surfaces climb one unbroken ladder (background < card < muted < popover < accent < secondary < border < input); no two rungs share a value.
+
+## Typography
+
+**Display, Body and Label Font:** Archivo, variable on the `wdth` axis (`app/fonts.ts`, `--font-archivo`), with `system-ui, sans-serif`. `--font-sans`, `--font-serif` and `--font-display` all resolve to it.
+
+**Character:** One family cut two ways, like an engraver's plate: an expanded cut for the printed legend and denomination, a normal cut for reading. No second family, no second numeral system.
+
+### Hierarchy
+- **Legend** (`.legend`: 700, `font-stretch: 125%`, uppercase, 0.12em tracking, ~11px in a note label): note labels, the wordmark, specimen captions, section legends.
+- **Figure** (`.figure`: tabular, lining numerals, 0 tracking, weight inherited): every amount, at any size. `MoneyDisplay` sets its own size steps (hero, feature, stat, inline) on top of it.
+- **Body** (400, 14px / `text-sm`): ledger titles, fields, copy. Row subtitles at 12px.
+- **Denomination numerals:** the Disponible/net-worth figure in expanded Archivo. Note does not size its figure; each call site sets it, and it scales down at 360px and eight digits rather than wrapping or clipping.
+
+### Named Rules
+**The One Face Rule.** Archivo only, app-wide. Emphasis comes from the width axis and weight, not a second family.
+**The Tabular Rule.** Every amount uses `.figure`; digits must align in ledger columns at 11-12px.
 
 ## Layout
 
-1. Hero: full-bleed violet note in a microprint frame; two-line expanded
-   headline, one primary CTA (`/login?mode=up`), quiet "I have an account";
-   statement sheet printing row by row into a ledger sheet (`statement-specimen.tsx`).
-2. Proofs: three demos (finds columns, redacts personal data, sums must match).
-3. Disponible: peso-orange note with one figure and a quincena timeline.
-4. Cards and cuotas: cards drawn from the typed name; perforated cuota strips.
-5. Close: violet note, second CTA. Footer: Help, Terms, Privacy.
+Sheets on a paper page. A signed-in screen is a column of ruled sections: at most one note, then ledger blocks separated by hairlines, not a grid of cards.
 
-`/login` reuses the violet field as a note panel (a band on phones) beside a
-security-paper form. `?mode=up` opens sign-up directly.
+Desktop shell: a 256px paper sidebar (heavy right rule, vertical microprint strip down the edge, engraved seal and wordmark, nav, then account row with figure-mask and theme toggles); content scrolls in its own pane with 24px padding (48px, then 64px bottom clearance at md/lg). Mobile shell: a 56px sticky paper header (mark, figure-mask, theme, language, Ask, Settings), and a ruled bottom band of five equal `1fr` cells (Activity is a sheet cell) on the safe area, with the round violet FAB above it. Main content clears both (9.5rem plus safe-area inset). `min-w-0` on flex parents and label truncation at 360px Spanish are load-bearing.
 
-## Rules
+Density: Operate is tight and glance-first; ledger rows are `px-4 py-3`. Public pages breathe: full-bleed notes, one primary CTA per band.
 
-- Every specimen number is made up and labelled as such (`sampleData`,
-  `cardsTyped`, `specimenLabel`). Never present illustrative figures as real.
-- Copy lives in `messages/{en,es}.json` (`Marketing`, `Login`); keep both in
-  parity. Microprint and bank terms (cuotas, quincena) stay Spanish in both.
-- State is shown as ink density and rule weight, not colour alone.
-- Reuse `Guilloche`, `Microprint`, `Serial`; do not add raster ornament.
+## Elevation & Depth
 
-## Provenance
+Flat by default. Paper has no drop shadow; a hairline frame does the separating (`--shadow-card: 0 0 0 1px var(--paper-line)`, hover `0 0 0 1px var(--ink-soft)`). Depth is otherwise carried by the ink: heavy rule versus hairline, full ink versus underprint, and a stepped surface ladder in dark.
 
-No shipping raster assets: everything is CSS, SVG, canvas or Lucide icons, and
-the only font is Archivo via `next/font`. The PNGs in `.impeccable/review/` are
-review screenshots, not shipped.
+The one shadow is `--shadow-float` (`0 6px 14px -6px` violet/black), used only by the round `brand` button (the FAB seal). Popovers, dialogs and toasts are paper slips with a perforated top edge (`.perforated-top`, a CSS mask), not floating cards.
 
-## Verdict
+### Named Rules
+**The Hairline Rule.** Separate with a frame or rule, never a blur. The single exception is the FAB seal.
 
-Finish review (2026-09-19): typecheck, lint and en/es key parity clean; desktop
-hero, mobile home and mobile/desktop login reviewed from screenshots. Not yet
-re-verified live after the last edits (dev server was not started).
+### Motion
+
+Motion explains hierarchy and marks moments the person caused; it never fires on passive render or navigation and only animates `transform` and `opacity`. Tokens: `--ease-press` / `--ease-out-soft` `cubic-bezier(0.16, 1, 0.3, 1)`, `--dur-fast` 160ms, `--dur-base` 380ms, `--dur-slow` 620ms. Entry reveals `.rise`, `.fade-in`, `.scale-in` stagger by 55ms per `--i`. Every animation has an explicit end state under `prefers-reduced-motion: reduce` (the count-up reads the query in JavaScript). The success cue is a paper stamp sound; other cues are unchanged.
+
+## Shapes
+
+Engraved, not rounded: sheet, button and dialog corners are 4px, small controls and badges 3px, notes 6px. Circles are reserved for stamps, seals, switches and the FAB. `--radius` is 0.25rem and the shadcn radius scale derives from it. Frames are hairline; a note carries an inset 1px ring at ~30% opacity. Inputs are a baseline rule with the label above (no box), except Textarea, which keeps a 3px box.
+
+## Components
+
+Built in Phase 0 and in the code today.
+
+### Papel primitives (`components/papel/`)
+
+| Papel object | Replaces | Used for | Status |
+| --- | --- | --- | --- |
+| **Note** (violet or peso field, guilloche underprint, serial, inset ring) | `HeroCard`, gradient `--hero` | the one hero figure per screen | built (`note.tsx`) |
+| **Sheet** (paper surface, hairline frame, 4px, no shadow) | `Card` | every grouped surface | built as the restyled `Card` (`ui/card.tsx`); no separate `Sheet` component |
+| **Ledger row** (lead, title/subtitle, tabular amount, rule below) | card rows, `divide-y` cards | transactions, upcoming, triage, rules, statements | built (`ledger-row.tsx`); screens pending |
+| **Stamp** (double ink ring + glyph/emoji/initial in the stored hex) | `ColorTile` | categories, accounts, merchants | built (`stamp.tsx`, `lib/papel/ink.ts`) |
+| **Proof mark** (engraved ring + check, cross or dot + label) | `StatPill`, success badges | "cuadra", "sin categoria", over-budget | built (`proof-mark.tsx`) |
+| **Perforation strip** (cuota cells, solid when paid, dashed when not) | progress bars for cuotas and loans | cuotas, loans, goal contributions | built (`perforation.tsx`); no screen uses it yet |
+| **Rule meter** (ruled scale with ink fill; red fill plus double rule when over) | `Progress`, `bar-fill` | budgets, goals, card utilisation | built (`rule-meter.tsx`); screens pending |
+| **Specimen frame** (dashed frame + "Ejemplo" legend) | help mocks, empty-state previews | `/help` mocks, empty states | built (`specimen-frame.tsx`); help mocks not yet wrapped |
+
+Also built: **Seal** (`seal.tsx`), the engraved Cashly mark (coins glyph in two rings on a note disc; `tone` note or ink). It takes a `rosette` prop, default off: the hairline guilloche ring only resolves from about 80px up and smears below, so nav, header and splash sizes leave it off. **Guilloche** (`guilloche.tsx`): canvas hypotrochoid rosettes and sine-wave fields in `currentColor`, cut in over ~1.8s, finished in one frame under reduced motion. **Microprint** and **Serial** (`microprint.tsx`, `ornament.module.css`): bilingual legend frame and corner serial, `aria-hidden`. `lib/papel/rosette.ts` also emits the rosette as a static SVG path for `next/og` icons.
+
+Structural pending: `Sheet` may stay `Card`; the Phase 1-6 screens do not yet use Note (peso) for Disponible, LedgerRow, Perforation, RuleMeter or SpecimenFrame in production.
+
+### Buttons
+- **Shape:** 4px (`xs`/`sm` and icon-xs/sm 3px); 40px default height, 32px sm, 48px lg; 600 weight.
+- **Primary:** note violet with near-white ink; hover note-deep; the focus outline takes the foreground ink (near-white would vanish on paper); in dark a `note-line` border holds the edge above 3:1.
+- **Outline:** ink border, transparent; hover muted. **Secondary:** flat tinted fill. **Ghost / Link:** underprint until hover. **Destructive:** red outline, fills red on hover.
+- **Brand:** round violet seal with `--shadow-float`, intended for the FAB (variant defined; FAB wiring not re-checked).
+- **Press:** 1px translate; loading swaps a spinner in and sets `aria-busy`.
+
+### Fields
+Input: a 32px baseline rule (`--input`), no fill, 2px ink rule on focus, destructive rule when invalid. Select trigger: 3px box, popup items are ledger rows (hairline between, bold on focus). Switch: pill, primary when on, hairline edge when off. Label: 14px medium, `*` in destructive.
+
+### Tabs, Badges, Progress
+Tabs are a hairline baseline with a 2px ink rule and heavier weight on the active tab (no fill). Badges are 3px outlined text in current ink. Progress is the ruled-scale track with an ink fill (the same look as Rule meter); Tabs, Badge and Progress are reskinned but not yet given their final per-screen roles.
+
+### Dialogs, Toasts
+Paper slips: 4px, hairline border, popover fill, perforated top edge, ink 40% scrim. Sonner toasts wear the same slip with a hairline border and 4px corners.
+
+### Navigation
+Sidebar: text in ink; the active item prints full ink, semibold, with a 3px bar at the left edge; inactive is soft ink underprint. Bottom band: five equal cells, 10px labels, active adds a 3px top rule over the icon and semibold. Both keep `aria-current="page"`. Focus everywhere is one 2px `currentColor` outline offset 2px, set globally.
+
+### Splash
+Once per session, full-bleed note violet with a rosette guilloche behind the Seal and wordmark; held 700ms, fades 420ms; skipped on repeat visits and under reduced motion (a pre-paint script sets `.splash-skip`).
+
+### Shipped and marketing-only
+The public pages (`components/marketing/papel/`) consume the global tokens (their own token block is gone) and add page-only pieces: the statement specimen, proofs, the Disponible note with a quincena timeline, drawn cards and perforated cuota strips. The drawn card face is the source Phase 2 extracts for every in-app card.
+
+### Pending, not yet migrated (Phases 1-7)
+- **Aliases, removed in Phase 7:** `ColorTile` re-exports `Stamp`; `StatPill` maps to `ProofMark`; `HeroCard` renders `Note tone="violet"`. They exist so 16, 7 and 6 callers restyle at once. Do not use them in new code.
+- **Incumbent tokens, named for removal in Phase 7:** the flat `--hero` slab and the `--chart-2` to `--chart-8` categorical palette (redrawn as engraved plates in Phase 5; only `--chart-1`, tied to `--ring`, is Papel).
+- **Incumbent and not yet reviewed:** `.tile-sheen`, `.lift`, `.burst` and the `CountUp` bounce, and the `MoneyDisplay` size steps, whose comments still describe Inter and a gradient slab. Treat them as legacy, not as Papel rules.
+- **Screens on old layouts with new primitives:** Overview (Phase 1: peso Disponible note, period ledger, coach margin note, Ask line), Accounts (Phase 2: violet net-worth note, shared drawn card face), Transactions and Imports (Phase 3), Budgets, Goals, Recurring (Phase 4), Insights and Ask (Phase 5), Settings, `/welcome`, `/help` mocks, `/terms`, `/privacy` (Phase 6). Quick-add dialog and FAB behaviour is unchanged.
+
+## Do's and Don'ts
+
+### Do:
+- **Do** print one note per screen for the screen's main figure, violet or peso, never inverted by theme.
+- **Do** build lists as ledger rows under `--paper-line` hairlines, and group surfaces as sheets (4px, hairline, no shadow).
+- **Do** render user category and account colour as a Stamp; compute the per-theme ink from the stored hex (`stampInk`) so any hex clears 3:1.
+- **Do** show state as ink density, rule weight or a glyph first (proof mark, double rule, underprint for projected figures).
+- **Do** use `.figure` for every amount and `.legend` for caps; keep copy in `messages/{en,es}.json` in parity, with microprint and bank terms (cuotas, quincena) Spanish in both.
+- **Do** label every specimen number as such (`SpecimenFrame`, `sampleData`, `specimenLabel`); only `/help` mocks and empty-state previews may show them.
+- **Do** keep all ornament generated (Guilloche, Microprint, Serial, `.perforated-top`), `aria-hidden`, on notes, the splash and empty states only.
+- **Do** carry over the mobile fixes as-is: safe-area insets, `min-w-0`, 360px Spanish truncation, FAB clearance.
+
+### Don't:
+- **Don't** put guilloche, microprint or serials on list rows, forms or anything read repeatedly.
+- **Don't** use more than one note per screen, or a violet gradient hero slab over a grid of white rounded cards with coloured icon discs.
+- **Don't** add decorative colour: colour is user ink, the two note fields, or teal/red state with a non-colour cue.
+- **Don't** set text in a user hex, or assume a shipped swatch in CSS.
+- **Don't** render the Seal rosette below about 80px, or size a figure inside Note (call sites do that).
+- **Don't** go sepia or cream; paper is cool lilac by day and ink-dark at night.
+- **Don't** use a drop shadow to separate paper, or add raster ornament.
+- **Don't** present illustrative figures as real anywhere a real figure belongs.
+
+## Provenance and Resolved decisions
+
+No shipping raster assets: everything is CSS, SVG, canvas or Lucide icons, and the only font is Archivo via `next/font`. PNGs in `.impeccable/review/` are review screenshots, not shipped. Source brief: `docs/superpowers/specs/2026-09-19-papel-moneda-app-redesign-design.md`.
+
+**Resolved decisions (2026-09-19, user)**
+1. **Logo: re-engraved.** The Cashly mark is redrawn as an engraved seal (concentric guilloche ring plus the mark in intaglio line, SVG, `currentColor`), used in the sidebar, mobile header, splash, app icons, OG image and the FAB seal. Built (Phase 0).
+2. **Payment cards: re-rendered to match the homepage card face exactly.** The drawn card on the marketing page is the single card-face source; Phase 2 extracts it into a shared component for the home page and every in-app card (gallery, group tile, detail, onboarding, help mocks). Keep brand colour, network mark and name inference as the card's field; add the homepage's line work and engraved lettering on top; add nothing the homepage face does not show. Pending (Phase 2).
+3. **Sound: a stamp sound replaces the success sound.** Only the success cue changes. Built (`29362bd`).
+4. **Native app adopts the tokens.** Papel tokens are exported as `design/tokens.json` (fixed, light, dark), which `app/globals.css` is checked against and the Expo repo consumes. Built.
+
+This file was written from the built code; it was not re-verified against a live render.
