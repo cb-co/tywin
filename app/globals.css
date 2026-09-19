@@ -285,6 +285,19 @@
     text-transform: uppercase;
     letter-spacing: 0.12em;
   }
+
+  /* Ink stamp: a double ring (outer rule + inner hairline) in the stamp's
+     own ink. The ink per theme is computed in components/papel/stamp.tsx. */
+  .stamp {
+    color: var(--stamp-light);
+    box-shadow:
+      inset 0 0 0 1.5px currentColor,
+      inset 0 0 0 3.5px var(--card),
+      inset 0 0 0 4.25px currentColor;
+  }
+  .dark .stamp {
+    color: var(--stamp-dark);
+  }
 }
 
 /* ============================================================
