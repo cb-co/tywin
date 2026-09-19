@@ -14,8 +14,12 @@ export function QuincenaEdge({ start, end, today }: { start: string; end: string
   const short = (iso: string) =>
     f.dateTime(new Date(`${iso}T00:00:00Z`), { day: "numeric", month: "short", timeZone: "UTC" });
 
+  // Edge-aware caption: near either end it hangs off the marker instead of
+  // being centred on it, so it never overflows the note or meets the captions.
+  const align = pos < 0.12 ? "" : pos > 0.88 ? "-translate-x-full text-right" : "-translate-x-1/2";
+
   return (
-    <div role="img" aria-label={t("quincenaEdgeLabel", { day, total, date: short(end) })} className="relative mt-6">
+    <div role="img" aria-label={t("quincenaEdgeLabel", { day, total, date: short(end) })} className="relative mt-6 pt-[26px]">
       <div aria-hidden className="relative h-3 border-b border-current">
         {Array.from({ length: total }, (_, i) => (
           <i
@@ -32,7 +36,7 @@ export function QuincenaEdge({ start, end, today }: { start: string; end: string
       </div>
       <span
         aria-hidden
-        className="legend absolute -top-1 -translate-x-1/2 text-[10px]"
+        className={`legend absolute top-0 text-[10px] leading-[14px] ${align}`}
         style={{ left: `${pos * 100}%` }}
       >
         {t("quincenaToday")}
