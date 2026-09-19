@@ -13,28 +13,6 @@
    ============================================================ */
 
 .page {
-  --note: #4a1f8c;
-  --note-deep: #2b1157;
-  --note-line: #a488ec;
-  --note-ink: #f8f5ff;
-  --note-ink-soft: #d9ccfa;
-
-  --peso: #e0661c;
-  --peso-line: #ffb27a;
-  --peso-ink: #1f0e22;
-  --peso-ink-soft: #4a2410;
-
-  --paper: #eeebf5;
-  --paper-2: #ffffff;
-  --paper-line: #cdc3e3;
-  --ink: #1b1530;
-  --ink-soft: #544a6c;
-  --rule: #1b1530;
-
-  --teal: #0e6e60;
-  --red: #b3302a;
-
-  --ease-press: cubic-bezier(0.16, 1, 0.3, 1);
   --gutter: clamp(1rem, 4vw, 3rem);
 
   font-family: var(--font-archivo), var(--font-jakarta), system-ui, sans-serif;
@@ -43,17 +21,6 @@
   color: var(--ink);
   min-height: 100dvh;
   overflow-x: clip;
-}
-
-:global(.dark) .page {
-  --paper: #15111f;
-  --paper-2: #1d1829;
-  --paper-line: #3b3252;
-  --ink: #efebf8;
-  --ink-soft: #b2a8c9;
-  --rule: #efebf8;
-  --teal: #4fc2ae;
-  --red: #f0766c;
 }
 
 .page ::selection {

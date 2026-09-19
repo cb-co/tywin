@@ -80,88 +80,89 @@
 }
 
 /* ============================================================
-   Identity colour
+   Papel Moneda — identity colour
    ============================================================
-   This app is a consumer finance product, not a ledger. Colour carries
-   identity, not only meaning.
+   The app is printed like a Dominican banknote: cool lilac security paper,
+   intaglio ink, two note fields (violet, peso orange) and user ink stamps.
 
-   The neutrals are cool and near-achromatic so that saturated colour has
-   somewhere quiet to sit. Violet is the brand: it owns the hero, primary
-   actions, active navigation and brand moments. It is not rationed to
-   "interactive state" — that restriction is what made the app read as a
-   dashboard.
+   Paper and ink are the only two things that invert. The note fields
+   (--note*, --peso*) are fixed: a note never goes dark, and a primary button
+   is a small piece of note, so --primary is note violet in BOTH themes.
 
-   Category colour is a first-class system. Every category and account
-   carries a stored hex (see lib/palette.ts) and renders as a FILLED tile,
-   not a wash. Those values live in the database, so this file must never
-   assume a category's colour is one of the sixteen shipped swatches.
+   Category and account colour is user data: every category and account
+   carries a stored hex (see lib/palette.ts) and renders as a stamp of ink.
+   This file must never assume one of the sixteen shipped swatches, and text
+   is never set in a user hex.
 
-   Semantic status keeps its own colours: green in, red out, amber for
-   attention. They are tuned to read app-bright rather than ledger-sober.
+   State is ink density, rule weight or a glyph, never colour alone. Teal and
+   red are the only status colours (in / out); amber (--warning) is the peso
+   family used for attention.
 
-   Contrast contract: every identity colour clears 3:1 against white and
-   against both card surfaces. That covers glyphs, icons and large text.
-   It does NOT cover small body text on a coloured fill.
+   design/tokens.json is the source of truth for the Papel tokens, and
+   design/tokens.test.ts fails the build if this file drifts from it.
    ============================================================ */
 
 /* --- Light -------------------------------------------------------------- */
 :root {
-  --background: #f5f6fb;
-  --foreground: #14141c;
+  /* Papel Moneda — see design/tokens.json (tested against this block). */
+  --note: #4a1f8c;
+  --note-deep: #2b1157;
+  --note-line: #a488ec;
+  --note-ink: #f8f5ff;
+  --note-ink-soft: #d9ccfa;
+  --peso: #e0661c;
+  --peso-line: #ffb27a;
+  --peso-ink: #1f0e22;
+  --peso-ink-soft: #4a2410;
+  --paper: #eeebf5;
+  --paper-2: #ffffff;
+  --paper-line: #cdc3e3;
+  --ink: #1b1530;
+  --ink-soft: #544a6c;
+  --rule: #1b1530;
+  --teal: #0e6e60;
+  --red: #b3302a;
+  --ease-press: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --background: #eeebf5;
+  --foreground: #1b1530;
   --card: #ffffff;
-  --card-foreground: #14141c;
+  --card-foreground: #1b1530;
   --popover: #ffffff;
-  --popover-foreground: #14141c;
-  --primary: #1b1b26;
-  --primary-foreground: #f7f7fb;
-  --secondary: #eceef7;
-  --secondary-foreground: #2b2b38;
-  /* Hand-picked rather than mixed from `secondary` and `foreground`, which is
-     what this used to be. Mixing two NEAR-NEUTRAL colours in oklch is the one
-     case that formula handles badly: chroma stays near zero, so the hue term is
-     numerically unstable, and where the result lands after the browser's gamut
-     mapping is not something the numbers predict — it came out with a visible
-     cast rather than the darker grey it was supposed to be. A palette step has
-     no interpolation in it to go wrong. */
-  --secondary-hover: #e0e2ee;
-  --muted: #f1f2f9;
-  --muted-foreground: #6b6b7b;
-  --accent: #e7e9f5;
-  --accent-foreground: #2b2b38;
-
-  --brand: #6C4EF5;
-  --brand-foreground: #ffffff;
-  --brand-muted: #ebe6ff;
-  --destructive: #F04438;
+  --popover-foreground: #1b1530;
+  /* The primary action prints in note violet in BOTH themes: a note field
+     never inverts, and a primary button is a small piece of note. */
+  --primary: #4a1f8c;
+  --primary-foreground: #f8f5ff;
+  --secondary: #e4dff0;
+  --secondary-foreground: #1b1530;
+  --secondary-hover: #d9d2ea;
+  --muted: #e4dff0;
+  --muted-foreground: #544a6c;
+  --accent: #e4dff0;
+  --accent-foreground: #1b1530;
+  --brand: #4a1f8c;
+  --brand-foreground: #f8f5ff;
+  --brand-muted: #e4dcf7;
+  --destructive: #b3302a;
   --destructive-foreground: #ffffff;
-  --success: #12B76A;
+  --success: #0e6e60;
   --success-foreground: #ffffff;
-  --warning: #F79009;
-  --warning-foreground: #1c1200;
-  --gold: #F79009;
-  --gold-foreground: #1c1200;
-  --border: #e3e5ef;
-  --input: #dcdfec;
-  /* Focus is the accent's job, not the ink's. A blue ring is unmistakably a
-     focus ring; a near-black one just looks like a thicker border. */
-  --ring: #6C4EF5;
+  --warning: #a14a0f;
+  --warning-foreground: #ffffff;
+  --gold: #a14a0f;
+  --gold-foreground: #ffffff;
+  --border: #cdc3e3;
+  --input: #544a6c;
+  --ring: #4a1f8c;
 
-  /* The signature gradient. Identical in both themes: it is the one surface
-     that does not invert, so the brand moment reads the same either way. */
-  --hero: linear-gradient(135deg, #6C4EF5 0%, #4326C9 100%);
-  --hero-foreground: #ffffff;
+  /* Kept until Phase 7 for HeroCard callers; a flat note, no glow. */
+  --hero: linear-gradient(160deg, #4a1f8c 0%, #2b1157 100%);
+  --hero-foreground: #f8f5ff;
 
-  /* Categorical series. Fixed order, never cycled. Validated for the light
-     surface: lightness band (OKLab L 0.558..0.673), chroma floor (0.116),
-     adjacent-pair separation under deutan/protan/tritan simulation, and
-     >= 3:1 against the surface. Slot 1 is the lead data hue and is now the
-     brand violet itself: with charts appearing on hero-adjacent surfaces, a
-     lead series in a foreign blue read as a second, competing brand. The
-     tightest pair against white is amber and olive at 3.05:1 — enough for
-     marks, glyphs and large text, not for small text on a filled area.
-     lib/palette.test.ts parses these values out of this file and fails the
-     build if an edit drops one below 3:1. */
-  --chart-1: #6C4EF5;
+  /* chart-1 is the lead series and must equal --ring (lib/palette.test.ts). */
+  --chart-1: #4a1f8c;
+  /* --chart-2 … --chart-8: unchanged until Phase 5 */
   --chart-2: #CE830A;
   --chart-3: #00A08A;
   --chart-4: #E85B3F;
@@ -170,109 +171,71 @@
   --chart-7: #1A96CE;
   --chart-8: #DB4A76;
 
-  --radius: 1.25rem;
+  /* Engraved, not rounded: sheets are cut paper. */
+  --radius: 0.25rem;
 
-  /* Elevation. On a white-on-white page a hairline alone leaves cards flat, so
-     surfaces get a warm-tinted shadow instead of a grey one — a grey shadow on
-     ivory reads as dirt. Two layers: a tight contact edge and a wide ambient
-     pool. Dark mode zeroes the ambient layer and leans on the hairline, because
-     a shadow on near-black is invisible work. */
-  /* With the page white, a white card has no tonal difference left to separate
-     it — the shadow is the entire separation, so it is stronger here than it
-     would be over a tinted page. Dark mode achieves the same lift by raising
-     the surface and lighting its top edge; a white-on-white card cannot go
-     lighter, so the depth has to come from underneath instead. Three layers: a
-     contact line, a short shadow, and a wide ambient pool. */
-  --shadow-card:
-    0 1px 2px rgb(20 20 28 / 0.04), 0 8px 24px -12px rgb(20 20 28 / 0.10);
-  --shadow-card-hover:
-    0 2px 4px rgb(20 20 28 / 0.06), 0 16px 40px -16px rgb(20 20 28 / 0.16);
-  /* Floating controls (the quick-add button) get a tighter, downward shadow
-     rather than the cards' wide ambient pool. A 32px blur around a 56px circle
-     lays a grey wash right up against the fill and the ink stops reading as
-     ink; keeping the spread under the element leaves the edge clean. */
-  --shadow-float: 0 8px 20px -6px rgb(108 78 245 / 0.45);
+  /* Paper has no drop shadow; a hairline frame does the separating. */
+  --shadow-card: 0 0 0 1px var(--paper-line);
+  --shadow-card-hover: 0 0 0 1px var(--ink-soft);
+  --shadow-float: 0 6px 14px -6px rgb(43 17 87 / 0.55);
 
-  /* White, like the cards — so the whole frame is paper and the page tint is
-     the only thing that isn't. The rail no longer has a fill to separate it
-     from the canvas, so its right border carries that job alone and is set a
-     step darker than the usual hairline. Ivory stays as the accent inside it:
-     nav hover and the active item are still tinted. */
-  --sidebar: #ffffff;
-  --sidebar-foreground: #14141c;
-  --sidebar-primary: #6C4EF5;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eeebff;
-  --sidebar-accent-foreground: #3a2b7a;
-  --sidebar-border: #e6e8f2;
-  --sidebar-ring: #6C4EF5;
+  --sidebar: #eeebf5;
+  --sidebar-foreground: #1b1530;
+  --sidebar-primary: #4a1f8c;
+  --sidebar-primary-foreground: #f8f5ff;
+  --sidebar-accent: #e4dff0;
+  --sidebar-accent-foreground: #1b1530;
+  --sidebar-border: #1b1530;
+  --sidebar-ring: #4a1f8c;
 }
-
 /* --- Dark --------------------------------------------------------------- */
-/* Surfaces climb in one unbroken ladder, and no two rungs may share a value:
+/* Paper goes ink-dark; the note fields do not move. Surfaces climb in one
+   unbroken ladder and no two rungs may share a value:
    background < card < muted < popover < accent < secondary < border < input.
    `muted` is the recessed fill (tab tracks, chips, wells) and `popover` is the
-   raised one (dialogs, menus). They were briefly set to the same hex, which
-   made a tab track inside a dialog disappear completely — if you change one of
-   these, check it against its neighbours, not against the background.
-
-   The ivory is deliberately held below full brightness. At L 0.90+ a large
-   fill like the quick-add button glares against near-black; the ink is set at
-   L 0.89 and the primary fill at L 0.855, which still clears 12:1. */
+   raised one (dialogs, menus): check a change against the neighbours, not
+   against the background. */
 .dark {
-  /* The canvas drops to near-black and every surface above it moves up, which
-     is the opposite of the instinct to darken the cards. Cards previously sat
-     1.07 off the page: technically a step, visually a single flat wash with
-     text floating on it. The page now goes down and the card comes up, so a
-     card looks like an object resting on the page rather than a slightly
-     different shade of it. */
-  --background: #0a0a0f;
-  --foreground: #e8e8f0;
-  --card: #16161f;
-  --card-foreground: #e8e8f0;
-  --muted: #1e1e2a;
-  --muted-foreground: #9494a6;
-  --popover: #242433;
-  --popover-foreground: #e8e8f0;
-  --primary: #e8e8f0;
-  --primary-foreground: #12121a;
-  /* `accent` is the hover/highlight fill, and it has to clear `popover` — it
-     is what marks the focused row in a select or dropdown, and those render on
-     a popover. It previously sat 1.04 off it, which is not a highlight. */
-  --accent: #2f2f40;
-  --accent-foreground: #e0e0ea;
-  --secondary: #383850;
-  --secondary-foreground: #cdcdda;
-  /* Lighter than `secondary`, where the light theme's equivalent is darker.
-     Hover moves AWAY from the page, and which direction that is depends on the
-     theme — the old mix-with-foreground formula got this right by accident and
-     only because `foreground` flips too. Stated outright here instead. */
-  --secondary-hover: #43435e;
+  --paper: #15111f;
+  --paper-2: #1d1829;
+  --paper-line: #3b3252;
+  --ink: #efebf8;
+  --ink-soft: #b2a8c9;
+  --rule: #efebf8;
+  --teal: #4fc2ae;
+  --red: #f0766c;
 
-  --brand: #8B72FF;
-  --brand-foreground: #12091f;
-  --brand-muted: #2a2450;
-  --destructive: #FF6B5E;
+  --background: #15111f;
+  --foreground: #efebf8;
+  --card: #1d1829;
+  --card-foreground: #efebf8;
+  --muted: #221c30;
+  --muted-foreground: #b2a8c9;
+  --popover: #282137;
+  --popover-foreground: #efebf8;
+  --primary: #4a1f8c;
+  --primary-foreground: #f8f5ff;
+  --accent: #2f2742;
+  --accent-foreground: #efebf8;
+  --secondary: #372e4d;
+  --secondary-foreground: #efebf8;
+  --secondary-hover: #41375a;
+  --border: #3b3252;
+  --input: #4a4064;
+  --brand: #a488ec;
+  --brand-foreground: #1b1530;
+  --brand-muted: #2f2742;
+  --destructive: #f0766c;
   --destructive-foreground: #1f0705;
-  --success: #3DD68C;
+  --success: #4fc2ae;
   --success-foreground: #04140b;
-  --warning: #FDB022;
-  --warning-foreground: #1a1000;
-  --gold: #FDB022;
-  --gold-foreground: #1a1000;
-  --border: #333346;
-  --input: #3d3d52;
-  --ring: #8B72FF;
-
-  /* Same eight entities, re-stepped for the dark surface rather than flipped:
-     each hue and chroma is carried over unchanged and only the lightness is
-     lifted into the dark band (OKLab L 0.646..0.703, spread 0.057), then
-     re-validated there. Carrying chroma across means a category keeps the
-     same identity in both themes and only its brightness moves. Slot 1 is the
-     dark-theme brand violet, the same value as --ring and --sidebar-primary,
-     so the lead series and the brand stay one colour on both themes. Tightest
-     against the dark card is the violet at 5.09:1. */
-  --chart-1: #8B72FF;
+  --warning: #ffb27a;
+  --warning-foreground: #1f0e22;
+  --gold: #ffb27a;
+  --gold-foreground: #1f0e22;
+  --ring: #a488ec;
+  --chart-1: #a488ec;
+  /* --chart-2 … --chart-8: unchanged until Phase 5 */
   --chart-2: #D88C1F;
   --chart-3: #2FB39D;
   --chart-4: #F36549;
@@ -281,27 +244,17 @@
   --chart-7: #35A8E1;
   --chart-8: #ED5B85;
 
-  /* Dark mode gets the same lit top edge, in white at low alpha. A cast shadow
-     is nearly invisible against near-black, so on this theme the edge is doing
-     almost all of the work of making a card look like an object. */
-  --shadow-card:
-    inset 0 1px 0 rgb(255 255 255 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.6);
-  --shadow-card-hover:
-    inset 0 1px 0 rgb(255 255 255 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.7),
-    0 10px 28px -18px rgb(0 0 0 / 0.9);
-  --shadow-float: 0 4px 10px -4px rgb(0 0 0 / 0.7);
-
-  /* A hair above the canvas, so the rail is the frame and the content area is
-     the deepest point. Light mode does the same thing with ivory chrome around
-     a white page — same role, opposite direction. */
-  --sidebar: #101018;
-  --sidebar-foreground: #e8e8f0;
-  --sidebar-primary: #8B72FF;
-  --sidebar-primary-foreground: #12091f;
-  --sidebar-accent: #241f45;
-  --sidebar-accent-foreground: #c8bcff;
-  --sidebar-border: #22222f;
-  --sidebar-ring: #8B72FF;
+  --shadow-card: 0 0 0 1px var(--paper-line);
+  --shadow-card-hover: 0 0 0 1px var(--ink-soft);
+  --shadow-float: 0 6px 14px -6px rgb(0 0 0 / 0.7);
+  --sidebar: #15111f;
+  --sidebar-foreground: #efebf8;
+  --sidebar-primary: #4a1f8c;
+  --sidebar-primary-foreground: #f8f5ff;
+  --sidebar-accent: #221c30;
+  --sidebar-accent-foreground: #efebf8;
+  --sidebar-border: #efebf8;
+  --sidebar-ring: #a488ec;
 }
 
 @layer base {
