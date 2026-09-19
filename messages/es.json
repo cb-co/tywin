@@ -1110,7 +1110,7 @@
     "fieldClosingDay": "Día de cierre del estado de cuenta",
     "fieldDueDay": "Día de vencimiento del pago",
     "fieldCardGroup": "Grupo de tarjeta",
-    "cardGroupNote": "Un grupo de tarjeta reúne varias líneas de moneda de una misma tarjeta física (por ejemplo, una línea en USD y otra en CAD) en una sola ficha.",
+    "cardGroupNote": "Un grupo de tarjeta reúne varias líneas de moneda de una misma tarjeta física (por ejemplo, una línea en USD y otra en CAD) en una sola entrada.",
     "loanFieldsTitle": "Los préstamos añaden",
     "fieldPrincipal": "Capital",
     "fieldInterestRate": "Tasa de interés",

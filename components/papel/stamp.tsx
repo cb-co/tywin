@@ -50,7 +50,7 @@ export function Stamp({
       ) : Icon ? (
         <Icon className={s.icon} strokeWidth={2.25} />
       ) : name ? (
-        <span className={cn(s.glyph, "[font-stretch:112%]")}>{name.charAt(0).toUpperCase()}</span>
+        <span className={cn(s.glyph, "text-(--ink) [font-stretch:112%]")}>{name.charAt(0).toUpperCase()}</span>
       ) : null}
     </span>
   );

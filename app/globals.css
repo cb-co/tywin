@@ -259,6 +259,12 @@
   * {
     @apply border-border outline-ring/50;
   }
+  /* One keyboard focus ring for every link, button and control: 2px in the
+     element's own ink. Components that set their own ring override this. */
+  :where(a, button, [role="button"], [role="tab"], [role="menuitem"], summary):focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
   body {
     @apply bg-background text-foreground;
   }
@@ -299,10 +305,18 @@
      own ink. The ink per theme is computed in components/papel/stamp.tsx. */
   .stamp {
     color: var(--stamp-light);
-    box-shadow:
-      inset 0 0 0 1.5px currentColor,
-      inset 0 0 0 3.5px var(--card),
-      inset 0 0 0 4.25px currentColor;
+    position: relative;
+    border: 1.5px solid currentColor;
+  }
+  /* The inner hairline is a pseudo-element, so the gap between the two rings
+     is the real surface underneath (no painted card-coloured halo). */
+  .stamp::before {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    border-radius: 9999px;
+    border: 0.75px solid currentColor;
+    pointer-events: none;
   }
   .dark .stamp {
     color: var(--stamp-dark);

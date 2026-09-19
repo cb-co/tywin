@@ -1110,7 +1110,7 @@
     "fieldClosingDay": "Statement closing day",
     "fieldDueDay": "Payment due day",
     "fieldCardGroup": "Card group",
-    "cardGroupNote": "A card group bundles multiple currency lines of one physical card (say, a USD and a CAD line) into a single tile.",
+    "cardGroupNote": "A card group bundles multiple currency lines of one physical card (say, a USD and a CAD line) into a single entry.",
     "loanFieldsTitle": "Loans add",
     "fieldPrincipal": "Principal",
     "fieldInterestRate": "Interest rate",

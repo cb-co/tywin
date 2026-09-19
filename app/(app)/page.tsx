@@ -74,8 +74,8 @@ export default async function OverviewPage() {
             <p className="mt-3 max-w-md text-sm opacity-80">{t("netWorthEmptyBody")}</p>
             {/* Anchored to HeroCard's inner content wrapper, which is the
                 nearest positioned ancestor, and clipped by the card's own
-                overflow-hidden. Painted in the inherited hero foreground —
-                `--brand` would be violet on the violet gradient. */}
+                overflow-hidden. Painted in the note's own ink (currentColor) so
+                it reads on both the violet and peso fields. */}
             <SpotIllustration
               scene="chart"
               className="pointer-events-none absolute -right-2 -top-12 size-40 text-current opacity-25"

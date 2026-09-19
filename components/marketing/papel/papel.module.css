@@ -15,7 +15,7 @@
 .page {
   --gutter: clamp(1rem, 4vw, 3rem);
 
-  font-family: var(--font-archivo), system-ui, system-ui, sans-serif;
+  font-family: var(--font-archivo), system-ui, sans-serif;
   font-variant-numeric: tabular-nums lining-nums;
   background: var(--paper);
   color: var(--ink);

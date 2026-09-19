@@ -109,7 +109,7 @@ export function OnboardingMock({
 /**
  * Home base, drawn as its own pieces rather than one boxed panel.
  *
- * The real screen is a gradient HeroCard followed by loose stat cards and an
+ * The real screen is a Note (HeroCard) followed by loose stat cards and an
  * upcoming rail — nothing on it sits inside a second bordered container. A
  * MockPanel wrapper around that composition would double-box the one element
  * on the whole app that is deliberately never boxed twice, so this mock skips
@@ -158,7 +158,7 @@ export function OverviewMock({
   const budgetPct = 64;
   return (
     <div className="space-y-3">
-      <HeroCard label={availableLabel} className="p-5">
+      <HeroCard label={availableLabel}>
         <MoneyDisplay amount={1840} currency="USD" size="stat" />
         <p className="mt-1 text-xs opacity-70">{availableIfCleared}</p>
 

@@ -67,7 +67,6 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
         // The active tab is marked by a 2px ink rule and a heavier weight,
         // not by fill, so it reads without colour.
         "data-active:border-foreground data-active:bg-transparent data-active:font-semibold data-active:text-foreground data-active:shadow-none",
-        "after:absolute after:bg-foreground after:opacity-0 after:transition-opacity group-data-horizontal/tabs:after:inset-x-0 group-data-horizontal/tabs:after:bottom-[-5px] group-data-horizontal/tabs:after:h-0.5 group-data-vertical/tabs:after:inset-y-0 group-data-vertical/tabs:after:-right-1 group-data-vertical/tabs:after:w-0.5",
         className
       )}
       {...props}

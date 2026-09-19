@@ -41,7 +41,7 @@ export function Note({
         />
       ) : null}
       <div aria-hidden className="pointer-events-none absolute inset-2 rounded-[3px] border border-current opacity-30" />
-      <p className="legend relative text-[11px] opacity-85">{label}</p>
+      <p className={cn("legend relative text-[11px]", tone === "violet" && "opacity-85")}>{label}</p>
       <div className="relative mt-2">{children}</div>
       {action ? <div className="relative mt-6 flex flex-wrap gap-3">{action}</div> : null}
       {serial ? <Serial value={serial} className="absolute right-4 top-3" /> : null}
