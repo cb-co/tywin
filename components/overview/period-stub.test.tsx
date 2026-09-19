@@ -43,8 +43,11 @@ describe("PeriodStub", () => {
     expect(out).toContain("160% of budget, over");
     expect(out).not.toContain("100.0%");
   });
-  it("gives the meter an over-budget reading", () => {
-    expect(html(1600, 1000)).toMatch(/aria-valuetext="[^"]*Over budget/);
+  it("gives the meter an over-budget reading with the true, unclamped percent", () => {
+    expect(html(1600, 1000)).toMatch(/aria-valuetext="160%, Over budget"/);
+  });
+  it("never lets the meter's aria-valuenow itself exceed 100", () => {
+    expect(html(1600, 1000)).toMatch(/aria-valuenow="100"/);
   });
   it("opens the stub with the period caption under the perforation", () => {
     const out = html(500, 1000);

@@ -39,7 +39,7 @@ function Row({
  * "Disponible hasta el <payday>" — the Overview hero. Replaces net worth as
  * the figure people actually check: not what they're worth, but what's left
  * before the next quincenal payday. Net worth survives as a secondary stat
- * inside the same card, not removed.
+ * inside the same note, not removed.
  */
 export function AvailableHero({
   available: a,
@@ -90,8 +90,8 @@ export function AvailableHero({
   }
 
   // A negative figure is information ("the period is already over-committed"),
-  // not a scolding — so it gets exactly the colour budget bars already use for
-  // `over`, and nothing louder.
+  // not a scolding — so it gets exactly the flag and red fill PeriodStub's
+  // RuleMeter uses for over-budget, and nothing louder.
   const negative = a.available < 0;
 
   const figureClass = cn(

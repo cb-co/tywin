@@ -52,7 +52,7 @@ export function PeriodStub({
         {/* The meter is a block element, so it sits in its own row rather than
             inside LedgerRow's subtitle <p>. */}
         <div className="px-4 pb-3">
-          <RuleMeter used={used} total={budget} label={t("budgetUsed")} overLabel={t("budgetOverLabel")} />
+          <RuleMeter used={used} total={budget} label={t("budgetUsed")} overLabel={t("budgetOverLabel")} pct={pct} />
           {over ? <ProofMark tone="flag" className="mt-1.5">{t("budgetOverBy", { pct: formatPercent(pct) })}</ProofMark> : null}
         </div>
       </Card>

@@ -19,7 +19,7 @@ import { getRecommendation } from "@/lib/overview/recommendation/queries";
 import { localDate } from "@/lib/period/cycle";
 import { greetingName } from "@/lib/profile";
 
-const STARTER_CARDS = [
+const STARTER_LINKS = [
   { href: "/accounts", icon: Wallet, key: "Accounts" as const },
   { href: "/budgets", icon: PieChart, key: "Budgets" as const },
   { href: "/recurring", icon: Repeat, key: "Recurring" as const },
@@ -61,7 +61,7 @@ export default async function OverviewPage() {
           <EmptyOverviewNote currency={o.baseCurrency} />
         </div>
         <Card className="rise gap-0 p-0" style={{ "--i": 2 } as React.CSSProperties}>
-          {STARTER_CARDS.map(({ href, icon: Icon, key }) => (
+          {STARTER_LINKS.map(({ href, icon: Icon, key }) => (
             <Link key={href} href={href} className="block outline-offset-[-2px] hover:bg-accent/40">
               <LedgerRow
                 lead={<Icon aria-hidden className="size-4 shrink-0 text-muted-foreground" />}

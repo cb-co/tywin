@@ -107,6 +107,7 @@ export function OverviewMock({
   loansLabel,
   subscriptionsLabel,
   netWorthLabel,
+  thisPeriodLabel,
   incomeLabel,
   spentLabel,
   budgetUsedLabel,
@@ -122,6 +123,7 @@ export function OverviewMock({
   loansLabel: string;
   subscriptionsLabel: string;
   netWorthLabel: string;
+  thisPeriodLabel: string;
   incomeLabel: string;
   spentLabel: string;
   budgetUsedLabel: string;
@@ -178,6 +180,7 @@ export function OverviewMock({
 
           <div aria-hidden className="mx-2 border-t-2 border-dashed border-(--ink-soft)" />
           <Card className="gap-0 rounded-t-none border-t-0 p-0">
+            <h2 className="legend px-4 pt-3 pb-1 text-[11px] text-muted-foreground">{thisPeriodLabel}</h2>
             <LedgerRow
               lead={<ArrowDownLeft aria-hidden className={glyph} />}
               title={incomeLabel}
