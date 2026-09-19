@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Logo, Wordmark } from "@/components/brand/logo";
+import { Seal } from "@/components/papel/seal";
+import { Guilloche } from "@/components/papel/guilloche";
 import { SPLASH_SEEN_KEY } from "@/lib/splash";
 
 const HOLD_MS = 700;
@@ -41,11 +42,16 @@ export function Splash() {
       // reader users get no benefit from being told a logo appeared.
       aria-hidden
       data-leaving={leaving ? "" : undefined}
-      className="splash fixed inset-0 z-[100] flex items-center justify-center bg-background"
+      className="splash fixed inset-0 z-[100] flex items-center justify-center bg-(--note) text-(--note-ink)"
     >
-      <div className="splash-mark flex items-center gap-3">
-        <Logo className="h-11 w-11 rounded-[0.85rem]" />
-        <Wordmark className="text-2xl" />
+      <Guilloche
+        variant="rosette"
+        className="absolute left-1/2 top-1/2 size-[min(80vw,28rem)] -translate-x-1/2 -translate-y-1/2 opacity-40"
+        duration={700}
+      />
+      <div className="splash-mark relative flex flex-col items-center gap-3">
+        <Seal className="size-14" />
+        <span className="legend text-xl">Cashly</span>
       </div>
     </div>
   );

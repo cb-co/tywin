@@ -4,10 +4,10 @@ import { SealSvg } from "@/lib/pwa/icon";
 export const OG_IMAGE_SIZE = { width: 1200, height: 630 };
 
 /**
- * Renders the same brand mark as app/favicon.ico (the Coins glyph knocked out
- * of the signature gradient — see components/brand/logo.tsx) at OG resolution.
- * The gradient is repeated literally because an ImageResponse is rasterised
- * with no stylesheet in scope; keep it in step with `--hero`.
+ * Renders the Cashly seal (SealSvg, the static twin of components/papel/seal.tsx)
+ * on a note-violet field at OG resolution. Colours are repeated literally
+ * because an ImageResponse is rasterised with no stylesheet in scope; keep them
+ * in step with the `--note` tokens in app/globals.css.
  */
 export function renderBrandOgImage() {
   return new ImageResponse(

@@ -8,7 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { RegisterServiceWorker } from "@/components/pwa/register-service-worker";
 import { ThemeColorSync } from "@/components/pwa/theme-color-sync";
-import { TOPBAR_DARK } from "@/lib/pwa/theme-color";
+import { TOPBAR_DARK, TOPBAR_LIGHT } from "@/lib/pwa/theme-color";
 import { SPLASH_SKIP_SCRIPT } from "@/lib/splash";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -59,13 +59,14 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  // Matches the dark topbar (components/shell/mobile-header.tsx's bg-card
-  // in dark mode). ThemeColorSync corrects this live to the light topbar
-  // color when the resolved theme is light; this is the pre-hydration
-  // default and the fallback for browsers that ignore theme-color
-  // entirely — a dark chrome reads as intentional either way, an ivory
-  // one that doesn't match the topbar reads as a bug.
-  themeColor: TOPBAR_DARK,
+  // Both topbar colours (components/shell/mobile-header.tsx's bg-background
+  // per theme), keyed by the OS colour scheme so the pre-hydration chrome
+  // already matches. ThemeColorSync corrects it live once next-themes
+  // resolves an explicit theme choice.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: TOPBAR_LIGHT },
+    { media: "(prefers-color-scheme: dark)", color: TOPBAR_DARK },
+  ],
 };
 
 export default async function RootLayout({

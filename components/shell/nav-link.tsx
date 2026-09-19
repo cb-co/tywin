@@ -17,24 +17,15 @@ export function useNavActive(href: string, match?: string[]) {
 
 export function navItemClass(variant: "side" | "bottom", active: boolean) {
   return cn(
-    "group relative flex items-center gap-3 rounded-md text-sm font-medium transition-colors",
+    "group relative flex items-center gap-3 text-sm transition-colors",
     variant === "side" && "rise px-3 py-2",
-    // Hover is gated to the inactive state: the active row is now a filled
-    // sidebar-primary pill, and an unconditional hover:bg-accent would sit at
-    // the same specificity and win on :hover, flashing the fill back to the
-    // pale accent tint every time the pointer crosses an active item.
-    variant === "side" &&
-      !active &&
-      "hover:bg-accent hover:text-accent-foreground",
-    variant === "bottom" && "min-w-0 flex-col gap-1 px-0.5 pb-1.5 pt-1 text-xs",
-    active ? "text-foreground" : "text-muted-foreground",
+    variant === "bottom" && "min-w-0 flex-col gap-1 px-0.5 pb-1.5 pt-2 text-xs",
+    // Ink density is the state: active prints in full ink and weight,
+    // inactive recedes to underprint. The rule (below) is the second cue.
+    active ? "font-semibold text-foreground" : "font-normal text-muted-foreground hover:text-foreground",
     variant === "side" &&
       active &&
-      "rounded-full bg-sidebar-primary text-sidebar-primary-foreground",
-    // The bottom bar signals active state through its icon pill (below) and
-    // label weight instead; the row itself just tints to the brand ink so
-    // the label reads as active without ever sitting on a coloured fill.
-    variant === "bottom" && active && "text-brand",
+      "before:absolute before:inset-y-1 before:left-0 before:w-[3px] before:bg-foreground",
   );
 }
 
@@ -56,41 +47,26 @@ export function NavItemBody({
   const bottom = variant === "bottom";
   return (
     <>
-      {/* The sidebar no longer needs a separate rail marker: the active row
-          is a solid sidebar-primary pill (see navItemClass), which is an
-          unambiguous signal on its own — a rail in the same brand hue would
-          just sit invisibly on top of the fill it's drawn over. */}
-
-      {/* The icon carries the hover feedback: nudging the whole row would
-          fight the sidebar's alignment. In the bottom bar it also sits in a
-          pill that fills solid with sidebar-primary when active, so the icon
-          itself flips to sidebar-primary-foreground to stay legible on the
-          fill. Ink-on-ivory is a weak signal at 20px, and with the palette
-          now near-neutral it must not be the only signal at all — the pill
-          and the label weight carry it. */}
+      {/* Active state is ink density, never colour alone: full ink and weight
+          on the label and icon, plus a rule (a 3px bar at the sidebar's left
+          edge, a top rule over the bottom band's icon). Inactive items recede
+          to underprint. */}
       <span
         className={cn(
-          "relative flex shrink-0 items-center justify-center transition-transform duration-150 ease-out group-hover:scale-110 group-active:scale-95",
+          "relative flex shrink-0 items-center justify-center transition-transform duration-150 ease-out group-active:scale-95",
           bottom && "h-7 w-12",
-          bottom && active && "text-sidebar-primary-foreground",
+          bottom &&
+            active &&
+            "before:absolute before:-top-2 before:inset-x-3 before:h-[3px] before:bg-foreground",
         )}
       >
-        {bottom ? (
-          <span
-            aria-hidden
-            className={cn(
-              "absolute inset-0 rounded-full bg-sidebar-primary transition-all duration-200 ease-out",
-              active ? "scale-100 opacity-100" : "scale-75 opacity-0",
-            )}
-          />
-        ) : null}
         <span className="relative">{children}</span>
       </span>
 
       <span
         className={cn(
           bottom && "w-full truncate text-center text-[10px] tracking-tight",
-          // Weight doubles up on the colour so the active tab stays
+          // Weight doubles up on the ink density so the active tab stays
           // distinguishable without relying on hue.
           bottom && active && "font-semibold",
         )}

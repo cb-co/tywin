@@ -14,9 +14,9 @@ test("returns null for an unresolved or unrecognized theme", () => {
   expect(topbarThemeColor("system")).toBeNull();
 });
 
-/** Pins the literal hex values against app/globals.css's --card so a typo'd
- *  constant can't silently drift from the topbar it's meant to match. */
-test("matches components/shell/mobile-header.tsx's bg-card in each theme", () => {
-  expect(TOPBAR_LIGHT).toBe("#ffffff");
-  expect(TOPBAR_DARK).toBe("#191714");
+/** Pins the literal hex values against app/globals.css's --background so a
+ *  typo'd constant can't silently drift from the topbar it's meant to match. */
+test("matches components/shell/mobile-header.tsx's bg-background in each theme", () => {
+  expect(TOPBAR_LIGHT).toBe("#eeebf5");
+  expect(TOPBAR_DARK).toBe("#15111f");
 });

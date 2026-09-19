@@ -10,9 +10,9 @@ import { Button } from "@/components/ui/button";
 export function MobileHeader() {
   const t = useTranslations("Nav");
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-card/95 px-4 backdrop-blur md:hidden">
+    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-(--rule) bg-background px-4 md:hidden">
       <Link href="/" className="flex items-center gap-2">
-        <Logo className="h-7 w-7" />
+        <Logo className="size-7" />
         <Wordmark className="text-base" />
       </Link>
       {/* Every destination has a home: five tabs in the bottom bar (two of

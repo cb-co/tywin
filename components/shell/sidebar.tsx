@@ -21,11 +21,18 @@ export function Sidebar({
   const initial = profileInitial(displayName, email);
 
   return (
-    <aside className="hidden md:flex md:h-dvh md:w-64 md:shrink-0 md:flex-col md:border-r md:border-sidebar-border md:bg-sidebar md:text-sidebar-foreground">
+    <aside className="relative hidden md:flex md:h-dvh md:w-64 md:shrink-0 md:flex-col md:border-r md:border-(--rule) md:bg-sidebar md:text-sidebar-foreground">
       <div className="flex h-16 items-center gap-2.5 px-5">
-        <Logo />
+        <Logo className="size-9" />
         <Wordmark />
       </div>
+      {/* Microprint strip down the right edge: decorative, so aria-hidden. */}
+      <span
+        aria-hidden
+        className="legend absolute inset-y-6 right-1 overflow-hidden text-[7px] tracking-[0.3em] text-muted-foreground [writing-mode:vertical-rl]"
+      >
+        {"CASHLY · REPÚBLICA DOMINICANA · ".repeat(6)}
+      </span>
       <nav className="flex flex-1 flex-col gap-0.5 px-3 py-2">
         {NAV_ITEMS.map((item, i) => (
           <NavLink
@@ -51,7 +58,7 @@ export function Sidebar({
           shorter name is a smaller loss than a wrapped row. Settings keeps its
           own theme row: this sidebar is desktop-only, so on mobile that row is
           the only way to reach the theme at all. */}
-      <div className="flex items-center gap-1 border-t border-sidebar-border px-3 py-3">
+      <div className="flex items-center gap-1 border-t border-(--rule) px-3 py-3">
         <Link
           href="/settings"
           title={email}
@@ -66,7 +73,7 @@ export function Sidebar({
               className="h-8 w-8 shrink-0 rounded-full object-cover transition-transform duration-150 group-hover:scale-105 group-active:scale-95"
             />
           ) : (
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand/15 text-xs font-semibold text-brand transition-transform duration-150 group-hover:scale-105 group-active:scale-95">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-transparent text-xs font-semibold text-foreground ring-1 ring-(--rule) transition-transform duration-150 group-hover:scale-105 group-active:scale-95">
               {initial}
             </span>
           )}
