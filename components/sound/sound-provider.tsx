@@ -28,7 +28,7 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
   // hydrating render use before the stored preference takes over.
   const [enabled, setEnabled] = useStoredBoolean(STORAGE_KEY, true);
 
-  const [rawPlaySuccess] = useSound("/sounds/success.wav", { volume: 0.5 });
+  const [rawPlaySuccess] = useSound("/sounds/stamp.wav", { volume: 0.6 });
   const [rawPlayDelete] = useSound("/sounds/delete.wav", { volume: 0.5 });
   const [rawPlayError] = useSound("/sounds/error.wav", { volume: 0.5 });
 

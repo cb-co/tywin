@@ -4,6 +4,16 @@ import { join } from "node:path";
 const SAMPLE_RATE = 44100;
 const OUT_DIR = join(process.cwd(), "public/sounds");
 
+/* Deterministic noise so regenerating the file is byte-stable. */
+function mulberry32(seed) {
+  return () => {
+    seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 function writeWavFile(path, samples) {
   const numSamples = samples.length;
   const buffer = Buffer.alloc(44 + numSamples * 2);
@@ -92,18 +102,30 @@ function mix(...layers) {
   return out;
 }
 
-mkdirSync(OUT_DIR, { recursive: true });
+/* Stamp: a rubber stamp meeting paper. A pitched-down body thump (the block
+   landing) and a 25ms burst of low-passed noise (the paper), both starting on
+   the first millisecond, gone by 0.28s. Replaces the old E5→B5 chime as the
+   success cue: in a world printed on paper, "done" is a stamp. */
+function stamp() {
+  const duration = 0.28;
+  const n = Math.round(SAMPLE_RATE * duration);
+  const out = new Float32Array(n);
+  const rand = mulberry32(417);
+  let lp = 0;
+  for (let i = 0; i < n; i++) {
+    const t = i / SAMPLE_RATE;
+    const f = 150 - 70 * Math.min(1, t / 0.05);
+    const body = Math.sin(2 * Math.PI * f * t) * Math.exp(-28 * t);
+    lp += 0.18 * ((rand() * 2 - 1) - lp);
+    const paper = lp * Math.exp(-160 * t) * 2.2;
+    const attack = t < ATTACK ? 0.5 * (1 - Math.cos((Math.PI * t) / ATTACK)) : 1;
+    const tail = Math.max(0, Math.min(1, (duration - t) / TAIL));
+    out[i] = (0.62 * body + 0.38 * paper) * attack * tail * 0.9;
+  }
+  return out;
+}
 
-/* Success: E5 → B5, a rising perfect fifth. The second note lands while the
-   first is still ringing, so it reads as one gesture rather than two beeps.
-   Decay is intentionally slower than the other two cues (and duration
-   longer) so the resolving second note actually gets time to ring out —
-   at the original 5.0-5.5/s decay the whole gesture was inaudible well
-   before its buffer ended, which read as chopped rather than finished. */
-const success = mix(
-  note(659.25, { duration: 1.1, decay: 3.2, amplitude: 0.5 }),
-  note(987.77, { duration: 1.1, decay: 2.8, amplitude: 0.42, delay: 0.085 }),
-);
+mkdirSync(OUT_DIR, { recursive: true });
 
 /* Delete: A4 → E4, the same interval inverted. Falling and a register lower,
    so it's unmistakably not the success cue without being harsh about it. */
@@ -120,8 +142,8 @@ const error = mix(
   note(293.66, { duration: 0.55, decay: 7.0, amplitude: 0.42, delay: 0.13 }),
 );
 
-writeWavFile(join(OUT_DIR, "success.wav"), success);
+writeWavFile(join(OUT_DIR, "stamp.wav"), stamp());
 writeWavFile(join(OUT_DIR, "delete.wav"), del);
 writeWavFile(join(OUT_DIR, "error.wav"), error);
 
-console.log("Generated public/sounds/{success,delete,error}.wav");
+console.log("Generated public/sounds/{stamp,delete,error}.wav");
