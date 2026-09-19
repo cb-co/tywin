@@ -138,13 +138,21 @@ export function StatementsPanel({
                     <ProofMark tone="ok">{tc("done")}</ProofMark>
                   )
                 }
-                title={formatDate(s.period_end, locale)}
+                title={
+                  <>
+                    {formatDate(s.period_end, locale)}
+                    <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {s.source === "import" ? t("sourceImport") : t("sourceManual")}
+                    </span>
+                  </>
+                }
                 subtitle={
-                  s.due_date
-                    ? t("dueLabel", { date: formatDate(s.due_date, locale) })
-                    : s.source === "import"
-                      ? t("sourceImport")
-                      : t("sourceManual")
+                  <>
+                    {s.due_date ? t("dueLabel", { date: formatDate(s.due_date, locale) }) : null}
+                    {s.minimum_payment != null
+                      ? ` · ${t("minimumLabel", { amount: formatMoney(Number(s.minimum_payment), currency) })}`
+                      : null}
+                  </>
                 }
                 amount={<span className="figure text-sm">{formatMoney(Number(s.total_balance), currency)}</span>}
                 meta={
