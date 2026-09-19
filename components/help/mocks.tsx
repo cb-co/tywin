@@ -1,4 +1,3 @@
-import type { LucideIcon } from "lucide-react";
 import {
   ArrowDownLeft,
   ArrowLeftRight,
@@ -14,7 +13,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ColorTile } from "@/components/ui/color-tile";
-import { HeroCard } from "@/components/ui/hero-card";
+import { Note } from "@/components/papel/note";
+import { LedgerRow } from "@/components/papel/ledger-row";
+import { RuleMeter } from "@/components/papel/rule-meter";
+import { SpecimenFrame } from "@/components/papel/specimen-frame";
+import { QuincenaEdge } from "@/components/overview/quincena-edge";
 import { MoneyDisplay } from "@/components/ui/money-display";
 import { Progress } from "@/components/ui/progress";
 import { StatPill } from "@/components/ui/stat-pill";
@@ -59,28 +62,6 @@ function MockSwitch({ checked }: { checked: boolean }) {
   );
 }
 
-function StatRow({
-  icon: Icon,
-  color,
-  label,
-  amount,
-  tone,
-}: {
-  icon: LucideIcon;
-  color: string | null;
-  label: string;
-  amount: number;
-  tone: string;
-}) {
-  return (
-    <div className="flex items-center gap-3 p-3">
-      <ColorTile color={color} icon={Icon} size="sm" />
-      <p className="flex-1 text-xs text-muted-foreground">{label}</p>
-      <MoneyDisplay amount={amount} currency="USD" size="inline" className={tone} />
-    </div>
-  );
-}
-
 export function OnboardingMock({
   label,
   account,
@@ -107,22 +88,14 @@ export function OnboardingMock({
 }
 
 /**
- * Home base, drawn as its own pieces rather than one boxed panel.
+ * Home base as a specimen of the real composition.
  *
- * The real screen is a Note (HeroCard) followed by loose stat cards and an
- * upcoming rail — nothing on it sits inside a second bordered container. A
- * MockPanel wrapper around that composition would double-box the one element
- * on the whole app that is deliberately never boxed twice, so this mock skips
- * it and stacks the real pieces directly, the way the dashboard does.
- *
- * The hero itself is a still of `AvailableHero` (Task 6): "Disponible" is the
- * big figure now, not net worth — the breakdown rows below it (liquid,
- * committed, cards, loans, subscriptions) mirror that component's own rows,
- * and the cards row carries a basis note the same way a real $0-minimum card
- * does, so the guide's screenshot teaches the same thing the callout above it
- * says in words. Net worth survives as the bordered-off secondary line at the
- * bottom of the same card, exactly where the real screen keeps it — demoted,
- * not removed.
+ * One peso Note carries the Disponible figure, the "if you clear your cards"
+ * line, the breakdown rows and the net-worth line, with the quincena engraved
+ * on its bottom edge. A dashed perforation joins it to the ruled period stub
+ * (income, paid out, budget used), then Upcoming as a ledger row. Built from
+ * the same primitives as `AvailableHero` and `PeriodStub`, with fixed figures,
+ * and framed as a specimen so it is never read as the user's own numbers.
  */
 export function OverviewMock({
   availableLabel,
@@ -156,68 +129,92 @@ export function OverviewMock({
   upcomingSubtitle: string;
 }) {
   const budgetPct = 64;
+  const glyph = "size-4 shrink-0 text-muted-foreground";
+  const rowClass = "flex items-baseline justify-between gap-4 text-sm";
   return (
-    <div className="space-y-3">
-      <HeroCard label={availableLabel}>
-        <MoneyDisplay amount={1840} currency="USD" size="stat" />
-        <p className="mt-1 text-xs opacity-70">{availableIfCleared}</p>
+    <SpecimenFrame className="mt-4">
+      <div className="space-y-4">
+        <div>
+          <Note tone="peso" label={availableLabel} serial="QNA 2026-09 B">
+            <MoneyDisplay
+              amount={1840}
+              currency="USD"
+              size="hero"
+              className="text-5xl font-extrabold [font-stretch:125%]"
+            />
+            <p className="mt-1 text-sm opacity-70">{availableIfCleared}</p>
 
-        <div className="mt-4 space-y-1.5">
-          <div className="flex items-baseline justify-between gap-4 text-xs">
-            <span className="opacity-80">{liquidLabel}</span>
-            <MoneyDisplay amount={3200} currency="USD" size="inline" />
-          </div>
-          <div className="flex items-baseline justify-between gap-4 text-xs">
-            <span className="opacity-80">{committedLabel}</span>
-            <MoneyDisplay amount={-200} currency="USD" size="inline" />
-          </div>
-          <div className="flex items-baseline justify-between gap-4 text-xs">
-            <span className="opacity-80">{cardsLabel}</span>
-            <MoneyDisplay amount={-350} currency="USD" size="inline" />
-          </div>
-          <p className="pl-3 text-[0.65rem] opacity-60">{cardsNote}</p>
-          <div className="flex items-baseline justify-between gap-4 text-xs">
-            <span className="opacity-80">{loansLabel}</span>
-            <MoneyDisplay amount={-180} currency="USD" size="inline" />
-          </div>
-          <div className="flex items-baseline justify-between gap-4 text-xs">
-            <span className="opacity-80">{subscriptionsLabel}</span>
-            <MoneyDisplay amount={-46} currency="USD" size="inline" />
-          </div>
+            <div className="mt-6 space-y-1.5">
+              <div className={rowClass}>
+                <span className="opacity-80">{liquidLabel}</span>
+                <MoneyDisplay amount={3200} currency="USD" size="inline" />
+              </div>
+              <div className={rowClass}>
+                <span className="opacity-80">{committedLabel}</span>
+                <MoneyDisplay amount={-200} currency="USD" size="inline" />
+              </div>
+              <div className={rowClass}>
+                <span className="opacity-80">{cardsLabel}</span>
+                <MoneyDisplay amount={-350} currency="USD" size="inline" />
+              </div>
+              <p className="pl-3 text-xs opacity-60">{cardsNote}</p>
+              <div className={rowClass}>
+                <span className="opacity-80">{loansLabel}</span>
+                <MoneyDisplay amount={-180} currency="USD" size="inline" />
+              </div>
+              <div className={rowClass}>
+                <span className="opacity-80">{subscriptionsLabel}</span>
+                <MoneyDisplay amount={-46} currency="USD" size="inline" />
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-baseline justify-between gap-4 border-t border-current/20 pt-4 text-sm">
+              <span className="opacity-80">{netWorthLabel}</span>
+              <MoneyDisplay amount={18430.12} currency="USD" size="stat" />
+            </div>
+
+            <QuincenaEdge start="2026-09-16" end="2026-09-30" today="2026-09-23" />
+          </Note>
+
+          <div aria-hidden className="mx-2 border-t-2 border-dashed border-(--ink-soft)" />
+          <Card className="gap-0 rounded-t-none border-t-0 p-0">
+            <LedgerRow
+              lead={<ArrowDownLeft aria-hidden className={glyph} />}
+              title={incomeLabel}
+              amount={<MoneyDisplay amount={3120} currency="USD" size="inline" className="text-foreground" />}
+            />
+            <LedgerRow
+              lead={<ArrowUpRight aria-hidden className={glyph} />}
+              title={spentLabel}
+              amount={<MoneyDisplay amount={2040} currency="USD" size="inline" className="text-foreground" />}
+            />
+            <LedgerRow
+              className="border-b-0 pb-2"
+              lead={<PieChart aria-hidden className={glyph} />}
+              title={budgetUsedLabel}
+              amount={
+                <>
+                  <MoneyDisplay amount={2040} currency="USD" size="inline" className="text-foreground" />
+                  <p className="figure text-xs text-muted-foreground">{budgetPct}%</p>
+                </>
+              }
+            />
+            <div className="px-4 pb-3">
+              <RuleMeter used={budgetPct} total={100} label={budgetUsedLabel} />
+            </div>
+          </Card>
         </div>
 
-        <div className="mt-4 flex items-baseline justify-between gap-4 border-t border-white/15 pt-3 text-xs">
-          <span className="opacity-80">{netWorthLabel}</span>
-          <MoneyDisplay amount={18430.12} currency="USD" size="inline" />
-        </div>
-      </HeroCard>
-
-      <Card className="divide-y gap-0 p-0">
-        <StatRow icon={ArrowDownLeft} color="var(--success)" label={incomeLabel} amount={3120} tone="text-success" />
-        <StatRow icon={ArrowUpRight} color={null} label={spentLabel} amount={2040} tone="text-foreground" />
-        <div className="p-3">
-          <div className="flex items-center gap-3">
-            <ColorTile color="var(--brand)" icon={PieChart} size="sm" />
-            <p className="flex-1 text-xs text-muted-foreground">{budgetUsedLabel}</p>
-            <StatPill tone="neutral">{budgetPct}%</StatPill>
-          </div>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-            <div className="h-full rounded-full bg-brand" style={{ width: `${budgetPct}%` }} />
-          </div>
-        </div>
-      </Card>
-
-      <Card className="p-0">
-        <div className="flex items-center gap-3 px-3 py-3">
-          <ColorTile color={null} icon={CalendarClock} size="sm" />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">{upcomingItem}</p>
-            <p className="truncate text-xs text-muted-foreground">{upcomingSubtitle}</p>
-          </div>
-          <MoneyDisplay amount={15.99} currency="USD" size="inline" className="text-foreground" />
-        </div>
-      </Card>
-    </div>
+        <Card className="gap-0 p-0">
+          <LedgerRow
+            lead={<CalendarClock aria-hidden className={glyph} />}
+            title={upcomingItem}
+            meta={upcomingSubtitle}
+            amount={<MoneyDisplay amount={15.99} currency="USD" size="inline" className="text-foreground" />}
+          />
+        </Card>
+      </div>
+    </SpecimenFrame>
   );
 }
 
