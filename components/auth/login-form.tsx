@@ -4,20 +4,22 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { Loader2 } from "lucide-react";
 import { signIn, signUp, signInWithGoogle } from "@/app/login/actions";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { GoogleIcon } from "@/components/auth/google-icon";
+import s from "@/components/marketing/papel/papel.module.css";
 
 /** Must match the Auth password policy in the Supabase dashboard
  *  (Authentication > Sign In / Providers > Email). Enforced server-side; this
  *  is only so the browser rejects a too-short password before a round trip. */
 const PASSWORD_MIN_LENGTH = 8;
 
-export function LoginForm() {
+/** Sign in / sign up, drawn in the Papel Moneda world of the public pages.
+ *  `initialMode` lets the home page's "Create account" land straight in
+ *  sign-up mode instead of making the visitor find the toggle. */
+export function LoginForm({ initialMode = "in" }: { initialMode?: "in" | "up" }) {
   const [pending, startTransition] = useTransition();
-  const [mode, setMode] = useState<"in" | "up">("in");
+  const [mode, setMode] = useState<"in" | "up">(initialMode);
   const t = useTranslations("Login");
   const signingUp = mode === "up";
 
@@ -38,35 +40,45 @@ export function LoginForm() {
   }
 
   return (
-    <div className="space-y-4">
-      <Button
+    <div className={s.authStack}>
+      <div>
+        <h1 className={s.authTitle}>{signingUp ? t("createTitle") : t("welcomeBack")}</h1>
+        <p className={s.authLede}>{signingUp ? t("createBody") : t("welcomeBody")}</p>
+      </div>
+
+      <button
         type="button"
-        variant="outline"
-        className="w-full"
+        className={s.btnOutline}
         disabled={pending}
-        isLoading={pending}
+        aria-busy={pending || undefined}
         onClick={onGoogleClick}
       >
-        <GoogleIcon />
+        {pending ? <Loader2 className={s.spin} aria-hidden /> : <GoogleIcon />}
         {t("continueWithGoogle")}
-      </Button>
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-        <div className="h-px flex-1 bg-border" />
-        {t("orContinueWith")}
-        <div className="h-px flex-1 bg-border" />
-      </div>
-      <form action={onSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">{t("email")}</Label>
-          <Input id="email" name="email" type="email" required autoComplete="email" />
+      </button>
+
+      <div className={s.divider}>{t("orContinueWith")}</div>
+
+      <form action={onSubmit} className={s.authStack}>
+        <div className={s.field}>
+          <label htmlFor="email">{t("email")}</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            autoComplete="email"
+            className={s.input}
+          />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">{t("password")}</Label>
-          <Input
+        <div className={s.field}>
+          <label htmlFor="password">{t("password")}</label>
+          <input
             id="password"
             name="password"
             type="password"
             required
+            className={s.input}
             // Mirrors the project's Auth policy. If that minimum changes in the
             // dashboard, change it here too: a lower value here just moves the
             // rejection from the field to a toast after a round trip.
@@ -79,34 +91,33 @@ export function LoginForm() {
             aria-describedby={signingUp ? "password-rules" : undefined}
           />
           {signingUp ? (
-            <p id="password-rules" className="text-xs text-muted-foreground">
+            <p id="password-rules" className={s.hint}>
               {t("passwordRules", { min: PASSWORD_MIN_LENGTH })}
             </p>
           ) : null}
         </div>
-        <Button type="submit" className="w-full" disabled={pending} isLoading={pending}>
+        <button
+          type="submit"
+          className={s.btnPrimary}
+          disabled={pending}
+          aria-busy={pending || undefined}
+        >
+          {pending ? <Loader2 className={s.spin} aria-hidden /> : null}
           {pending ? t("pleaseWait") : signingUp ? t("createAccount") : t("signIn")}
-        </Button>
+        </button>
         <button
           type="button"
-          className="w-full text-sm text-muted-foreground underline-offset-4 hover:underline"
+          className={s.switchMode}
           onClick={() => setMode(signingUp ? "in" : "up")}
         >
           {signingUp ? t("haveAccount") : t("needAccount")}
         </button>
       </form>
-      <p className="text-center text-xs text-muted-foreground">
+
+      <p className={s.terms}>
         {t.rich("termsAgreement", {
-          terms: (chunks) => (
-            <Link href="/terms" className="underline underline-offset-2 hover:text-foreground">
-              {chunks}
-            </Link>
-          ),
-          privacy: (chunks) => (
-            <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">
-              {chunks}
-            </Link>
-          ),
+          terms: (chunks) => <Link href="/terms">{chunks}</Link>,
+          privacy: (chunks) => <Link href="/privacy">{chunks}</Link>,
         })}
       </p>
     </div>

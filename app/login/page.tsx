@@ -1,14 +1,18 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { LoginForm } from "@/components/auth/login-form";
-import { Logo, Wordmark } from "@/components/brand/logo";
-import { SpotIllustration } from "@/components/brand/spot-illustration";
+import { Logo } from "@/components/brand/logo";
+import { archivo } from "@/components/marketing/papel/fonts";
+import { Guilloche } from "@/components/marketing/papel/guilloche";
+import { Microprint, Serial } from "@/components/marketing/papel/microprint";
+import s from "@/components/marketing/papel/papel.module.css";
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; mode?: string }>;
 }) {
   const supabase = await createClient();
   const {
@@ -16,62 +20,40 @@ export default async function LoginPage({
   } = await supabase.auth.getUser();
   if (user) redirect("/");
 
-  const { error } = await searchParams;
+  const { error, mode } = await searchParams;
   const t = await getTranslations("Login");
+  const tm = await getTranslations("Marketing");
 
   return (
-    <main className="grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">
-      {/* Brand panel */}
-      {/* The signature gradient, the same slab the overview hero uses — it is
-          the one surface that does not invert, so the first thing a signed-out
-          visitor sees is identical in both themes. This previously reached for
-          background and text utilities built on the removed brand panel tokens;
-          Tailwind emits nothing for an unknown utility rather
-          than failing, so the panel had silently been rendering with no
-          background at all while the build stayed green. Class names are spelt
-          out in prose here on purpose — the content scanner matches class-like
-          tokens inside comments too, and naming a dead one would resurrect it
-          in the stylesheet. */}
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-[image:var(--hero)] p-10 text-(--hero-foreground) lg:flex">
-        <div className="flex items-center gap-2.5">
+    <main className={`${s.page} ${s.authPage} ${archivo.variable}`}>
+      {/* The note panel: the same violet field the public home page leads
+          with. It never inverts, so a signed-out visitor sees one brand in
+          both themes. On a phone it shrinks to a band above the form. */}
+      <section className={s.authNote} aria-labelledby="auth-note-title">
+        <Guilloche className={s.authRosette} />
+        <Microprint text={tm("microprint")} />
+        <Serial value="CL 2026 000417 A" className={s.serialBottom} />
+        <Link href="/" className={s.brand}>
           <Logo />
-          <Wordmark />
-        </div>
-        <div className="relative z-10 max-w-md space-y-4">
-          <h2 className="text-4xl font-semibold leading-[1.1] tracking-tight">
+          <span>Cashly</span>
+        </Link>
+        <div className={s.authNoteCopy}>
+          <h2 id="auth-note-title" className={s.authNoteTitle}>
             {t("heroTitle")}
           </h2>
-          <p className="opacity-75">{t("heroBody")}</p>
+          <p className={s.authNoteBody}>{t("heroBody")}</p>
+          <p className={s.authFootnote}>{t("heroFootnote")}</p>
         </div>
-        <p className="relative z-10 text-xs opacity-60">{t("heroFootnote")}</p>
-        {/* Replaces the two outline rings that used to sit here. Painted in the
-            inherited hero foreground rather than `--brand`, which on this
-            gradient would be violet on violet. */}
-        <SpotIllustration
-          scene="wallet"
-          className="pointer-events-none absolute -bottom-8 -right-8 size-80 text-current opacity-40"
-        />
-      </div>
+      </section>
 
-      {/* Form panel */}
-      <div className="flex items-center justify-center p-6">
-        <div className="w-full max-w-sm space-y-8">
-          <div className="flex items-center gap-2.5 lg:hidden">
-            <Logo />
-            <Wordmark />
-          </div>
-          <div className="space-y-1.5">
-            <h1 className="text-3xl font-semibold tracking-tight">
-              {t("welcomeBack")}
-            </h1>
-            <p className="text-sm text-muted-foreground">{t("welcomeBody")}</p>
-          </div>
+      <div className={s.authPaper}>
+        <div className={s.authForm}>
           {error ? (
-            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <p role="alert" className={s.authError}>
               {t("linkError")}
             </p>
           ) : null}
-          <LoginForm />
+          <LoginForm initialMode={mode === "up" ? "up" : "in"} />
         </div>
       </div>
     </main>
