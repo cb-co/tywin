@@ -20,4 +20,20 @@ describe("perforationCells", () => {
     expect(perforationCells(0, 0).cells).toEqual([]);
     expect(perforationCells(Number.NaN, 1).cells).toEqual([]);
   });
+  it("punches every cell when paid equals total", () => {
+    const { cells, hidden } = perforationCells(4, 4);
+    expect(cells.every((c) => c.paid)).toBe(true);
+    expect(hidden).toBe(0);
+  });
+  it("punches all drawn cells when paid exceeds the cap and cells are hidden", () => {
+    const { cells, hidden } = perforationCells(48, 40, 24);
+    expect(cells).toHaveLength(24);
+    expect(cells.every((c) => c.paid)).toBe(true);
+    expect(hidden).toBe(24);
+  });
+  it("handles a fractional total without throwing", () => {
+    const { cells } = perforationCells(3.5, 1);
+    expect(cells.length).toBeGreaterThan(0);
+    expect(cells.length).toBeLessThanOrEqual(4);
+  });
 });
