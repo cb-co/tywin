@@ -1110,7 +1110,7 @@
     "fieldClosingDay": "Statement closing day",
     "fieldDueDay": "Payment due day",
     "fieldCardGroup": "Card group",
-    "cardGroupNote": "A card group bundles multiple currency lines of one physical card (say, a USD and a CAD line) into a single tile.",
+    "cardGroupNote": "A card group bundles multiple currency lines of one physical card (say, a USD and a CAD line) into a single entry.",
     "loanFieldsTitle": "Loans add",
     "fieldPrincipal": "Principal",
     "fieldInterestRate": "Interest rate",
@@ -1184,7 +1184,7 @@
     "subscriptionsTitle": "Recurring payments",
     "subscriptionsIntro": "Save the expenses and payments you repeat — streaming, rent, a transfer to savings, a card payment — and record each occurrence in one tap.",
     "subName": "Pick Expense or Payment, then set a name, amount and currency",
-    "subCycle": "Choose a cycle — weekly, biweekly, monthly, yearly, or custom. Biweekly repeats every 14 days from a first date; the others anchor to a day",
+    "subCycle": "Choose a cycle — weekly, semimonthly (quincenal), monthly, yearly, or custom. Each anchors to a day",
     "subLink": "An expense takes the account it's paid from and a category; a payment takes a from and a to account",
     "subFees": "From checking or savings you can apply the transfer tax and network fee. A card charge never carries them",
     "subViews": "Switch between grid and table views, and toggle each one active or paused",
@@ -1245,11 +1245,14 @@
     "insightsDebtCost": "What your debt costs, in two groups never added together: what each card would charge if you financed its balance (from its latest statement), and the interest each loan payment actually went to. Tap a row to open that card or loan.",
     "accountPageReport": "For credit cards, a card report: cost of carry from the latest statement, interest paid, cashback and fees & insurance this year, penalty fees, what you paid into the card this month, and welcome-bonus progress. Rows appear only once there's data behind them.",
     "subscriptionsMockTransfer": "Savings transfer",
-    "subscriptionsMockTransferCycle": "Payment · Biweekly",
+    "subscriptionsMockTransferCycle": "Payment · Quincenal",
     "subscriptionsMockTransferNext": "Next Aug 8 · Everyday Checking → Savings",
     "step5Title": "Loans (optional)",
     "step5Body": "Describe each loan as it stands today: what you owe, the installment, the annual rate and the payment day. The installments left are worked out from the rate; if you don't know it, enter the count under More details. Each becomes a loan account whose installments show up in upcoming payments.",
     "step6Title": "Fixed bills (optional)",
     "step6Body": "Tap the bills you pay every month — rent, electricity, water, internet, phone, insurance — and give each an amount and day. They're subtracted from \"safe to spend\" before they're due."
+  },
+  "Papel": {
+    "specimen": "Ejemplo · Specimen"
   }
 }

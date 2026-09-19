@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test } from "vitest";
 
-const SOUND_FILES = ["success.wav", "delete.wav", "error.wav"];
+const SOUND_FILES = ["stamp.wav", "delete.wav", "error.wav"];
 
 for (const file of SOUND_FILES) {
   test(`public/sounds/${file} is a valid 44.1kHz mono 16-bit PCM WAV file`, () => {
@@ -38,13 +38,12 @@ for (const file of SOUND_FILES) {
   });
 }
 
-test("public/sounds/success.wav rings long enough to resolve, not chop", () => {
-  // The success cue is a two-note rising gesture (E5 → B5); the second note
-  // needs real time to ring out or the whole thing reads as cut off rather
-  // than finished. 1s is comfortably past the ~0.83s the too-fast version
-  // used to run for.
-  const buffer = readFileSync(join(process.cwd(), "public/sounds", "success.wav"));
-  const numSamples = (buffer.length - 44) / 2;
-  const durationMs = (numSamples / 44100) * 1000;
-  expect(durationMs).toBeGreaterThan(1000);
+test("public/sounds/stamp.wav is a short percussive stamp, not a chime", () => {
+  const buffer = readFileSync(join(process.cwd(), "public/sounds", "stamp.wav"));
+  const samples: number[] = [];
+  for (let i = 44; i + 1 < buffer.length; i += 2) samples.push(Math.abs(buffer.readInt16LE(i) / 32767));
+  const durationMs = (samples.length / 44100) * 1000;
+  expect(durationMs).toBeLessThan(400);
+  const peakAt = samples.indexOf(Math.max(...samples));
+  expect((peakAt / 44100) * 1000).toBeLessThan(30); // the hit lands immediately
 });

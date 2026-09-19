@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import {
   BILLING_CYCLES,
+  BILLING_CYCLE_CHOICES,
   usesAnchorDate,
   type BillingCycle,
 } from "@/lib/subscriptions/cycle";
@@ -124,6 +125,8 @@ export function SubscriptionFormDialog({
   /* Value→label maps for the closed trigger. Base UI's `<Select.Value>`
      renders the raw value unless `items` is given on the root, which showed
      bare UUIDs and raw cycle keys. Sentinels ("none") need an entry too. */
+  const cycleOptions: BillingCycle[] =
+    subscription?.billing_cycle === "biweekly" ? BILLING_CYCLES : BILLING_CYCLE_CHOICES;
   const cycleItems: Record<string, string> = Object.fromEntries(
     BILLING_CYCLES.map((c) => [c, tCycle(c)]),
   );
@@ -346,7 +349,7 @@ export function SubscriptionFormDialog({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {BILLING_CYCLES.map((c) => (
+                      {cycleOptions.map((c) => (
                         <SelectItem key={c} value={c}>
                           {tCycle(c)}
                         </SelectItem>

@@ -16,7 +16,8 @@ const ratio = (a: number, b: number) => {
 };
 
 const WHITE = luminance("#ffffff");
-const CARD_DARK = luminance("#16161f");
+// Papel's dark --paper-2, the card surface (app/globals.css .dark).
+const CARD_DARK = luminance("#1d1829");
 
 describe("SWATCHES", () => {
   it("has sixteen unique values", () => {

@@ -5,6 +5,13 @@ export type BillingCycle = (typeof BILLING_CYCLE_VALUES)[number];
 
 export const BILLING_CYCLES: BillingCycle[] = [...BILLING_CYCLE_VALUES];
 
+/**
+ * Cycles offered in pickers. Biweekly (every 14 days) is hidden: the Dominican
+ * Republic uses the semimonthly "quincenal" and the two are easily confused.
+ * It stays valid data, so a form editing an existing biweekly row adds it back.
+ */
+export const BILLING_CYCLE_CHOICES: BillingCycle[] = BILLING_CYCLES.filter((c) => c !== "biweekly");
+
 
 /**
  * When a recurring payment falls.

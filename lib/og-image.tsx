@@ -1,12 +1,13 @@
 import { ImageResponse } from "next/og";
+import { SealSvg } from "@/lib/pwa/icon";
 
 export const OG_IMAGE_SIZE = { width: 1200, height: 630 };
 
 /**
- * Renders the same brand mark as app/favicon.ico (the Coins glyph knocked out
- * of the signature gradient — see components/brand/logo.tsx) at OG resolution.
- * The gradient is repeated literally because an ImageResponse is rasterised
- * with no stylesheet in scope; keep it in step with `--hero`.
+ * Renders the Cashly seal (SealSvg, the static twin of components/papel/seal.tsx)
+ * on a note-violet field at OG resolution. Colours are repeated literally
+ * because an ImageResponse is rasterised with no stylesheet in scope; keep them
+ * in step with the `--note` tokens in app/globals.css.
  */
 export function renderBrandOgImage() {
   return new ImageResponse(
@@ -19,7 +20,7 @@ export function renderBrandOgImage() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#ffffff",
+          backgroundColor: "#eeebf5",
         }}
       >
         <div
@@ -27,29 +28,14 @@ export function renderBrandOgImage() {
             display: "flex",
             width: 200,
             height: 200,
-            borderRadius: 44,
+            borderRadius: 100,
             alignItems: "center",
             justifyContent: "center",
-            backgroundImage: "linear-gradient(135deg, #6C4EF5 0%, #4326C9 100%)",
-            boxShadow: "0 1px 0 rgba(255,255,255,0.55) inset",
+            backgroundColor: "#4a1f8c",
             marginBottom: 44,
           }}
         >
-          <svg
-            width="112"
-            height="112"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#ffffff"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M13.744 17.736a6 6 0 1 1-7.48-7.48" />
-            <path d="M15 6h1v4" />
-            <path d="m6.134 14.768.866-.5 2 3.464" />
-            <circle cx="16" cy="8" r="6" />
-          </svg>
+          <SealSvg size={168} />
         </div>
         <div
           style={{
@@ -57,7 +43,7 @@ export function renderBrandOgImage() {
             fontSize: 88,
             fontWeight: 700,
             letterSpacing: -2,
-            color: "#211d1a",
+            color: "#1b1530",
           }}
         >
           Cashly
@@ -67,7 +53,7 @@ export function renderBrandOgImage() {
             display: "flex",
             marginTop: 16,
             fontSize: 32,
-            color: "#6d6862",
+            color: "#544a6c",
           }}
         >
           Track accounts, budgets, and subscriptions.

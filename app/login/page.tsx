@@ -5,8 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { LoginForm } from "@/components/auth/login-form";
 import { Logo } from "@/components/brand/logo";
 import { archivo } from "@/components/marketing/papel/fonts";
-import { Guilloche } from "@/components/marketing/papel/guilloche";
-import { Microprint, Serial } from "@/components/marketing/papel/microprint";
+import { Guilloche } from "@/components/papel/guilloche";
+import { Microprint, Serial } from "@/components/papel/microprint";
 import s from "@/components/marketing/papel/papel.module.css";
 
 export default async function LoginPage({

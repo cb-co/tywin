@@ -27,7 +27,7 @@ export function HelpChapter({
         </div>
       </div>
       <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">{intro}</p>
-      <div className="mt-5 grid gap-6 md:grid-cols-[1fr_18rem]">{children}</div>
+      <div className="mt-5 grid grid-cols-[minmax(0,1fr)] gap-6 md:grid-cols-[minmax(0,1fr)_18rem]">{children}</div>
     </section>
   );
 }

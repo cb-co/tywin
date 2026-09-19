@@ -1,5 +1,4 @@
 import { expect, test } from "vitest";
-import { TOPBAR_DARK } from "../lib/pwa/theme-color";
 import manifest from "./manifest";
 
 test("exposes 192, 512, and a maskable 512 icon", () => {
@@ -9,9 +8,9 @@ test("exposes 192, 512, and a maskable 512 icon", () => {
   expect(result.icons?.[2]?.purpose).toBe("maskable");
 });
 
-test("launches standalone with the splash background and dark topbar chrome", () => {
+test("launches standalone with the paper background and theme colour", () => {
   const result = manifest();
   expect(result.display).toBe("standalone");
-  expect(result.background_color).toBe("#ffffff");
-  expect(result.theme_color).toBe(TOPBAR_DARK);
+  expect(result.background_color).toBe("#eeebf5");
+  expect(result.theme_color).toBe("#eeebf5");
 });

@@ -39,20 +39,16 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
                 horizontally on mobile. */}
             <div className="flex min-w-0 flex-1 flex-col md:h-dvh md:overflow-y-auto">
               <MobileHeader />
-              {/* Bottom padding clears both floating elements above the
-                  content. The nav pill's bottom offset is 1rem (16px) fixed
-                  plus the safe-area inset — the inset lives in that offset,
-                  not as interior padding, so it rides the whole pill higher
-                  rather than padding out empty space under its icon row —
-                  and the pill has a fixed ~56px of its own content height.
-                  Its top edge sits at 16 + inset + 56 = 72px + inset. The
-                  FAB (now 60px, up from 56px) keeps its 5rem (80px) bottom
-                  offset, so its top edge sits at 80 + 60 = 140px — still
-                  the taller of the two, and the binding constraint
-                  regardless of the inset. 9.5rem (152px) clears the FAB's
-                  140px with a 12px buffer; the safe-area inset stays in
-                  this calc too, so notched phones get the same buffer on
-                  top of their inset.
+              {/* Bottom padding clears both fixed elements above the content.
+                  The nav band sits on the screen edge: its content is a fixed
+                  ~56px tall and the safe-area inset is interior padding, so
+                  its top edge sits at 56px + inset. The FAB (60px) keeps its
+                  5rem (80px) bottom offset, so its top edge sits at
+                  80 + 60 = 140px, still the taller of the two and the binding
+                  constraint regardless of the inset. 9.5rem (152px) clears
+                  the FAB's 140px with a 12px buffer; the safe-area inset
+                  stays in this calc too, so notched phones get the same
+                  buffer on top of their inset.
 
                   From md up the nav pill and the FAB are gone, so nothing has
                   to be cleared — but 24px left the last card sitting on the

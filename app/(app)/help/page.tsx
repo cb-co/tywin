@@ -16,6 +16,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { FigureMaskProvider } from "@/components/figure-mask/figure-mask-provider";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { HelpChapter, HelpCallout } from "@/components/help/chapter";
@@ -52,10 +53,11 @@ export default async function HelpPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <FigureMaskProvider>
+    <div className="mx-auto w-full min-w-0 max-w-5xl space-y-8">
       <PageHeader title={t("pageTitle")} description={t("pageDescription")} />
 
-      <div className="grid gap-8 md:grid-cols-[14rem_1fr] md:items-start">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-[14rem_minmax(0,1fr)] md:items-start">
         <SectionNav sections={sections} />
 
         <div>
@@ -467,5 +469,6 @@ export default async function HelpPage() {
         </div>
       </div>
     </div>
+    </FigureMaskProvider>
   );
 }
