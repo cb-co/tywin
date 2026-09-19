@@ -100,7 +100,7 @@ export function OnboardingMock({
           <p className="truncate text-sm font-medium text-foreground">{account}</p>
           <p className="text-xs text-muted-foreground">{subtitle}</p>
         </div>
-        <MoneyDisplay amount={1200} currency="USD" size="inline" className="text-foreground" />
+        <MoneyDisplay amount={45000} currency="DOP" size="inline" className="text-foreground" />
       </div>
     </MockPanel>
   );
