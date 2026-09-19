@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { monthlyEquivalent, nextChargeDate } from "./cycle";
+import { BILLING_CYCLE_CHOICES, BILLING_CYCLE_VALUES, monthlyEquivalent, nextChargeDate } from "./cycle";
 
 // Local dates throughout: the cycle helpers work on the viewer's calendar.
 const ymd = (d: Date | null) =>
@@ -84,3 +84,11 @@ describe("monthlyEquivalent", () => {
   });
 });
 
+
+describe("BILLING_CYCLE_CHOICES", () => {
+  test("hides biweekly from pickers but keeps it a valid cycle", () => {
+    expect(BILLING_CYCLE_CHOICES).not.toContain("biweekly");
+    expect(BILLING_CYCLE_CHOICES).toEqual(["weekly", "semimonthly", "monthly", "yearly", "custom"]);
+    expect(BILLING_CYCLE_VALUES).toContain("biweekly");
+  });
+});

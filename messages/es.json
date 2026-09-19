@@ -1184,7 +1184,7 @@
     "subscriptionsTitle": "Pagos recurrentes",
     "subscriptionsIntro": "Guarda los gastos y pagos que repites — streaming, alquiler, una transferencia a ahorros, el pago de la tarjeta — y registra cada vez con un toque.",
     "subName": "Elige Gasto o Pago y define un nombre, importe y moneda",
-    "subCycle": "Elige un ciclo — semanal, quincenal, mensual, anual o personalizado. El quincenal se repite cada 14 días desde una primera fecha; los demás se anclan a un día",
+    "subCycle": "Elige un ciclo — semanal, quincenal, mensual, anual o personalizado. Cada uno se ancla a un día",
     "subLink": "Un gasto lleva la cuenta desde la que se paga y una categoría; un pago lleva una cuenta de origen y otra de destino",
     "subFees": "Desde una cuenta corriente o de ahorros puedes aplicar el impuesto a transferencias y la comisión de red. Un cargo a tarjeta nunca los lleva",
     "subViews": "Cambia entre vista de cuadrícula y de tabla, y activa o pausa cada uno",

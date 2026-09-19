@@ -582,7 +582,7 @@ export function BudgetGroupsMock({
  * and both kinds of template.
  *
  * The first is a subscription the app recognised — its real logo on its real
- * brand colour. The second is a biweekly transfer to savings, which no model
+ * brand colour. The second is a semimonthly transfer to savings, which no model
  * would place, wearing the initial on the theme's accent. Drawing only the good case would leave anyone whose gym or
  * ISP shows a letter thinking something had failed, when that is the
  * finished state.
