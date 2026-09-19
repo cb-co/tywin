@@ -211,7 +211,11 @@
     "groupAssetsTitle": "Propiedades y bienes",
     "groupAssetsBlurb": "Valores estimados que tú mantienes al día.",
     "estimatedValue": "Valor estimado",
-    "availableCommitted": "<available></available> disponible · <committed></committed> comprometido"
+    "availableCommitted": "<available></available> disponible · <committed></committed> comprometido",
+    "attentionTitle": "Necesita revisión",
+    "attentionOverdue": "Atrasada",
+    "attentionDueSoon": "Vence {date}",
+    "attentionUntriaged": "{count} sin categorizar"
   },
   "AccountDetail": {
     "backLink": "Cuentas",

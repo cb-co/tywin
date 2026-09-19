@@ -211,7 +211,11 @@
     "groupAssetsTitle": "Property & assets",
     "groupAssetsBlurb": "Estimated values you keep up to date.",
     "estimatedValue": "Estimated value",
-    "availableCommitted": "<available></available> available · <committed></committed> committed"
+    "availableCommitted": "<available></available> available · <committed></committed> committed",
+    "attentionTitle": "Needs a look",
+    "attentionOverdue": "Overdue",
+    "attentionDueSoon": "Due {date}",
+    "attentionUntriaged": "{count} uncategorized"
   },
   "AccountDetail": {
     "backLink": "Accounts",
