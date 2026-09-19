@@ -215,7 +215,8 @@
     "attentionTitle": "Necesita revisión",
     "attentionOverdue": "Atrasada",
     "attentionDueSoon": "Vence {date}",
-    "attentionUntriaged": "{count} sin categorizar"
+    "attentionUntriaged": "{count} sin categorizar",
+    "netWorthLabel": "Patrimonio neto"
   },
   "AccountDetail": {
     "backLink": "Cuentas",

@@ -87,7 +87,7 @@ export function CardGroupTile({
         accent={artColor}
         className="pointer-events-none"
       />
-      <div className="relative z-10 mt-4 divide-y">
+      <div className="relative z-10 mt-4 divide-y border-t-2 border-(--rule)">
         {accounts.map((a) => {
           const lineOwed = a.cardStatus?.owed ?? a.current_balance;
           const util = a.cardStatus?.utilization_pct ?? null;

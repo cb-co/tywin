@@ -215,7 +215,8 @@
     "attentionTitle": "Needs a look",
     "attentionOverdue": "Overdue",
     "attentionDueSoon": "Due {date}",
-    "attentionUntriaged": "{count} uncategorized"
+    "attentionUntriaged": "{count} uncategorized",
+    "netWorthLabel": "Net worth"
   },
   "AccountDetail": {
     "backLink": "Accounts",
