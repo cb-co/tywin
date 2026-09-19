@@ -14,8 +14,9 @@ import type { StepProps } from "./types";
 /**
  * Any number of cards, each a stub — name, currency, last 4 — because limit,
  * closing day and due day are what its first statement backfills. Adding one
- * opens its import straight away; closing that dialog, imported or not, comes
- * back here rather than ending onboarding, so the steps after this still run.
+ * does not open its import: the person may not have the PDF on hand, so the
+ * upload waits on the row's own button. Closing that dialog, imported or not,
+ * comes back here rather than ending onboarding.
  */
 export function StepCards({ data, baseCurrency, onNext, onBack }: StepProps) {
   const t = useTranslations("Welcome");
@@ -59,10 +60,9 @@ export function StepCards({ data, baseCurrency, onNext, onBack }: StepProps) {
             <ImportCardStubStep
               // Remounted per card so the form comes back empty for the next one.
               key={cards.length}
-              onCreated={(id) => {
+              onCreated={() => {
                 setAdding(false);
                 router.refresh();
-                setImportFor(id);
               }}
               submitLabel={tStatements("stubSubmit")}
               defaultCurrency={baseCurrency}

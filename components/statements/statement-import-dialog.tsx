@@ -81,7 +81,11 @@ export function StatementImportDialog({
   /* The card this import lands on. `accountId` pins it (the card page); without
      one it is resolved from the user's own cards, and `targets` is the list
      those choices are made from — null until it has been fetched. */
-  const [targetId, setTargetId] = useState<string | null>(accountId ?? null);
+  const [pickedId, setPickedId] = useState<string | null>(null);
+  // Read on every render, not captured at mount: a host that keeps the dialog
+  // mounted and pins the card later (onboarding creates it, then opens this)
+  // would otherwise land on the card picker for a card it already named.
+  const targetId = accountId ?? pickedId;
   const [targets, setTargets] = useState<ImportTarget[] | null>(null);
   const [targetsFailed, setTargetsFailed] = useState(false);
   const [addLinePending, startAddLine] = useTransition();
@@ -101,7 +105,7 @@ export function StatementImportDialog({
         // One physical card is not a choice worth asking about — and a card
         // group's three lines are one card, not three.
         const rows = collapseImportTargets(list);
-        if (rows.length === 1) setTargetId(rows[0].accountId);
+        if (rows.length === 1) setPickedId(rows[0].accountId);
       })
       .catch(() => {
         // A rejected action would otherwise leave `targets` null forever: a
@@ -152,10 +156,10 @@ export function StatementImportDialog({
     setParsedStatement(null);
     setMappings({});
     setExcludeFromBudget(true);
-    // Back to whatever the host pinned, so a second open — possibly from a
-    // different card — never inherits the first one's target. `targets` is
-    // dropped with it: a card created during this run belongs in the next list.
-    setTargetId(accountId ?? null);
+    // Clears only the user's own pick — a pinned card still wins through
+    // `targetId`. `targets` is dropped with it: a card created during this run
+    // belongs in the next list.
+    setPickedId(null);
     setTargets(null);
     setTargetsFailed(false);
     setAddingKey(null);
@@ -386,7 +390,7 @@ export function StatementImportDialog({
                 new card, never one of the existing ones. */}
             {!targetId && forceStub ? (
               <ImportCardStubStep
-                onCreated={setTargetId}
+                onCreated={setPickedId}
                 submitLabel={t("stubSubmit")}
                 defaultCurrency=""
               />
@@ -438,7 +442,7 @@ export function StatementImportDialog({
             {!targetId && !forceStub && !targetsFailed && targets !== null ? (
               targets.length === 0 ? (
                 <ImportCardStubStep
-                  onCreated={setTargetId}
+                  onCreated={setPickedId}
                   submitLabel={t("stubSubmit")}
                   /* No preference: the step falls back to the profile's base
                      currency, which it already fetches for its own list. */
@@ -458,7 +462,7 @@ export function StatementImportDialog({
                         <button
                           type="button"
                           className="flex w-full min-w-0 items-center justify-between gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-muted/50"
-                          onClick={() => setTargetId(c.accountId)}
+                          onClick={() => setPickedId(c.accountId)}
                         >
                           <span className="min-w-0 truncate text-sm font-medium">{c.label}</span>
                           <span className="shrink-0 text-xs text-muted-foreground">
