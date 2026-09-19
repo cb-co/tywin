@@ -2,9 +2,16 @@
 
 import { useId, useRef, useEffect } from "react";
 import { useTranslations, useFormatter } from "next-intl";
-import { HeroCard } from "@/components/ui/hero-card";
+import { Note } from "@/components/papel/note";
+import { ProofMark } from "@/components/papel/proof-mark";
+import { QuincenaEdge } from "@/components/overview/quincena-edge";
 import { MoneyDisplay } from "@/components/ui/money-display";
 import type { Available } from "@/lib/overview/available";
+import { periodSerial } from "@/lib/overview/period-serial";
+import { fitFigureClass } from "@/lib/papel/fit";
+import { formatMoney } from "@/lib/format";
+import type { Period } from "@/lib/period/cycle";
+import { cn } from "@/lib/utils";
 
 function Row({
   label,
@@ -38,10 +45,14 @@ export function AvailableHero({
   available: a,
   netWorth,
   currency,
+  period,
+  today,
 }: {
   available: Available;
   netWorth: number;
   currency: string;
+  period: Period;
+  today: string;
 }) {
   const t = useTranslations("Overview");
   const f = useFormatter();
@@ -83,15 +94,23 @@ export function AvailableHero({
   // `over`, and nothing louder.
   const negative = a.available < 0;
 
+  const figureClass = cn(
+    fitFigureClass(formatMoney(a.available, currency)),
+    "[font-stretch:125%] font-extrabold",
+  );
+
   return (
-    <HeroCard label={t("availableLabel", { date })}>
-      <MoneyDisplay
-        amount={a.available}
-        currency={currency}
-        size="hero"
-        animate
-        className={negative ? "text-destructive" : undefined}
-      />
+    <Note tone="peso" label={t("availableLabel", { date })} serial={periodSerial(period.start)}>
+      {negative ? (
+        <div className="inline-block max-w-full rounded-[3px] bg-(--paper-2) px-3 py-2 text-(--red)">
+          <MoneyDisplay amount={a.available} currency={currency} size="hero" animate className={figureClass} />
+          <ProofMark tone="flag" className="mt-1 block">
+            {t("availableOver")}
+          </ProofMark>
+        </div>
+      ) : (
+        <MoneyDisplay amount={a.available} currency={currency} size="hero" animate className={figureClass} />
+      )}
 
       {/* Only when the two card bases actually differ — with no card debt, or
           every card at a clamped-to-zero minimum, they land within a cent of
@@ -113,7 +132,7 @@ export function AvailableHero({
         onClick={toggleBreakdown}
         aria-expanded="true"
         aria-controls={breakdownId}
-        className="mt-4 block text-sm underline decoration-white/40 underline-offset-4 sm:hidden"
+        className="mt-4 block text-sm underline decoration-current/40 underline-offset-4 sm:hidden"
       >
         {t("availableBreakdownToggle")}
       </button>
@@ -153,10 +172,12 @@ export function AvailableHero({
       {/* A sibling of the collapsible breakdown, not a child of it: net worth
           is demoted, not removed, and must stay visible at every width — the
           returning user's anchor while the hero above it changes meaning. */}
-      <div className="mt-6 flex items-baseline justify-between gap-4 border-t border-white/15 pt-4 text-sm">
+      <div className="mt-6 flex items-baseline justify-between gap-4 border-t border-current/20 pt-4 text-sm">
         <span className="opacity-80">{t("netWorthSecondary")}</span>
         <MoneyDisplay amount={netWorth} currency={currency} size="stat" />
       </div>
-    </HeroCard>
+
+      <QuincenaEdge start={period.start} end={period.end} today={today} />
+    </Note>
   );
 }
