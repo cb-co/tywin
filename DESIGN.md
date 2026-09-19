@@ -120,7 +120,7 @@ A cool-violet-and-orange banknote palette on lilac paper, with teal and red as t
 - **Paper Line** (`paper-line`): hairline frame, ruled separators, toast and dialog edge (`--border`).
 - **Ink** (`ink`) and **Soft Ink** (`ink-soft`): text, primary rules, active state; soft ink is underprint (secondary text, inactive nav, projected figures).
 - **Rule** (`rule`): equals ink; the heavy rule on the shell (sidebar edge, mobile header, bottom band).
-- **Note ink** (`note-ink`, `note-ink-soft`) and **peso ink** (`peso-ink`, `peso-ink-soft`): text on the two fields; both clear 4.5:1.
+- **Note ink** (`note-ink`, `note-ink-soft`) and **peso ink** (`peso-ink`, `peso-ink-soft`): text on the two fields. Note ink and peso-ink clear 4.5:1 at full opacity; peso-ink-soft does not (`#4a2410` on `--peso` `#e0661c` is ~3.93:1) — a known pre-existing gap, out of scope here. `MoneyDisplay` draws cents in `currentColor` at 0.6 opacity, which dims peso-ink (the peso `Note`'s own text colour, not peso-ink-soft, which `MoneyDisplay` never uses) below 4.5:1 on the orange field; the peso `Note` lifts cents to 0.9 opacity (`components/papel/note.tsx`, tone-scoped, violet is untouched) so real figures stay compliant.
 - **Matches Teal** (`teal`) and **Error Red** (`red`): in/out, cuadra/no cuadra, over budget. Always paired with a glyph or rule.
 
 ### Named Rules
@@ -180,16 +180,16 @@ Built in Phase 0 and in the code today.
 | --- | --- | --- | --- |
 | **Note** (violet or peso field, guilloche underprint, serial, inset ring) | `HeroCard`, gradient `--hero` | the one hero figure per screen | built (`note.tsx`) |
 | **Sheet** (paper surface, hairline frame, 4px, no shadow) | `Card` | every grouped surface | built as the restyled `Card` (`ui/card.tsx`); no separate `Sheet` component |
-| **Ledger row** (lead, title/subtitle, tabular amount, rule below) | card rows, `divide-y` cards | transactions, upcoming, triage, rules, statements | built (`ledger-row.tsx`); screens pending |
+| **Ledger row** (lead, title/subtitle, tabular amount, rule below) | card rows, `divide-y` cards | transactions, upcoming, triage, rules, statements | built (`ledger-row.tsx`); used by Overview, other screens pending |
 | **Stamp** (double ink ring + glyph/emoji/initial in the stored hex) | `ColorTile` | categories, accounts, merchants | built (`stamp.tsx`, `lib/papel/ink.ts`) |
 | **Proof mark** (engraved ring + check, cross or dot + label) | `StatPill`, success badges | "cuadra", "sin categoria", over-budget | built (`proof-mark.tsx`) |
 | **Perforation strip** (cuota cells, solid when paid, dashed when not) | progress bars for cuotas and loans | cuotas, loans, goal contributions | built (`perforation.tsx`); no screen uses it yet |
-| **Rule meter** (ruled scale with ink fill; red fill plus double rule when over) | `Progress`, `bar-fill` | budgets, goals, card utilisation | built (`rule-meter.tsx`); screens pending |
-| **Specimen frame** (dashed frame + "Ejemplo" legend) | help mocks, empty-state previews | `/help` mocks, empty states | built (`specimen-frame.tsx`); help mocks not yet wrapped |
+| **Rule meter** (ruled scale with ink fill; red fill plus double rule when over) | `Progress`, `bar-fill` | budgets, goals, card utilisation | built (`rule-meter.tsx`); used by Overview, other screens pending |
+| **Specimen frame** (dashed frame + "Ejemplo" legend) | help mocks, empty-state previews | `/help` mocks, empty states | built (`specimen-frame.tsx`); wraps Overview's help mock, other help mocks not yet wrapped |
 
 Also built: **Seal** (`seal.tsx`), the engraved Cashly mark (coins glyph in two rings on a note disc; `tone` note or ink). It takes a `rosette` prop, default off: the hairline guilloche ring only resolves from about 80px up and smears below, so nav, header and splash sizes leave it off. **Guilloche** (`guilloche.tsx`): canvas hypotrochoid rosettes and sine-wave fields in `currentColor`, cut in over ~1.8s, finished in one frame under reduced motion. **Microprint** and **Serial** (`microprint.tsx`, `ornament.module.css`): bilingual legend frame and corner serial, `aria-hidden`. `lib/papel/rosette.ts` also emits the rosette as a static SVG path for `next/og` icons.
 
-Structural pending: `Sheet` may stay `Card`; the Phase 1-6 screens do not yet use Note (peso) for Disponible, LedgerRow, Perforation, RuleMeter or SpecimenFrame in production.
+Structural pending: `Sheet` may stay `Card`. Overview (Phase 1) is the first screen built on Note (peso), LedgerRow, RuleMeter and SpecimenFrame (its help mock); Phases 2-6 do not yet use them in production. Perforation stays unused by any screen.
 
 ### Buttons
 - **Shape:** 4px (`xs`/`sm` and icon-xs/sm 3px); 40px default height, 32px sm, 48px lg; 600 weight.
@@ -216,11 +216,14 @@ Once per session, full-bleed note violet with a rosette guilloche behind the Sea
 ### Shipped and marketing-only
 The public pages (`components/marketing/papel/`) consume the global tokens (their own token block is gone) and add page-only pieces: the statement specimen, proofs, the Disponible note with a quincena timeline, drawn cards and perforated cuota strips. The drawn card face is the source Phase 2 extracts for every in-app card.
 
-### Pending, not yet migrated (Phases 1-7)
-- **Aliases, removed in Phase 7:** `ColorTile` re-exports `Stamp`; `StatPill` maps to `ProofMark`; `HeroCard` renders `Note tone="violet"`. They exist so 16, 7 and 6 callers restyle at once. Do not use them in new code.
+### Overview (Phase 1)
+The signed-in Overview (`app/(app)/page.tsx`) is the cheque-stub composition. One peso `Note` (`available-hero.tsx`) carries the Disponible figure, the net-worth line and `QuincenaEdge` (`components/overview/quincena-edge.tsx`), a pay-period timeline engraved along the note's bottom edge: a `QNA yyyy-mm A|B` serial (`aria-hidden`), a today tick with an "HOY" caption clear of it, and, on a negative Disponible, the figure on a white inset with a flag `ProofMark`. A dashed rule perforates the note into `PeriodStub` ("Este período"), a ruled three-`LedgerRow` table for income, spent and budget used, the last driven by `RuleMeter` with an unclamped, worded over-budget flag past 100%. Below the stub sit a margin-note coach tip (`RecommendationCard`, restyled as marginalia, not a card), a baseline-rule `AskEntry`, and Upcoming as `LedgerRow`s with the due date as `meta`. The empty state swaps the peso note for a violet `EmptyOverviewNote` (import is the first action) plus `LedgerRow` starter links, so exactly one Note renders in either state. An `FxDegradedNotice`, when it shows, sits directly under the note. `/help#overview`'s `OverviewMock` (`components/help/mocks.tsx`) is built from the same primitives inside a `SpecimenFrame`, so the guide drifts with the screen instead of describing an old look.
+
+### Pending, not yet migrated (Phases 2-7)
+- **Aliases, removed in Phase 7:** `ColorTile` re-exports `Stamp`; `StatPill` maps to `ProofMark`; `HeroCard` renders `Note tone="violet"`. They exist so callers restyle at once — 16 for `ColorTile`, 7 for `StatPill`. `HeroCard` is down to 0 callers (this branch removed the last one); it is unused but kept until the Phase 7 removal sweep. Do not use them in new code.
 - **Incumbent tokens, named for removal in Phase 7:** the flat `--hero` slab and the `--chart-2` to `--chart-8` categorical palette (redrawn as engraved plates in Phase 5; only `--chart-1`, tied to `--ring`, is Papel).
 - **Incumbent and not yet reviewed:** `.tile-sheen`, `.lift`, `.burst` and the `CountUp` bounce, and the `MoneyDisplay` size steps, whose comments still describe Inter and a gradient slab. Treat them as legacy, not as Papel rules.
-- **Screens on old layouts with new primitives:** Overview (Phase 1: peso Disponible note, period ledger, coach margin note, Ask line), Accounts (Phase 2: violet net-worth note, shared drawn card face), Transactions and Imports (Phase 3), Budgets, Goals, Recurring (Phase 4), Insights and Ask (Phase 5), Settings, `/welcome`, `/help` mocks, `/terms`, `/privacy` (Phase 6). Quick-add dialog and FAB behaviour is unchanged.
+- **Screens on old layouts with new primitives:** Accounts (Phase 2: violet net-worth note, shared drawn card face), Transactions and Imports (Phase 3), Budgets, Goals, Recurring (Phase 4), Insights and Ask (Phase 5), Settings, `/welcome`, `/terms`, `/privacy` (Phase 6). Quick-add dialog and FAB behaviour is unchanged. `/help` mocks migrate alongside each screen's phase; only `OverviewMock` is done.
 
 ## Do's and Don'ts
 

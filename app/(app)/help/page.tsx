@@ -167,6 +167,7 @@ export default async function HelpPage() {
               loansLabel={t("overviewMockLoans")}
               subscriptionsLabel={t("overviewMockSubscriptions")}
               netWorthLabel={t("overviewMockNetWorth")}
+              thisPeriodLabel={t("overviewMockThisPeriod")}
               incomeLabel={t("overviewMockIncome")}
               spentLabel={t("overviewMockSpent")}
               budgetUsedLabel={t("overviewMockBudgetUsed")}

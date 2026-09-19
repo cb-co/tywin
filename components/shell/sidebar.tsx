@@ -29,7 +29,7 @@ export function Sidebar({
       {/* Microprint strip down the right edge: decorative, so aria-hidden. */}
       <span
         aria-hidden
-        className="legend absolute inset-y-6 right-1 overflow-hidden text-[7px] tracking-[0.3em] text-muted-foreground [writing-mode:vertical-rl]"
+        className="legend pointer-events-none absolute inset-y-6 right-1 overflow-hidden text-[7px] tracking-[0.3em] text-muted-foreground [writing-mode:vertical-rl]"
       >
         {"CASHLY · REPÚBLICA DOMINICANA · ".repeat(6)}
       </span>

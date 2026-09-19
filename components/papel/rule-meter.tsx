@@ -3,8 +3,9 @@ import { meterFill } from "@/lib/papel/meter";
 
 /** A ruled scale filled with ink. Over budget prints a double rule at the
  *  end and a red fill, so the state never relies on colour alone. */
-export function RuleMeter({ used, total, label, overLabel, className }: { used: number; total: number; label: string; /** Localised reading announced when over budget (e.g. "Over budget"). */ overLabel?: string; className?: string }) {
+export function RuleMeter({ used, total, label, overLabel, pct: truePct, className }: { used: number; total: number; label: string; /** Localised reading announced when over budget (e.g. "Over budget"). */ overLabel?: string; /** The caller's own unclamped percent (e.g. 160 at 160% spend), for `aria-valuetext` only. `aria-valuenow` always uses the clamped fill percent, since ARIA requires it within `aria-valuemin`/`aria-valuemax`. Falls back to the clamped percent when omitted. */ pct?: number; className?: string }) {
   const { pct, over } = meterFill(used, total);
+  const reportedPct = truePct ?? pct;
   return (
     <div
       role="meter"
@@ -12,7 +13,7 @@ export function RuleMeter({ used, total, label, overLabel, className }: { used: 
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(pct)}
-      aria-valuetext={over && overLabel ? `${Math.round(pct)}%, ${overLabel}` : undefined}
+      aria-valuetext={over && overLabel ? `${Math.round(reportedPct)}%, ${overLabel}` : undefined}
       className={cn("relative h-2 border-b border-(--rule)", className)}
       style={{ backgroundImage: "repeating-linear-gradient(90deg, var(--paper-line) 0 1px, transparent 1px 10%)" }}
     >

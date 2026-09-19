@@ -6,7 +6,8 @@ import { Serial } from "./microprint";
  * A screen's one banknote: the field the screen's main figure is printed on.
  * Violet or peso, never inverted by theme, never more than one per screen.
  * The line work is decoration (aria-hidden inside Guilloche); the label and
- * figure are the content.
+ * figure are the content. On peso the figure's cents (drawn at 0.6 opacity by
+ * MoneyDisplay) are lifted to 0.9 so real data clears 4.5:1 on that ink.
  */
 export function Note({
   tone = "violet",
@@ -29,7 +30,7 @@ export function Note({
     <section
       className={cn(
         "relative isolate overflow-hidden rounded-[6px] p-6 sm:p-7",
-        tone === "violet" ? "bg-(--note) text-(--note-ink)" : "bg-(--peso) text-(--peso-ink)",
+        tone === "violet" ? "bg-(--note) text-(--note-ink)" : "bg-(--peso) text-(--peso-ink) [&_.figure>span]:opacity-90",
         className,
       )}
     >
