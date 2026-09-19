@@ -1,4 +1,4 @@
-import s from "./papel.module.css";
+import s from "./ornament.module.css";
 
 /**
  * The microprinted border every banknote carries, here in both languages.

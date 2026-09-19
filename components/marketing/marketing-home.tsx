@@ -3,9 +3,9 @@ import { ArrowRight, Check } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Logo } from "@/components/brand/logo";
 import { archivo } from "./papel/fonts";
-import { Guilloche } from "./papel/guilloche";
+import { Guilloche } from "@/components/papel/guilloche";
 import { LocaleToggle } from "./papel/locale-toggle";
-import { Microprint, Serial } from "./papel/microprint";
+import { Microprint, Serial } from "@/components/papel/microprint";
 import { StatementSpecimen } from "./papel/statement-specimen";
 import s from "./papel/papel.module.css";
 

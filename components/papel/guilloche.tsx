@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { ROSETTE_LAYERS, rosettePoints } from "@/lib/papel/rosette";
 
 /**
  * Engraved guilloche line work, drawn live on a canvas.
@@ -15,32 +16,6 @@ import { useEffect, useRef } from "react";
  * an exponential ease-out. Under reduced motion the finished plate is drawn in
  * one frame. It is decoration, so it is aria-hidden and never holds content.
  */
-
-type Rosette = { R: number; r: number; d: number };
-
-const ROSETTE_LAYERS: Rosette[] = [
-  { R: 144, r: 55, d: 78 },
-  { R: 144, r: 55, d: 44 },
-  { R: 120, r: 47, d: 96 },
-];
-
-function gcd(a: number, b: number): number {
-  return b === 0 ? a : gcd(b, a % b);
-}
-
-function rosettePoints({ R, r, d }: Rosette): Float32Array {
-  const turns = r / gcd(R, r);
-  const steps = Math.round(turns * 260);
-  const out = new Float32Array((steps + 1) * 2);
-  const k = (R - r) / r;
-  const span = Math.PI * 2 * turns;
-  for (let i = 0; i <= steps; i++) {
-    const t = (i / steps) * span;
-    out[i * 2] = (R - r) * Math.cos(t) + d * Math.cos(k * t);
-    out[i * 2 + 1] = (R - r) * Math.sin(t) - d * Math.sin(k * t);
-  }
-  return out;
-}
 
 const easeOutExpo = (x: number) => (x >= 1 ? 1 : 1 - Math.pow(2, -10 * x));
 
