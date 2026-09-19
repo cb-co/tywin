@@ -223,7 +223,7 @@ The signed-in Overview (`app/(app)/page.tsx`) is the cheque-stub composition. On
 - **Aliases, removed in Phase 7:** `ColorTile` re-exports `Stamp`; `StatPill` maps to `ProofMark`; `HeroCard` renders `Note tone="violet"`. They exist so callers restyle at once — 16 for `ColorTile`, 7 for `StatPill`. `HeroCard` is down to 0 callers (this branch removed the last one); it is unused but kept until the Phase 7 removal sweep. Do not use them in new code.
 - **Incumbent tokens, named for removal in Phase 7:** the flat `--hero` slab and the `--chart-2` to `--chart-8` categorical palette (redrawn as engraved plates in Phase 5; only `--chart-1`, tied to `--ring`, is Papel).
 - **Incumbent and not yet reviewed:** `.tile-sheen`, `.lift`, `.burst` and the `CountUp` bounce, and the `MoneyDisplay` size steps, whose comments still describe Inter and a gradient slab. Treat them as legacy, not as Papel rules.
-- **Screens on old layouts with new primitives:** Accounts (Phase 2: violet net-worth note, shared drawn card face), Transactions and Imports (Phase 3), Budgets, Goals, Recurring (Phase 4), Insights and Ask (Phase 5), Settings, `/welcome`, `/terms`, `/privacy` (Phase 6). Quick-add dialog and FAB behaviour is unchanged.
+- **Screens on old layouts with new primitives:** Accounts (Phase 2: violet net-worth note, shared drawn card face), Transactions and Imports (Phase 3), Budgets, Goals, Recurring (Phase 4), Insights and Ask (Phase 5), Settings, `/welcome`, `/terms`, `/privacy` (Phase 6). Quick-add dialog and FAB behaviour is unchanged. `/help` mocks migrate alongside each screen's phase; only `OverviewMock` is done.
 
 ## Do's and Don'ts
 
