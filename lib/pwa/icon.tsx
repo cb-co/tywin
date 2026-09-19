@@ -1,15 +1,34 @@
 import { ImageResponse } from "next/og";
 
-// The literal form of `--hero` and `--hero-foreground`. An ImageResponse is
-// rasterised at build time with no stylesheet in scope, so the brand ramp has
-// to be repeated here — keep these in step with app/globals.css.
-const TILE = "linear-gradient(135deg, #6C4EF5 0%, #4326C9 100%)";
-const GLYPH = "#ffffff";
+import { rosettePath } from "@/lib/papel/rosette";
+
+// Literal form of `--note` and `--note-ink`. An ImageResponse is rasterised
+// with no stylesheet in scope, so hex values are repeated here; keep them in
+// step with design/tokens.json.
+const DISC = "#4a1f8c";
+const INK = "#f8f5ff";
+const RING = rosettePath(64);
+
+/** The Seal (components/papel/seal.tsx) as literal SVG for next/og. */
+export function SealSvg({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" stroke={INK}>
+      <path d={RING} strokeWidth={0.35} opacity={0.55} />
+      <circle cx="32" cy="32" r="30.5" strokeWidth={1.2} />
+      <circle cx="32" cy="32" r="17" strokeWidth={0.8} />
+      <g transform="translate(20 20)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="8" cy="8" r="6" />
+        <path d="M18.09 10.37A6 6 0 1 1 10.34 18" />
+        <path d="M7 6h1v4" />
+        <path d="m16.71 13.88.7.71-2.82 2.82" />
+      </g>
+    </svg>
+  );
+}
 
 /**
- * Same mark as components/brand/logo.tsx / lib/og-image.tsx: the Lucide
- * "Coins" glyph knocked out of the signature gradient. Kept in one place so
- * every icon size/purpose stays pixel-consistent with the favicon and OG image.
+ * Same mark as components/brand/logo.tsx: the engraved seal on a flat note
+ * violet tile. Kept in one place so every icon size/purpose stays consistent.
  */
 export function renderAppIcon({
   size,
@@ -18,7 +37,8 @@ export function renderAppIcon({
   size: number;
   maskable?: boolean;
 }) {
-  const glyphSize = maskable ? size * 0.45 : size * 0.56;
+  // Maskable icons get a safe zone (the OS crops to its own shape).
+  const sealSize = Math.round(maskable ? size * 0.7 : size * 0.86);
   const tileRadius = maskable ? 0 : Math.round(size * 0.22);
 
   return new ImageResponse(
@@ -30,25 +50,11 @@ export function renderAppIcon({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundImage: TILE,
+          backgroundColor: DISC,
           borderRadius: tileRadius,
         }}
       >
-        <svg
-          width={glyphSize}
-          height={glyphSize}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke={GLYPH}
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M13.744 17.736a6 6 0 1 1-7.48-7.48" />
-          <path d="M15 6h1v4" />
-          <path d="m6.134 14.768.866-.5 2 3.464" />
-          <circle cx="16" cy="8" r="6" />
-        </svg>
+        <SealSvg size={sealSize} />
       </div>
     ),
     { width: size, height: size },
