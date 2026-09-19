@@ -1,27 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import { headers } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
+import { archivo } from "./fonts";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { RegisterServiceWorker } from "@/components/pwa/register-service-worker";
 import { ThemeColorSync } from "@/components/pwa/theme-color-sync";
 import { TOPBAR_DARK } from "@/lib/pwa/theme-color";
 import { SPLASH_SKIP_SCRIPT } from "@/lib/splash";
-
-const jakarta = Plus_Jakarta_Sans({
-  variable: "--font-jakarta",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
-});
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 const title = "Cashly · Personal Finance";
@@ -94,7 +82,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`${jakarta.variable} ${inter.variable} h-full antialiased`}
+      className={`${archivo.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">

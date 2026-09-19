@@ -8,13 +8,11 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
-  /* Type roles — Cashly: Plus Jakarta Sans for UI text; Inter for ledger
-     numbers via the `.figure` class (better tabular figures at small sizes).
-     The `font-serif` role maps to the sans so any lingering `font-serif`
-     class renders in it rather than a real serif. */
-  --font-sans: var(--font-jakarta);
-  --font-serif: var(--font-jakarta);
-  --font-display: var(--font-jakarta);
+  /* Type roles: Archivo everywhere. The wdth axis gives the wide engraved
+     legend (`.legend`) and the normal body cut. */
+  --font-sans: var(--font-archivo), system-ui, sans-serif;
+  --font-serif: var(--font-archivo), system-ui, sans-serif;
+  --font-display: var(--font-archivo), system-ui, sans-serif;
 
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -266,24 +264,26 @@
   }
   html {
     @apply font-sans;
-    /* Jakarta's 400 sits lighter than most grotesques at the same nominal
-       weight, so body copy read thin against the heavy figures. 450 — a real
-       instance on the variable axis, not a synthesised one — lifts it just
-       enough to sit comfortably under the 700 the figures now use. Narrowing
-       the range from both ends is the point: the spread was the problem, not
-       either end on its own. */
-    font-weight: 450;
+    /* Archivo's 400 is the body weight; figures and legends set their own. */
+    font-weight: 400;
   }
 }
 
 @layer components {
-  /* The "ledger figure" — key monetary/statistic numbers set in Inter with
-     aligned tabular figures for a steady, scannable look. */
+  /* The "ledger figure": tabular numerals in the one face. */
   .figure {
-    font-family: var(--font-inter), var(--font-jakarta), sans-serif;
+    font-family: var(--font-archivo), system-ui, sans-serif;
     font-variant-numeric: tabular-nums lining-nums;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
     font-weight: inherit;
+  }
+
+  /* Engraved legend: the banknote's wide caps. */
+  .legend {
+    font-stretch: 125%;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
   }
 }
 
