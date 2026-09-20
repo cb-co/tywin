@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -8,10 +8,10 @@ import { useTranslations, useLocale } from "next-intl";
 import { categorizeTriageGroup } from "@/app/(app)/imports/actions";
 import { orderCategories } from "@/lib/transactions/defaults";
 import { CategoryRail } from "@/components/transactions/category-rail";
-import { EmptyState } from "@/components/empty-state";
+import { DoneStamp } from "@/components/imports/done-stamp";
+import { LedgerRow } from "@/components/papel/ledger-row";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MoneyDisplay } from "@/components/ui/money-display";
 import {
   Select,
   SelectContent,
@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useUiSound } from "@/components/sound/sound-provider";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { TriageGroup } from "@/lib/statements/triage";
 import type { QuickAddCategory } from "@/lib/transactions/queries";
@@ -68,6 +68,7 @@ export function TriageList({
   // would.
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const { playSuccess, playError } = useUiSound();
+  const listRef = useRef<HTMLUListElement>(null);
 
   // Most-used first, for the rail and for the digit shortcuts below — 1-5
   // line up with the five chips CategoryRail actually renders. The full
@@ -140,108 +141,108 @@ export function TriageList({
       );
       playSuccess();
       router.refresh();
+      // The rail button that held focus is about to unmount with its group;
+      // park focus on the list so keyboard users aren't dropped to the page.
+      listRef.current?.focus();
     });
   }
 
   const focusedIndex = Math.min(focused, Math.max(0, groups.length - 1));
+
+  // Finishing is detected during render (the previous-count pattern, as in
+  // ledger.tsx), not in an effect: it flips only on the transition to zero, so
+  // arriving at an already-finished triage shows the mark still.
+  const [prevCount, setPrevCount] = useState(groups.length);
+  const [justFinished, setJustFinished] = useState(false);
+  if (groups.length !== prevCount) {
+    setPrevCount(groups.length);
+    if (prevCount > 0 && groups.length === 0) setJustFinished(true);
+  }
 
   return (
     <>
       <p className="text-sm text-muted-foreground">{summary}</p>
 
       {groups.length === 0 ? (
-        <EmptyState
-          title={t("allDone")}
-          description={t("allDoneBody")}
-          action={
-            accountId ? (
-              <Button
-                variant="outline"
-                size="sm"
-                nativeButton={false}
-                render={<Link href={`/accounts/${accountId}`} />}
-              >
-                {t("backToAccount")}
-              </Button>
-            ) : undefined
-          }
-        />
+        // No second playSuccess here: the last assignment's own playSuccess
+        // is the stamp sound.
+        <Card className="items-center gap-4 p-8 text-center">
+          <DoneStamp label={t("allDone")} animate={justFinished} />
+          <p className="text-sm text-muted-foreground">{t("allDoneBody")}</p>
+          {accountId ? (
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              render={<Link href={`/accounts/${accountId}`} />}
+            >
+              {t("backToAccount")}
+            </Button>
+          ) : null}
+        </Card>
       ) : (
         // tabIndex so the list itself can hold focus and receive the keys;
         // the rail buttons and the "more" picker inside stay individually
         // tabbable, which is what a screen reader and a Tab-only user need.
-        <ul
-          className="space-y-3 focus-visible:outline-none"
-          tabIndex={0}
-          onKeyDown={onKeyDown}
-        >
-          {groups.map((group, i) => (
-            <li key={group.key}>
-              <Card
+        <Card className="gap-0 overflow-hidden p-0">
+          <ul ref={listRef} className="focus-visible:outline-none" tabIndex={0} onKeyDown={onKeyDown}>
+            {groups.map((group, i) => (
+              <li
+                key={group.key}
                 className={cn(
-                  // Card's own flex-col carries a `gap-(--card-spacing)`
-                  // (1rem) between direct children by default; zeroed here
-                  // because the header row already spaces itself off the rail
-                  // with `mb-3` below, the same way budget-grid's cards do.
-                  "gap-0 p-4",
+                  "border-b-2 border-(--rule) last:border-b-0",
                   busyKey === group.key && "opacity-60",
-                  i === focusedIndex && "ring-2 ring-ring/50",
+                  i === focusedIndex && "outline-2 -outline-offset-2 outline-current",
                 )}
               >
-                <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{group.description}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {t("groupLines", { count: group.count })} ·{" "}
-                      {t("groupDates", {
-                        from: formatDate(group.firstDate, locale),
-                        to: formatDate(group.lastDate, locale),
-                      })}
-                    </p>
-                  </div>
-                  <MoneyDisplay amount={group.total} currency={group.currency} size="inline" />
+                <LedgerRow
+                  className="border-b-0 px-4 pt-3"
+                  title={group.description}
+                  subtitle={`${t("groupLines", { count: group.count })} · ${t("groupDates", { from: formatDate(group.firstDate, locale), to: formatDate(group.lastDate, locale) })}`}
+                  amount={<span className="text-sm font-semibold">{formatMoney(group.total, group.currency)}</span>}
+                />
+                <div className="px-4 pb-3">
+                    {expandedKey === group.key ? (
+                      <Select
+                        items={categoryItems}
+                        value=""
+                        open
+                        onOpenChange={(next) => {
+                          if (!next) setExpandedKey(null);
+                        }}
+                        onValueChange={(id) => {
+                          if (id) assign(group, id);
+                        }}
+                      >
+                        <SelectTrigger
+                          className="w-full"
+                          size="sm"
+                          aria-label={tCategory("categoryLabel")}
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.emoji ? `${c.emoji} ` : ""}
+                              {c.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <CategoryRail
+                        categories={railCategories}
+                        value=""
+                        onChange={(id) => !pending && assign(group, id)}
+                        onMore={() => setExpandedKey(group.key)}
+                      />
+                    )}
                 </div>
-
-                {expandedKey === group.key ? (
-                  <Select
-                    items={categoryItems}
-                    value=""
-                    open
-                    onOpenChange={(next) => {
-                      if (!next) setExpandedKey(null);
-                    }}
-                    onValueChange={(id) => {
-                      if (id) assign(group, id);
-                    }}
-                  >
-                    <SelectTrigger
-                      className="w-full"
-                      size="sm"
-                      aria-label={tCategory("categoryLabel")}
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.emoji ? `${c.emoji} ` : ""}
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <CategoryRail
-                    categories={railCategories}
-                    value=""
-                    onChange={(id) => !pending && assign(group, id)}
-                    onMore={() => setExpandedKey(group.key)}
-                  />
-                )}
-              </Card>
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+        </Card>
       )}
     </>
   );

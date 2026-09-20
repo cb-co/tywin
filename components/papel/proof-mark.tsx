@@ -14,23 +14,26 @@ const GLYPH = {
 export function ProofMark({
   tone,
   children,
+  size = "sm",
   className,
 }: {
   tone: keyof typeof GLYPH;
   children: React.ReactNode;
+  size?: "sm" | "lg";
   className?: string;
 }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 text-xs font-semibold",
+        "inline-flex items-center font-semibold",
+        size === "sm" ? "gap-1.5 text-xs" : "flex-col gap-2 legend text-sm",
         tone === "ok" && "text-(--teal)",
         tone === "flag" && "text-(--red)",
         tone === "neutral" && "text-muted-foreground",
         className,
       )}
     >
-      <svg viewBox="0 0 16 16" aria-hidden className="size-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.75}>
+      <svg viewBox="0 0 16 16" aria-hidden className={size === "sm" ? "size-4 shrink-0" : "size-14 shrink-0"} fill="none" stroke="currentColor" strokeWidth={1.75}>
         <circle cx="8" cy="8" r="7.1" strokeWidth={1.1} />
         {GLYPH[tone]}
       </svg>

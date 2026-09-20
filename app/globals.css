@@ -497,6 +497,20 @@
       transform: translate3d(0, 0, 0) scale(0.96);
       transition-duration: 60ms;
     }
+    /* Triage finished: the proof mark is stamped down once. */
+    .stamp-down {
+      animation: stamp-down 520ms var(--ease-press, cubic-bezier(0.2, 0.9, 0.3, 1.2)) both;
+    }
+    @keyframes stamp-down {
+      from {
+        opacity: 0;
+        transform: scale(1.5) rotate(-10deg);
+      }
+      to {
+        opacity: 1;
+        transform: rotate(-4deg);
+      }
+    }
     /* The statement being read: each real line is scanned, then printed. Only
        the first dozen animate; a 100-line statement must not take 40 seconds. */
     .sheet-row {
