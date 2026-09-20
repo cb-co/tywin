@@ -100,11 +100,12 @@ export function TransactionRow({
           ) : null}
         </span>
       }
-      subtitle={subtitle}
-      amount={figure}
-      meta={
-        hasExtras ? t("inclFees", { amount: formatMoney(txn.tax_amount + txn.fee_amount, txn.currency) }) : undefined
+      subtitle={
+        hasExtras
+          ? `${subtitle} · ${t("inclFees", { amount: formatMoney(txn.tax_amount + txn.fee_amount, txn.currency) })}`
+          : subtitle
       }
+      amount={figure}
       trailing={
         <>
           <TransactionDialog
