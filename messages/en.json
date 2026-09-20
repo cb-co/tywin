@@ -338,6 +338,9 @@
     "toastAccountUpdated": "Account updated"
   },
   "Statements": {
+    "sheetLabel": "Statement lines",
+    "sheetMore": "and {count} more lines",
+    "readingSheet": "Reading {fileName}…",
     "title": "Statements",
     "description": "Upload your monthly statement PDF. It becomes the source of truth: balances anchor to it and purchases import as categorized expenses. Payments you record yourself are never duplicated.",
     "importButton": "Import statement",

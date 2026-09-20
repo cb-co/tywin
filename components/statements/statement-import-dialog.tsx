@@ -14,6 +14,8 @@ import {
 } from "@/app/(app)/accounts/statement-actions";
 import { addCardLine } from "@/app/(app)/accounts/actions";
 import { ImportCardStubStep } from "@/components/statements/import-card-stub-step";
+import { ReadingSheet, StatementSheet } from "@/components/statements/statement-sheet";
+import { sheetRows } from "@/lib/statements/sheet-rows";
 import { collapseImportTargets } from "@/lib/statements/import-targets";
 import { isInstallmentSection, suggestLineName } from "@/lib/statements/line-name";
 import { NAME_MAX_LENGTH } from "@/lib/accounts/schema";
@@ -429,7 +431,7 @@ export function StatementImportDialog({
                     does not jump when it lands. */}
                 <ul className="min-w-0 space-y-2" aria-hidden>
                   {[0, 1, 2].map((i) => (
-                    <li key={i} className="skeleton h-12 rounded-lg" />
+                    <li key={i} className="skeleton h-12 rounded-none" />
                   ))}
                 </ul>
                 <p className="sr-only" role="status">
@@ -461,7 +463,7 @@ export function StatementImportDialog({
                       <li key={c.accountId} className="min-w-0">
                         <button
                           type="button"
-                          className="flex w-full min-w-0 items-center justify-between gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-muted/50"
+                          className="flex w-full min-w-0 items-center justify-between gap-3 border-b border-(--paper-line) px-1 py-3 text-left transition-colors hover:bg-muted/50"
                           onClick={() => setPickedId(c.accountId)}
                         >
                           <span className="min-w-0 truncate text-sm font-medium">{c.label}</span>
@@ -498,6 +500,8 @@ export function StatementImportDialog({
               </Button>
             ) : null}
 
+            {pending && file && !preview && !needsPassword ? <ReadingSheet fileName={file.name} /> : null}
+
             {needsPassword && file ? (
               <div className="space-y-2">
                 <Label htmlFor="stmt-password">{t("passwordLabel")}</Label>
@@ -528,16 +532,21 @@ export function StatementImportDialog({
                      cannot disagree about whether the section is stuck. */
                   const unmatched = available.length === 0;
                   return (
-                    <div key={s.sectionKey} className="min-w-0 rounded-lg border p-3 space-y-2">
+                    <div key={s.sectionKey} className="min-w-0 space-y-2 border-t-2 border-(--rule) pt-3">
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
-                        <p className="text-sm font-medium">
-                          {s.sectionKey} · {s.currency} · {formatDate(s.periodStart, locale)} →{" "}
-                          {formatDate(s.periodEnd, locale)}
-                        </p>
+                        <div className="min-w-0">
+                          <p className="legend text-[11px]">
+                            {s.sectionKey} · {s.currency}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDate(s.periodStart, locale)} → {formatDate(s.periodEnd, locale)}
+                          </p>
+                        </div>
                         <p className="figure text-sm">
                           {formatMoney(Number(s.closingBalance), s.currency)}
                         </p>
                       </div>
+                      <StatementSheet {...sheetRows(parsedStatement, s.sectionKey, 8)} currency={s.currency} />
                       <p className="text-xs text-muted-foreground">
                         {t("sectionSummary", { lines: s.lineCount, skipped: s.skippedCount })}
                       </p>
@@ -601,7 +610,7 @@ export function StatementImportDialog({
                     </div>
                   );
                 })}
-                <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3">
+                <div className="flex items-center justify-between gap-3 border-y border-(--paper-line) py-3">
                   <Label htmlFor="exclude_from_budget" className="font-normal text-muted-foreground">
                     {t("excludeFromBudgetLabel")}
                     <span className="ml-1.5 block text-xs">{t("excludeFromBudgetHint")}</span>

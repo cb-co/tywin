@@ -497,6 +497,24 @@
       transform: translate3d(0, 0, 0) scale(0.96);
       transition-duration: 60ms;
     }
+    /* The statement being read: each real line is scanned, then printed. Only
+       the first dozen animate; a 100-line statement must not take 40 seconds. */
+    .sheet-row {
+      animation: sheet-print 520ms var(--ease-press, ease-out) both;
+      animation-delay: calc(min(var(--i, 0), 11) * 90ms);
+    }
+    @keyframes sheet-print {
+      from {
+        clip-path: inset(0 100% 0 0);
+        opacity: 0.2;
+        background: color-mix(in oklab, var(--stamp-light, var(--ink)) 18%, transparent);
+      }
+      to {
+        clip-path: inset(0 0 0 0);
+        opacity: 1;
+        background: transparent;
+      }
+    }
   }
 
   /* --- Value bars -----------------------------------------------------
