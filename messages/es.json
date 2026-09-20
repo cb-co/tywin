@@ -339,7 +339,7 @@
   },
   "Statements": {
     "sheetLabel": "Líneas del estado",
-    "sheetMore": "y {count} líneas más",
+    "sheetMore": "y {count, plural, one {# línea más} other {# líneas más}}",
     "readingSheet": "Leyendo {fileName}…",
     "title": "Estados de cuenta",
     "description": "Sube el PDF de tu estado de cuenta mensual. Se convierte en la fuente de verdad: los saldos se anclan a él y las compras se importan como gastos categorizados. Los pagos que registras tú mismo nunca se duplican.",
