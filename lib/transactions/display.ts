@@ -1,0 +1,73 @@
+import type { TransactionWithRefs } from "./queries";
+
+/** The fields `amountDisplay` reads — a structural slice so tests need not
+ *  build a whole joined row. */
+export type AmountTxn = Pick<
+  TransactionWithRefs,
+  "type" | "amount" | "total_amount" | "to_amount" | "currency" | "statement_line_id" | "to_account_id"
+> & { to_account: { currency: string } | null };
+
+export type AmountDisplay = {
+  /** Always a non-negative magnitude; the sign is printed separately. */
+  value: number;
+  currency: string;
+  sign: "+" | "−" | "";
+  /** Money arriving. Only these figures go through the figure mask. */
+  income: boolean;
+};
+
+/**
+ * What a ledger row prints as its figure. A statement-sourced expense can be
+ * negative (refund, rebate, reversal), which arrives as money in. A payment
+ * seen from its destination account shows the destination leg, or a
+ * cross-currency payment would show the wrong currency's number there.
+ */
+export function amountDisplay(txn: AmountTxn, viewAccountId?: string): AmountDisplay {
+  const isStatementCredit =
+    txn.type === "expense" && !!txn.statement_line_id && Number(txn.total_amount) < 0;
+  if (isStatementCredit) {
+    return { value: Math.abs(txn.total_amount), currency: txn.currency, sign: "+", income: true };
+  }
+  if (txn.type === "income") {
+    return { value: Math.abs(txn.amount), currency: txn.currency, sign: "+", income: true };
+  }
+  if (txn.type === "expense") {
+    return { value: Math.abs(txn.total_amount), currency: txn.currency, sign: "−", income: false };
+  }
+  const isDestinationLeg = viewAccountId != null && txn.to_account_id === viewAccountId;
+  return {
+    value: Math.abs(isDestinationLeg ? (txn.to_amount ?? txn.amount) : txn.total_amount),
+    currency: isDestinationLeg ? (txn.to_account?.currency ?? txn.currency) : txn.currency,
+    sign: "",
+    income: false,
+  };
+}
+
+/**
+ * Month → day → rows. `occurred_at` is a calendar date stored as UTC
+ * midnight, so the day key is read in UTC. Relies on the ledger arriving
+ * sorted by date (same-month days contiguous), exactly as the inline version
+ * in `ledger.tsx` did.
+ */
+export function groupLedger<T extends { occurred_at: string }>(
+  rows: T[],
+  monthLabel: (year: number, month: number) => string,
+): { monthKey: string; label: string; days: { day: string; rows: T[] }[] }[] {
+  const months = new Map<string, Map<string, T[]>>();
+  for (const r of rows) {
+    const day = new Date(r.occurred_at).toISOString().slice(0, 10);
+    const monthKey = day.slice(0, 7);
+    if (!months.has(monthKey)) months.set(monthKey, new Map());
+    const days = months.get(monthKey)!;
+    if (!days.has(day)) days.set(day, []);
+    days.get(day)!.push(r);
+  }
+  return [...months.entries()].map(([monthKey, days]) => {
+    const [y, m] = monthKey.split("-").map(Number);
+    return {
+      monthKey,
+      label: monthLabel(y, m),
+      days: [...days.entries()].map(([day, dayRows]) => ({ day, rows: dayRows })),
+    };
+  });
+}
