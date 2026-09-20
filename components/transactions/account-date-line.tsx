@@ -25,7 +25,7 @@ export function AccountDateLine({
       type="button"
       onClick={onEdit}
       aria-label={t("summaryAria")}
-      className="flex items-center gap-1.5 self-start rounded-md px-1.5 py-1 text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+      className="flex w-full items-center gap-1.5 border-y border-(--paper-line) py-2 text-sm text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
     >
       <span>{accountLabel}</span>
       {destinationLabel ? (

@@ -412,22 +412,24 @@ export function TransactionForm({
         control={control}
         name="type"
         render={({ field }) => (
-          <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
-            {TRANSACTION_TYPES.map((t) => (
+          <div role="radiogroup" aria-label={t("typeLabel")} className="grid grid-cols-3 border-b border-(--rule)">
+            {TRANSACTION_TYPES.map((tt) => (
               <button
-                key={t}
+                key={tt}
                 type="button"
+                role="radio"
+                aria-checked={field.value === tt}
                 disabled={fromStatement}
-                onClick={() => field.onChange(t)}
+                onClick={() => field.onChange(tt)}
                 className={cn(
-                  "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                  field.value === t
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
+                  "legend -mb-px border-b-[3px] px-2 py-2.5 text-[11px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-current",
+                  field.value === tt
+                    ? "border-foreground text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground",
                   fromStatement && "cursor-not-allowed opacity-60",
                 )}
               >
-                {tType(t)}
+                {tType(tt)}
               </button>
             ))}
           </div>
@@ -620,7 +622,7 @@ export function TransactionForm({
 
           {/* Fee toggles */}
           {type !== "income" && (srcIsBankAccount || type === "expense" || showGroupOverride) ? (
-            <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
+            <div className="space-y-3 border-y border-(--paper-line) py-3">
               {srcIsBankAccount ? (
                 <>
                   <Controller

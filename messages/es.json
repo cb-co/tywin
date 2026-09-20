@@ -608,6 +608,7 @@
     "endOfLedger": "{count, plural, one {# transacción} other {# transacciones}} · fin del registro"
   },
   "TransactionForm": {
+    "typeLabel": "Tipo",
     "dialogAddTitle": "Añadir transacción",
     "dialogEditTitle": "Editar transacción",
     "sourceLabelExpense": "Pagado desde",

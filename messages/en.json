@@ -608,6 +608,7 @@
     "endOfLedger": "{count, plural, one {# transaction} other {# transactions}} · end of ledger"
   },
   "TransactionForm": {
+    "typeLabel": "Type",
     "dialogAddTitle": "Add transaction",
     "dialogEditTitle": "Edit transaction",
     "sourceLabelExpense": "Paid from",

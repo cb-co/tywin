@@ -36,7 +36,7 @@ export function FeeSummaryLine({
       <button
         type="button"
         onClick={onEdit}
-        className="text-primary underline-offset-2 hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+        className="text-foreground underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
       >
         {t("feeLineEdit")}
       </button>
