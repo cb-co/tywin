@@ -17,7 +17,6 @@ import { LedgerRow } from "@/components/papel/ledger-row";
 import { ProofMark } from "@/components/papel/proof-mark";
 import { Stamp } from "@/components/papel/stamp";
 import { Mark } from "@/components/transactions/mark";
-import { formatMoney } from "@/lib/format";
 import { Perforation } from "@/components/papel/perforation";
 import { RuleMeter } from "@/components/papel/rule-meter";
 import { SpecimenFrame } from "@/components/papel/specimen-frame";
@@ -26,6 +25,7 @@ import { MoneyDisplay } from "@/components/ui/money-display";
 import { StatPill } from "@/components/ui/stat-pill";
 import { CardFace } from "@/components/papel/card-face";
 import { BrandGlyph } from "@/components/ui/brand-glyph";
+import { formatMoney } from "@/lib/format";
 import { ACCOUNT_TYPE_META } from "@/lib/accounts/meta";
 import { SWATCHES } from "@/lib/palette";
 import { STATUS_COLOR } from "@/lib/budgets/bar";
@@ -480,7 +480,8 @@ export function LedgerMock({
 
   return (
     <SpecimenFrame className="mt-4">
-      <MockLabel>{label}</MockLabel>
+      {/* SpecimenFrame already carries the visible legend; keep the label for screen readers. */}
+      <p className="sr-only">{label}</p>
       <h3 className="legend border-b border-(--rule) py-1.5 text-[10px] text-muted-foreground">{dayLabel}</h3>
       <div>
         {rows.map((row, i) => (
