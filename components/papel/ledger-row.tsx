@@ -12,6 +12,7 @@ export function LedgerRow({
   amount,
   meta,
   wrapSubtitle,
+  trailing,
   className,
   ...props
 }: {
@@ -22,6 +23,8 @@ export function LedgerRow({
   meta?: React.ReactNode;
   /** Let the subtitle wrap instead of truncating (default: truncate). */
   wrapSubtitle?: boolean;
+  /** Controls that live at the row's end (edit/delete). Not part of the figure column. */
+  trailing?: React.ReactNode;
 } & Omit<React.ComponentProps<"div">, "title">) {
   return (
     <div
@@ -39,6 +42,7 @@ export function LedgerRow({
           {meta ? <p className="text-xs text-muted-foreground">{meta}</p> : null}
         </div>
       ) : null}
+      {trailing ? <div className="flex shrink-0 items-center">{trailing}</div> : null}
     </div>
   );
 }
