@@ -1,6 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { Ellipsis } from "lucide-react";
+import { Stamp } from "@/components/papel/stamp";
 import { cn } from "@/lib/utils";
 import type { QuickAddCategory } from "@/lib/transactions/queries";
 
@@ -37,34 +39,39 @@ export function CategoryRail({
 
   return (
     <div
-      className="-mx-1 flex min-w-0 gap-1.5 overflow-x-auto px-1 pb-1"
+      className="-mx-1 flex min-w-0 gap-0.5 overflow-x-auto px-1 pb-1"
       role="radiogroup"
       aria-label={t("categoryLabel")}
     >
-      {[...(selectedOffRail ? [selectedOffRail] : []), ...shown].map((c) => (
-        <button
-          key={c.id}
-          type="button"
-          role="radio"
-          aria-checked={value === c.id}
-          onClick={() => onChange(c.id)}
-          className={cn(
-            "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm whitespace-nowrap transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
-            value === c.id
-              ? "border-primary bg-primary/10 text-foreground"
-              : "border-input text-muted-foreground hover:text-foreground",
-          )}
-        >
-          {c.emoji ? <span aria-hidden>{c.emoji}</span> : null}
-          {c.name}
-        </button>
-      ))}
+      {[...(selectedOffRail ? [selectedOffRail] : []), ...shown].map((c) => {
+        const on = value === c.id;
+        return (
+          <button
+            key={c.id}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            title={c.name}
+            onClick={() => onChange(c.id)}
+            className={cn(
+              "flex w-[3.25rem] shrink-0 flex-col items-center gap-1 border-b-[3px] pb-1 pt-0.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current",
+              on ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <Stamp color={c.color} emoji={c.emoji} name={c.name} size="sm" className={on ? "stamp-inked" : undefined} />
+            <span className="w-full truncate text-center text-[10px] font-semibold leading-tight">{c.name}</span>
+          </button>
+        );
+      })}
       <button
         type="button"
         onClick={onMore}
-        className="shrink-0 rounded-full border border-dashed border-input px-3 py-1.5 text-sm text-muted-foreground whitespace-nowrap hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+        className="flex w-[3.25rem] shrink-0 flex-col items-center gap-1 border-b-[3px] border-transparent pb-1 pt-0.5 text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
       >
-        {t("moreCategories")}
+        <span className="flex size-9 items-center justify-center rounded-full border border-dashed border-(--ink-soft)">
+          <Ellipsis aria-hidden className="size-[18px]" />
+        </span>
+        <span className="w-full truncate text-center text-[10px] font-semibold leading-tight">{t("moreCategories")}</span>
       </button>
     </div>
   );

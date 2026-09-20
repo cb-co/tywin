@@ -321,6 +321,11 @@
   .dark .stamp {
     color: var(--stamp-dark);
   }
+  /* A stamp pressed harder: the selected state on a category rail. The heavier
+     ring plus the underline on its button is the state, not colour. */
+  .stamp.stamp-inked {
+    border-width: 3px;
+  }
 }
 
 /* ============================================================
