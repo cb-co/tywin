@@ -521,7 +521,7 @@
       from {
         clip-path: inset(0 100% 0 0);
         opacity: 0.2;
-        background: color-mix(in oklab, var(--stamp-light, var(--ink)) 18%, transparent);
+        background: color-mix(in oklab, var(--ink) 18%, transparent);
       }
       to {
         clip-path: inset(0 0 0 0);

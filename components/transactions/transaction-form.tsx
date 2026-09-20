@@ -334,6 +334,7 @@ export function TransactionForm({
      a EUR one otherwise silently reuses the rate typed for dollars. The ref
      seed means mount is not a change, so an edit's saved rate survives. */
   const pairKey = crossCurrency && src && dst ? `${src.currency}>${dst.currency}` : "";
+  const typeRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const prevPairKey = useRef(pairKey);
   useEffect(() => {
     if (prevPairKey.current === pairKey) return;
@@ -413,9 +414,24 @@ export function TransactionForm({
         name="type"
         render={({ field }) => (
           <div role="radiogroup" aria-label={t("typeLabel")} className="grid grid-cols-3 border-b border-(--rule)">
-            {TRANSACTION_TYPES.map((tt) => (
+            {TRANSACTION_TYPES.map((tt, idx) => (
               <button
                 key={tt}
+                ref={(el) => {
+                  typeRefs.current[idx] = el;
+                }}
+                tabIndex={field.value === tt ? 0 : -1}
+                onKeyDown={(e) => {
+                  const step =
+                    e.key === "ArrowRight" || e.key === "ArrowDown" ? 1
+                    : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1
+                    : 0;
+                  if (!step || fromStatement) return;
+                  e.preventDefault();
+                  const next = (idx + step + TRANSACTION_TYPES.length) % TRANSACTION_TYPES.length;
+                  field.onChange(TRANSACTION_TYPES[next]);
+                  typeRefs.current[next]?.focus();
+                }}
                 type="button"
                 role="radio"
                 aria-checked={field.value === tt}

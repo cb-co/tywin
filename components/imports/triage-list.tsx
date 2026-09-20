@@ -167,7 +167,10 @@ export function TriageList({
         // No second playSuccess here: the last assignment's own playSuccess
         // is the stamp sound.
         <Card className="items-center gap-4 p-8 text-center">
-          <DoneStamp label={t("allDone")} animate={justFinished} />
+          <h2 className="sr-only">{t("allDone")}</h2>
+          <div aria-hidden>
+            <DoneStamp label={t("allDone")} animate={justFinished} />
+          </div>
           <p className="text-sm text-muted-foreground">{t("allDoneBody")}</p>
           {accountId ? (
             <Button

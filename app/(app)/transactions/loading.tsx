@@ -6,10 +6,10 @@ export default function Loading() {
         <div className="skeleton h-4 w-64 rounded" />
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <div className="skeleton h-8 min-w-40 flex-1 rounded-lg" />
-        <div className="skeleton h-8 w-32 rounded-lg" />
-        <div className="skeleton h-8 w-40 rounded-lg" />
-        <div className="skeleton h-8 w-40 rounded-lg" />
+        <div className="skeleton h-8 min-w-40 flex-1 rounded-none" />
+        <div className="skeleton h-8 w-32 rounded-none" />
+        <div className="skeleton h-8 w-40 rounded-none" />
+        <div className="skeleton h-8 w-40 rounded-none" />
       </div>
       <div className="space-y-8">
         {[0, 1].map((month) => (

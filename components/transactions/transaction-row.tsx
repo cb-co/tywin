@@ -82,7 +82,7 @@ export function TransactionRow({
 
   return (
     <LedgerRow
-      className="px-0 py-2.5"
+      className="px-0 py-2"
       lead={
         <Stamp color={category?.color ?? null} emoji={category?.emoji} name={category?.name} icon={Icon} size="sm" />
       }

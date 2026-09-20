@@ -362,10 +362,17 @@ export function TriageMock({
     { name: merchantOne, count: merchantOneCount, amount: 84.5, selected: 0 },
     { name: merchantTwo, count: merchantTwoCount, amount: 32.0, selected: 1 },
   ];
+  // The message strings carry their own leading emoji ("🍽️ Food"): split it
+  // off so the stamp holds the emoji and the label is the plain name, as in
+  // the real CategoryRail.
+  const splitEmoji = (label: string) => {
+    const m = label.match(/^(\P{L}+?)\s+(.+)$/u);
+    return m ? { emoji: m[1], name: m[2] } : { emoji: null, name: label };
+  };
   const cats = [
-    { name: categoryOne, color: SWATCHES[1], emoji: "🛒" },
-    { name: categoryTwo, color: SWATCHES[4], emoji: "🚌" },
-    { name: categoryThree, color: SWATCHES[7], emoji: "🎬" },
+    { ...splitEmoji(categoryOne), color: SWATCHES[1] },
+    { ...splitEmoji(categoryTwo), color: SWATCHES[4] },
+    { ...splitEmoji(categoryThree), color: SWATCHES[7] },
   ];
 
   return (
@@ -482,7 +489,7 @@ export function LedgerMock({
     <SpecimenFrame className="mt-4">
       {/* SpecimenFrame already carries the visible legend; keep the label for screen readers. */}
       <p className="sr-only">{label}</p>
-      <h3 className="legend border-b border-(--rule) py-1.5 text-[10px] text-muted-foreground">{dayLabel}</h3>
+      <p className="legend border-b border-(--rule) py-1.5 text-[10px] text-muted-foreground">{dayLabel}</p>
       <div>
         {rows.map((row, i) => (
           <LedgerRow

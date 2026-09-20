@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { sheetRows } from "./sheet-rows";
 
-const line = (lineNo: number, amountCents: number, madeOn = "2026-09-05") => ({
+const line = (lineNo: number, amountCents: number, madeOn = "2026-09-05", kind?: string) => ({
   lineNo, madeOn, postedOn: madeOn, reference: null, description: `LINE ${lineNo}`,
-  mcc: null, authCode: null, amountCents, kind: amountCents < 0 ? "credit" : "purchase", suggestedCategory: null,
+  mcc: null, authCode: null, amountCents, kind: kind ?? (amountCents < 0 ? "credit" : "purchase"), suggestedCategory: null,
 });
 const stmt = JSON.stringify({
   parserId: "p", cardLast4: "4417",
@@ -25,6 +25,21 @@ describe("sheetRows", () => {
     const { rows } = sheetRows(stmt, "DOP", 8);
     expect(rows[1]).toMatchObject({ amount: 50, credit: true, date: "06/09" });
     expect(sheetRows(stmt, "DOP", 8).more).toBe(0);
+  });
+
+  it("leaves off lines that never become transactions and counts more from the rest", () => {
+    const withPayment = JSON.stringify({
+      parserId: "p", cardLast4: "4417",
+      sections: [{ sectionKey: "DOP", currency: "DOP", lines: [line(1, 100), line(2, -9000, "2026-09-06", "payment"), line(3, 200), line(4, 300)] }],
+    });
+    const { rows, more } = sheetRows(withPayment, "DOP", 2);
+    expect(rows.map((r) => r.key)).toEqual(["DOP-1", "DOP-3"]);
+    expect(more).toBe(1);
+  });
+
+  it("does not throw on a line missing its date or description", () => {
+    const bad = JSON.stringify({ sections: [{ sectionKey: "DOP", currency: "DOP", lines: [{ lineNo: 1, amountCents: 100, kind: "purchase" }] }] });
+    expect(sheetRows(bad, "DOP", 8).rows).toHaveLength(1);
   });
 
   it("only reads the requested section", () => {
