@@ -11,15 +11,18 @@ export default function Loading() {
         <div className="skeleton h-8 w-40 rounded-lg" />
         <div className="skeleton h-8 w-40 rounded-lg" />
       </div>
-      <div className="space-y-6">
-        {[0, 1, 2].map((day) => (
-          <div key={day} className="space-y-2">
-            <div className="skeleton h-3 w-32 rounded" />
-            <div className="space-y-3">
-              {[0, 1, 2].map((row) => (
-                <div key={row} className="skeleton h-12 rounded-lg" />
-              ))}
-            </div>
+      <div className="space-y-8">
+        {[0, 1].map((month) => (
+          <div key={month} className="space-y-3">
+            <div className="skeleton h-3 w-28 rounded-none" />
+            <div className="border-t-2 border-(--rule)" />
+            {[0, 1, 2, 3].map((row) => (
+              <div key={row} className="flex items-center gap-3 border-b border-(--paper-line) py-2.5">
+                <div className="skeleton size-9 rounded-full" />
+                <div className="skeleton h-4 flex-1 rounded-none" />
+                <div className="skeleton h-4 w-16 rounded-none" />
+              </div>
+            ))}
           </div>
         ))}
       </div>

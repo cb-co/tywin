@@ -8,13 +8,14 @@ import { Search, ArrowLeftRight } from "lucide-react";
 import { deleteTransaction, loadTransactions } from "@/app/(app)/transactions/actions";
 import type {
   TransactionPage,
-  TransactionWithRefs,
   TxnCursor,
   TxnFilters,
   QuickAddData,
 } from "@/lib/transactions/queries";
 import { TRANSACTION_TYPES } from "@/lib/transactions/schema";
 import { TransactionRow } from "./transaction-row";
+import { DateRule, MonthLegend } from "./date-rule";
+import { groupLedger } from "@/lib/transactions/display";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/empty-state";
@@ -29,17 +30,6 @@ import {
 } from "@/components/ui/select";
 import { ACCOUNT_GROUPS, accountOptionLabel, accountTypeMeta, type AccountType } from "@/lib/accounts/meta";
 import { useUiSound } from "@/components/sound/sound-provider";
-
-/* occurred_at is a plain calendar date stored as UTC midnight (no time-of-day
-   component) — format it in UTC so the displayed day doesn't drift backward
-   for users west of UTC, who'd otherwise see local-midnight roll it back a day. */
-const dayFormatter = new Intl.DateTimeFormat("en-US", {
-  weekday: "short",
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-  timeZone: "UTC",
-});
 
 /** Long enough that typing a merchant name is one query, not eight. */
 const SEARCH_DEBOUNCE_MS = 300;
@@ -168,37 +158,18 @@ export function Ledger({
     return () => observer.disconnect();
   }, [cursor, loading, loadingMore, loadMore]);
 
-  const byDay = useMemo(() => {
-    const map = new Map<string, TransactionWithRefs[]>();
-    for (const t of rows) {
-      const key = new Date(t.occurred_at).toISOString().slice(0, 10);
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(t);
-    }
-    return [...map.entries()];
-  }, [rows]);
-
-  // Groups the (already-ordered) day sections under a sticky month pill.
-  // Presentational only — it doesn't touch the row order, so it relies
-  // on same-month days being contiguous, which holds as long as the ledger
-  // stays sorted by date.
-  const monthFormatter = useMemo(
-    () => new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }),
+  /* occurred_at is a plain calendar date stored as UTC midnight (no time-of-day
+     component) — format it in UTC so the displayed day doesn't drift backward
+     for users west of UTC, who'd otherwise see local-midnight roll it back a day. */
+  const dayFormatter = useMemo(
+    () => new Intl.DateTimeFormat(locale, { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }),
     [locale],
   );
-  const byMonth = useMemo(() => {
-    const map = new Map<string, [string, TransactionWithRefs[]][]>();
-    for (const entry of byDay) {
-      const [day] = entry;
-      const monthKey = day.slice(0, 7); // "YYYY-MM"
-      if (!map.has(monthKey)) map.set(monthKey, []);
-      map.get(monthKey)!.push(entry);
-    }
-    return [...map.entries()].map(([monthKey, days]) => {
-      const [y, m] = monthKey.split("-").map(Number);
-      return { monthKey, label: monthFormatter.format(new Date(y, m - 1, 1)), days };
-    });
-  }, [byDay, monthFormatter]);
+  const monthFormatter = useMemo(() => new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }), [locale]);
+  const grouped = useMemo(
+    () => groupLedger(rows, (y, m) => monthFormatter.format(new Date(y, m - 1, 1))),
+    [rows, monthFormatter],
+  );
 
   /* Value→label maps for the closed trigger. Base UI's `<Select.Value>`
      renders the raw value unless `items` is given on the root, so these
@@ -330,35 +301,19 @@ export function Ledger({
           />
         )
       ) : (
-        <div className={loading ? "space-y-6 opacity-60 transition-opacity" : "space-y-6"}>
-          {byMonth.map(({ monthKey, label, days }) => (
-            <div key={monthKey}>
-              <h2 className="sticky top-14 z-10 -mx-1 mb-1 py-2 md:top-0">
-                <span className="inline-flex rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground backdrop-blur">
-                  {label}
-                </span>
-              </h2>
-              <div className="space-y-6">
-                {days.map(([day, rowsOfDay]) => (
-                  <div key={day}>
-                    <p className="mb-1 text-xs font-medium text-muted-foreground">
-                      {dayFormatter.format(new Date(day))}
-                    </p>
-                    <div className="divide-y">
-                      {rowsOfDay.map((txn) => (
-                        <TransactionRow
-                          key={txn.id}
-                          txn={txn}
-                          data={data}
-                          onDelete={onDelete}
-                          pending={pending}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+        <div className={loading ? "space-y-8 opacity-60 transition-opacity" : "space-y-8"}>
+          {grouped.map(({ monthKey, label, days }) => (
+            <section key={monthKey} className="space-y-3">
+              <MonthLegend label={label} />
+              {days.map(({ day, rows: rowsOfDay }) => (
+                <div key={day}>
+                  <DateRule label={dayFormatter.format(new Date(day))} />
+                  {rowsOfDay.map((txn) => (
+                    <TransactionRow key={txn.id} txn={txn} data={data} onDelete={onDelete} pending={pending} />
+                  ))}
+                </div>
+              ))}
+            </section>
           ))}
         </div>
       )}
