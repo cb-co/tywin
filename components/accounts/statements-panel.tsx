@@ -136,7 +136,9 @@ export function StatementsPanel({
                       <ProofMark tone="flag">{t("categorizeCount", { count: triageCounts[s.id].count })}</ProofMark>
                     </a>
                   ) : (
-                    <ProofMark tone="ok">{tc("done")}</ProofMark>
+                    <ProofMark tone="ok">
+                      <span className="sr-only">{tc("done")}</span>
+                    </ProofMark>
                   )
                 }
                 title={
