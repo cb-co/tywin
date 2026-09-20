@@ -84,17 +84,12 @@ export default async function OverviewPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-8">
       <div className="rise">
-        {/* Desktop only — below `sm` the button sits in its own row above the note. */}
+        {/* Icon-only below `sm` so it shares the title row instead of taking its own. */}
         <PageHeader
           title={heading}
           description={t("description")}
-          actions={<ImportButton className="max-sm:hidden" />}
+          actions={<ImportButton iconOnlyOnMobile />}
         />
-      </div>
-
-      {/* Mobile only: the desktop header above already carries the button. */}
-      <div className="rise -mt-4 flex justify-end sm:hidden">
-        <ImportButton variant="outline" size="sm" />
       </div>
 
       {/* One issued document: the note, then the stub torn along the

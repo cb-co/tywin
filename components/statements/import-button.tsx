@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Upload } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { StatementImportDialog } from "@/components/statements/statement-import-dialog";
 
@@ -18,11 +19,14 @@ export function ImportButton({
   variant = "outline",
   size = "default",
   className,
+  iconOnlyOnMobile = false,
 }: {
   variant?: "default" | "outline";
   size?: "default" | "sm";
   /** For hosts that mount it twice and let width pick the visible one. */
   className?: string;
+  /** Below `sm` collapse to a square icon button so it fits beside a title. */
+  iconOnlyOnMobile?: boolean;
 }) {
   const t = useTranslations("Statements");
   const router = useRouter();
@@ -30,9 +34,15 @@ export function ImportButton({
 
   return (
     <>
-      <Button variant={variant} size={size} className={className} onClick={() => setOpen(true)}>
-        <Upload className="mr-1.5 size-4" />
-        {t("importButton")}
+      <Button
+        variant={variant}
+        size={size}
+        className={cn(iconOnlyOnMobile && "max-sm:size-9 max-sm:px-0", className)}
+        aria-label={iconOnlyOnMobile ? t("importButton") : undefined}
+        onClick={() => setOpen(true)}
+      >
+        <Upload className={cn("size-4", iconOnlyOnMobile ? "sm:mr-1.5" : "mr-1.5")} />
+        {iconOnlyOnMobile ? <span className="max-sm:hidden">{t("importButton")}</span> : t("importButton")}
       </Button>
 
       <StatementImportDialog open={open} onOpenChange={setOpen} onImported={() => router.refresh()} />
