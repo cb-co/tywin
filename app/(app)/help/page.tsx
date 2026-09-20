@@ -302,6 +302,7 @@ export default async function HelpPage() {
             </div>
             <LedgerMock
               label={t("transactionsTitle")}
+              dayLabel={t("ledgerMockDay")}
               groceries={t("ledgerMockGroceries")}
               groceriesAccount={t("ledgerMockGroceriesAccount")}
               groceriesBadge={t("ledgerMockGroceriesBadge")}

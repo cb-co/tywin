@@ -10,13 +10,14 @@ import {
 } from "lucide-react";
 import { siSpotify } from "simple-icons";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ColorTile } from "@/components/ui/color-tile";
 import { Note } from "@/components/papel/note";
 import { LedgerRow } from "@/components/papel/ledger-row";
 import { ProofMark } from "@/components/papel/proof-mark";
 import { Stamp } from "@/components/papel/stamp";
+import { Mark } from "@/components/transactions/mark";
+import { formatMoney } from "@/lib/format";
 import { Perforation } from "@/components/papel/perforation";
 import { RuleMeter } from "@/components/papel/rule-meter";
 import { SpecimenFrame } from "@/components/papel/specimen-frame";
@@ -323,18 +324,20 @@ export function AccountsMock({
 }
 
 /**
- * Two triage groups, drawn as a still of `TriageList`'s own card: a merchant
- * name, how many lines it covers, the running total, and the same
- * `CategoryRail` chip styling a real card offers — none of it wired up, and
- * `TriageList` itself is never imported here. The line above mirrors the
- * frozen "{done} of {total} categorised automatically" summary the real
- * screen shows only on the redirect straight out of an import.
+ * Two triage groups, drawn as a still of `TriageList`'s own sheet: the frozen
+ * summary line, then one hairline sheet of ledger blocks — a `LedgerRow` head
+ * (merchant, line count, running total) over a static stamp rail of three
+ * `Stamp`s with names, the picked one `stamp-inked` and underlined, exactly as
+ * `CategoryRail` prints it. None of it is wired up, and `TriageList` itself is
+ * never imported here. The summary mirrors the frozen "{done} of {total}
+ * categorised automatically" line the real screen shows only on the redirect
+ * straight out of an import.
  *
  * Both merchant strings are raw bank text, not translated — the same reason
  * `AccountsMock`'s card name is a fixed, hardcoded string rather than a prop
- * — and the first one keeps
- * its branch tail on purpose, the same location text a real rule pattern
- * would keep unless a person shortens it on the rules screen.
+ * — and the first one keeps its branch tail on purpose, the same location
+ * text a real rule pattern would keep unless a person shortens it on the
+ * rules screen.
  */
 export function TriageMock({
   summary,
@@ -359,45 +362,68 @@ export function TriageMock({
     { name: merchantOne, count: merchantOneCount, amount: 84.5, selected: 0 },
     { name: merchantTwo, count: merchantTwoCount, amount: 32.0, selected: 1 },
   ];
-  const chips = [categoryOne, categoryTwo, categoryThree];
+  const cats = [
+    { name: categoryOne, color: SWATCHES[1], emoji: "🛒" },
+    { name: categoryTwo, color: SWATCHES[4], emoji: "🚌" },
+    { name: categoryThree, color: SWATCHES[7], emoji: "🎬" },
+  ];
 
   return (
-    <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">{summary}</p>
-      {rows.map((row) => (
-        <Card key={row.name} className="gap-0 p-4">
-          <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-foreground">{row.name}</p>
-              <p className="text-xs text-muted-foreground">{row.count}</p>
+    <SpecimenFrame className="mt-4">
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground">{summary}</p>
+        <div className="rounded-[4px] border border-(--paper-line)">
+          {rows.map((row) => (
+            <div key={row.name} className="border-b-2 border-(--rule) last:border-b-0">
+              <LedgerRow
+                className="border-b-0 px-4 pt-3"
+                title={row.name}
+                subtitle={row.count}
+                amount={<span className="text-sm font-semibold">{formatMoney(row.amount, "USD")}</span>}
+              />
+              <div aria-hidden className="-mx-1 flex gap-0.5 overflow-x-auto px-5 pb-3">
+                {cats.map((c, i) => {
+                  const on = i === row.selected;
+                  return (
+                    <span
+                      key={c.name}
+                      className={cn(
+                        "flex w-[3.25rem] shrink-0 flex-col items-center gap-1 border-b-[3px] pb-1 pt-0.5",
+                        on ? "border-foreground text-foreground" : "border-transparent text-muted-foreground",
+                      )}
+                    >
+                      <Stamp
+                        color={c.color}
+                        emoji={c.emoji}
+                        name={c.name}
+                        size="sm"
+                        className={on ? "stamp-inked" : undefined}
+                      />
+                      <span className="w-full truncate text-center text-[10px] font-semibold leading-tight">{c.name}</span>
+                    </span>
+                  );
+                })}
+              </div>
             </div>
-            <MoneyDisplay amount={row.amount} currency="USD" size="inline" />
-          </div>
-          <div aria-hidden className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
-            {chips.map((chip, i) => (
-              <span
-                key={chip}
-                className={cn(
-                  "shrink-0 rounded-full border px-3 py-1.5 text-sm whitespace-nowrap",
-                  i === row.selected
-                    ? "border-primary bg-primary/10 text-foreground"
-                    : "border-input text-muted-foreground",
-                )}
-              >
-                {chip}
-              </span>
-            ))}
-          </div>
-        </Card>
-      ))}
-    </div>
+          ))}
+        </div>
+      </div>
+    </SpecimenFrame>
   );
 }
 
 const TYPE_ICON = { expense: ArrowUpRight, income: ArrowDownLeft, payment: ArrowLeftRight } as const;
 
+/**
+ * The ledger, drawn from the real primitives: a static date legend over a rule
+ * (the pinned `DateRule` minus its stickiness) and three `LedgerRow`s led by
+ * `Stamp`s, with `TransactionRow`'s own sign rules — an expense prints `−` in
+ * ink, income `+` in teal, a payment no sign — and the shared `Mark` for the
+ * statement tag.
+ */
 export function LedgerMock({
   label,
+  dayLabel,
   groceries,
   groceriesAccount,
   groceriesBadge,
@@ -407,6 +433,7 @@ export function LedgerMock({
   paymentAccounts,
 }: {
   label: string;
+  dayLabel: string;
   groceries: string;
   groceriesAccount: string;
   groceriesBadge: string;
@@ -423,9 +450,9 @@ export function LedgerMock({
       color: SWATCHES[1],
       emoji: "🛒",
       icon: TYPE_ICON.expense,
-      amount: -64.2,
-      signed: false,
-      tone: "text-destructive",
+      amount: 3850,
+      sign: "−",
+      income: false,
     },
     {
       title: paycheck,
@@ -434,9 +461,9 @@ export function LedgerMock({
       color: null,
       emoji: null,
       icon: TYPE_ICON.income,
-      amount: 2400,
-      signed: true,
-      tone: "text-success",
+      amount: 48000,
+      sign: "+",
+      income: true,
     },
     {
       title: payment,
@@ -445,41 +472,39 @@ export function LedgerMock({
       color: null,
       emoji: null,
       icon: TYPE_ICON.payment,
-      amount: 300,
-      signed: false,
-      tone: "text-foreground",
+      amount: 15000,
+      sign: "",
+      income: false,
     },
   ] as const;
 
   return (
-    <MockPanel>
+    <SpecimenFrame className="mt-4">
       <MockLabel>{label}</MockLabel>
-      <div className="divide-y">
+      <h3 className="legend border-b border-(--rule) py-1.5 text-[10px] text-muted-foreground">{dayLabel}</h3>
+      <div>
         {rows.map((row, i) => (
-          <div key={i} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
-            <ColorTile color={row.color} emoji={row.emoji} icon={row.icon} size="md" />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-foreground">
-                {row.title}
-                {row.badge ? (
-                  <Badge className="ml-2 bg-muted uppercase tracking-wide text-muted-foreground">
-                    {row.badge}
-                  </Badge>
-                ) : null}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">{row.subtitle}</p>
-            </div>
-            <MoneyDisplay
-              amount={row.amount}
-              currency="USD"
-              size="inline"
-              opts={{ signed: row.signed }}
-              className={row.tone}
-            />
-          </div>
+          <LedgerRow
+            key={i}
+            className="px-0 py-2.5"
+            lead={<Stamp color={row.color} emoji={row.emoji} name={row.title} icon={row.icon} size="sm" />}
+            title={
+              <span className="flex min-w-0 items-center gap-1.5">
+                <span className="truncate">{row.title}</span>
+                {row.badge ? <Mark>{row.badge}</Mark> : null}
+              </span>
+            }
+            subtitle={row.subtitle}
+            amount={
+              <span className={cn("text-sm font-semibold", row.income ? "text-(--teal)" : "text-foreground")}>
+                {row.sign}
+                {formatMoney(row.amount, "DOP")}
+              </span>
+            }
+          />
         ))}
       </div>
-    </MockPanel>
+    </SpecimenFrame>
   );
 }
 
