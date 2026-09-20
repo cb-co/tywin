@@ -499,7 +499,7 @@
     }
     /* Triage finished: the proof mark is stamped down once. */
     .stamp-down {
-      animation: stamp-down 520ms var(--ease-press, cubic-bezier(0.2, 0.9, 0.3, 1.2)) both;
+      animation: stamp-down 520ms var(--ease-press) both;
     }
     @keyframes stamp-down {
       from {
