@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { barPct } from "./bar";
+import { barPct, meterArgs } from "./bar";
+import { meterFill } from "@/lib/papel/meter";
 
 describe("barPct", () => {
   it("is the fraction of the budget used", () => {
@@ -21,6 +22,24 @@ describe("barPct", () => {
   });
 
   it("is empty when there is neither budget nor spend", () => {
+    expect(barPct(0, 0)).toBe(0);
+  });
+});
+
+describe("meterArgs", () => {
+  it("passes a real budget through", () => {
+    expect(meterArgs(40, 100)).toEqual({ used: 40, total: 100 });
+  });
+  it("fills fully, without reading as over, when spend has no budget", () => {
+    const { used, total } = meterArgs(25, 0);
+    expect(meterFill(used, total)).toEqual({ pct: 100, over: false });
+  });
+  it("stays empty when there is neither spend nor budget", () => {
+    const { used, total } = meterArgs(0, 0);
+    expect(meterFill(used, total)).toEqual({ pct: 0, over: false });
+  });
+  it("agrees with barPct on the unbudgeted cases", () => {
+    expect(barPct(25, 0)).toBe(100);
     expect(barPct(0, 0)).toBe(0);
   });
 });
