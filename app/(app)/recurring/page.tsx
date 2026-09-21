@@ -12,7 +12,7 @@ export default async function SubscriptionsPage() {
   const t = await getTranslations("Subscriptions");
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div className="mx-auto max-w-3xl space-y-8">
       <PageHeader
         title={t("pageTitle")}
         description={t("pageDescription")}

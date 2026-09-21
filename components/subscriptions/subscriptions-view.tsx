@@ -27,6 +27,11 @@ import { BrandGlyph } from "@/components/ui/brand-glyph";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/empty-state";
+import { LedgerBlock } from "@/components/papel/ledger-block";
+import { LedgerRow } from "@/components/papel/ledger-row";
+import { SectionLegend } from "@/components/papel/section-legend";
+import { DoubleRule } from "@/components/papel/double-rule";
+import { orderByNext } from "@/lib/subscriptions/order";
 import { cn } from "@/lib/utils";
 
 const dateFmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
@@ -94,8 +99,8 @@ export function SubscriptionsView({
      reads as noise, not information. Only worth the extra headings when both
      groups actually exist: a user with no income templates yet, or one whose
      list is all income, sees the same flat list as before. */
-  const incomeSubs = subscriptions.filter((s) => s.kind === "income");
-  const otherSubs = subscriptions.filter((s) => s.kind !== "income");
+  const incomeSubs = orderByNext(subscriptions.filter((s) => s.kind === "income"));
+  const otherSubs = orderByNext(subscriptions.filter((s) => s.kind !== "income"));
   const showBands = incomeSubs.length > 0 && otherSubs.length > 0;
 
   /* Resolves to whether the charge saved, so RecordChargeDialog can stay open on
@@ -144,136 +149,103 @@ export function SubscriptionsView({
     });
   }
 
-  const renderCard = (sub: SubscriptionWithRefs) => {
+  const renderBlock = (sub: SubscriptionWithRefs) => {
     const monthly = monthlyEquivalent(sub.amount, sub.billing_cycle as BillingCycle);
     return (
-    <Card key={sub.id} className={cn("gap-0 p-5", !sub.is_active && "opacity-60")}>
-      {/* Identity only. The active switch used to sit at this row's right edge
-          and has moved down into the control row, so the name gets the full
-          width and every control on the card lives on one line. */}
-      <div className="flex items-center gap-3">
-        <BrandMark name={sub.name} color={sub.color} logoPath={sub.logoPath} />
-        <div className="min-w-0">
-          <p className="truncate font-medium text-foreground">{sub.name}</p>
-          <p className="text-xs text-muted-foreground">
-            {sub.kind !== "expense" ? `${tType(sub.kind)} · ` : ""}
-            {tCycle(sub.billing_cycle as BillingCycle)}
-          </p>
-        </div>
-      </div>
-      {/* Same treatment as a budget card's figure: MoneyDisplay's
-          `stat` size, cents de-emphasised, and mask-aware — the raw
-          formatMoney that used to sit here kept showing real digits
-          while figure masking was on. */}
-      <p className="mt-4 leading-none">
-        <MoneyDisplay amount={sub.amount} currency={sub.currency} size="stat" />
-      </p>
-      {/* The cycle normalised to a month, so a biweekly 1,200 and a monthly
-          2,600 can be compared without doing the arithmetic in your head. Stays
-          in the template's OWN currency — this is a cycle conversion, not an FX
-          one; the base-currency figures are the two totals up top.
-
-          Shown only when it differs from the figure directly above it, which
-          silently covers "custom" as well as "monthly": monthlyEquivalent treats
-          both as already-monthly, and restating the same number would read as a
-          rendering fault rather than as information. */}
-      {monthly !== sub.amount ? (
-        <p className="mt-1.5 text-xs text-muted-foreground tabular-nums">
-          {t.rich("monthlyEquivalent", {
-            amount: () => <MaskedMoney amount={monthly} currency={sub.currency} />,
-          })}
-        </p>
-      ) : null}
-      <p className="mt-1 text-xs text-muted-foreground">
-        {t("nextPrefix", { date: nextLabel(sub) })}
-        {accountLine(sub) ? ` · ${accountLine(sub)}` : ""}
-      </p>
-      {/* Settings on the left, the act on the right. "Registrar" is the one
-          thing anybody comes to this card to do, so it sits at the card's right
-          edge where a right thumb already rests; pause, edit and delete are
-          occasional and keep the far corner, which is also the hardest place to
-          hit by accident. The switch moved down from the title row to make this
-          one balanced line rather than two half-empty ones. */}
-      <div className="mt-4 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1">
-          <Switch
-            checked={sub.is_active}
-            onCheckedChange={(v) => onToggle(sub.id, v)}
-            aria-label={t("activeAria")}
-            className="mr-1"
+      <LedgerBlock
+        key={sub.id}
+        className={cn(!sub.is_active && "opacity-60")}
+        head={
+          <LedgerRow
+            lead={<BrandMark name={sub.name} color={sub.color} logoPath={sub.logoPath} />}
+            title={sub.name}
+            subtitle={`${sub.kind !== "expense" ? `${tType(sub.kind)} · ` : ""}${tCycle(sub.billing_cycle as BillingCycle)}`}
+            amount={<MoneyDisplay amount={sub.amount} currency={sub.currency} size="inline" />}
+            meta={t("nextPrefix", { date: nextLabel(sub) })}
           />
-          <SubscriptionFormDialog
-            mode="edit"
-            subscription={sub}
-            data={data}
+        }
+      >
+        {monthly !== sub.amount ? (
+          <p className="text-xs text-muted-foreground tabular-nums">
+            {t.rich("monthlyEquivalent", {
+              amount: () => <MaskedMoney amount={monthly} currency={sub.currency} />,
+            })}
+          </p>
+        ) : null}
+        {accountLine(sub) ? <p className="truncate text-xs text-muted-foreground">{accountLine(sub)}</p> : null}
+        {/* The control row, unchanged in content and order: Switch, edit and
+            delete on the left, Record at the right edge. */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1">
+            <Switch
+              checked={sub.is_active}
+              onCheckedChange={(v) => onToggle(sub.id, v)}
+              aria-label={t("activeAria")}
+              className="mr-1"
+            />
+            <SubscriptionFormDialog
+              mode="edit"
+              subscription={sub}
+              data={data}
+              trigger={
+                <Button variant="ghost" size="icon-sm" aria-label={t("editAria")}>
+                  <Pencil className="size-4" />
+                </Button>
+              }
+            />
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={t("deleteAria")}
+              className="text-muted-foreground hover:text-destructive"
+              onClick={() => onDelete(sub.id)}
+              disabled={pending}
+              isLoading={pending}
+            >
+              {pending ? null : <Trash2 className="size-4" />}
+            </Button>
+          </div>
+          <ChargeButton
+            sub={sub}
+            rates={data.rates}
+            pending={pending}
+            onCharge={onAddCharge}
+            /* Deliberately not the primary variant: with one of these per card
+               plus the active toggle, a grid of solid black CTAs drowned out the
+               "add recurring" button that is meant to be the one high-contrast
+               action on the page. */
             trigger={
-              <Button variant="ghost" size="icon-sm" aria-label={t("editAria")}>
-                <Pencil className="size-4" />
+              <Button size="sm" variant="secondary" disabled={pending} isLoading={pending}>
+                <Receipt className="size-4" />
+                {t("addCharge")}
               </Button>
             }
           />
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label={t("deleteAria")}
-            className="text-muted-foreground hover:text-destructive"
-            onClick={() => onDelete(sub.id)}
-            disabled={pending}
-            isLoading={pending}
-          >
-            {pending ? null : <Trash2 className="size-4" />}
-          </Button>
         </div>
-        <ChargeButton
-          sub={sub}
-          rates={data.rates}
-          pending={pending}
-          onCharge={onAddCharge}
-          /* Deliberately not the primary variant: with one of these per card
-             plus the active toggle, a grid of solid black CTAs drowned out the
-             "add recurring" button that is meant to be the one high-contrast
-             action on the page. */
-          trigger={
-            <Button size="sm" variant="secondary" disabled={pending} isLoading={pending}>
-              <Receipt className="size-4" />
-              {t("addCharge")}
-            </Button>
-          }
-        />
-      </div>
-    </Card>
+      </LedgerBlock>
     );
   };
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border bg-card p-5">
-        {/* Peers, not a figure and a footnote: money out and money in are two
-            answers a person wants at the same size. The income figure appears
-            whenever income templates exist at all, on the same condition as the
-            income band — so pausing your only paycheck dims its card and takes
-            the total to zero rather than making a whole figure disappear. */}
-        <div className="flex flex-wrap items-start gap-x-10 gap-y-4">
+      {/* Plain ruled totals, no note: this screen is read and edited
+          repeatedly. Money out and money in are peers at one size. Income
+          is teal and also carries its own label, so colour never alone. */}
+      <div className="flex flex-wrap items-start gap-x-10 gap-y-4 border-y-2 border-(--rule) py-4">
+        <div>
+          <p className="legend text-[11px] text-muted-foreground">{t("monthlyRecurring")}</p>
+          <p className="mt-1 leading-none text-foreground">
+            <MoneyDisplay amount={totals.outgoing} currency={data.baseCurrency} size="feature" />
+          </p>
+        </div>
+        {incomeSubs.length > 0 && (
           <div>
-            <p className="text-xs text-muted-foreground">{t("monthlyRecurring")}</p>
-            <p className="mt-1 leading-none text-foreground">
-              <MoneyDisplay amount={totals.outgoing} currency={data.baseCurrency} size="feature" />
+            <p className="legend text-[11px] text-muted-foreground">{t("monthlyIncome")}</p>
+            <p className="mt-1 leading-none text-(--teal)">
+              <MoneyDisplay amount={totals.income} currency={data.baseCurrency} size="feature" />
             </p>
           </div>
-          {incomeSubs.length > 0 && (
-            <div>
-              <p className="text-xs text-muted-foreground">{t("monthlyIncome")}</p>
-              <p className="mt-1 leading-none">
-                <MoneyDisplay
-                  amount={totals.income}
-                  currency={data.baseCurrency}
-                  size="feature"
-                  className="text-success"
-                />
-              </p>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       {subscriptions.length === 0 ? (
@@ -286,15 +258,16 @@ export function SubscriptionsView({
         <div className="space-y-6">
           {showBands && (
             <div className="space-y-3">
-              <h3 className="text-sm font-medium text-foreground">{t("sectionIncome")}</h3>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{incomeSubs.map(renderCard)}</div>
+              <SectionLegend>{t("sectionIncome")}</SectionLegend>
+              <Card className="gap-0 overflow-hidden p-0">{incomeSubs.map(renderBlock)}</Card>
             </div>
           )}
-          <div className={showBands ? "space-y-3" : undefined}>
-            {showBands && <h3 className="text-sm font-medium text-foreground">{t("sectionOther")}</h3>}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {(showBands ? otherSubs : subscriptions).map(renderCard)}
-            </div>
+          {showBands && <DoubleRule />}
+          <div className="space-y-3">
+            {showBands && <SectionLegend>{t("sectionOther")}</SectionLegend>}
+            <Card className="gap-0 overflow-hidden p-0">
+              {(showBands ? otherSubs : orderByNext(subscriptions)).map(renderBlock)}
+            </Card>
           </div>
         </div>
       )}
@@ -332,16 +305,9 @@ export function SubscriptionsView({
  * touch the rim; the inset is the optical padding the artwork does not carry
  * itself.
  *
- * `.tile-sheen` is what keeps it from reading as a flat chip, and it is the same
- * utility every ColorTile in the app uses, so the marks belong to one family
- * rather than each being lit their own way. It only darkens, and only away from
- * the centre — which matters more here than on a ColorTile, because this glyph
- * can be near-black on a pale brand colour, and a treatment that lightened the
- * middle would eat exactly that case.
- *
- * Every state carries the same sheen. Skipping it on a fallback would make an
- * unresolved subscription look like a different kind of object rather than the
- * same one awaiting an answer.
+ * There is no gloss: the old sheen utility is retired with the rest of the
+ * tile look. A hairline `ring-(--rule)` does its one useful job instead,
+ * keeping a pale brand colour from dissolving into the paper.
  */
 function BrandMark({
   name,
@@ -357,7 +323,7 @@ function BrandMark({
   // still drew a circle, because that token is 20px against a 40px box and the
   // browser clamps it — the shape was luck rather than intent.
   const shared =
-    "tile-sheen flex size-10 items-center justify-center rounded-full text-sm font-semibold";
+    "flex size-10 items-center justify-center rounded-full text-sm font-semibold ring-1 ring-(--rule)";
   const mark = logoPath ? (
     <BrandGlyph path={logoPath} className="size-[55%]" />
   ) : (
