@@ -34,7 +34,7 @@ import { AccountDetailActions } from "@/components/accounts/account-detail-actio
 import { StatementsPanel } from "@/components/accounts/statements-panel";
 import { AmortizationTable } from "@/components/accounts/amortization-table";
 import { Card } from "@/components/ui/card";
-import { ColorTile } from "@/components/ui/color-tile";
+import { Stamp } from "@/components/papel/stamp";
 import { CardFace } from "@/components/papel/card-face";
 import { CardLineRail } from "@/components/accounts/card-line-rail";
 import { CardReport } from "@/components/accounts/card-report";
@@ -219,7 +219,7 @@ export default async function AccountDetailPage({
               portraits of the same object stacked on top of each other. The
               tile is the account's identity in the header row (it is what the
               accounts grid uses); the face is the physical card. */}
-          <ColorTile color={account.color ?? meta.color} icon={Icon} size="md" />
+          <Stamp color={account.color ?? meta.color} icon={Icon} size="md" />
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               {account.name}

@@ -88,6 +88,8 @@ surface); bank-account statement import is still gated to cards only.
 - **Spanish + RD$ are the first-run defaults.** A new Dominican profile should open in Spanish with
   `RD$` before the user touches a setting. The code today still defaults to English and USD — closing
   that gap is committed product direction, not an open question.
+- **Papel Moneda is the whole-domain visual world:** the signed-in app, `/welcome`, `/help`, legal, marketing
+  and login all share one banknote-inspired system (see `DESIGN.md`).
 - Voice, as written in the existing catalogues: plain, calm, second person, no finance jargon and no
   cheerleading. Errors say what happened and what to do.
 

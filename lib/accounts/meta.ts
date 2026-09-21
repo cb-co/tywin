@@ -24,7 +24,7 @@ export type GroupKey = "cash" | "assets" | "cards" | "loans";
 
 type Meta = { label: string; icon: LucideIcon; group: GroupKey; color: string };
 
-/* Per-type identity colour for the tile ColorTile draws when an account has
+/* Per-type identity colour for the tile Stamp draws when an account has
    no colour of its own (the common case — accounts have no colour picker).
    Picked from the shared SWATCHES palette so an account's tile always clears
    the same contrast bar as a category's or goal's. Distinct from `account.color`,

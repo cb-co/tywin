@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Logo, Wordmark } from "@/components/brand/logo";
-import { archivo } from "./papel/fonts";
+import { archivo } from "@/app/fonts";
 import { CardFace } from "@/components/papel/card-face";
 import { Guilloche } from "@/components/papel/guilloche";
 import { LocaleToggle } from "./papel/locale-toggle";

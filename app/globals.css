@@ -44,10 +44,7 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
-  --color-gold: var(--gold);
-  --color-gold-foreground: var(--gold-foreground);
 
-  --color-hero-foreground: var(--hero-foreground);
 
   /* The one chromatic accent. See the palette note below for where it may and
      may not go. */
@@ -148,15 +145,10 @@
   --success-foreground: #ffffff;
   --warning: #a14a0f;
   --warning-foreground: #ffffff;
-  --gold: #a14a0f;
-  --gold-foreground: #ffffff;
   --border: #cdc3e3;
   --input: #544a6c;
   --ring: #4a1f8c;
 
-  /* Kept until Phase 7 for HeroCard callers; a flat note, no glow. */
-  --hero: linear-gradient(160deg, #4a1f8c 0%, #2b1157 100%);
-  --hero-foreground: #f8f5ff;
 
   /* chart-1 is the lead series and must equal --ring (lib/palette.test.ts). */
   --chart-1: #4a1f8c;
@@ -228,8 +220,6 @@
   --success-foreground: #04140b;
   --warning: #ffb27a;
   --warning-foreground: #1f0e22;
-  --gold: #ffb27a;
-  --gold-foreground: #1f0e22;
   --ring: #a488ec;
   --chart-1: #a488ec;
   --chart-2: #D88C1F;
@@ -413,88 +403,7 @@
     }
   }
 
-  /* --- Identity tiles -------------------------------------------------
-     `.tile-sheen` stops a filled colour tile — a category, an account, a
-     subscription's brand mark — reading as a flat chip. The fill stays the
-     stored colour; this only adds the falloff that makes it look lit.
-
-     It DARKENS toward the far corner rather than adding a highlight, and that
-     is a constraint rather than a preference. The tile fills are held to 3:1
-     behind a white glyph (lib/palette.test.ts), and several swatches sit at
-     3.05 — #899C39 and #CE830A clear the bar by 0.05. A white wash of even
-     0.02 over the glyph puts them under it, so there is no strength at which
-     an additive highlight is safe. Removing light is free in that direction:
-     it can only push contrast up.
-
-     The ramp is placed so the GLYPH sits in the clean part of it, and tuned for
-     a CIRCLE rather than a square. Avatars here are round, so the square's far
-     corner — where a naive ramp puts its peak — is clipped away and never
-     rendered: the darkest point that actually survives is where the inscribed
-     circle runs furthest from the gradient's origin, at 0.81 of the way out
-     rather than 0.98. An earlier version peaked at 0.16 in that dead corner and
-     showed only 0.11 on screen, which is why it read as no effect at all.
-
-     At the values below the glyph centre sits at 0.39 of the ramp and takes 4%
-     darkening, while the visible edge of the circle takes 22%. The 4% is safe
-     for both foreground policies: it can only help ColorTile's white glyph, and
-     a sweep of the colour cube puts the WORST case for a measured dark glyph at
-     3.97:1 — clear of the 3:1 bar — so lib/color's readableForeground stays
-     correct without having to know this exists.
-
-     Deliberately colour-AGNOSTIC. These fills are not always hex: callers pass
-     `var(--brand)`, `var(--success)`, and `var(--muted-foreground)` too, so
-     nothing here may depend on parsing the colour underneath.
-
-     The two inset edges are the same trick the card face uses: a bright top
-     and a dark bottom read as a moulded object with thickness. One pixel each,
-     nowhere near the glyph. */
-  .tile-sheen {
-    background-image: radial-gradient(
-      120% 120% at 22% 12%,
-      rgba(0, 0, 0, 0) 30%,
-      rgba(0, 0, 0, 0.3) 100%
-    );
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.26),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.14);
-  }
-
-  /* --- Interactive surfaces ------------------------------------------
-     `.lift` marks a surface as clickable: it rises slightly under the
-     pointer and presses back down on click. The press is the important
-     half — it's the tactile receipt that the click registered. */
-  .lift {
-    transition:
-      transform var(--dur-fast) var(--ease-out-soft),
-      box-shadow var(--dur-fast) var(--ease-out-soft),
-      border-color var(--dur-fast) var(--ease-out-soft);
-  }
-
-  /* The lift also deepens the elevation, so the surface reads as coming
-     toward you rather than just sliding up two pixels. This runs outside the
-     `no-preference` block on purpose: it costs no motion, and it is the only
-     hover feedback left once the translate is gone.
-
-     It sets `--tw-shadow` rather than `box-shadow` because Tailwind composes
-     the ring and the shadow into one `box-shadow` declaration — writing the
-     property directly here would drop the card's hairline ring on hover. */
-  .lift:hover {
-    --tw-shadow: var(--shadow-card-hover);
-  }
-
   @media (prefers-reduced-motion: no-preference) {
-    .lift:hover {
-      transform: translate3d(0, -2px, 0);
-    }
-    /* A real press, not a hint of one. The old 0.995 was below the
-       threshold where the eye registers a size change at all, so the
-       click had no tactile receipt; 0.96 is unmistakable. The duration
-       drops with it — a press that takes 80ms to arrive feels like lag,
-       whereas 60ms reads as the surface responding under the finger. */
-    .lift:active {
-      transform: translate3d(0, 0, 0) scale(0.96);
-      transition-duration: 60ms;
-    }
     /* Triage finished: the proof mark is stamped down once. */
     .stamp-down {
       animation: stamp-down 520ms var(--ease-press) both;
