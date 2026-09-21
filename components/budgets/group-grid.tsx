@@ -125,6 +125,7 @@ export function GroupGrid({
       <SectionLegend aside={<span>{periodLabel}</span>}>{t("sectionTitle")}</SectionLegend>
       <Card className="gap-0 overflow-hidden p-0">
         {rows.map((row) => {
+          // null prorated means "one figure" — see budgetLabelParts.
           const parts = budgetLabelParts(period, row.budget_monthly, row.budget);
           return (
             <BudgetLine

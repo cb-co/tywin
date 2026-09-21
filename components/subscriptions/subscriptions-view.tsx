@@ -210,8 +210,8 @@ export function SubscriptionsView({
             rates={data.rates}
             pending={pending}
             onCharge={onAddCharge}
-            /* Deliberately not the primary variant: with one of these per card
-               plus the active toggle, a grid of solid black CTAs drowned out the
+            /* Deliberately not the primary variant: with one of these on every
+               ledger block plus the active toggle, a column of solid black CTAs drowned out the
                "add recurring" button that is meant to be the one high-contrast
                action on the page. */
             trigger={
@@ -344,7 +344,7 @@ function BrandMark({
 }
 
 /**
- * Record, in both the grid and the table.
+ * Record, on every ledger block.
  *
  * Recording only needs asking about when currencies differ — the template bills
  * in something other than its account's currency, or a payment's two accounts

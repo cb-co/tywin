@@ -11,8 +11,8 @@ import type { Pace } from "@/lib/goals/pace";
  * Share of the target that is saved, 0–100.
  *
  * Clamped at both ends: net withdrawals can drive `saved` negative, and a goal
- * overshot past its target has still only filled the bar once. Exported so the
- * bar and the percentage chip beside it are the same number by construction.
+ * overshot past its target has still only filled the strip once. Exported so the
+ * strip and the percentage beside it are the same number by construction.
  */
 export function goalProgressPct(goal: Pick<GoalCardRow, "saved" | "target_amount">) {
   const target = goal.target_amount;
@@ -30,11 +30,11 @@ const PACE_TONE = { success: "ok", warning: "flag", destructive: "flag" } as con
  * where the verdict was nothing but a coloured word at the end of the same
  * line, which reads as the tail of the sentence rather than as a status. Colour
  * alone was carrying it, and colour alone is the one signal some readers do not
- * get. The chip gives it a shape, a background and its own place on the line.
+ * get. The proof mark gives it a shape, a border and its own place on the line.
  *
- * Kinds that are ALREADY only a verdict (complete, overdue) render as the chip
+ * Kinds that are ALREADY only a verdict (complete, overdue) render as the proof mark
  * with no text beside it; kinds that are only arithmetic (no-pace, projection,
- * shortfall) render as text with no chip. Nothing is stated twice.
+ * shortfall) render as text with no mark. Nothing is stated twice.
  */
 type PaceParts = {
   detail: string | null;
@@ -85,18 +85,18 @@ function usePaceParts(pace: Pace, currency: string): PaceParts {
 }
 
 /**
- * One line, two objects: the arithmetic on the left taking whatever the chip
+ * One line, two objects: the arithmetic on the left taking whatever the mark
  * leaves and wrapping inside it, the verdict pinned right.
  *
- * The row never wraps as a row — the chip holds its corner and the text reflows
- * around it — so the verdict is in the same place on every card regardless of
+ * The row never wraps as a row — the mark holds its corner and the text reflows
+ * around it — so the verdict is in the same place on every block regardless of
  * how long the sentence beside it runs.
  *
  * Either half can be absent, and the ones that are absent are the ones that
  * would repeat: "Target reached" and "Overdue" are the whole reading, with no
  * arithmetic to show beneath them, while a projection or a borrowed-back
  * shortfall is arithmetic with no verdict to give. `ms-auto` is what keeps a
- * lone chip in its corner, where `justify-between` alone would drop it to the
+ * lone mark in its corner, where `justify-between` alone would drop it to the
  * left; with both halves present it changes nothing.
  */
 export function PaceSummary({
