@@ -141,7 +141,7 @@ export async function getInsights(month: string): Promise<Insights> {
   /* A null category is money the importer could not identify, not a category
      whose row went missing — so it gets a deliberate muted grey rather than the
      next colour off the fallback rotation, and reads as absence. `spend_distribution`
-     stopped filtering these out so the donut would stop quietly under-reporting
+     stopped filtering these out so the ledger would stop quietly under-reporting
      the month; see the null_category_triage migration. */
   const distribution = (dist ?? []).map((d, i) => {
     const cat = d.category_id ? catById.get(d.category_id) : undefined;

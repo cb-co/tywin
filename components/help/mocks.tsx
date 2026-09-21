@@ -809,9 +809,9 @@ export function InsightsMock({
 }) {
   const legend = [
     { name: essentials, color: "var(--chart-1)", pct: 38 },
-    { name: other, color: "var(--muted-foreground)", pct: 24 },
     { name: discretionary, color: "var(--chart-2)", pct: 23 },
     { name: subscriptions, color: "var(--chart-6)", pct: 15 },
+    { name: other, color: "var(--muted-foreground)", pct: 24 },
   ];
   return (
     <SpecimenFrame>
@@ -827,7 +827,7 @@ export function InsightsMock({
           <div key={name} className="border-b border-(--paper-line) py-1.5 last:border-b-0">
             <div className="flex items-center justify-between gap-2 text-xs">
               <span className="flex min-w-0 items-center gap-2">
-                <Stamp color={color} name={name} className="size-6 text-[10px]" />
+                <Stamp color={color} name={name} className="size-6" />
                 <span className="truncate text-foreground">{name}</span>
               </span>
               <span className="figure shrink-0 tabular-nums text-muted-foreground">{pct}%</span>

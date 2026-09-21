@@ -1146,7 +1146,7 @@
     "accountPageTitle": "En la pantalla de una cuenta",
     "accountPageBalance": "El saldo (o lo pendiente) como cifra principal, más un gráfico de saldo en el tiempo",
     "accountPageUtilization": "Utilización y próxima fecha de vencimiento, en tarjetas de crédito",
-    "accountPageSpend": "Un anillo de gasto por categoría del mes calendario actual, en tarjetas de crédito, que cuenta solo lo consumido con esa tarjeta y en la moneda de la propia tarjeta",
+    "accountPageSpend": "Un libro de gasto por categoría del mes calendario actual (sello, porcentaje e importe por categoría), en tarjetas de crédito, que cuenta solo lo consumido con esa tarjeta y en la moneda de la propia tarjeta",
     "accountPageAmortization": "Una tabla de amortización completa, en préstamos",
     "accountPageActivity": "En cuentas corrientes, de ahorro e inversión, la configuración de impuesto y comisión de transferencia más lo que la cuenta realmente pagó en comisiones e impuestos este año, en cualquier tipo de movimiento; luego todo el historial de actividad",
     "accountPageActions": "Editar, Archivar / Restaurar, o Eliminar (con confirmación)",

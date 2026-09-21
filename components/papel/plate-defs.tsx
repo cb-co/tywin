@@ -21,8 +21,8 @@ export function PlateDefs() {
         const n = i + 1;
         return (
           <pattern key={n} id={`plate-${n}`} width={h.gap} height={h.gap} patternUnits="userSpaceOnUse" patternTransform={`rotate(${h.angle})`}>
-            <line x1="0" y1="0" x2="0" y2={h.gap} stroke={`var(--chart-${n})`} strokeWidth={1.25} />
-            {n === 4 ? <line x1="0" y1="0" x2={h.gap} y2="0" stroke={`var(--chart-${n})`} strokeWidth={1.25} /> : null}
+            <line x1={h.gap / 2} y1="0" x2={h.gap / 2} y2={h.gap} stroke={`var(--chart-${n})`} strokeWidth={1.25} />
+            {n === 4 ? <line x1="0" y1={h.gap / 2} x2={h.gap} y2={h.gap / 2} stroke={`var(--chart-${n})`} strokeWidth={1.25} /> : null}
           </pattern>
         );
       })}

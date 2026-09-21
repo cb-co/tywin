@@ -24,21 +24,22 @@ export function BudgetBars({
     <div className="-mx-4 -mb-4">
       {data.map((row) => {
         const over = row.budget > 0 && row.used > row.budget;
-        const pct = row.budget > 0 ? Math.min(Math.max((row.used / row.budget) * 100, 0), 100) : row.used > 0 ? 100 : 0;
-        const usedOfBudget = row.budget > 0 ? `${formatMoney(row.used, currency)} / ${formatMoney(row.budget, currency)}` : undefined;
+        // The true percent prints; RuleMeter clamps its own fill.
+        const pct = row.budget > 0 ? Math.max((row.used / row.budget) * 100, 0) : row.used > 0 ? 100 : 0;
+        const ofBudget = row.budget > 0 ? `of ${formatMoney(row.budget, currency)}` : undefined;
         return (
           <LedgerBlock
             key={row.name}
             head={
               <LedgerRow
                 title={row.name}
-                subtitle={usedOfBudget}
+                subtitle={ofBudget}
                 amount={formatMoney(row.used, currency)}
                 meta={formatPercent(pct)}
               />
             }
           >
-            <RuleMeter {...meterArgs(row.used, row.budget)} label={row.name} overLabel={overLabel} near={pct >= 85 && !over} />
+            <RuleMeter {...meterArgs(row.used, row.budget)} pct={pct} label={row.name} overLabel={overLabel} near={pct >= 85 && !over} />
             {over ? <ProofMark tone="flag">{overLabel}</ProofMark> : null}
           </LedgerBlock>
         );

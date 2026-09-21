@@ -19,7 +19,7 @@ export function Plate({
   return (
     <Card className={cn("h-full gap-0 p-0", className)}>
       <div className="flex min-h-10 items-end justify-between gap-3 border-b-2 border-(--rule) px-4 pb-1.5 pt-3">
-        <h3 className="legend min-w-0 truncate text-[11px] text-foreground">
+        <h3 className="legend min-w-0 text-[11px] text-foreground">
           <span className="text-muted-foreground">{figLabel} · </span>
           {title}
         </h3>

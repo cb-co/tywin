@@ -16,7 +16,7 @@ const ratio = (a: number, b: number) => {
 };
 
 const WHITE = luminance("#ffffff");
-// Papel's light --paper, the surface charts print on (app/globals.css :root).
+// --paper, the lightest ground charts sit on; plates are --card, which is lighter still, so this is the stricter bound.
 const CARD_LIGHT = luminance("#eeebf5");
 // Papel's dark --paper-2, the card surface (app/globals.css .dark).
 const CARD_DARK = luminance("#1d1829");

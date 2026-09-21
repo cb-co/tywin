@@ -5,6 +5,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { AskAnswer } from "@/components/ask/ask-answer";
 
 /**
@@ -174,7 +175,7 @@ export function AskChat({ initialQuestion }: { initialQuestion: string | null })
         <label className="sr-only" htmlFor="ask-input">
           {t("inputLabel")}
         </label>
-        <input
+        <Input
           id="ask-input"
           name="question"
           value={input}
@@ -182,7 +183,7 @@ export function AskChat({ initialQuestion }: { initialQuestion: string | null })
           onFocus={warm}
           placeholder={t("placeholder")}
           autoComplete="off"
-          className="min-w-0 flex-1 border-0 border-b border-(--rule) bg-transparent px-0 py-2 text-sm focus-visible:border-b-2 focus-visible:outline-none"
+          className="flex-1 min-w-0"
         />
         <Button type="submit" disabled={busy || !input.trim()}>
           {t("send")}

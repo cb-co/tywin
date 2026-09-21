@@ -16,6 +16,6 @@ describe("Plate", () => {
   });
   it("omits the basis when none is given", () => {
     const html = renderToStaticMarkup(<Plate figLabel="Fig. 1" title="Net worth"><i /></Plate>);
-    expect(html).not.toContain("when");
+    expect(html).not.toContain("shrink-0");
   });
 });

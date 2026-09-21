@@ -136,11 +136,11 @@ export default async function AccountDetailPage({
   /* Where this month's charges went, by category. A second round trip rather
    * than a member of the Promise.all above, because it is only worth issuing
    * once `type` says this account is a card — and `type` comes out of that very
-   * batch. The same shape the Insights donut is fed, so the ring below is
+   * batch. The same shape the Insights ledger is fed, so the ledger below is
    * literally that component rather than a near-copy of it.
    *
    * Calendar month, not the statement period: it is the window every other
-   * spending figure in the app is framed by (the donut, the budget bars, the
+   * spending figure in the app is framed by (the spend ledger, the budget bars, the
    * pace chart), and a card whose statement closes mid-month would otherwise
    * report a category total that agreed with nothing else on screen.
    *

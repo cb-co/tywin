@@ -1146,7 +1146,7 @@
     "accountPageTitle": "On an account's page",
     "accountPageBalance": "Balance (or amount owed) as the hero figure, plus a balance-over-time chart",
     "accountPageUtilization": "Utilization and next due date, for credit cards",
-    "accountPageSpend": "A spend-by-category ring for the current calendar month, for credit cards, counting only what was charged to that card and in that card's own currency",
+    "accountPageSpend": "A spend-by-category ledger for the current calendar month (a stamp, share and amount per category), for credit cards, counting only what was charged to that card and in that card's own currency",
     "accountPageAmortization": "A full amortization schedule, for loans",
     "accountPageActivity": "For checking, savings and investment accounts, the transfer tax and network fee settings plus what the account actually paid in fees and tax this year, across every kind of transaction; then the complete activity feed",
     "accountPageActions": "Edit, Archive / Restore, or Delete (with a confirmation step)",
