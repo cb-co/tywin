@@ -48,7 +48,7 @@ export type BudgetLineProps = {
  */
 export function BudgetLine(p: BudgetLineProps) {
   const t = useTranslations("Budgets");
-  const { used, total } = meterArgs(p.used, p.budget);
+  const { used, total } = meterArgs(p.used, p.budget, p.status === "over");
   return (
     <LedgerBlock
       head={

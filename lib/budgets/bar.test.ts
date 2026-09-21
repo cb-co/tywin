@@ -43,3 +43,18 @@ describe("meterArgs", () => {
     expect(barPct(0, 0)).toBe(0);
   });
 });
+
+describe("meterArgs with an over status", () => {
+  it("prints an unbudgeted overspend as an over meter", () => {
+    const { used, total } = meterArgs(216.5, 0, true);
+    expect(meterFill(used, total)).toEqual({ pct: 100, over: true });
+  });
+  it("keeps an unbudgeted, not-over row full but not over", () => {
+    for (const args of [meterArgs(216.5, 0, false), meterArgs(216.5, 0)]) {
+      expect(meterFill(args.used, args.total)).toEqual({ pct: 100, over: false });
+    }
+  });
+  it("leaves a real budget's over state to the numbers", () => {
+    expect(meterArgs(40, 100, true)).toEqual({ used: 40, total: 100 });
+  });
+});
