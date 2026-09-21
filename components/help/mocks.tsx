@@ -809,36 +809,30 @@ export function InsightsMock({
 }) {
   const legend = [
     { name: essentials, color: "var(--chart-1)", pct: 38 },
+    { name: other, color: "var(--muted-foreground)", pct: 24 },
     { name: discretionary, color: "var(--chart-2)", pct: 23 },
     { name: subscriptions, color: "var(--chart-6)", pct: 15 },
-    { name: other, color: "var(--border)", pct: 24 },
   ];
   return (
     <MockPanel>
       <MockLabel>{label}</MockLabel>
-      {/* A gap in the surface colour between wedges, like the real ring's
-          `stroke="var(--card)"` separator, rather than the touching flat
-          segments a bare conic-gradient draws by default. */}
-      <div
-        className="mx-auto flex size-28 items-center justify-center rounded-full"
-        style={{
-          background:
-            "conic-gradient(var(--chart-1) 0 37%, var(--card) 37% 39%, var(--chart-2) 39% 62%, var(--card) 62% 64%, var(--chart-6) 64% 79%, var(--card) 79% 81%, var(--border) 81% 99%, var(--card) 99% 100%)",
-        }}
-      >
-        <div className="flex size-16 flex-col items-center justify-center gap-0.5 rounded-full bg-card">
-          <span className="text-[9px] uppercase tracking-wide text-muted-foreground">{thisMonth}</span>
-          <MoneyDisplay amount={2050} currency="USD" size="stat" className="text-base leading-none" />
-        </div>
+      {/* The real card is a stamped ledger: one ruled row per category with
+          its share and a hairline share strip, largest first. */}
+      <div className="mb-2 flex items-baseline justify-between gap-2">
+        <span className="legend text-[10px] text-muted-foreground">{thisMonth}</span>
+        <MoneyDisplay amount={2050} currency="USD" size="stat" className="text-base leading-none" />
       </div>
-      <div className="mt-4 space-y-1.5">
+      <div className="border-t border-(--paper-line)">
         {legend.map(({ name, color, pct }) => (
-          <div key={name} className="flex items-center justify-between gap-2 text-xs">
-            <span className="flex min-w-0 items-center gap-2 text-muted-foreground">
-              <span className="size-2.5 shrink-0 rounded-[3px]" style={{ backgroundColor: color }} />
-              <span className="truncate text-foreground">{name}</span>
-            </span>
-            <span className="figure shrink-0 tabular-nums text-muted-foreground">{pct}%</span>
+          <div key={name} className="border-b border-(--paper-line) py-1.5 last:border-b-0">
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <span className="flex min-w-0 items-center gap-2">
+                <Stamp color={color} name={name} className="size-6 text-[10px]" />
+                <span className="truncate text-foreground">{name}</span>
+              </span>
+              <span className="figure shrink-0 tabular-nums text-muted-foreground">{pct}%</span>
+            </div>
+            <RuleMeter className="mt-1.5" used={pct} total={38} label={`${name} ${pct}%`} />
           </div>
         ))}
       </div>

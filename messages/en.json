@@ -1218,7 +1218,7 @@
     "subscriptionsMockStreamingNext": "Next Aug 3 · Everyday Checking",
     "insightsTitle": "Insights",
     "insightsIntro": "Insights answers four questions: is your net worth moving, where did the money go, are you on pace, and what does your debt cost. The middle band follows the month you pick; the others don't need one.",
-    "insightsSpend": "Spend distribution — where your money went, by category",
+    "insightsSpend": "Spend ledger: where your money went, one stamped row per category with its share",
     "insightsDebt": "Debt health: credit utilization and loan payoff at a glance",
     "insightsCashflow": "Cash-flow trend and spending pace across the month",
     "insightsBudget": "Expenses vs. budget, category by category",
