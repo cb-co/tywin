@@ -5,21 +5,18 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
 import { useUiSound } from "@/components/sound/sound-provider";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { setGroupBudget, deleteBudgetGroup } from "@/app/(app)/budgets/group-actions";
 import { monthLabel, normalizeMonth } from "@/lib/budgets/month";
 import { budgetLabelParts } from "@/lib/budgets/label";
 import { isWholeMonth, type PayCycle } from "@/lib/period/cycle";
-import { formatDate, formatPercent } from "@/lib/format";
-import { STATUS_COLOR, barPct } from "@/lib/budgets/bar";
+import { formatDate } from "@/lib/format";
 import type { BudgetGroupOverview } from "@/lib/budgets/queries";
 import { GroupDialog } from "./group-dialog";
+import { BudgetLine } from "./budget-line";
+import { SectionLegend } from "@/components/papel/section-legend";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { ColorTile } from "@/components/ui/color-tile";
-import { MoneyDisplay } from "@/components/ui/money-display";
-import { StatPill } from "@/components/ui/stat-pill";
 import { useMaskedFormatMoney } from "@/components/figure-mask/figure-mask-provider";
 import { cn } from "@/lib/utils";
 
@@ -38,9 +35,8 @@ const TOUCH_TARGET = "[@media(hover:none)]:size-9";
  * such a user ever meets is the "Add group" button in the band below.
  *
  * The second is that it draws money exactly the way BudgetGrid does — the same
- * tile, the same stat-sized figure, the same pill, the same bar off the same
- * shared STATUS_COLOR and barPct. These are the same quantity sliced a second
- * way, and a second visual language for it would suggest they are not.
+ * `BudgetLine`. These are the same quantity sliced a second way, and a second
+ * visual language for it would suggest they are not.
  *
  * There is no totals row here on purpose. The band below already carries one,
  * and the two would rarely match: a category budget and a group budget are two
@@ -126,69 +122,38 @@ export function GroupGrid({
 
   return (
     <section className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          {t("sectionTitle")}
-        </h2>
-        <span className="shrink-0 text-xs text-muted-foreground">{periodLabel}</span>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <SectionLegend aside={<span>{periodLabel}</span>}>{t("sectionTitle")}</SectionLegend>
+      <Card className="gap-0 overflow-hidden p-0">
         {rows.map((row) => {
-          // null `prorated` means "one figure" — see budgetLabelParts.
           const parts = budgetLabelParts(period, row.budget_monthly, row.budget);
           return (
-            <Card key={row.budget_group_id} className="gap-0 p-5">
-              <div className="flex items-center gap-3">
-                <ColorTile color={row.color} emoji={row.emoji} name={row.name} size="md" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground">{row.name}</p>
-                  <p className="text-xs text-muted-foreground tabular-nums">
-                    {t("amountOfBudget", {
-                      used: maskedFormatMoney(row.used, baseCurrency),
-                      budget: maskedFormatMoney(row.budget, baseCurrency),
-                    })}
-                  </p>
-                  {parts.prorated !== null ? (
-                    <p className="text-xs text-muted-foreground tabular-nums">
-                      {tb(payCycle === "weekly" ? "budgetProratedWeekly" : "budgetProrated", {
-                        monthly: maskedFormatMoney(parts.monthly, baseCurrency),
-                        prorated: maskedFormatMoney(parts.prorated, baseCurrency),
-                      })}
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-              <div className="mt-3 flex items-end justify-between gap-2">
-                <MoneyDisplay amount={row.used} currency={baseCurrency} size="stat" />
-                <StatPill tone={row.status === "over" ? "destructive" : "neutral"}>
-                  {formatPercent(barPct(row.used, row.budget))}
-                </StatPill>
-              </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{
-                    width: `${barPct(row.used, row.budget)}%`,
-                    backgroundColor: STATUS_COLOR[row.status],
-                  }}
-                />
-              </div>
-              <div className="mt-4 flex items-center gap-1">
-                <Input
-                  key={`${row.budget_group_id}-${row.budget_monthly}`}
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  defaultValue={row.budget_monthly || ""}
-                  placeholder={t("amountPlaceholder")}
-                  aria-label={t("budgetForAria", { name: row.name })}
-                  className="h-8 flex-1 tabular-nums"
-                  onBlur={(e) => onSaveBudget(row.budget_group_id, e.target.value, row.budget_monthly)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                  }}
-                />
+            <BudgetLine
+              key={row.budget_group_id}
+              name={row.name}
+              color={row.color}
+              emoji={row.emoji}
+              used={row.used}
+              budget={row.budget}
+              status={row.status}
+              currency={baseCurrency}
+              subtitle={t("amountOfBudget", {
+                used: maskedFormatMoney(row.used, baseCurrency),
+                budget: maskedFormatMoney(row.budget, baseCurrency),
+              })}
+              prorated={
+                parts.prorated !== null
+                  ? tb(payCycle === "weekly" ? "budgetProratedWeekly" : "budgetProrated", {
+                      monthly: maskedFormatMoney(parts.monthly, baseCurrency),
+                      prorated: maskedFormatMoney(parts.prorated, baseCurrency),
+                    })
+                  : null
+              }
+              inputKey={`${row.budget_group_id}-${row.budget_monthly}`}
+              defaultAmount={row.budget_monthly}
+              placeholder={t("amountPlaceholder")}
+              budgetAria={t("budgetForAria", { name: row.name })}
+              onSave={(raw) => onSaveBudget(row.budget_group_id, raw, row.budget_monthly)}
+              editControl={
                 <GroupDialog
                   mode="edit"
                   group={row}
@@ -203,22 +168,14 @@ export function GroupGrid({
                     </Button>
                   }
                 />
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={t("deleteAria", { name: row.name })}
-                  className={cn("text-muted-foreground hover:text-destructive", TOUCH_TARGET)}
-                  onClick={() => onDelete(row.budget_group_id)}
-                  disabled={deletingId === row.budget_group_id}
-                  isLoading={deletingId === row.budget_group_id}
-                >
-                  {deletingId === row.budget_group_id ? null : <Trash2 className="size-4" />}
-                </Button>
-              </div>
-            </Card>
+              }
+              deleteAria={t("deleteAria", { name: row.name })}
+              onDelete={() => onDelete(row.budget_group_id)}
+              deleting={deletingId === row.budget_group_id}
+            />
           );
         })}
-      </div>
+      </Card>
     </section>
   );
 }
