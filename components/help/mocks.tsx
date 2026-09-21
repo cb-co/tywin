@@ -533,6 +533,12 @@ type MockBudgetRow = {
  * is a stamped `LedgerRow`, with the ruled meter and its status mark under it.
  * The percent is the clamped `barPct`, exactly what the real head shows.
  */
+/** The message strings carry a leading emoji ("🍽️ Food"); an aria-label wants the name alone. */
+function plainName(label: string) {
+  const m = label.match(/^\P{L}+?\s+(.+)$/u);
+  return m ? m[1] : label;
+}
+
 function MockBudgetBlock({
   row,
   nearLabel,
@@ -563,7 +569,7 @@ function MockBudgetBlock({
           used={used}
           total={total}
           near={row.status === "approaching"}
-          label={row.name}
+          label={plainName(row.name)}
           overLabel={overLabel}
         />
         <BudgetStatusMark status={row.status} overLabel={overLabel} nearLabel={nearLabel} />
@@ -586,6 +592,8 @@ export function BudgetsMock({
   nearLabel,
   overLabel,
   usedOf,
+  usedLabel,
+  remainingLabel,
 }: {
   month: string;
   food: string;
@@ -594,6 +602,8 @@ export function BudgetsMock({
   nearLabel: string;
   overLabel: string;
   usedOf: (used: string, budget: string) => string;
+  usedLabel: string;
+  remainingLabel: string;
 }) {
   const rows: MockBudgetRow[] = [
     { name: food, emoji: "🍽️", color: SWATCHES[1], used: 340, budget: 500, status: "within" },
@@ -606,6 +616,16 @@ export function BudgetsMock({
       <div className="space-y-3">
         <Note tone="peso" ornament={false} label={month} className="p-4 sm:p-4">
           <MoneyDisplay amount={890} currency="DOP" size="stat" />
+          <div className="mt-3 space-y-1.5 border-t border-current/30 pt-3 text-sm">
+            <div className="flex items-baseline justify-between gap-4">
+              <span className="opacity-90">{usedLabel}</span>
+              <MoneyDisplay amount={746} currency="DOP" size="inline" />
+            </div>
+            <div className="flex items-baseline justify-between gap-4 font-semibold">
+              <span>{remainingLabel}</span>
+              <MoneyDisplay amount={144} currency="DOP" size="inline" />
+            </div>
+          </div>
         </Note>
         <div className="rounded-[4px] border border-(--paper-line)">
           {rows.map((row) => (

@@ -343,6 +343,8 @@ export default async function HelpPage() {
               nearLabel={tBudgets("statusApproaching")}
               overLabel={tBudgets("statusOver")}
               usedOf={usedOf}
+              usedLabel={tBudgets("usedLabel")}
+              remainingLabel={tBudgets("remainingLabel")}
             />
           </HelpChapter>
 
