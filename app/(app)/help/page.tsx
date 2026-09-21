@@ -4,7 +4,7 @@ import {
   Landmark,
   LayoutDashboard,
   LineChart,
-  Coins,
+  Bird,
   MessageCircle,
   PieChart,
   Repeat,
@@ -484,7 +484,7 @@ export default async function HelpPage() {
           </HelpChapter>
 
           <p className="flex items-center gap-2 pt-8 text-sm text-muted-foreground">
-            <Coins className="size-4 shrink-0" />
+            <Bird className="size-4 shrink-0" />
             {t("footerNote")}
           </p>
         </div>
