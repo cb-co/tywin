@@ -787,6 +787,7 @@
     "title": "Ask Cigua",
     "description": "Ask about your money in your own words.",
     "placeholder": "How much did I spend on transportation last month?",
+    "you": "You",
     "send": "Ask",
     "emptyTitle": "Ask anything about your own numbers",
     "emptyHint": "Try: what went on my Amex between the 8th and the 14th?",

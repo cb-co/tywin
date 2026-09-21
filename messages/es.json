@@ -787,6 +787,7 @@
     "title": "Pregunta a Cigua",
     "description": "Pregunta sobre tu dinero con tus propias palabras.",
     "placeholder": "¿Cuánto gasté en transporte el mes pasado?",
+    "you": "Tú",
     "send": "Preguntar",
     "emptyTitle": "Pregunta lo que quieras sobre tus números",
     "emptyHint": "Prueba: ¿qué se cargó a mi Amex entre el 8 y el 14?",
