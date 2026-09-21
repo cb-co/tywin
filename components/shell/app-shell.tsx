@@ -28,8 +28,11 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           <Splash />
           {/* overflow-clip, not hidden: hidden still lets focus and scrollIntoView
               scroll this root, which slid the whole shell (sidebar included)
-              up off the window and left dead space below it. */}
-          <div className="flex min-h-dvh md:h-dvh md:overflow-clip">
+              up off the window and left dead space below it. relative: an absolute
+              descendant with no positioned ancestor is contained by the page,
+              not this root, so it escaped the clip and made the document taller
+              than the window. */}
+          <div className="relative flex min-h-dvh md:h-dvh md:overflow-clip">
             <Sidebar
               email={user?.email ?? ""}
               displayName={profile?.display_name ?? null}
