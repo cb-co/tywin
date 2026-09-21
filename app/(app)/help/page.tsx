@@ -448,6 +448,7 @@ export default async function HelpPage() {
               <p className="mt-3 text-sm text-foreground">{t("askLimits")}</p>
             </div>
             <AskMock
+              you={t("askMockYou")}
               question={t("askMockQuestion")}
               narration={t("askMockNarration")}
               answer={t("askMockAnswer")}

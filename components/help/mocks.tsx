@@ -814,7 +814,7 @@ export function InsightsMock({
     { name: subscriptions, color: "var(--chart-6)", pct: 15 },
   ];
   return (
-    <MockPanel>
+    <SpecimenFrame>
       <MockLabel>{label}</MockLabel>
       {/* The real card is a stamped ledger: one ruled row per category with
           its share and a hairline share strip, largest first. */}
@@ -836,37 +836,38 @@ export function InsightsMock({
           </div>
         ))}
       </div>
-    </MockPanel>
+    </SpecimenFrame>
   );
 }
 
 export function AskMock({
+  you,
   question,
   narration,
   answer,
 }: {
+  you: string;
   question: string;
   narration: string;
   answer: string;
 }) {
   return (
-    <MockPanel>
+    <SpecimenFrame>
       <div className="space-y-3">
+        {/* The real sheet: a question is a right-aligned ruled slip, the answer
+            prints as the body of the sheet between hairlines. */}
         <div className="flex justify-end">
-          <div className="max-w-xs rounded-2xl bg-primary px-4 py-2.5">
-            <p className="text-sm text-primary-foreground">{question}</p>
+          <div className="max-w-xs border border-(--paper-line) bg-muted/50 px-3 py-2">
+            <p className="legend text-[10px] text-muted-foreground">{you}</p>
+            <p className="text-sm text-foreground">{question}</p>
           </div>
         </div>
-        <div className="flex justify-start">
-          <p className="text-xs text-muted-foreground">{narration}</p>
-        </div>
-        <div className="flex justify-start">
-          <div className="max-w-xs rounded-2xl border bg-background px-4 py-2.5">
-            <p className="text-sm text-foreground">{answer}</p>
-          </div>
+        <p className="text-xs text-muted-foreground">{narration}</p>
+        <div className="border-y border-(--paper-line) py-3">
+          <p className="text-sm text-foreground">{answer}</p>
         </div>
       </div>
-    </MockPanel>
+    </SpecimenFrame>
   );
 }
 

@@ -122,26 +122,26 @@ export default async function InsightsPage({
           band is two lists of rows, which pair up fine at half width. */}
       <div className="@container space-y-10">
         <Section title={t("sectionPosition")}>
-          <Plate fig={1} title={t("cardNetWorth")} className="@[34rem]:col-span-2">
+          <Plate figLabel={t("fig", { n: 1 })} title={t("cardNetWorth")} className="@[34rem]:col-span-2">
             <NetWorthChart data={netWorth.points} currency={netWorth.baseCurrency} />
           </Plate>
 
-          <Plate fig={2} title={t("cardCashFlow")} className="@[34rem]:col-span-2">
+          <Plate figLabel={t("fig", { n: 2 })} title={t("cardCashFlow")} className="@[34rem]:col-span-2">
             <CashflowChart data={insights.trend} currency={cur} />
           </Plate>
         </Section>
 
         <Section title={t("sectionThisMonth")} actions={monthNav}>
-          <Plate fig={3} title={t("cardSpendingPace")} basis={t("basisWhenCharged")} className="@[34rem]:col-span-2">
+          <Plate figLabel={t("fig", { n: 3 })} title={t("cardSpendingPace")} basis={t("basisWhenCharged")} className="@[34rem]:col-span-2">
             <SpendingPace data={insights.pace} currency={cur} />
           </Plate>
 
-          <Plate fig={4} title={t("cardSpendDistribution")} basis={t("basisWhenCharged")} className="@[34rem]:col-span-2">
+          <Plate figLabel={t("fig", { n: 4 })} title={t("cardSpendDistribution")} basis={t("basisWhenCharged")} className="@[34rem]:col-span-2">
             <SpendLedger data={insights.distribution} total={insights.totalSpend} currency={cur} />
           </Plate>
 
           <Plate
-            fig={5}
+            figLabel={t("fig", { n: 5 })}
             title={
               insights.budgetBarsBy === "group"
                 ? t("cardExpensesVsBudgetGroups")
@@ -155,11 +155,11 @@ export default async function InsightsPage({
         </Section>
 
         <Section title={t("sectionDebt")}>
-          <Plate fig={6} title={t("cardDebtHealth")}>
+          <Plate figLabel={t("fig", { n: 6 })} title={t("cardDebtHealth")}>
             <DebtHealth utilization={insights.utilization} loans={insights.loans} />
           </Plate>
 
-          <Plate fig={7} title={t("debtCostTitle")}>
+          <Plate figLabel={t("fig", { n: 7 })} title={t("debtCostTitle")}>
             <DebtCostList data={debtCost} locale={locale} />
           </Plate>
         </Section>
