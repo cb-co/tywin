@@ -1,6 +1,7 @@
 "use client";
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { PlateDefs, PLATE_AXIS, PLATE_GRID, PLATE_TOOLTIP_STYLE } from "@/components/papel/plate-defs";
 import { useTranslations } from "next-intl";
 import { formatMoney } from "@/lib/format";
 import type { Insights } from "@/lib/insights/queries";
@@ -24,23 +25,16 @@ export function SpendingPace({
     // ResizeObserver measures. One fixed dimension satisfies the check.
     <ResponsiveContainer width="100%" height={256}>
       <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-        <XAxis dataKey="day" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} minTickGap={20} />
+        <PlateDefs />
+        <CartesianGrid {...PLATE_GRID} />
+        <XAxis dataKey="day" {...PLATE_AXIS} minTickGap={20} />
         <YAxis
-          stroke="var(--muted-foreground)"
-          fontSize={12}
-          tickLine={false}
-          axisLine={false}
+          {...PLATE_AXIS}
           width={48}
           tickFormatter={(v: number) => formatMoney(v, currency, { compact: true })}
         />
         <Tooltip
-          contentStyle={{
-            background: "var(--popover)",
-            border: "1px solid var(--border)",
-            borderRadius: 8,
-            fontSize: 12,
-          }}
+          contentStyle={PLATE_TOOLTIP_STYLE}
           formatter={(value) => formatMoney(Number(value), currency)}
           labelFormatter={(label) => t("dayLabel", { day: label })}
         />
@@ -50,7 +44,7 @@ export function SpendingPace({
             against its own equal-length previous period (spending_pace_range),
             not literally "last month". So these use dedicated paceThisPeriod/
             paceLastPeriod keys rather than the thisMonth/lastMonth keys —
-            spend-donut.tsx uses those same shared keys for its own caption,
+            spend-ledger.tsx uses those same shared keys for its own caption,
             which must keep reading "this month" verbatim. */}
         <Line
           dataKey="lastMonth"

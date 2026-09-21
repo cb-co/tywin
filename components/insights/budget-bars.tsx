@@ -1,5 +1,10 @@
 import { useTranslations } from "next-intl";
-import { formatMoney } from "@/lib/format";
+import { LedgerBlock } from "@/components/papel/ledger-block";
+import { LedgerRow } from "@/components/papel/ledger-row";
+import { ProofMark } from "@/components/papel/proof-mark";
+import { RuleMeter } from "@/components/papel/rule-meter";
+import { meterArgs } from "@/lib/budgets/bar";
+import { formatMoney, formatPercent } from "@/lib/format";
 import type { Insights } from "@/lib/insights/queries";
 
 export function BudgetBars({
@@ -10,34 +15,33 @@ export function BudgetBars({
   currency: string;
 }) {
   const t = useTranslations("Insights");
+  const overLabel = useTranslations("Budgets")("statusOver");
   if (data.length === 0) {
     return <p className="py-8 text-center text-sm text-muted-foreground">{t("budgetBarsEmpty")}</p>;
   }
 
   return (
-    <div className="space-y-4">
+    <div className="-mx-4 -mb-4">
       {data.map((row) => {
         const over = row.budget > 0 && row.used > row.budget;
-        const pct = row.budget > 0 ? Math.min(Math.max((row.used / row.budget) * 100, 0), 100) : row.used > 0 ? 100 : 0;
+        // The true percent prints; RuleMeter clamps its own fill.
+        const pct = row.budget > 0 ? Math.max((row.used / row.budget) * 100, 0) : row.used > 0 ? 100 : 0;
+        const ofBudget = row.budget > 0 ? t("budgetOf", { amount: formatMoney(row.budget, currency) }) : undefined;
         return (
-          <div key={row.name}>
-            <div className="flex items-baseline justify-between text-sm">
-              <span className="text-foreground">{row.name}</span>
-              <span className="text-xs tabular-nums text-muted-foreground">
-                {formatMoney(row.used, currency)}
-                {row.budget > 0 ? ` / ${formatMoney(row.budget, currency)}` : ""}
-              </span>
-            </div>
-            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full"
-                style={{
-                  width: `${pct}%`,
-                  backgroundColor: over ? "var(--destructive)" : "var(--brand)",
-                }}
+          <LedgerBlock
+            key={row.name}
+            head={
+              <LedgerRow
+                title={row.name}
+                subtitle={ofBudget}
+                amount={formatMoney(row.used, currency)}
+                meta={formatPercent(pct)}
               />
-            </div>
-          </div>
+            }
+          >
+            <RuleMeter {...meterArgs(row.used, row.budget)} pct={pct} label={row.name} overLabel={overLabel} near={pct >= 85 && !over} />
+            {over ? <ProofMark tone="flag">{overLabel}</ProofMark> : null}
+          </LedgerBlock>
         );
       })}
     </div>

@@ -160,14 +160,13 @@
 
   /* chart-1 is the lead series and must equal --ring (lib/palette.test.ts). */
   --chart-1: #4a1f8c;
-  /* --chart-2 … --chart-8: unchanged until Phase 5 */
-  --chart-2: #CE830A;
-  --chart-3: #00A08A;
-  --chart-4: #E85B3F;
-  --chart-5: #9B4FBC;
-  --chart-6: #899C39;
-  --chart-7: #1A96CE;
-  --chart-8: #DB4A76;
+  --chart-2: #7a5a00;
+  --chart-3: #0a7a6a;
+  --chart-4: #a2461e;
+  --chart-5: #8b3fa8;
+  --chart-6: #5f7a1c;
+  --chart-7: #1a6f9c;
+  --chart-8: #b03a68;
 
   /* Engraved, not rounded: sheets are cut paper. */
   --radius: 0.25rem;
@@ -233,7 +232,6 @@
   --gold-foreground: #1f0e22;
   --ring: #a488ec;
   --chart-1: #a488ec;
-  /* --chart-2 … --chart-8: unchanged until Phase 5 */
   --chart-2: #D88C1F;
   --chart-3: #2FB39D;
   --chart-4: #F36549;

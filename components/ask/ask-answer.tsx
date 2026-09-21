@@ -47,15 +47,15 @@ const COMPONENTS: Components = {
       <table className="w-full border-collapse text-sm">{children}</table>
     </div>
   ),
-  thead: ({ children }) => <thead className="border-b">{children}</thead>,
-  tbody: ({ children }) => <tbody className="divide-y divide-border/60">{children}</tbody>,
+  thead: ({ children }) => <thead className="border-b-2 border-(--rule)">{children}</thead>,
+  tbody: ({ children }) => <tbody className="divide-y divide-(--paper-line)">{children}</tbody>,
 
   /* style is spread through on both cell types because that is where GFM column
      alignment arrives — a right-aligned amount column is the whole reason a
      table beats a sentence with the figures in brackets. Every cell gets
      tabular numerals: it changes nothing for words and aligns every digit. */
   th: ({ children, style }) => (
-    <th style={style} className="figure px-2 py-1.5 text-left font-medium text-muted-foreground">
+    <th style={style} className="figure legend px-2 py-1.5 text-left text-[11px] text-muted-foreground">
       {children}
     </th>
   ),
@@ -88,9 +88,9 @@ const COMPONENTS: Components = {
   h5: ({ children }) => <p className="text-sm font-semibold text-foreground">{children}</p>,
   h6: ({ children }) => <p className="text-sm font-semibold text-foreground">{children}</p>,
 
-  hr: () => <hr className="border-border/60" />,
+  hr: () => <hr className="border-(--paper-line)" />,
   blockquote: ({ children }) => (
-    <blockquote className="border-l-2 pl-3 text-sm text-muted-foreground">{children}</blockquote>
+    <blockquote className="border-l-2 border-(--rule) pl-3 text-sm text-muted-foreground">{children}</blockquote>
   ),
 };
 

@@ -16,6 +16,8 @@ const ratio = (a: number, b: number) => {
 };
 
 const WHITE = luminance("#ffffff");
+// --paper, the lightest ground charts sit on; plates are --card, which is lighter still, so this is the stricter bound.
+const CARD_LIGHT = luminance("#eeebf5");
 // Papel's dark --paper-2, the card surface (app/globals.css .dark).
 const CARD_DARK = luminance("#1d1829");
 
@@ -98,7 +100,7 @@ describe("chart series", () => {
   // swatches above are held to.
   it("clears 3:1 against the light surface", () => {
     for (const c of LIGHT_SERIES) {
-      expect(ratio(luminance(c), WHITE), `${c} vs white`).toBeGreaterThanOrEqual(3);
+      expect(ratio(luminance(c), CARD_LIGHT), `${c} vs light paper`).toBeGreaterThanOrEqual(3);
     }
   });
 

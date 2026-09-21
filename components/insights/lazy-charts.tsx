@@ -2,18 +2,17 @@
 
 import dynamic from "next/dynamic";
 
-export const SpendDonut = dynamic(
-  () => import("./spend-donut").then((m) => m.SpendDonut),
+export const SpendLedger = dynamic(
+  () => import("./spend-ledger").then((m) => m.SpendLedger),
   {
     ssr: false,
     loading: () => (
-      <div className="grid gap-4 sm:grid-cols-[1fr_1fr] sm:items-center">
-        <div className="skeleton h-56 rounded-xl" />
-        <div className="space-y-2">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <div key={i} className="skeleton h-5 rounded" />
-          ))}
-        </div>
+      <div>
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div key={i} className="border-b border-(--paper-line) py-3">
+            <div className="skeleton h-5 w-full rounded" />
+          </div>
+        ))}
       </div>
     ),
   },

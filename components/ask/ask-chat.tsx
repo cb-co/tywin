@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useTranslations } from "next-intl";
-import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { AskAnswer } from "@/components/ask/ask-answer";
 
 /**
@@ -83,10 +84,10 @@ export function AskChat({ initialQuestion }: { initialQuestion: string | null })
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-4">
         {messages.length === 0 ? (
-          <Card className="p-6 text-center">
+          <div className="border-y border-(--paper-line) px-3 py-6 text-center">
             <p className="font-medium text-foreground">{t("emptyTitle")}</p>
             <p className="mt-1 text-sm text-muted-foreground">{t("emptyHint")}</p>
-          </Card>
+          </div>
         ) : null}
 
         {messages.map((m) => {
@@ -115,17 +116,22 @@ export function AskChat({ initialQuestion }: { initialQuestion: string | null })
                capping it at the same width wrapped merchant names for no
                reason — it gets the whole column. */
             <div key={m.id} className={m.role === "user" ? "max-w-[85%] self-end" : "w-full"}>
-              <Card className={m.role === "user" ? "bg-muted p-3" : "p-4"}>
-                {silent ? (
-                  <p className="text-sm text-muted-foreground">{t("noAnswer")}</p>
-                ) : m.role === "user" ? (
-                  /* Their own words, shown as typed. Markdown here would let a
-                     stray asterisk in a question restyle it. */
+              {m.role === "user" ? (
+                <div className="border border-(--paper-line) bg-muted/50 px-3 py-2">
+                  <p className="legend text-[10px] text-muted-foreground">{t("you")}</p>
+                  {/* Their own words, shown as typed. Markdown here would let a
+                      stray asterisk in a question restyle it. */}
                   <p className="whitespace-pre-wrap text-sm">{body}</p>
-                ) : (
-                  <AskAnswer text={body} />
-                )}
-              </Card>
+                </div>
+              ) : (
+                <div className="w-full border-y border-(--paper-line) py-3">
+                  {silent ? (
+                    <p className="text-sm text-muted-foreground">{t("noAnswer")}</p>
+                  ) : (
+                    <AskAnswer text={body} />
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
@@ -162,14 +168,14 @@ export function AskChat({ initialQuestion }: { initialQuestion: string | null })
           sendMessage({ text: input });
           setInput("");
         }}
-        className="flex gap-2"
+        className="flex items-end gap-3"
       >
         {/* A placeholder is not a label: it is gone the moment anyone types, and
             a screen reader announcing it is not required to. */}
         <label className="sr-only" htmlFor="ask-input">
           {t("inputLabel")}
         </label>
-        <input
+        <Input
           id="ask-input"
           name="question"
           value={input}
@@ -177,18 +183,14 @@ export function AskChat({ initialQuestion }: { initialQuestion: string | null })
           onFocus={warm}
           placeholder={t("placeholder")}
           autoComplete="off"
-          className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
+          className="flex-1 min-w-0"
         />
-        <button
-          type="submit"
-          disabled={busy || !input.trim()}
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
-        >
+        <Button type="submit" disabled={busy || !input.trim()}>
           {t("send")}
-        </button>
+        </Button>
       </form>
 
-      <p className="text-xs text-muted-foreground">{t("readOnly")}</p>
+      <p className="legend text-[10px] text-muted-foreground">{t("readOnly")}</p>
     </div>
   );
 }

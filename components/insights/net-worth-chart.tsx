@@ -1,6 +1,7 @@
 "use client";
 
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer } from "recharts";
+import { PlateDefs, PLATE_AXIS, PLATE_GRID, PLATE_TOOLTIP_STYLE } from "@/components/papel/plate-defs";
 import { useTranslations } from "next-intl";
 import { useMaskedFormatMoney } from "@/components/figure-mask/figure-mask-provider";
 import type { NetWorthPoint } from "@/lib/insights/net-worth-history";
@@ -22,19 +23,11 @@ export function NetWorthChart({ data, currency }: { data: NetWorthPoint[]; curre
     // ResizeObserver measures. One fixed dimension satisfies the check.
     <ResponsiveContainer width="100%" height={256}>
       <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-        <defs>
-          <linearGradient id="netWorthFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.35} />
-            <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0.02} />
-          </linearGradient>
-        </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-        <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
+        <PlateDefs />
+        <CartesianGrid {...PLATE_GRID} />
+        <XAxis dataKey="label" {...PLATE_AXIS} />
         <YAxis
-          stroke="var(--muted-foreground)"
-          fontSize={12}
-          tickLine={false}
-          axisLine={false}
+          {...PLATE_AXIS}
           width={48}
           // Not the default [0, auto]: net worth can be negative, and a run
           // of large positive months reads as a flat line when the axis is
@@ -44,21 +37,16 @@ export function NetWorthChart({ data, currency }: { data: NetWorthPoint[]; curre
           tickFormatter={(v: number) => maskedFormat(v, currency, { compact: true, maximumFractionDigits: 0 })}
         />
         <Tooltip
-          contentStyle={{
-            background: "var(--popover)",
-            border: "1px solid var(--border)",
-            borderRadius: 8,
-            fontSize: 12,
-          }}
+          contentStyle={PLATE_TOOLTIP_STYLE}
           formatter={(value) => maskedFormat(Number(value), currency)}
         />
-        {crossesZero && <ReferenceLine y={0} stroke="var(--border)" />}
+        {crossesZero && <ReferenceLine y={0} stroke="var(--rule)" />}
         <Area
           dataKey="netWorth"
           name={t("seriesNetWorth")}
           stroke="var(--chart-1)"
           strokeWidth={2}
-          fill="url(#netWorthFill)"
+          fill="url(#plate-1)"
           // Six points is few enough that each one is worth marking — the
           // reader is comparing months, not following a curve.
           dot={{ r: 3, fill: "var(--chart-1)", strokeWidth: 0 }}

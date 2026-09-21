@@ -26,10 +26,11 @@ export function BudgetNote({
   periodStart: string;
 }) {
   const t = useTranslations("Budgets");
+  const tm = useTranslations("Marketing");
   const remaining = totalBudget - totalUsed;
   const figureClass = cn(fitFigureClass(formatMoney(totalBudget, currency)), "[font-stretch:125%] font-extrabold");
   return (
-    <Note tone="peso" label={t("budgetLabel")} serial={periodSerial(periodStart)}>
+    <Note tone="peso" label={t("budgetLabel")} serial={periodSerial(periodStart)} microprint={tm("microprint")}>
       <MoneyDisplay amount={totalBudget} currency={currency} size="hero" className={figureClass} />
       <div className="mt-5 space-y-1.5 border-t border-current/30 pt-3 text-sm">
         <div className="flex items-baseline justify-between gap-4">

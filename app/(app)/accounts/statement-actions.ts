@@ -544,7 +544,7 @@ export async function deleteCardStatement(id: string, accountId: string): Promis
   revalidatePath("/");
   // Deleting a statement cascades to its lines and then to the expenses they
   // created (card_statement_lines → transactions, both ON DELETE CASCADE), so
-  // the budget bars and Insights donut move too. Mirrors the revalidation the
+  // the budget bars and Insights ledger move too. Mirrors the revalidation the
   // import path already does.
   revalidatePath("/budgets");
   revalidatePath("/insights");

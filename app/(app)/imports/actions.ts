@@ -68,7 +68,7 @@ export async function categorizeTriageGroup(
   if (ruleError) return { error: await dbError(ruleError, "categorizeTriageGroup") };
 
   // The same set the import path revalidates, for the same reason: this moves
-  // budget bars, the Insights donut and every ledger row it touched.
+  // budget bars, the Insights spend ledger and every ledger row it touched.
   revalidatePath(`/imports/${importId}`);
   revalidatePath("/transactions");
   revalidatePath("/budgets");

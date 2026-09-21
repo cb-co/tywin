@@ -10,9 +10,9 @@ export type CardSpendTransaction = {
 
 export type SpendCategory = { id: string; name: string; color: string | null };
 
-/** The shape recharts' `Pie` reads, and the same one the Insights donut is fed
- *  — which is what lets this reuse `<SpendDonut>` rather than grow a second
- *  ring component that would drift from it. */
+/** The shape the Insights spend ledger is fed — which is what lets this reuse
+ *  `<SpendLedger>` rather than grow a second ledger component that would drift
+ *  from it. */
 export type SpendSlice = { name: string; value: number; color: string };
 
 /**
@@ -27,10 +27,10 @@ export type SpendSlice = { name: string; value: number; color: string };
  * the underlying charges sat still.
  *
  * The inclusion rule is NOT the one `spend_distribution` uses for the Insights
- * donut, because this panel answers a different question. `exclude_from_budget`
+ * ledger, because this panel answers a different question. `exclude_from_budget`
  * rows are kept (the caller does not filter them): they are excluded from
  * budgets, not from reality — the charge hit the card and is sitting in the
- * balance shown at the top of the page. Dropping them would leave a ring that
+ * balance shown at the top of the page. Dropping them would leave a ledger that
  * quietly disagreed with the statement above it.
  */
 export function cardSpendDistribution(
@@ -55,7 +55,7 @@ export function cardSpendDistribution(
 
   return Array.from(totals.entries())
     .sort((a, b) => b[1] - a[1])
-    // Indexed AFTER the sort, so the fallback colours run in the ring's own
+    // Indexed AFTER the sort, so the fallback colours run in the ledger's own
     // order instead of the order rows happened to arrive in.
     .map(([id, value], i) => {
       const cat = catById.get(id);

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { DoubleRule } from "@/components/papel/double-rule";
+import { LedgerRow } from "@/components/papel/ledger-row";
 import { ImportButton } from "@/components/statements/import-button";
 import { formatDate, formatMoney } from "@/lib/format";
 import type { DebtCost, DebtCostRow } from "@/lib/insights/debt-cost";
@@ -7,21 +9,18 @@ import type { DebtCost, DebtCostRow } from "@/lib/insights/debt-cost";
 function Rows({ rows, locale }: { rows: DebtCostRow[]; locale: string }) {
   const t = useTranslations("Insights");
   return (
-    <div className="space-y-1">
+    <div className="border-t border-(--paper-line)">
       {rows.map((r) => (
         <Link
           key={r.accountId}
           href={`/accounts/${r.accountId}`}
-          className="-mx-2 flex items-baseline justify-between gap-3 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted"
+          className="block transition-colors hover:bg-muted/50"
         >
-          <div className="min-w-0">
-            <p className="truncate text-foreground">{r.name}</p>
-            <p className="text-xs text-muted-foreground">
-              {r.currency} · {r.apr !== null ? `${t("costOfCarryApr", { rate: r.apr })} · ` : ""}
-              {t("costOfCarryAsOf", { date: formatDate(r.asOf, locale) })}
-            </p>
-          </div>
-          <span className="shrink-0 tabular-nums text-foreground">{formatMoney(r.amount, r.currency)}</span>
+          <LedgerRow
+            title={r.name}
+            subtitle={`${r.currency} · ${r.apr !== null ? `${t("costOfCarryApr", { rate: r.apr })} · ` : ""}${t("costOfCarryAsOf", { date: formatDate(r.asOf, locale) })}`}
+            amount={formatMoney(r.amount, r.currency)}
+          />
         </Link>
       ))}
     </div>
@@ -31,10 +30,10 @@ function Rows({ rows, locale }: { rows: DebtCostRow[]; locale: string }) {
 function Subtotal({ label, amount, muted }: { label: string; amount: string; muted?: boolean }) {
   return (
     <div
-      className={`flex items-baseline justify-between gap-3 text-sm font-medium ${muted ? "text-muted-foreground" : "text-foreground"}`}
+      className={`figure flex items-baseline justify-between gap-3 px-4 text-sm font-medium ${muted ? "text-muted-foreground" : "text-foreground"}`}
     >
       <span>{label}</span>
-      <span className="tabular-nums">{amount}</span>
+      <span>{amount}</span>
     </div>
   );
 }
@@ -61,14 +60,15 @@ export function DebtCostList({ data, locale }: { data: DebtCost; locale: string 
   }
 
   return (
-    <div className="space-y-6">
+    <div className="-mx-4 -mb-4 space-y-6 pb-4">
       {data.cards.length > 0 ? (
-        <section className="space-y-2">
-          <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <section className="space-y-3">
+          <h4 className="legend px-4 text-[11px] text-muted-foreground">
             {t("debtCostCards")}
           </h4>
           <Rows rows={data.cards} locale={locale} />
-          <div className="border-t pt-3">
+          <div className="space-y-3">
+            <DoubleRule className="mx-4" />
             <Subtotal
               label={t("debtCostCardsMonthly", { currency: cur })}
               amount={formatMoney(data.cardsMonthlyBase, cur)}
@@ -77,15 +77,16 @@ export function DebtCostList({ data, locale }: { data: DebtCost; locale: string 
         </section>
       ) : null}
       {data.loans.length > 0 ? (
-        <section className="space-y-2">
-          <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <section className="space-y-3">
+          <h4 className="legend px-4 text-[11px] text-muted-foreground">
             {t("debtCostLoans")}
           </h4>
           <Rows rows={data.loans} locale={locale} />
           {/* "Recorded in", not "Paid in": payments made before the loan was
               added to the app were never transactions, so the year figure
               counts the tracked part of the year, not the year. */}
-          <div className="space-y-1.5 border-t pt-3">
+          <div className="space-y-1.5">
+            <DoubleRule className="mx-4 mb-1.5" />
             <Subtotal
               label={t("loanInterestMonthly", { currency: cur })}
               amount={formatMoney(data.loansMonthlyBase, cur)}

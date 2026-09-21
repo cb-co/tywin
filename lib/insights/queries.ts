@@ -32,7 +32,7 @@ function cardLabel(groupName: string | null | undefined, accountName: string): s
 
 export type Insights = {
   baseCurrency: string;
-  distribution: { name: string; value: number; color: string }[];
+  distribution: { name: string; value: number; color: string; emoji?: string | null }[];
   budgetBars: { name: string; used: number; budget: number }[];
   /** Which dimension `budgetBars` is sliced by, so the card can name what it is
    *  showing. Only ever one of them — see the switch in getInsights. */
@@ -124,7 +124,7 @@ export async function getInsights(month: string): Promise<Insights> {
       .select(
         "account_id,currency,principal,outstanding_balance,progress_installments_paid,progress_term_months",
       ),
-    supabase.from("categories").select("id,name,color"),
+    supabase.from("categories").select("id,name,color,emoji"),
     supabase.from("accounts").select("id,name"),
     fetchPace(supabase, month, period),
     // The calendar month, not `period`: these bars sit where category_usage's
@@ -141,12 +141,13 @@ export async function getInsights(month: string): Promise<Insights> {
   /* A null category is money the importer could not identify, not a category
      whose row went missing — so it gets a deliberate muted grey rather than the
      next colour off the fallback rotation, and reads as absence. `spend_distribution`
-     stopped filtering these out so the donut would stop quietly under-reporting
+     stopped filtering these out so the ledger would stop quietly under-reporting
      the month; see the null_category_triage migration. */
   const distribution = (dist ?? []).map((d, i) => {
     const cat = d.category_id ? catById.get(d.category_id) : undefined;
     return {
       name: cat?.name ?? tCommon("uncategorized"),
+      emoji: cat?.emoji ?? null,
       value: Number(d.total ?? 0),
       color: d.category_id
         ? (cat?.color ?? CHART_FALLBACK[i % CHART_FALLBACK.length])
