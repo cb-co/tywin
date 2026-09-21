@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 
+import { BIRD_BODY, BIRD_FEATHER, BIRD_WING } from "@/lib/papel/bird";
 import { rosettePath } from "@/lib/papel/rosette";
 
 // Literal form of `--note` and `--note-ink`. An ImageResponse is rasterised
@@ -16,11 +17,16 @@ export function SealSvg({ size }: { size: number }) {
       <path d={RING} strokeWidth={0.35} opacity={0.55} />
       <circle cx="32" cy="32" r="30.5" strokeWidth={1.2} />
       <circle cx="32" cy="32" r="17" strokeWidth={0.8} />
-      <g transform="translate(20 20)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="8" cy="8" r="6" />
-        <path d="M18.09 10.37A6 6 0 1 1 10.34 18" />
-        <path d="M7 6h1v4" />
-        <path d="m16.71 13.88.7.71-2.82 2.82" />
+      {/* The inner ring here is r=17, so the bird is scaled to sit inside it. */}
+      <g
+        transform="translate(32 32) scale(0.74) translate(-32.8 -31.8)"
+        strokeWidth={2.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d={BIRD_WING} />
+        <path d={BIRD_FEATHER} strokeWidth={1} />
+        <path d={BIRD_BODY} />
       </g>
     </svg>
   );
