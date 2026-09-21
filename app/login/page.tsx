@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { LoginForm } from "@/components/auth/login-form";
 import { Logo, Wordmark } from "@/components/brand/logo";
-import { archivo } from "@/components/marketing/papel/fonts";
+import { archivo } from "@/app/fonts";
 import { Guilloche } from "@/components/papel/guilloche";
 import { Microprint, Serial } from "@/components/papel/microprint";
 import s from "@/components/marketing/papel/papel.module.css";

@@ -57,14 +57,14 @@ export function CardGroupTile({
   // DOP line on one physical card, there is no FX conversion here to unify them,
   // and the per-line rows below already report each one in its own currency.
   return (
-    /* `relative` + `lift` so the whole tile is one clickable surface, exactly
+    /* `relative` so the whole tile is one clickable surface, exactly
        like AccountCard's — which is a `<Link>` wrapping its whole Card. It
        cannot be a wrapping link here, because the currency rows below are links
        too and an anchor inside an anchor is invalid. The stretched overlay
        below does the same job: it covers the tile, the rows sit above it, so
        the face and the padding open the primary line while each row still opens
        its own. */
-    <Card className="lift relative h-full gap-0 p-5">
+    <Card className="relative h-full gap-0 p-5">
       {/* Positioned, so it paints over the static face beneath it; the rows are
           positioned too and carry a higher z-index, which is what keeps them
           clickable through it. The card's name is the accessible name — an

@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Perforation } from "@/components/papel/perforation";
-import { ColorTile } from "@/components/ui/color-tile";
+import { Stamp } from "@/components/papel/stamp";
 import { MoneyDisplay } from "@/components/ui/money-display";
 import { CardFace } from "@/components/papel/card-face";
 import { ProofMark } from "@/components/papel/proof-mark";
@@ -35,7 +35,7 @@ export function AccountCard({
       {/* Cards carry a soft shadow rather than a ring, so the hover has to
           deepen the shadow — `group-hover:ring-*` was styling an edge that
           isn't drawn. */}
-      <Card className="lift h-full gap-0 p-5 group-hover:shadow-(--shadow-card-hover)">
+      <Card className="h-full gap-0 p-5 transition-shadow group-hover:shadow-(--shadow-card-hover)">
         {isStandaloneCard ? (
           <CardFace
             name={account.name}
@@ -46,7 +46,7 @@ export function AccountCard({
         ) : (
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <ColorTile color={account.color ?? meta.color} icon={Icon} size="sm" />
+              <Stamp color={account.color ?? meta.color} icon={Icon} size="sm" />
               <div className="min-w-0">
                 <p className="truncate font-medium text-foreground">{account.name}</p>
                 <p className="text-xs text-muted-foreground">

@@ -8,7 +8,7 @@
  * the more visible wrong of the two, so the face resolves in.
  *
  * The header keeps its tile for the same reason: non-card accounts show the
- * ColorTile, and the page only hides it where a face takes over below.
+ * Stamp, and the page only hides it where a face takes over below.
  */
 export default function Loading() {
   return (
