@@ -4,7 +4,7 @@ import { BudgetGrid } from "@/components/budgets/budget-grid";
 import { GroupGrid } from "@/components/budgets/group-grid";
 import { AddBudgetControl } from "@/components/budgets/add-budget-control";
 import { GoalGrid } from "@/components/goals/goal-grid";
-import { Separator } from "@/components/ui/separator";
+import { DoubleRule } from "@/components/papel/double-rule";
 import { getBudgetOverview, getBudgetGroupOverview } from "@/lib/budgets/queries";
 import { getGoalsOverview } from "@/lib/goals/queries";
 import { normalizeMonth, monthEnd } from "@/lib/budgets/month";
@@ -75,32 +75,22 @@ export default async function BudgetsPage({
         actions={<AddBudgetControl groups={groupOverview.rows} />}
       />
 
-      {/* Two bands, because they answer to different clocks. Budgets are scoped
-          to a period and goals are cumulative, so an unlabelled picker at
-          the top of the page would appear to scope both. Inside a labelled band
-          it visibly belongs to budgets alone — the same fix /insights uses by
-          putting its picker in one section's heading.
-
-          Each band renders its own heading, the way GoalGrid always has: the
-          budgets heading doubles as an overflow slot for the "add category"
-          button on narrow screens, and that placement only makes sense next to
-          the toolbar it moves out of. */}
-      {/* The plan, then its breakdown. Groups answer to the same period as
-          budgets, so they sit inside the same band pair rather than getting a
-          picker of their own — and GroupGrid renders nothing at all until the
-          first group exists, so for everyone else this line is invisible and
-          the page below is exactly the page that was here before. */}
-      <GroupGrid overview={groupOverview} payCycle={payCycle} />
-
+      {/* Top to bottom: the period toolbar, the peso Note, the groups band, the
+          categories, a double rule, then goals. Budgets answer to the period
+          and goals are cumulative, so the rule separates two clocks. The group
+          band is handed to BudgetGrid so the Note leads the page while the
+          picker still lives with the categories; GroupGrid renders nothing
+          until the first group exists. */}
       <BudgetGrid
         overview={overview}
         mode={mode}
         payCycle={payCycle}
         payAnchor={payAnchor}
         groups={groupOverview.rows}
+        groupBand={<GroupGrid overview={groupOverview} payCycle={payCycle} />}
       />
 
-      <Separator />
+      <DoubleRule />
 
       <GoalGrid overview={goals} />
     </div>
