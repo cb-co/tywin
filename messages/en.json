@@ -457,7 +457,10 @@
     "badMonth": "Bad month.",
     "noBudgetsToCopy": "No budgets to copy from last month.",
     "uncategorizedLine": "{amount} uncategorised this month.",
-    "uncategorizedAction": "Categorise"
+    "uncategorizedAction": "Categorise",
+    "statusOver": "Over budget",
+    "statusApproaching": "Near",
+    "meterLabel": "{name}: budget used"
   },
   "CategoryDialog": {
     "addTitle": "New category",

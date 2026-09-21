@@ -457,7 +457,10 @@
     "badMonth": "Mes inválido.",
     "noBudgetsToCopy": "No hay presupuestos del mes anterior para copiar.",
     "uncategorizedLine": "{amount} sin categorizar este mes.",
-    "uncategorizedAction": "Categorizar"
+    "uncategorizedAction": "Categorizar",
+    "statusOver": "Excedido",
+    "statusApproaching": "Cerca",
+    "meterLabel": "{name}: presupuesto usado"
   },
   "CategoryDialog": {
     "addTitle": "Nueva categoría",
