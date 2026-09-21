@@ -9,7 +9,6 @@ import { updateRule, deleteRule } from "@/app/(app)/settings/rules/actions";
 import { EmptyState } from "@/components/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -89,14 +88,14 @@ export function RulesList({
   }
 
   return (
-    <ul className="space-y-3">
+    <ul className="divide-y divide-(--paper-line) border-y-2 border-(--rule)">
       {rules.map((rule) => {
         const draft = draftFor(rule);
         const dirty = draft.pattern !== rule.pattern || draft.categoryId !== rule.categoryId;
         const isMcc = rule.ruleType === "mcc";
         return (
           <li key={rule.id}>
-            <Card className="gap-0 p-4">
+            <div className="py-4">
               <div className="flex items-center gap-2">
                 {isMcc ? (
                   <Badge variant="outline" className="shrink-0 uppercase tracking-wide">
@@ -164,7 +163,7 @@ export function RulesList({
                   </Button>
                 </div>
               </div>
-            </Card>
+            </div>
           </li>
         );
       })}

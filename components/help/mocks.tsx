@@ -11,7 +11,6 @@ import {
 import { siSpotify } from "simple-icons";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ColorTile } from "@/components/ui/color-tile";
 import { Note } from "@/components/papel/note";
 import { LedgerRow } from "@/components/papel/ledger-row";
 import { ProofMark } from "@/components/papel/proof-mark";
@@ -43,7 +42,7 @@ function MockLabel({ children }: { children: React.ReactNode }) {
 }
 
 function MockPanel({ children }: { children: React.ReactNode }) {
-  return <Card className="p-4">{children}</Card>;
+  return <SpecimenFrame>{children}</SpecimenFrame>;
 }
 
 /** A single row of the real Switch's classes, minus the interactivity —
@@ -80,13 +79,13 @@ export function OnboardingMock({
   return (
     <MockPanel>
       <MockLabel>{label}</MockLabel>
-      <div className="flex items-center gap-3 rounded-lg border bg-background p-3">
-        <ColorTile color={meta.color} icon={meta.icon} size="sm" />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-foreground">{account}</p>
-          <p className="text-xs text-muted-foreground">{subtitle}</p>
-        </div>
-        <MoneyDisplay amount={45000} currency="DOP" size="inline" className="text-foreground" />
+      <div className="border-y border-(--paper-line)">
+        <LedgerRow
+          lead={<Stamp color={meta.color} icon={meta.icon} size="sm" />}
+          title={account}
+          subtitle={subtitle}
+          amount={<MoneyDisplay amount={45000} currency="DOP" size="inline" className="text-foreground" />}
+        />
       </div>
     </MockPanel>
   );
@@ -888,10 +887,10 @@ export function SettingsMock({
 }) {
   return (
     <MockPanel>
-      <div className="divide-y">
-        <div className="flex items-center justify-between gap-3 py-3 first:pt-0">
+      <div className="divide-y divide-(--paper-line) border-y-2 border-(--rule)">
+        <div className="flex items-center justify-between gap-3 py-3">
           <span className="text-sm font-medium text-foreground">{currencyLabel}</span>
-          <span className="flex h-8 w-fit items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent py-2 pr-2 pl-2.5 text-sm text-foreground">
+          <span className="flex h-8 w-fit items-center justify-between gap-1.5 rounded-[4px] border border-input bg-transparent py-2 pr-2 pl-2.5 text-sm text-foreground">
             {currencyValue}
             <ChevronDown className="size-4 text-muted-foreground" />
           </span>
@@ -906,7 +905,7 @@ export function SettingsMock({
           <span className="text-sm font-medium text-foreground">{soundLabel}</span>
           <MockSwitch checked />
         </div>
-        <div className="flex items-center justify-between gap-3 py-3 last:pb-0">
+        <div className="flex items-center justify-between gap-3 py-3">
           <span className="text-sm font-medium text-foreground">{installLabel}</span>
           <Button variant="outline" size="sm" aria-hidden tabIndex={-1}>
             <Download className="size-4" />

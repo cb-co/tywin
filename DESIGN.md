@@ -263,11 +263,14 @@ The Accounts list page (`app/(app)/accounts/page.tsx`) reads Attention First, to
 
 **Ask sheet.** The conversation is a ruled sheet: a question is a hairline box with a "You" legend, an answer sits between two hairlines and uses the whole column, and the input is the house `Input` (a baseline rule, 2px ink rule on focus) beside the send button. The empty state is a ruled strip. `/help#insights` and `/help#ask` print `InsightsMock` (its `other` row last, like the real one) and `AskMock` inside a `SpecimenFrame`.
 
-### Pending, not yet migrated (Phases 6-7)
+### Settings, Welcome, Help and legal (Phase 6)
+**Settings** is ruled sections between heavy rules with no Note and no card; the rules list is a ledger on the same rules. The danger zone is a hairline-ruled band with an engraved legend. **`/welcome`** continues the login's violet band (guilloche, microprint, serial) beside a paper column holding the flow; each step is a hairline slip, and progress is a `Perforation` strip plus a serial-style `1 / 7` counter. **`/help`** is Read mode: chapters are engraved legends over heavy rules, the rail marks the current chapter with an ink rule, and every mock sits in a `SpecimenFrame`. **Terms and Privacy** are paper with Archivo, engraved legend headings and a 70ch measure.
+
+### Pending, not yet migrated (Phase 7)
 - **Aliases, removed in Phase 7:** `ColorTile` re-exports `Stamp`; `StatPill` maps to `ProofMark`; `HeroCard` renders `Note tone="violet"`. They exist so callers restyle at once — down to 3 callers for `ColorTile` (`account-card.tsx`, `accounts/[id]/page.tsx`, the Accounts help mock; two more files only mention it in a comment) and 0 for `StatPill` after Phase 4, recounted with `grep -rln` over `components` and `app` outside `components/ui/`. `HeroCard` is at 0 callers; it is unused but kept until the Phase 7 removal sweep. Do not use them in new code.
 - **Incumbent token, named for removal in Phase 7:** the flat `--hero` slab. (`--chart-1` to `--chart-8` are Papel as of Phase 5.)
 - **Incumbent and not yet reviewed:** `.lift`, `.burst` and the `CountUp` bounce, and the `MoneyDisplay` size steps, whose comments still describe Inter and a gradient slab. Treat them as legacy, not as Papel rules. `.tile-sheen` no longer has a component caller after Phase 4; its definition in `app/globals.css` remains and is a Phase 7 deletion.
-- **Screens on old layouts with new primitives:** Settings, `/welcome`, `/terms`, `/privacy` (Phase 6). Quick-add dialog and FAB behaviour is unchanged. `/help` mocks migrate alongside each screen's phase; `OverviewMock`, `AccountsMock`, `LedgerMock`, `TriageMock`, `BudgetsMock`, `BudgetGroupsMock`, `SubscriptionsMock`, `InsightsMock` and `AskMock` are done. Phases 6-7 remain. Known shell issue, not from Phase 4: the mobile header icon row overflows the 360px viewport by about 8px.
+- **Screens on old layouts with new primitives:** none. Quick-add dialog and FAB behaviour is unchanged. `/help` mocks migrate alongside each screen's phase; `OverviewMock`, `AccountsMock`, `LedgerMock`, `TriageMock`, `BudgetsMock`, `BudgetGroupsMock`, `SubscriptionsMock`, `InsightsMock` and `AskMock` are done. Phase 7 remains. Known shell issue, not from Phase 4: the mobile header icon row overflows the 360px viewport by about 8px.
 
 ## Do's and Don'ts
 

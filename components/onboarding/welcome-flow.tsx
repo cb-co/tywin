@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import type { CurrencyRow } from "@/lib/accounts/queries";
 import type { Locale } from "@/lib/i18n/locale";
 import { STEPS, type Step } from "@/lib/onboarding/resume";
-import { cn } from "@/lib/utils";
+import { Perforation } from "@/components/papel/perforation";
 import { StepAbout } from "./step-about";
 import { StepAccount } from "./step-account";
 import { StepCards } from "./step-cards";
@@ -46,7 +45,6 @@ export function WelcomeFlow({
   data: WelcomeData;
   stepLabels: string[];
 }) {
-  const t = useTranslations("Welcome");
   const [step, setStep] = useState(initialStep);
   // Tracked here as well as saved, so later steps default to a currency the
   // user just picked without waiting on the refresh.
@@ -64,29 +62,30 @@ export function WelcomeFlow({
 
   return (
     <div className="w-full max-w-md">
-      {/* Progress. Segments fill as steps complete, so the end is always in
-          sight. */}
-      <div className="flex items-center gap-2" aria-hidden>
-        {Array.from({ length: COUNTED }, (_, i) => (
-          <span key={i} className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
-            <span
-              className={cn(
-                "block h-full rounded-full bg-primary transition-transform duration-500 ease-out",
-                i <= step ? "scale-x-100" : "scale-x-0",
-              )}
-              style={{ transformOrigin: "left center" }}
-            />
-          </span>
-        ))}
-      </div>
+      {/* Progress: a perforated strip that punches out as steps pass, with
+          the count printed as a serial. */}
+      <Perforation
+        decorative
+        total={COUNTED}
+        paid={Math.min(step + 1, COUNTED)}
+        label={stepLabels[step]}
+        className="text-foreground [&>i]:h-2 [&>i]:flex-1"
+      />
       <p className="mt-3 text-xs font-medium text-muted-foreground">
-        {current === "done"
-          ? stepLabels[step]
-          : `${t("stepCounter", { current: step + 1, total: COUNTED })} · ${stepLabels[step]}`}
+        {current === "done" ? (
+          stepLabels[step]
+        ) : (
+          <>
+            <span className="figure legend tracking-widest text-foreground">
+              {step + 1} / {COUNTED}
+            </span>
+            {` · ${stepLabels[step]}`}
+          </>
+        )}
       </p>
 
       {/* Keyed so each step animates in and starts from fresh local state. */}
-      <div key={step} className="rise mt-6">
+      <div key={step} className="rise mt-6 border border-(--paper-line) bg-card p-5 sm:p-6">
         {current === "about" ? (
           <StepAbout
             {...props}
