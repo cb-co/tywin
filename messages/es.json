@@ -762,6 +762,7 @@
     "seriesNet": "Neto",
     "debtHealthEmpty": "Aún no hay tarjetas ni préstamos.",
     "cardUtilizationLabel": "Utilización de tarjetas",
+    "utilizationHigh": "Utilización alta",
     "loanPayoffLabel": "Pago de préstamos",
     "spendDonutEmpty": "Aún no hay gastos este mes.",
     "spendOther": "Todo lo demás",

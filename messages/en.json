@@ -762,6 +762,7 @@
     "seriesNet": "Net",
     "debtHealthEmpty": "No cards or loans yet.",
     "cardUtilizationLabel": "Card utilization",
+    "utilizationHigh": "High utilization",
     "loanPayoffLabel": "Loan payoff",
     "spendDonutEmpty": "No spending this month yet.",
     "spendOther": "Everything else",
