@@ -41,9 +41,6 @@ export type Insights = {
   utilization: { id: string; name: string; pct: number; currency: string }[];
   loans: { id: string; name: string; paidPct: number; currency: string }[];
   totalSpend: number;
-  /** The month's budget total and what has been used against it (Σ category_usage), for the peso note. */
-  budgetTotals: { budget: number; used: number };
-  periodStart: string;
   pace: { day: number; thisMonth: number | null; lastMonth: number | null }[];
 };
 
@@ -229,11 +226,6 @@ export async function getInsights(month: string): Promise<Insights> {
     utilization,
     loans: loanRows,
     totalSpend: distribution.reduce((s, d) => s + d.value, 0),
-    budgetTotals: {
-      budget: (usage ?? []).reduce((s, u) => s + Number(u.budget ?? 0), 0),
-      used: (usage ?? []).reduce((s, u) => s + Number(u.used ?? 0), 0),
-    },
-    periodStart: period.start,
     pace,
   };
 }
