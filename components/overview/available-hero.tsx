@@ -55,6 +55,7 @@ export function AvailableHero({
   today: string;
 }) {
   const t = useTranslations("Overview");
+  const tm = useTranslations("Marketing");
   const f = useFormatter();
   const breakdownRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -100,7 +101,7 @@ export function AvailableHero({
   );
 
   return (
-    <Note tone="peso" label={t("availableLabel", { date })} serial={periodSerial(period.start)}>
+    <Note tone="peso" label={t("availableLabel", { date })} serial={periodSerial(period.start)} microprint={tm("microprint")}>
       {negative ? (
         <div className="inline-block max-w-full rounded-[3px] bg-(--paper-2) px-3 py-2 text-(--red)">
           <MoneyDisplay amount={a.available} currency={currency} size="hero" animate className={figureClass} />

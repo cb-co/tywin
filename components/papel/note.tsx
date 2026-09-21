@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Guilloche } from "./guilloche";
-import { Serial } from "./microprint";
+import { Microprint, Serial } from "./microprint";
 
 /**
  * A screen's one banknote: the field the screen's main figure is printed on.
@@ -13,6 +13,7 @@ export function Note({
   tone = "violet",
   label,
   serial,
+  microprint,
   action,
   ornament = true,
   className,
@@ -21,6 +22,8 @@ export function Note({
   tone?: "violet" | "peso";
   label: string;
   serial?: string;
+  /** Bilingual legend for the banknote's microprinted border; replaces the plain inner hairline. */
+  microprint?: string;
   action?: React.ReactNode;
   ornament?: boolean;
   className?: string;
@@ -30,7 +33,7 @@ export function Note({
     <section
       className={cn(
         "relative isolate overflow-hidden rounded-[6px] p-6 sm:p-7",
-        tone === "violet" ? "bg-(--note) text-(--note-ink)" : "bg-(--peso) text-(--peso-ink) [&_.figure>span]:opacity-90",
+        tone === "violet" ? "bg-(--note) text-(--note-ink)" : "bg-(--peso) text-(--peso-ink) [--note-line:var(--peso-line)] [&_.figure>span]:opacity-90",
         className,
       )}
     >
@@ -41,11 +44,15 @@ export function Note({
           className="pointer-events-none absolute inset-0 -z-10 size-full opacity-25"
         />
       ) : null}
-      <div aria-hidden className="pointer-events-none absolute inset-2 rounded-[3px] border border-current opacity-30" />
+      {microprint ? (
+        <Microprint text={microprint} />
+      ) : (
+        <div aria-hidden className="pointer-events-none absolute inset-2 rounded-[3px] border border-current opacity-30" />
+      )}
       <p className={cn("legend relative text-[11px]", tone === "violet" && "opacity-85")}>{label}</p>
       <div className="relative mt-2">{children}</div>
       {action ? <div className="relative mt-6 flex flex-wrap gap-3">{action}</div> : null}
-      {serial ? <Serial value={serial} className="absolute right-4 top-3" /> : null}
+      {serial ? <Serial value={serial} className={microprint ? "absolute right-6 top-5" : "absolute right-4 top-3"} /> : null}
     </section>
   );
 }
