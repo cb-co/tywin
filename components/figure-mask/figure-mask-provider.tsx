@@ -5,7 +5,7 @@ import { formatMoney } from "@/lib/format";
 import { useStoredBoolean } from "@/lib/use-stored-boolean";
 import { maskFigure } from "./mask-figure";
 
-const STORAGE_KEY = "cashly:figures-masked";
+const STORAGE_KEY = "cigua:figures-masked";
 
 type FigureMaskContextValue = {
   masked: boolean;

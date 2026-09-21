@@ -1,4 +1,4 @@
-const CACHE_VERSION = "cashly-shell-v1";
+const CACHE_VERSION = "cigua-shell-v1";
 const APP_SHELL = [
   "/manifest.webmanifest",
   "/icon-192.png",

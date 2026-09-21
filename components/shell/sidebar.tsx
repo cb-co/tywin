@@ -31,7 +31,7 @@ export function Sidebar({
         aria-hidden
         className="legend pointer-events-none absolute inset-y-6 right-1 overflow-hidden text-[7px] tracking-[0.3em] text-muted-foreground [writing-mode:vertical-rl]"
       >
-        {"CASHLY · REPÚBLICA DOMINICANA · ".repeat(6)}
+        {"CIGUA · REPÚBLICA DOMINICANA · ".repeat(6)}
       </span>
       <nav className="flex flex-1 flex-col gap-0.5 px-3 py-2">
         {NAV_ITEMS.map((item, i) => (

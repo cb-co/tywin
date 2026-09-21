@@ -6,7 +6,7 @@
  *  tab: the splash plays once per tab and never again on reload. That makes
  *  it almost invisible while developing, since Fast Refresh keeps the tab
  *  alive. Append `?splash` to any app URL to force it to play. */
-export const SPLASH_SEEN_KEY = "cashly:splash-seen";
+export const SPLASH_SEEN_KEY = "cigua:splash-seen";
 
 /** Runs synchronously during parse, before first paint.
  *

@@ -19,7 +19,7 @@ as a real second audience rather than a courtesy.
 
 ## Product Purpose
 
-Cashly reads a Dominican bank or card statement, turns it into a categorised ledger, and keeps net
+Cigua reads a Dominican bank or card statement, turns it into a categorised ledger, and keeps net
 worth, budgets, subscriptions, and goals current from that ledger rather than from data the user
 retypes.
 
@@ -84,7 +84,7 @@ surface); bank-account statement import is still gated to cards only.
 
 ## Brand Commitments
 
-- **Name: Cashly.** In use across the product and both message catalogues.
+- **Name: Cigua.** In use across the product and both message catalogues.
 - **Spanish + RD$ are the first-run defaults.** A new Dominican profile should open in Spanish with
   `RD$` before the user touches a setting. The code today still defaults to English and USD — closing
   that gap is committed product direction, not an open question.

@@ -4,7 +4,7 @@ import { createContext, useContext } from "react";
 import useSound from "use-sound";
 import { useStoredBoolean } from "@/lib/use-stored-boolean";
 
-const STORAGE_KEY = "cashly:sound-enabled";
+const STORAGE_KEY = "cigua:sound-enabled";
 
 type SoundContextValue = {
   playSuccess: () => void;

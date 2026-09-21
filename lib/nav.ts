@@ -66,7 +66,7 @@ export const SETTINGS_ITEM: NavItem = NAV_ITEMS.find(
 )!;
 
 /**
- * Ask Cashly, for the mobile header.
+ * Ask Cigua, for the mobile header.
  *
  * The bottom bar is a deliberate five-cell layout (see above) and Ask does not
  * displace anything in it: a sixth cell takes every other tab from 66px to 55px
@@ -78,7 +78,7 @@ export const SETTINGS_ITEM: NavItem = NAV_ITEMS.find(
  * `MessagesSquare`: the one square in a rail of circles and charts, and the only
  * shape here that means conversation. It has to dodge two marks, not one — a
  * question mark in a circle collides with Help two rows below (the confusion the
- * label "Ask Cashly" also exists to settle), and Sparkles collides with the
+ * label "Ask Cigua" also exists to settle), and Sparkles collides with the
  * recommendation card, which had it first and is the surface people already read
  * as the app noticing something. Sharing that mark sounded like family and
  * looked, stacked on Overview, like the same chip printed twice.

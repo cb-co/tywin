@@ -4,7 +4,7 @@ import { rosettePath } from "@/lib/papel/rosette";
 const RING = rosettePath(64);
 
 /**
- * The Cashly seal: the engraved re-issue of the logo. A guilloche rosette
+ * The Cigua seal: the engraved re-issue of the logo. A guilloche rosette
  * ring cut around the incumbent Coins mark, all line work, in note ink on a
  * note-violet disc. Static SVG (no canvas) so next/og can render it too.
  */

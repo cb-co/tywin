@@ -51,7 +51,7 @@ export function Splash() {
       />
       <div className="splash-mark relative flex flex-col items-center gap-3">
         <Seal className="size-14" />
-        <span className="legend text-xl">Cashly</span>
+        <span className="legend text-xl">Cigua</span>
       </div>
     </div>
   );

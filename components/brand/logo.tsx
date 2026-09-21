@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Seal } from "@/components/papel/seal";
 
-/** Cashly brand mark: the engraved seal (see components/papel/seal.tsx). */
+/** Cigua brand mark: the engraved seal (see components/papel/seal.tsx). */
 export function Logo({ className }: { className?: string }) {
   return <Seal className={cn("size-8", className)} />;
 }
@@ -11,7 +11,7 @@ export function Wordmark({ className }: { className?: string }) {
     <span
       className={cn("legend text-base text-foreground", className)}
     >
-      Cashly
+      Cigua
     </span>
   );
 }
