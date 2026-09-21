@@ -2,8 +2,8 @@
 
 import dynamic from "next/dynamic";
 
-export const SpendDonut = dynamic(
-  () => import("./spend-donut").then((m) => m.SpendDonut),
+export const SpendLedger = dynamic(
+  () => import("./spend-ledger").then((m) => m.SpendLedger),
   {
     ssr: false,
     loading: () => (

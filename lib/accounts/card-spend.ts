@@ -11,7 +11,7 @@ export type CardSpendTransaction = {
 export type SpendCategory = { id: string; name: string; color: string | null };
 
 /** The shape recharts' `Pie` reads, and the same one the Insights donut is fed
- *  — which is what lets this reuse `<SpendDonut>` rather than grow a second
+ *  — which is what lets this reuse `<SpendLedger>` rather than grow a second
  *  ring component that would drift from it. */
 export type SpendSlice = { name: string; value: number; color: string };
 

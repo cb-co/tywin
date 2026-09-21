@@ -764,6 +764,7 @@
     "cardUtilizationLabel": "Card utilization",
     "loanPayoffLabel": "Loan payoff",
     "spendDonutEmpty": "No spending this month yet.",
+    "spendOther": "Everything else",
     "thisMonth": "This month",
     "lastMonth": "Last month",
     "paceThisPeriod": "This period",
