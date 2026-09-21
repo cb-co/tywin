@@ -24,7 +24,7 @@ export async function LegalPage({
       <header className="flex h-16 shrink-0 items-center gap-2.5 px-6">
         <Link href="/" className="flex items-center gap-2.5">
           <Logo />
-          <Wordmark />
+          <Wordmark className="text-base" />
         </Link>
       </header>
 

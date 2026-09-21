@@ -89,7 +89,7 @@ export default async function WelcomePage() {
     <main className="flex min-h-dvh flex-col">
       <header className="flex h-16 shrink-0 items-center gap-2.5 px-6">
         <Logo />
-        <Wordmark />
+        <Wordmark className="text-base" />
       </header>
 
       <div className="flex flex-1 items-start justify-center px-6 pb-16 pt-4 sm:items-center sm:pt-0">

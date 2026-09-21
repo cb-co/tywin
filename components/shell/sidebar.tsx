@@ -24,7 +24,7 @@ export function Sidebar({
     <aside className="relative hidden md:flex md:h-dvh md:w-64 md:shrink-0 md:flex-col md:border-r md:border-(--rule) md:bg-sidebar md:text-sidebar-foreground">
       <div className="flex h-16 items-center gap-2.5 px-5">
         <Logo className="size-9" />
-        <Wordmark />
+        <Wordmark className="text-base" />
       </div>
       {/* Microprint strip down the right edge: decorative, so aria-hidden. */}
       <span

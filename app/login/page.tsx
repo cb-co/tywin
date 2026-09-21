@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { LoginForm } from "@/components/auth/login-form";
-import { Logo } from "@/components/brand/logo";
+import { Logo, Wordmark } from "@/components/brand/logo";
 import { archivo } from "@/components/marketing/papel/fonts";
 import { Guilloche } from "@/components/papel/guilloche";
 import { Microprint, Serial } from "@/components/papel/microprint";
@@ -35,7 +35,7 @@ export default async function LoginPage({
         <Serial value="CL 2026 000417 A" className={s.serialBottom} />
         <Link href="/" className={s.brand}>
           <Logo />
-          <span>Cigua</span>
+          <Wordmark />
         </Link>
         <div className={s.authNoteCopy}>
           <h2 id="auth-note-title" className={s.authNoteTitle}>

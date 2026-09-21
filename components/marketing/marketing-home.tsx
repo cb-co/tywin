@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { Logo } from "@/components/brand/logo";
+import { Logo, Wordmark } from "@/components/brand/logo";
 import { archivo } from "./papel/fonts";
 import { CardFace } from "@/components/papel/card-face";
 import { Guilloche } from "@/components/papel/guilloche";
@@ -53,7 +53,7 @@ export async function MarketingHome() {
         <nav className={s.nav} aria-label={t("navLabel")}>
           <Link href="/" className={s.brand}>
             <Logo />
-            <span>Cigua</span>
+            <Wordmark />
           </Link>
           <div className={s.navEnd}>
             <LocaleToggle />
@@ -292,7 +292,7 @@ export async function MarketingHome() {
         <div className={s.footerInner}>
           <span className={s.brand}>
             <Logo className="h-6 w-6" />
-            <span>Cigua</span>
+            <Wordmark />
           </span>
           <span className={s.footerNote}>{t("footerNote")}</span>
           <nav aria-label={t("footerNav")} className={s.footerLinks}>

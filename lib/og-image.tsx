@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { WORDMARK_RATIO, WORDMARK_VIEWBOX, WordmarkPaths } from "@/lib/papel/wordmark";
 import { SealSvg } from "@/lib/pwa/icon";
 
 export const OG_IMAGE_SIZE = { width: 1200, height: 630 };
@@ -37,17 +38,14 @@ export function renderBrandOgImage() {
         >
           <SealSvg size={168} />
         </div>
-        <div
-          style={{
-            display: "flex",
-            fontSize: 88,
-            fontWeight: 700,
-            letterSpacing: -2,
-            color: "#1b1530",
-          }}
+        <svg
+          width={Math.round(110 * WORDMARK_RATIO)}
+          height={110}
+          viewBox={WORDMARK_VIEWBOX}
+          fill="none"
         >
-          Cigua
-        </div>
+          <WordmarkPaths color="#1b1530" />
+        </svg>
         <div
           style={{
             display: "flex",

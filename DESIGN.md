@@ -136,13 +136,14 @@ A cool-violet-and-orange banknote palette on lilac paper, with teal and red as t
 **Character:** One family cut two ways, like an engraver's plate: an expanded cut for the printed legend and denomination, a normal cut for reading. No second family, no second numeral system.
 
 ### Hierarchy
-- **Legend** (`.legend`: 700, `font-stretch: 125%`, uppercase, 0.12em tracking, ~11px in a note label): note labels, the wordmark, specimen captions, section legends.
+- **Legend** (`.legend`: 700, `font-stretch: 125%`, uppercase, 0.12em tracking, ~11px in a note label): note labels, specimen captions, section legends. (The wordmark is not legend type; see The Drawn Wordmark Exception.)
 - **Figure** (`.figure`: tabular, lining numerals, 0 tracking, weight inherited): every amount, at any size. `MoneyDisplay` sets its own size steps (hero, feature, stat, inline) on top of it.
 - **Body** (400, 14px / `text-sm`): ledger titles, fields, copy. Row subtitles at 12px.
 - **Denomination numerals:** the Disponible/net-worth figure in expanded Archivo. Note does not size its figure; each call site sets it, and it scales down at 360px and eight digits rather than wrapping or clipping.
 
 ### Named Rules
 **The One Face Rule.** Archivo only, app-wide. Emphasis comes from the width axis and weight, not a second family.
+**The Drawn Wordmark Exception.** The one place Archivo does not appear is the brand wordmark: a soft, rounded, lowercase "cigua" drawn as monoline round-cap strokes (`lib/papel/wordmark.tsx`, `Wordmark` in `components/brand/logo.tsx`). It is outlined geometry, not a second font: nothing loads, it takes `currentColor` (a literal ink in `next/og`), and it scales in `em`. Like the Seal it is a drawn mark, not typeset copy; never set body or UI text in its style.
 **The Tabular Rule.** Every amount uses `.figure`; digits must align in ledger columns at 11-12px.
 
 ## Layout

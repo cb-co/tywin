@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Wordmark } from "@/components/brand/logo";
 import { Seal } from "@/components/papel/seal";
 import { Guilloche } from "@/components/papel/guilloche";
 import { SPLASH_SEEN_KEY } from "@/lib/splash";
@@ -51,7 +52,7 @@ export function Splash() {
       />
       <div className="splash-mark relative flex flex-col items-center gap-3">
         <Seal className="size-14" />
-        <span className="legend text-xl">Cigua</span>
+        <Wordmark className="text-xl" />
       </div>
     </div>
   );
