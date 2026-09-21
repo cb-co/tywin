@@ -1,4 +1,4 @@
-type Slice = { name: string; value: number; color: string };
+type Slice = { name: string; value: number; color: string; emoji?: string | null };
 
 /** Ledger rows for a spend breakdown. Rows past `max` fold into one trailing
  *  `rest` row (its `name` is left empty for the caller to localise) so the

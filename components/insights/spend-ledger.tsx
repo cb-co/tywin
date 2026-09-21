@@ -30,7 +30,7 @@ export function SpendLedger({ data, total, currency }: { data: Insights["distrib
             <li key={r.rest ? "rest" : r.name} className="border-b border-(--paper-line) last:border-b-0">
               <LedgerRow
                 className="border-b-0 pb-1.5"
-                lead={<Stamp color={r.color} name={name} />}
+                lead={<Stamp color={r.color} emoji={r.emoji} name={name} />}
                 title={name}
                 amount={maskedFormat(r.value, currency)}
                 meta={`${r.pct.toFixed(r.pct < 10 ? 1 : 0)}%`}

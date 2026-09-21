@@ -15,6 +15,7 @@ import {
   SpendingPace,
   NetWorthChart,
 } from "@/components/insights/lazy-charts";
+import { BudgetNote } from "@/components/budgets/budget-note";
 import { BudgetBars } from "@/components/insights/budget-bars";
 import { DebtHealth } from "@/components/insights/debt-health";
 import { DebtCostList } from "@/components/insights/debt-cost";
@@ -132,6 +133,18 @@ export default async function InsightsPage({
         </Section>
 
         <Section title={t("sectionThisMonth")} actions={monthNav}>
+          {/* The month's budget note, the same peso note as /budgets. Skipped
+              when nothing is budgeted, so it never prints a $0 slab. */}
+          {insights.budgetTotals.budget > 0 ? (
+            <div className="@[34rem]:col-span-2">
+              <BudgetNote
+                totalBudget={insights.budgetTotals.budget}
+                totalUsed={insights.budgetTotals.used}
+                currency={cur}
+                periodStart={insights.periodStart}
+              />
+            </div>
+          ) : null}
           <Plate figLabel={t("fig", { n: 3 })} title={t("cardSpendingPace")} basis={t("basisWhenCharged")} className="@[34rem]:col-span-2">
             <SpendingPace data={insights.pace} currency={cur} />
           </Plate>
