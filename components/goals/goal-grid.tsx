@@ -122,7 +122,7 @@ export function GoalGrid({ overview }: { overview: GoalsOverview }) {
                 <LedgerRow
                   lead={<Stamp color={goal.color} emoji={goal.emoji} name={goal.name} size="md" />}
                   title={
-                    <Link href={`/budgets/goals/${goal.id}`} className="hover:underline">
+                    <Link href={`/budgets/goals/${goal.id}`} className="hover:underline focus-visible:underline focus-visible:outline-offset-[-2px]">
                       {goal.name}
                     </Link>
                   }
