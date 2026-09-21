@@ -20,8 +20,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/empty-state";
+import { LedgerRow } from "@/components/papel/ledger-row";
+import { SectionLegend } from "@/components/papel/section-legend";
 import { ContributeDialog } from "./contribute-dialog";
-import { cn } from "@/lib/utils";
 
 export function ContributionsList({
   goal,
@@ -69,46 +70,39 @@ export function ContributionsList({
   }
 
   return (
-    <Card className="p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-medium text-foreground">{t("contributionsTitle")}</h2>
-        <ContributeDialog
-          goal={goal}
-          accounts={accounts}
-          baseCurrency={baseCurrency}
-          trigger={<Button size="sm">{tg("contribute")}</Button>}
-        />
-      </div>
+    <section className="space-y-4">
+      <SectionLegend
+        aside={
+          <ContributeDialog
+            goal={goal}
+            accounts={accounts}
+            baseCurrency={baseCurrency}
+            trigger={<Button size="sm">{tg("contribute")}</Button>}
+          />
+        }
+      >
+        {t("contributionsTitle")}
+      </SectionLegend>
 
       {contributions.length === 0 ? (
         <EmptyState
           icon={<Receipt className="size-6" />}
           title={t("contributionsEmptyTitle")}
           description={t("contributionsEmptyDescription")}
-          className="mt-4"
         />
       ) : (
-        <ul className="mt-4 space-y-2">
+        <Card className="gap-0 overflow-hidden p-0">
           {contributions.map((c) => (
-            <li
+            <LedgerRow
               key={c.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"
-            >
-              <div className="flex min-w-0 items-baseline gap-3">
-                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+              lead={
+                <span className="figure w-14 shrink-0 text-xs text-muted-foreground">
                   {formatDate(c.occurred_at.slice(0, 10), locale)}
                 </span>
-                <span className="truncate text-sm text-foreground">{c.account_name}</span>
-              </div>
-              <div className="flex shrink-0 items-center gap-3">
-                <span
-                  className={cn(
-                    "figure text-sm tabular-nums",
-                    c.amount < 0 ? "text-destructive" : "text-foreground",
-                  )}
-                >
-                  {formatMoney(c.amount, c.currency, { signed: true })}
-                </span>
+              }
+              title={c.account_name}
+              amount={<span className="text-sm">{formatMoney(c.amount, c.currency, { signed: true })}</span>}
+              trailing={
                 <Button
                   variant="ghost"
                   size="icon-sm"
@@ -123,10 +117,10 @@ export function ContributionsList({
                 >
                   {deletingId === c.id ? null : <Trash2 className="size-4" />}
                 </Button>
-              </div>
-            </li>
+              }
+            />
           ))}
-        </ul>
+        </Card>
       )}
 
       {/* Same confirmation pattern as goal deletion (GoalGrid) and statement
@@ -169,6 +163,6 @@ export function ContributionsList({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+    </section>
   );
 }

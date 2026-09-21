@@ -10,12 +10,15 @@ import { Plus, Trash2, Pencil, PiggyBank } from "lucide-react";
 import { deleteGoal } from "@/app/(app)/budgets/goal-actions";
 import { formatMoney, formatPercent } from "@/lib/format";
 import type { GoalCardRow, GoalsOverview } from "@/lib/goals/queries";
-import { GoalBar, PaceSummary, goalProgressPct } from "./goal-progress";
+import { PaceSummary, goalProgressPct } from "./goal-progress";
+import { GoalStrip } from "./goal-strip";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ColorTile } from "@/components/ui/color-tile";
+import { Stamp } from "@/components/papel/stamp";
+import { LedgerBlock } from "@/components/papel/ledger-block";
+import { LedgerRow } from "@/components/papel/ledger-row";
+import { SectionLegend } from "@/components/papel/section-legend";
 import { MoneyDisplay } from "@/components/ui/money-display";
-import { StatPill } from "@/components/ui/stat-pill";
 import {
   Dialog,
   DialogContent,
@@ -68,19 +71,20 @@ export function GoalGrid({ overview }: { overview: GoalsOverview }) {
 
   return (
     <section className="space-y-4">
-      <div className="flex min-h-8 flex-wrap items-center justify-between gap-4">
-        <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          {t("sectionTitle")}
-        </h2>
-        <GoalDialog
-          trigger={
-            <Button size="sm">
-              <Plus className="size-4" />
-              {t("addGoal")}
-            </Button>
-          }
-        />
-      </div>
+      <SectionLegend
+        aside={
+          <GoalDialog
+            trigger={
+              <Button size="sm">
+                <Plus className="size-4" />
+                {t("addGoal")}
+              </Button>
+            }
+          />
+        }
+      >
+        {t("sectionTitle")}
+      </SectionLegend>
 
       {goals.length > 0 && (
         /* The aggregate honesty check. The clamp makes per-account
@@ -95,10 +99,10 @@ export function GoalGrid({ overview }: { overview: GoalsOverview }) {
             backed: formatMoney(totalBacked, baseCurrency),
           })}
           {totalShortfall > 0 && (
-            <span className="text-destructive">
+            <>
               {" · "}
               {t("totalsBorrowed", { amount: formatMoney(totalShortfall, baseCurrency) })}
-            </span>
+            </>
           )}
         </p>
       )}
@@ -110,57 +114,30 @@ export function GoalGrid({ overview }: { overview: GoalsOverview }) {
           description={t("emptyDescription")}
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Card className="gap-0 overflow-hidden p-0">
           {goals.map((goal) => (
-            <Card key={goal.id} className="gap-0 p-5">
-              {/* Only this chip+name block is a Link, not the whole card — the
-                  card also holds Contribute/edit/delete buttons below, and
-                  nesting those inside an anchor would be an invalid,
-                  inaccessible interactive-in-interactive structure. */}
-              <Link
-                href={`/budgets/goals/${goal.id}`}
-                className="-m-1 flex items-center gap-3 rounded-lg p-1 transition-colors hover:bg-foreground/[0.03]"
-              >
-                <ColorTile color={goal.color} emoji={goal.emoji} name={goal.name} size="md" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground">{goal.name}</p>
-                  <p className="text-xs text-muted-foreground tabular-nums">
-                    {t("amountOfTarget", {
-                      saved: formatMoney(goal.saved, baseCurrency),
-                      target: formatMoney(goal.target_amount, baseCurrency),
-                    })}
-                  </p>
-                </div>
-              </Link>
-
-              {/* The same body a budget card has: the figure, its share, then
-                  the bar — figure left, percentage right, one line that never
-                  wraps. The share stays neutral in tone, because being 3% of
-                  the way to a house is not itself good or bad news.
-
-                  The verdict rides below the bar instead. It is a phrase, not
-                  a percentage, so up here it would either overflow the row or
-                  wrap it, and down there it sits with the arithmetic that
-                  explains it. */}
-              <div className="mt-3 flex items-end justify-between gap-2">
-                <MoneyDisplay amount={goal.saved} currency={baseCurrency} size="stat" />
-                <StatPill className="shrink-0">{formatPercent(goalProgressPct(goal))}</StatPill>
-              </div>
-
-              <GoalBar goal={goal} />
-
-              {/* The arithmetic and the verdict share this line — text taking
-                  whatever the chip leaves and wrapping inside it, chip pinned
-                  right. The min-height is what keeps the action rows level
-                  across a row of cards whose pace lines run to one line, two,
-                  or none at all. */}
-              <PaceSummary
-                pace={goal.pace}
-                currency={baseCurrency}
-                className="mt-2 min-h-8 text-xs"
-              />
-
-              <div className="mt-3 flex items-center gap-1">
+            <LedgerBlock
+              key={goal.id}
+              head={
+                <LedgerRow
+                  lead={<Stamp color={goal.color} emoji={goal.emoji} name={goal.name} size="md" />}
+                  title={
+                    <Link href={`/budgets/goals/${goal.id}`} className="hover:underline">
+                      {goal.name}
+                    </Link>
+                  }
+                  subtitle={t("amountOfTarget", {
+                    saved: formatMoney(goal.saved, baseCurrency),
+                    target: formatMoney(goal.target_amount, baseCurrency),
+                  })}
+                  amount={<MoneyDisplay amount={goal.saved} currency={baseCurrency} size="inline" />}
+                  meta={formatPercent(goalProgressPct(goal))}
+                />
+              }
+            >
+              <GoalStrip goal={goal} decorative />
+              <PaceSummary pace={goal.pace} currency={baseCurrency} className="min-h-6 text-xs" />
+              <div className="flex items-center gap-1">
                 <ContributeDialog
                   goal={goal}
                   accounts={accounts}
@@ -197,9 +174,9 @@ export function GoalGrid({ overview }: { overview: GoalsOverview }) {
                   {deletingId === goal.id ? null : <Trash2 className="size-4" />}
                 </Button>
               </div>
-            </Card>
+            </LedgerBlock>
           ))}
-        </div>
+        </Card>
       )}
 
       {/* Same confirmation pattern as account deletion (account-detail-actions)
