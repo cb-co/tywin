@@ -50,9 +50,12 @@ export function Splash() {
         className="absolute left-1/2 top-1/2 size-[min(80vw,28rem)] -translate-x-1/2 -translate-y-1/2 opacity-40"
         duration={700}
       />
-      <div className="splash-mark relative flex flex-col items-center gap-3">
-        <Seal className="size-14" />
-        <Wordmark className="text-xl" />
+      {/* The seal alone is the centred element, so it sits in the rosette's
+          hollow centre; the wordmark hangs below it instead of sharing the
+          flex column, which pushed the seal above the plate's centre. */}
+      <div className="splash-mark relative">
+        <Seal className="size-20" />
+        <Wordmark className="absolute left-1/2 top-full mt-4 -translate-x-1/2 text-xl" />
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { WORDMARK_VIEWBOX, WordmarkPaths } from "@/lib/papel/wordmark";
 
 /** Cigua brand mark: the engraved seal (see components/papel/seal.tsx). */
 export function Logo({ className }: { className?: string }) {
-  return <Seal className={cn("size-8", className)} />;
+  return <Seal rosette className={cn("size-8", className)} />;
 }
 
 /**
