@@ -56,3 +56,6 @@ next-env.d.ts
 # impeccable: per-machine consent and edit cache (config.json + live/ are shared)
 .impeccable/*.local.json
 .impeccable/hook.cache.json
+# impeccable: review screenshots and question logs are local scratch, never shipped
+.impeccable/questions/
+.impeccable/review/
