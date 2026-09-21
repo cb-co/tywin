@@ -26,7 +26,7 @@ export function BudgetBars({
         const over = row.budget > 0 && row.used > row.budget;
         // The true percent prints; RuleMeter clamps its own fill.
         const pct = row.budget > 0 ? Math.max((row.used / row.budget) * 100, 0) : row.used > 0 ? 100 : 0;
-        const ofBudget = row.budget > 0 ? `of ${formatMoney(row.budget, currency)}` : undefined;
+        const ofBudget = row.budget > 0 ? t("budgetOf", { amount: formatMoney(row.budget, currency) }) : undefined;
         return (
           <LedgerBlock
             key={row.name}

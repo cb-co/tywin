@@ -757,6 +757,7 @@
     "cardSpendingPace": "Ritmo de gasto",
     "cardExpensesVsBudget": "Gastos frente al presupuesto",
     "budgetBarsEmpty": "Define algunos presupuestos para comparar.",
+    "budgetOf": "de {amount}",
     "cashflowEmpty": "Aún no hay flujo de caja.",
     "seriesIncome": "Ingresos",
     "seriesExpense": "Gastos",

@@ -757,6 +757,7 @@
     "cardSpendingPace": "Spending pace",
     "cardExpensesVsBudget": "Expenses vs budget",
     "budgetBarsEmpty": "Set some budgets to compare.",
+    "budgetOf": "of {amount}",
     "cashflowEmpty": "No cash flow yet.",
     "seriesIncome": "Income",
     "seriesExpense": "Expense",
