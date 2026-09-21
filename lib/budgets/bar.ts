@@ -1,24 +1,3 @@
-import type { BudgetStatus } from "./queries";
-
-/**
- * Three states, escalating in loudness.
- *
- * `within` used to be `--primary`, which drew a comfortable budget as the
- * heaviest black bar on the screen and made every row look urgent; the calm
- * state should be the quietest mark here, and only `over` should shout.
- *
- * Lives here rather than in the grid that first drew it because a budget bar
- * is now drawn in three places — the category band, the group band above it,
- * and the help guide's mock of both — and a category reading amber beside a
- * group reading green for the same fraction of the same money would be the
- * kind of disagreement nobody can debug from the screen.
- */
-export const STATUS_COLOR: Record<BudgetStatus, string> = {
-  within: "var(--brand)",
-  approaching: "var(--warning)",
-  over: "var(--destructive)",
-};
-
 /**
  * How much of the bar to fill, clamped to the track.
  *

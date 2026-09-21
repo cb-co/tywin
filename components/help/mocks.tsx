@@ -19,16 +19,18 @@ import { Stamp } from "@/components/papel/stamp";
 import { Mark } from "@/components/transactions/mark";
 import { Perforation } from "@/components/papel/perforation";
 import { RuleMeter } from "@/components/papel/rule-meter";
+import { LedgerBlock } from "@/components/papel/ledger-block";
+import { SectionLegend } from "@/components/papel/section-legend";
+import { BudgetStatusMark } from "@/components/budgets/budget-status-mark";
 import { SpecimenFrame } from "@/components/papel/specimen-frame";
 import { QuincenaEdge } from "@/components/overview/quincena-edge";
 import { MoneyDisplay } from "@/components/ui/money-display";
-import { StatPill } from "@/components/ui/stat-pill";
 import { CardFace } from "@/components/papel/card-face";
 import { BrandGlyph } from "@/components/ui/brand-glyph";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatPercent } from "@/lib/format";
 import { ACCOUNT_TYPE_META } from "@/lib/accounts/meta";
 import { SWATCHES } from "@/lib/palette";
-import { STATUS_COLOR } from "@/lib/budgets/bar";
+import { barPct, meterArgs } from "@/lib/budgets/bar";
 import { readableForeground } from "@/lib/color";
 import { cn } from "@/lib/utils";
 
@@ -516,110 +518,146 @@ export function LedgerMock({
   );
 }
 
+type MockBudgetRow = {
+  name: string;
+  emoji: string;
+  color: string;
+  used: number;
+  budget: number;
+  status: "within" | "approaching" | "over";
+};
+
+/**
+ * One budget line as the live `BudgetLine` prints it, minus its inputs and
+ * edit/delete controls (those need client hooks): a `LedgerBlock` whose head
+ * is a stamped `LedgerRow`, with the ruled meter and its status mark under it.
+ * The percent is the clamped `barPct`, exactly what the real head shows.
+ */
+function MockBudgetBlock({
+  row,
+  nearLabel,
+  overLabel,
+  usedOf,
+}: {
+  row: MockBudgetRow;
+  nearLabel: string;
+  overLabel: string;
+  usedOf: (used: string, budget: string) => string;
+}) {
+  const { used, total } = meterArgs(row.used, row.budget);
+  return (
+    <LedgerBlock
+      head={
+        <LedgerRow
+          lead={<Stamp color={row.color} emoji={row.emoji} name={row.name} size="md" />}
+          title={row.name}
+          subtitle={usedOf(formatMoney(row.used, "DOP"), formatMoney(row.budget, "DOP"))}
+          amount={<MoneyDisplay amount={row.used} currency="DOP" size="inline" />}
+          meta={formatPercent(barPct(row.used, row.budget))}
+        />
+      }
+    >
+      <div className="flex items-center gap-3">
+        <RuleMeter
+          className="flex-1"
+          used={used}
+          total={total}
+          near={row.status === "approaching"}
+          label={row.name}
+          overLabel={overLabel}
+        />
+        <BudgetStatusMark status={row.status} overLabel={overLabel} nearLabel={nearLabel} />
+      </div>
+    </LedgerBlock>
+  );
+}
+
+/**
+ * The Budgets screen in miniature: the peso note that carries the period total,
+ * then one budget line per state. Within prints nothing extra, approaching a
+ * "Near" tag and a heavy rule, over a flag mark and the red double-rule end.
+ * Everything sits in a SpecimenFrame, so the figures read as an example.
+ */
 export function BudgetsMock({
   month,
   food,
   transport,
   entertainment,
+  nearLabel,
+  overLabel,
+  usedOf,
 }: {
   month: string;
   food: string;
   transport: string;
   entertainment: string;
+  nearLabel: string;
+  overLabel: string;
+  usedOf: (used: string, budget: string) => string;
 }) {
-  const rows = [
-    { name: food, emoji: "🍽️", color: SWATCHES[1], used: 340, budget: 500, pct: 68, status: "within" as const },
-    { name: transport, emoji: "🚗", color: SWATCHES[6], used: 210, budget: 250, pct: 84, status: "approaching" as const },
-    { name: entertainment, emoji: "🎬", color: SWATCHES[4], used: 140, budget: 100, pct: 100, status: "over" as const },
+  const rows: MockBudgetRow[] = [
+    { name: food, emoji: "🍽️", color: SWATCHES[1], used: 340, budget: 500, status: "within" },
+    { name: transport, emoji: "🚗", color: SWATCHES[6], used: 210, budget: 250, status: "approaching" },
+    { name: entertainment, emoji: "🎬", color: SWATCHES[4], used: 196, budget: 140, status: "over" },
   ];
 
   return (
-    <MockPanel>
-      <MockLabel>{month}</MockLabel>
-      <div className="space-y-4">
-        {rows.map((row) => (
-          <div key={row.name}>
-            <div className="flex items-center gap-3">
-              <ColorTile color={row.color} emoji={row.emoji} name={row.name} size="md" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">{row.name}</p>
-                <p className="figure text-xs text-muted-foreground tabular-nums">
-                  ${row.used} of ${row.budget}
-                </p>
-              </div>
-            </div>
-            <div className="mt-2 flex items-end justify-between gap-2">
-              <MoneyDisplay amount={row.used} currency="USD" size="stat" />
-              <StatPill tone={row.status === "over" ? "destructive" : "neutral"}>{row.pct}%</StatPill>
-            </div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full"
-                style={{ width: `${row.pct}%`, backgroundColor: STATUS_COLOR[row.status] }}
-              />
-            </div>
-          </div>
-        ))}
+    <SpecimenFrame className="mt-4">
+      <div className="space-y-3">
+        <Note tone="peso" ornament={false} label={month} className="p-4 sm:p-4">
+          <MoneyDisplay amount={890} currency="DOP" size="stat" />
+        </Note>
+        <div className="rounded-[4px] border border-(--paper-line)">
+          {rows.map((row) => (
+            <MockBudgetBlock key={row.name} row={row} nearLabel={nearLabel} overLabel={overLabel} usedOf={usedOf} />
+          ))}
+        </div>
       </div>
-    </MockPanel>
+    </SpecimenFrame>
   );
 }
 
 /**
- * The group band as it sits above the category band.
- *
- * Drawn with the same tile, figure, pill and bar as BudgetsMock directly above
- * it, because on the real page the two bands are the same money sliced twice
- * and look it. What the mock is actually teaching is the row count: three
- * coarse buckets over what the guide has just shown as a longer list of
- * categories.
+ * The group band as it sits above the category band: the same budget line,
+ * because on the real page the two bands are the same money sliced twice and
+ * look it. What the mock teaches is the row count: three coarse buckets over
+ * the longer list of categories the guide has just shown. None is over: a plan
+ * on track is the truer picture, and the mock above already shows over.
  */
 export function BudgetGroupsMock({
+  heading,
   essentials,
   lifestyle,
   future,
+  nearLabel,
+  overLabel,
+  usedOf,
 }: {
+  heading: string;
   essentials: string;
   lifestyle: string;
   future: string;
+  nearLabel: string;
+  overLabel: string;
+  usedOf: (used: string, budget: string) => string;
 }) {
-  const rows = [
-    { name: essentials, emoji: "🏠", color: SWATCHES[2], used: 1180, budget: 1400, pct: 84, status: "approaching" as const },
-    { name: lifestyle, emoji: "🎈", color: SWATCHES[4], used: 520, budget: 600, pct: 87, status: "approaching" as const },
-    { name: future, emoji: "🌱", color: SWATCHES[7], used: 300, budget: 500, pct: 60, status: "within" as const },
+  const rows: MockBudgetRow[] = [
+    { name: essentials, emoji: "🏠", color: SWATCHES[2], used: 1180, budget: 1400, status: "approaching" },
+    { name: lifestyle, emoji: "🎈", color: SWATCHES[4], used: 520, budget: 600, status: "approaching" },
+    { name: future, emoji: "🌱", color: SWATCHES[7], used: 300, budget: 500, status: "within" },
   ];
 
   return (
-    <MockPanel>
-      <div className="space-y-4">
-        {rows.map((row) => (
-          <div key={row.name}>
-            <div className="flex items-center gap-3">
-              <ColorTile color={row.color} emoji={row.emoji} name={row.name} size="md" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">{row.name}</p>
-                <p className="figure text-xs text-muted-foreground tabular-nums">
-                  ${row.used} of ${row.budget}
-                </p>
-              </div>
-            </div>
-            <div className="mt-2 flex items-end justify-between gap-2">
-              <MoneyDisplay amount={row.used} currency="USD" size="stat" />
-              {/* None of these three is over. A plan on track is the truer
-                  picture of the group band — the category mock above already
-                  shows what over looks like, and it looks the same here. */}
-              <StatPill tone="neutral">{row.pct}%</StatPill>
-            </div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full"
-                style={{ width: `${row.pct}%`, backgroundColor: STATUS_COLOR[row.status] }}
-              />
-            </div>
-          </div>
-        ))}
+    <SpecimenFrame className="mt-4">
+      <div className="space-y-2">
+        <SectionLegend>{heading}</SectionLegend>
+        <div className="rounded-[4px] border border-(--paper-line)">
+          {rows.map((row) => (
+            <MockBudgetBlock key={row.name} row={row} nearLabel={nearLabel} overLabel={overLabel} usedOf={usedOf} />
+          ))}
+        </div>
       </div>
-    </MockPanel>
+    </SpecimenFrame>
   );
 }
 
@@ -627,23 +665,24 @@ export function BudgetGroupsMock({
  * Two recurring payments, deliberately showing BOTH marks a person will see
  * and both kinds of template.
  *
- * The first is a subscription the app recognised — its real logo on its real
+ * The first is a subscription the app recognised: its real logo on its real
  * brand colour. The second is a semimonthly transfer to savings, which no model
- * would place, wearing the initial on the theme's accent. Drawing only the good case would leave anyone whose gym or
- * ISP shows a letter thinking something had failed, when that is the
- * finished state.
+ * would place, wearing the initial on the theme's accent. Drawing only the good
+ * case would leave anyone whose gym or ISP shows a letter thinking something
+ * had failed, when that is the finished state.
  *
- * Each is its own Card, not a row in a shared list — the real screen is a
- * grid of recurring-payment cards, each with its own toggle, stat-sized
- * amount, and "Record" action, and stacking two of those is truer than a
- * transaction-style list would be.
+ * Drawn as the live screen is: one ledger, each recurring payment a
+ * `LedgerBlock` in next-charge order with paused ones last (at 60% opacity),
+ * the "Next <date>" as the head's meta, the account line, then the control row
+ * with Record at the right edge.
  *
  * Spotify by name, because the mark has to be one people actually recognise
  * for the row to make its point. The glyph is a static import, so only this
- * one path ships — see lib/brand/simple-icon for why a slug lookup at
- * runtime may not happen in a client bundle.
+ * one path ships; see lib/brand/simple-icon for why a slug lookup at runtime
+ * may not happen in a client bundle.
  */
 export function SubscriptionsMock({
+  heading,
   streaming,
   streamingCycle,
   streamingNext,
@@ -652,6 +691,7 @@ export function SubscriptionsMock({
   transferNext,
   addCharge,
 }: {
+  heading: string;
   streaming: string;
   streamingCycle: string;
   streamingNext: string;
@@ -660,11 +700,17 @@ export function SubscriptionsMock({
   transferNext: string;
   addCharge: string;
 }) {
+  // The catalogue strings read "Next <date> · <account>". The live row splits
+  // them into a meta line and an account line, so split on the first " · ".
+  const splitNext = (s: string) => {
+    const i = s.indexOf(" · ");
+    return i < 0 ? { next: s, account: null } : { next: s.slice(0, i), account: s.slice(i + 3) };
+  };
   const rows = [
     {
       name: streaming,
       cycle: streamingCycle,
-      next: streamingNext,
+      ...splitNext(streamingNext),
       amt: 15.99,
       active: true,
       mark: <BrandGlyph path={siSpotify.path} className="size-[55%]" />,
@@ -673,7 +719,7 @@ export function SubscriptionsMock({
     {
       name: transfer,
       cycle: transferCycle,
-      next: transferNext,
+      ...splitNext(transferNext),
       amt: 250,
       active: false,
       mark: transfer[0]?.toUpperCase(),
@@ -682,38 +728,47 @@ export function SubscriptionsMock({
   ];
 
   return (
-    <div className="space-y-3">
-      {rows.map((row, i) => (
-        <Card key={i} className={cn("gap-0 p-4", !row.active && "opacity-60")}>
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <span
-                className={cn(
-                  "tile-sheen flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
-                  row.style ? undefined : "bg-accent text-accent-foreground",
-                )}
-                style={row.style}
-              >
-                {row.mark}
-              </span>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-foreground">{row.name}</p>
-                <p className="truncate text-xs text-muted-foreground">{row.cycle}</p>
+    <SpecimenFrame className="mt-4">
+      <div className="space-y-2">
+        <SectionLegend>{heading}</SectionLegend>
+        <div className="rounded-[4px] border border-(--paper-line)">
+          {rows.map((row, i) => (
+            <LedgerBlock
+              key={i}
+              className={cn(!row.active && "opacity-60")}
+              head={
+                <LedgerRow
+                  lead={
+                    <span
+                      className={cn(
+                        "flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
+                        row.style ? undefined : "bg-accent text-accent-foreground",
+                      )}
+                      style={row.style}
+                    >
+                      {row.mark}
+                    </span>
+                  }
+                  title={row.name}
+                  subtitle={row.cycle}
+                  amount={<MoneyDisplay amount={row.amt} currency="USD" size="inline" />}
+                  meta={row.next}
+                />
+              }
+            >
+              {row.account ? <p className="truncate text-xs text-muted-foreground">{row.account}</p> : null}
+              <div className="flex items-center justify-between gap-2">
+                <MockSwitch checked={row.active} />
+                <Button size="sm" variant="secondary">
+                  <Receipt className="size-4" />
+                  {addCharge}
+                </Button>
               </div>
-            </div>
-            <MockSwitch checked={row.active} />
-          </div>
-          <p className="mt-3 leading-none">
-            <MoneyDisplay amount={row.amt} currency="USD" size="stat" />
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">{row.next}</p>
-          <Button size="sm" variant="secondary" className="mt-3">
-            <Receipt className="size-4" />
-            {addCharge}
-          </Button>
-        </Card>
-      ))}
-    </div>
+            </LedgerBlock>
+          ))}
+        </div>
+      </div>
+    </SpecimenFrame>
   );
 }
 

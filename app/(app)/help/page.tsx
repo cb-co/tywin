@@ -37,6 +37,10 @@ import {
 
 export default async function HelpPage() {
   const t = await getTranslations("Help");
+  const tBudgets = await getTranslations("Budgets");
+  const tGroups = await getTranslations("BudgetGroups");
+  const tSubs = await getTranslations("Subscriptions");
+  const usedOf = (used: string, budget: string) => tBudgets("amountOfBudget", { used, budget });
 
   const navIconClass = "size-4 shrink-0";
   const sections: HelpSection[] = [
@@ -336,6 +340,9 @@ export default async function HelpPage() {
               food={t("budgetsMockFood")}
               transport={t("budgetsMockTransport")}
               entertainment={t("budgetsMockEntertainment")}
+              nearLabel={tBudgets("statusApproaching")}
+              overLabel={tBudgets("statusOver")}
+              usedOf={usedOf}
             />
           </HelpChapter>
 
@@ -361,9 +368,13 @@ export default async function HelpPage() {
               </HelpCallout>
             </div>
             <BudgetGroupsMock
+              heading={tGroups("sectionTitle")}
               essentials={t("budgetGroupsMockEssentials")}
               lifestyle={t("budgetGroupsMockLifestyle")}
               future={t("budgetGroupsMockFuture")}
+              nearLabel={tBudgets("statusApproaching")}
+              overLabel={tBudgets("statusOver")}
+              usedOf={usedOf}
             />
           </HelpChapter>
 
@@ -386,6 +397,7 @@ export default async function HelpPage() {
               <p className="mt-3 text-sm text-muted-foreground">{t("subLogCharge")}</p>
             </div>
             <SubscriptionsMock
+              heading={tSubs("sectionOther")}
               streaming={t("subscriptionsMockStreaming")}
               streamingCycle={t("subscriptionsMockStreamingCycle")}
               streamingNext={t("subscriptionsMockStreamingNext")}
