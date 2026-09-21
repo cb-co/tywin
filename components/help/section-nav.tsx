@@ -45,9 +45,9 @@ export function SectionNav({ sections }: { sections: HelpSection[] }) {
           key={id}
           href={`#${id}`}
           className={cn(
-            "flex shrink-0 items-center gap-2 rounded-md px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors",
-            "hover:bg-accent hover:text-accent-foreground",
-            activeId === id && "bg-accent text-accent-foreground",
+            "flex shrink-0 items-center gap-2 border-b-2 border-transparent px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors md:border-b-0 md:border-l-2",
+            "hover:text-foreground",
+            activeId === id && "border-(--rule) text-foreground",
           )}
         >
           {icon}

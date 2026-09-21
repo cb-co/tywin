@@ -23,7 +23,6 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { InstallAppRow } from "@/components/pwa/install-app-row";
 import { Row } from "@/components/settings/row";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -244,7 +243,7 @@ export function SettingsPanel({
 
   return (
     <div className="space-y-6">
-      <Card className="divide-y gap-0 px-6 py-0">
+      <div className="divide-y divide-(--paper-line) border-y-2 border-(--rule)">
         <Row
           index={0}
           htmlFor="display-name"
@@ -451,12 +450,12 @@ export function SettingsPanel({
             </Button>
           </form>
         </Row>
-      </Card>
+      </div>
 
-      <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-6 dark:bg-destructive/10">
+      <div className="border-y border-destructive/60">
         <div className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-0.5">
-            <p className="text-sm font-medium text-destructive">{t("dangerZoneTitle")}</p>
+            <p className="legend text-[11px] text-destructive">{t("dangerZoneTitle")}</p>
             <p className="text-sm text-muted-foreground">{t("deleteAccountDescription")}</p>
           </div>
           <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
