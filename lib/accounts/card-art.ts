@@ -11,7 +11,7 @@ import { HEX6 } from "@/lib/color";
  *
  * Deliberately NOT the brand violet. The violet is the app's own colour; a card
  * is the issuer's object, and defaulting it to the product's brand made every
- * unresolved card look like Cashly merchandise.
+ * unresolved card look like Cigua merchandise.
  */
 export const DEFAULT_CARD_ACCENT = "#1B4B8F";
 

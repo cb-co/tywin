@@ -35,7 +35,7 @@ export default async function LoginPage({
         <Serial value="CL 2026 000417 A" className={s.serialBottom} />
         <Link href="/" className={s.brand}>
           <Logo />
-          <span>Cashly</span>
+          <span>Cigua</span>
         </Link>
         <div className={s.authNoteCopy}>
           <h2 id="auth-note-title" className={s.authNoteTitle}>

@@ -32,7 +32,7 @@ const CUOTAS = [
 ];
 
 /** Public, unauthenticated home page. Google's OAuth verification and any
- *  signed-out visitor land here, so it has to explain what Cashly does on
+ *  signed-out visitor land here, so it has to explain what Cigua does on
  *  its own — it can't assume the reader already knows. */
 export async function MarketingHome() {
   const t = await getTranslations("Marketing");
@@ -53,7 +53,7 @@ export async function MarketingHome() {
         <nav className={s.nav} aria-label={t("navLabel")}>
           <Link href="/" className={s.brand}>
             <Logo />
-            <span>Cashly</span>
+            <span>Cigua</span>
           </Link>
           <div className={s.navEnd}>
             <LocaleToggle />
@@ -292,7 +292,7 @@ export async function MarketingHome() {
         <div className={s.footerInner}>
           <span className={s.brand}>
             <Logo className="h-6 w-6" />
-            <span>Cashly</span>
+            <span>Cigua</span>
           </span>
           <span className={s.footerNote}>{t("footerNote")}</span>
           <nav aria-label={t("footerNav")} className={s.footerLinks}>

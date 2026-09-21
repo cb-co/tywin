@@ -174,7 +174,7 @@ export default async function AccountDetailPage({
   const owed = account.cardStatus?.owed ?? account.current_balance;
   const util = account.cardStatus?.utilization_pct ?? null;
   const outstanding = account.loanStatus?.outstanding_balance ?? account.principal ?? 0;
-  // Raw count of payments logged in Cashly — drives the forward-looking amortization
+  // Raw count of payments logged in Cigua — drives the forward-looking amortization
   // schedule below, which always starts fresh from `term_months` (remaining) at entry.
   const paid = account.loanStatus?.installments_paid ?? 0;
   // Display-only progress: credits installments assumed paid before tracking started

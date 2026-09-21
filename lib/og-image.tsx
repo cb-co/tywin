@@ -4,7 +4,7 @@ import { SealSvg } from "@/lib/pwa/icon";
 export const OG_IMAGE_SIZE = { width: 1200, height: 630 };
 
 /**
- * Renders the Cashly seal (SealSvg, the static twin of components/papel/seal.tsx)
+ * Renders the Cigua seal (SealSvg, the static twin of components/papel/seal.tsx)
  * on a note-violet field at OG resolution. Colours are repeated literally
  * because an ImageResponse is rasterised with no stylesheet in scope; keep them
  * in step with the `--note` tokens in app/globals.css.
@@ -46,7 +46,7 @@ export function renderBrandOgImage() {
             color: "#1b1530",
           }}
         >
-          Cashly
+          Cigua
         </div>
         <div
           style={{

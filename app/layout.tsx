@@ -12,14 +12,14 @@ import { TOPBAR_DARK, TOPBAR_LIGHT } from "@/lib/pwa/theme-color";
 import { SPLASH_SKIP_SCRIPT } from "@/lib/splash";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-const title = "Cashly · Personal Finance";
+const title = "Cigua · Personal Finance";
 const description = "Track accounts, budgets, credit cards, and subscriptions.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
     default: title,
-    template: "%s · Cashly",
+    template: "%s · Cigua",
   },
   description,
   keywords: [
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   openGraph: {
     title,
     description,
-    siteName: "Cashly",
+    siteName: "Cigua",
     type: "website",
     locale: "en_US",
     url: "/",
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     // iOS only offers three status-bar presets, no arbitrary color.
     // "black" is the closest match to the dark topbar.
     statusBarStyle: "black",
-    title: "Cashly",
+    title: "Cigua",
   },
 };
 
