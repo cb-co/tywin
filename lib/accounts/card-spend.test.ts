@@ -10,7 +10,7 @@ const CHART_1 = "var(--chart-1)";
 const CHART_2 = "var(--chart-2)";
 
 const CATEGORIES: SpendCategory[] = [
-  { id: "dining", name: "Dining", color: "#E85B3F" },
+  { id: "dining", name: "Dining", color: "#E85B3F", emoji: "🍜" },
   { id: "transport", name: "Transport", color: "#1A96CE" },
   { id: "nocolor", name: "Sin color", color: null },
 ];
@@ -27,7 +27,7 @@ describe("cardSpendDistribution", () => {
       "Uncategorized",
     );
     expect(slices).toEqual([
-      { name: "Dining", value: 1200, color: "#E85B3F" },
+      { name: "Dining", value: 1200, color: "#E85B3F", emoji: "🍜" },
       { name: "Transport", value: 550, color: "#1A96CE" },
     ]);
   });
@@ -41,7 +41,7 @@ describe("cardSpendDistribution", () => {
       "Uncategorized",
     );
     expect(slices).toEqual([
-      { name: "Dining", value: 500, color: "#E85B3F" },
+      { name: "Dining", value: 500, color: "#E85B3F", emoji: "🍜" },
       { name: "Uncategorized", value: 200, color: CHART_2 },
     ]);
   });
@@ -67,7 +67,7 @@ describe("cardSpendDistribution", () => {
       CATEGORIES,
       "Uncategorized",
     );
-    expect(slices).toEqual([{ name: "Dining", value: 120, color: "#E85B3F" }]);
+    expect(slices).toEqual([{ name: "Dining", value: 120, color: "#E85B3F", emoji: "🍜" }]);
   });
 
   it("reads a numeric column that arrives as a string", () => {
@@ -82,6 +82,19 @@ describe("cardSpendDistribution", () => {
 
   it("is empty when the card was charged nothing in the window", () => {
     expect(cardSpendDistribution([], CATEGORIES, "Uncategorized")).toEqual([]);
+  });
+
+  // Regression: the credit card detail page's ledger fell back to Dining's
+  // first letter ("D") instead of its emoji, because SpendCategory/SpendSlice
+  // had no emoji field for it to travel through.
+  it("carries a category's emoji through to its slice", () => {
+    const slices = cardSpendDistribution([tx("dining", 100)], CATEGORIES, "Uncategorized");
+    expect(slices[0].emoji).toBe("🍜");
+  });
+
+  it("leaves emoji undefined for a category that has none", () => {
+    const slices = cardSpendDistribution([tx("transport", 100)], CATEGORIES, "Uncategorized");
+    expect(slices[0].emoji).toBeUndefined();
   });
 });
 

@@ -8,12 +8,12 @@ export type CardSpendTransaction = {
   total_amount: number | string | null;
 };
 
-export type SpendCategory = { id: string; name: string; color: string | null };
+export type SpendCategory = { id: string; name: string; color: string | null; emoji?: string | null };
 
 /** The shape the Insights spend ledger is fed — which is what lets this reuse
  *  `<SpendLedger>` rather than grow a second ledger component that would drift
  *  from it. */
-export type SpendSlice = { name: string; value: number; color: string };
+export type SpendSlice = { name: string; value: number; color: string; emoji?: string | null };
 
 /**
  * What a card was charged for, by category, over whatever window the caller
@@ -63,6 +63,7 @@ export function cardSpendDistribution(
         name: cat?.name ?? uncategorizedLabel,
         value,
         color: cat?.color ?? CHART_FALLBACK[i % CHART_FALLBACK.length],
+        emoji: cat?.emoji,
       };
     });
 }

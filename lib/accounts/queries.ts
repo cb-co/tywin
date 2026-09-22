@@ -207,7 +207,7 @@ export async function getCardSpendByCategory(
       .eq("type", "expense")
       .gte("occurred_at", month)
       .lt("occurred_at", addMonths(month, 1)),
-    supabase.from("categories").select("id,name,color"),
+    supabase.from("categories").select("id,name,color,emoji"),
   ]);
   return cardSpendDistribution(rows ?? [], categories ?? [], uncategorizedLabel);
 }
