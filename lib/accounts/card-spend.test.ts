@@ -27,8 +27,8 @@ describe("cardSpendDistribution", () => {
       "Uncategorized",
     );
     expect(slices).toEqual([
-      { name: "Dining", value: 1200, color: "#E85B3F", emoji: "🍜" },
-      { name: "Transport", value: 550, color: "#1A96CE" },
+      { name: "Dining", value: 1200, color: "#E85B3F", emoji: "🍜", categoryId: "dining" },
+      { name: "Transport", value: 550, color: "#1A96CE", categoryId: "transport" },
     ]);
   });
 
@@ -41,14 +41,14 @@ describe("cardSpendDistribution", () => {
       "Uncategorized",
     );
     expect(slices).toEqual([
-      { name: "Dining", value: 500, color: "#E85B3F", emoji: "🍜" },
-      { name: "Uncategorized", value: 200, color: CHART_2 },
+      { name: "Dining", value: 500, color: "#E85B3F", emoji: "🍜", categoryId: "dining" },
+      { name: "Uncategorized", value: 200, color: CHART_2, categoryId: null },
     ]);
   });
 
   it("falls back to a series colour for a category with none stored", () => {
     const slices = cardSpendDistribution([tx("nocolor", 75)], CATEGORIES, "Uncategorized");
-    expect(slices).toEqual([{ name: "Sin color", value: 75, color: CHART_1 }]);
+    expect(slices).toEqual([{ name: "Sin color", value: 75, color: CHART_1, categoryId: "nocolor" }]);
   });
 
   it("assigns fallback colours in ring order, not row order", () => {
@@ -67,7 +67,7 @@ describe("cardSpendDistribution", () => {
       CATEGORIES,
       "Uncategorized",
     );
-    expect(slices).toEqual([{ name: "Dining", value: 120, color: "#E85B3F", emoji: "🍜" }]);
+    expect(slices).toEqual([{ name: "Dining", value: 120, color: "#E85B3F", emoji: "🍜", categoryId: "dining" }]);
   });
 
   it("reads a numeric column that arrives as a string", () => {
@@ -95,6 +95,18 @@ describe("cardSpendDistribution", () => {
   it("leaves emoji undefined for a category that has none", () => {
     const slices = cardSpendDistribution([tx("transport", 100)], CATEGORIES, "Uncategorized");
     expect(slices[0].emoji).toBeUndefined();
+  });
+
+  // Regression: a category row had no id to drill into — tapping it to see
+  // the transactions behind the number had nothing to filter by.
+  it("carries a category's id through to its slice", () => {
+    const slices = cardSpendDistribution([tx("dining", 100)], CATEGORIES, "Uncategorized");
+    expect(slices[0].categoryId).toBe("dining");
+  });
+
+  it("gives the uncategorized/deleted-category slice a null id", () => {
+    const slices = cardSpendDistribution([tx(null, 100)], CATEGORIES, "Uncategorized");
+    expect(slices[0].categoryId).toBeNull();
   });
 });
 

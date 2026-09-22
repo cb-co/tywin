@@ -1,13 +1,15 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { baseCurrencyOf } from "@/lib/profile";
-import { shortMonth } from "@/lib/budgets/month";
+import { shortMonth, monthEnd } from "@/lib/budgets/month";
 import { getExchangeRates, convertToBase } from "@/lib/fx";
 import { CHART_FALLBACK } from "@/lib/chart-series";
 import { splitPayments } from "@/lib/accounts/amortization";
 import { loanPaymentAmounts } from "@/lib/insights/net-worth-history";
 import { currentPeriod } from "@/lib/period/profile";
 import { addDays, isWholeMonth, type Period } from "@/lib/period/cycle";
+import { getTransactions, type TransactionWithRefs } from "@/lib/transactions/queries";
+import { isInsightsSpend } from "@/lib/insights/spend-rule";
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -31,7 +33,7 @@ function cardLabel(groupName: string | null | undefined, accountName: string): s
 
 export type Insights = {
   baseCurrency: string;
-  distribution: { name: string; value: number; color: string; emoji?: string | null }[];
+  distribution: { name: string; value: number; color: string; emoji?: string | null; categoryId: string | null }[];
   trend: { month: string; income: number; expense: number; net: number }[];
   utilization: { id: string; name: string; pct: number; currency: string }[];
   loans: { id: string; name: string; paidPct: number; currency: string }[];
@@ -147,6 +149,7 @@ export async function getInsights(month: string): Promise<Insights> {
       color: d.category_id
         ? (cat?.color ?? CHART_FALLBACK[i % CHART_FALLBACK.length])
         : "var(--muted-foreground)",
+      categoryId: d.category_id ?? null,
     };
   });
 
@@ -194,6 +197,39 @@ export async function getInsights(month: string): Promise<Insights> {
     totalSpend: distribution.reduce((s, d) => s + d.value, 0),
     pace,
   };
+}
+
+/** Generously above what a single category+month realistically holds, so the
+ *  category drawer never silently truncates without the caller knowing to
+ *  add paging — see the comment on getInsightsSpendTransactions. */
+const SPEND_DRILLDOWN_LIMIT = 300;
+
+/**
+ * Every transaction behind one `distribution` row — what "tap a spend-ledger
+ * row" drills into. `categoryIds` is a list, not a single id, because the
+ * folded "everything else" row stands in for every category past the top
+ * seven (see shareRows) — querying only the category it's named after would
+ * silently drop the rest of what it represents.
+ *
+ * Applies `spend_distribution`'s own inclusion rule (`isInsightsSpend`)
+ * client-side rather than trusting the DB-level `type` filter alone, because
+ * that rule also depends on the destination account's type, which PostgREST
+ * cannot express as an OR across the base table and an embedded one.
+ *
+ * Not paginated: a category's charges in one month are a small, bounded set
+ * in practice, and the calling UI renders them as one scrollable list rather
+ * than a "load more" ledger.
+ */
+export async function getInsightsSpendTransactions(
+  month: string,
+  categoryIds: (string | null)[],
+): Promise<TransactionWithRefs[]> {
+  const { rows } = await getTransactions(
+    { categoryIds, types: ["expense", "payment"], from: month, to: monthEnd(month) },
+    null,
+    SPEND_DRILLDOWN_LIMIT,
+  );
+  return rows.filter((r) => isInsightsSpend({ type: r.type, toAccountType: r.to_account?.type ?? null }));
 }
 
 export interface CostOfCarryLine {

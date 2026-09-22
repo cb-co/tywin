@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { amountDisplay, groupLedger, type AmountTxn } from "./display";
+import { amountDisplay, groupLedger, transactionTitle, type AmountTxn, type TitleTxn } from "./display";
 
 const base: AmountTxn = {
   type: "expense",
@@ -47,6 +47,39 @@ describe("amountDisplay", () => {
     );
     expect(r.value).toBe(300);
     expect(r.currency).toBe("DOP");
+  });
+});
+
+describe("transactionTitle", () => {
+  const base: TitleTxn = { type: "expense", description: null, category: null, account: null };
+  const t = (over: Partial<TitleTxn>): TitleTxn => ({ ...base, ...over });
+
+  it("prefers the transaction's own description", () => {
+    const title = transactionTitle(
+      t({ description: "Coffee", category: { name: "Dining" } }),
+      "Income",
+      "Transaction",
+    );
+    expect(title).toBe("Coffee");
+  });
+
+  it("falls back to the category name when there is no description", () => {
+    const title = transactionTitle(t({ category: { name: "Dining" } }), "Income", "Transaction");
+    expect(title).toBe("Dining");
+  });
+
+  it("falls back to the income label for an uncategorized income row", () => {
+    const title = transactionTitle(t({ type: "income" }), "Income", "Transaction");
+    expect(title).toBe("Income");
+  });
+
+  it("falls back to the account name for a non-income row with no category", () => {
+    const title = transactionTitle(t({ account: { name: "Checking" } }), "Income", "Transaction");
+    expect(title).toBe("Checking");
+  });
+
+  it("falls back to the generic label when nothing else is available", () => {
+    expect(transactionTitle(t({}), "Income", "Transaction")).toBe("Transaction");
   });
 });
 

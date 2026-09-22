@@ -8,7 +8,7 @@ import { searchTerms } from "./search";
 type Client = Awaited<ReturnType<typeof createClient>>;
 
 const TXN_SELECT =
-  "*, account:accounts!transactions_account_id_fkey(id,name,currency,type), to_account:accounts!transactions_to_account_id_fkey(id,name,currency), category:categories!transactions_category_id_fkey(id,name,emoji,color)";
+  "*, account:accounts!transactions_account_id_fkey(id,name,currency,type), to_account:accounts!transactions_to_account_id_fkey(id,name,currency,type), category:categories!transactions_category_id_fkey(id,name,emoji,color)";
 
 function selectTransactions(supabase: Client) {
   return supabase.from("transactions").select(TXN_SELECT);
@@ -24,8 +24,16 @@ export const TRANSACTIONS_PAGE_SIZE = 50;
 
 export type TxnFilters = {
   type?: string;
+  /** Alternative to `type`: match any of these (an IN filter). The two are
+   *  never passed together. */
+  types?: string[];
   accountId?: string;
-  categoryId?: string;
+  /** `null` filters for the uncategorized/deleted-category bucket
+   *  (`category_id IS NULL`) rather than leaving the filter off. */
+  categoryId?: string | null;
+  /** Alternative to `categoryId`: match any of these (`null` included means
+   *  "or uncategorized"). Never passed together with `categoryId`. */
+  categoryIds?: (string | null)[];
   search?: string;
   /** Inclusive `YYYY-MM-DD` bounds on `occurred_at`. */
   from?: string;
@@ -45,10 +53,20 @@ type TxnQuery = ReturnType<typeof selectTransactions>;
 
 function applyTxnFilters(q: TxnQuery, f: TxnFilters): TxnQuery {
   if (f.type) q = q.eq("type", f.type as "expense" | "income" | "payment");
+  if (f.types) q = q.in("type", f.types as ("expense" | "income" | "payment")[]);
   // A payment shows up on both of its accounts, so filtering by account has
   // to match either leg — the same rule the ledger applied client-side.
   if (f.accountId) q = q.or(`account_id.eq.${f.accountId},to_account_id.eq.${f.accountId}`);
-  if (f.categoryId) q = q.eq("category_id", f.categoryId);
+  if (f.categoryId !== undefined) {
+    q = f.categoryId === null ? q.is("category_id", null) : q.eq("category_id", f.categoryId);
+  }
+  if (f.categoryIds) {
+    const real = f.categoryIds.filter((id): id is string => id !== null);
+    const hasNull = f.categoryIds.includes(null);
+    if (real.length > 0 && hasNull) q = q.or(`category_id.in.(${real.join(",")}),category_id.is.null`);
+    else if (real.length > 0) q = q.in("category_id", real);
+    else if (hasNull) q = q.is("category_id", null);
+  }
 
   const terms = searchTerms(f.search ?? "");
   if (terms.length > 0) q = q.or(terms.join(","));

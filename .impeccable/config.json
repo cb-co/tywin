@@ -27,6 +27,12 @@
         "value": "#1a96ce",
         "createdAt": "2026-09-22T14:00:54.155Z",
         "reason": "unit test fixture color in card-spend.test.ts, not app UI - arbitrary value for category pass-through test"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#123456",
+        "createdAt": "2026-09-22T18:28:33.539Z",
+        "reason": "unit test fixture color in share.test.ts, not app UI - preexisting fixture from the original shareRows tests"
       }
     ]
   }

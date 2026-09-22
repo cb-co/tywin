@@ -409,7 +409,13 @@ export default async function AccountDetailPage({
           </h2>
           {/* Native currency, never converted: every charge here posted to this
               one account. See lib/accounts/card-spend.ts. */}
-          <SpendLedger data={spendSlices} total={spendMonthTotal} currency={currency} />
+          <SpendLedger
+            data={spendSlices}
+            total={spendMonthTotal}
+            currency={currency}
+            month={spendMonth}
+            scope={{ kind: "account", accountId: id }}
+          />
         </Card>
       ) : null}
 

@@ -139,7 +139,13 @@ export default async function InsightsPage({
           </Plate>
 
           <Plate figLabel={t("fig", { n: 4 })} title={t("cardSpendDistribution")} basis={t("basisWhenCharged")} className="@[34rem]:col-span-2">
-            <SpendLedger data={insights.distribution} total={insights.totalSpend} currency={cur} />
+            <SpendLedger
+              data={insights.distribution}
+              total={insights.totalSpend}
+              currency={cur}
+              month={month}
+              scope={{ kind: "insights" }}
+            />
           </Plate>
         </Section>
 

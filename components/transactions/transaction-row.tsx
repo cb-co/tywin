@@ -1,7 +1,7 @@
 import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Trash2, Pencil, TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { formatMoney } from "@/lib/format";
-import { amountDisplay } from "@/lib/transactions/display";
+import { amountDisplay, transactionTitle } from "@/lib/transactions/display";
 import type { TransactionWithRefs, QuickAddData } from "@/lib/transactions/queries";
 import { TransactionDialog } from "./transaction-dialog";
 import { Button } from "@/components/ui/button";
@@ -49,11 +49,7 @@ export function TransactionRow({
   const account = txn.account;
   const toAccount = txn.to_account;
 
-  const title =
-    txn.description ||
-    category?.name ||
-    (txn.type === "income" ? tType("income") : account?.name) ||
-    t("transactionFallbackTitle");
+  const title = transactionTitle(txn, tType("income"), t("transactionFallbackTitle"));
 
   const subtitle =
     txn.type === "payment" && toAccount

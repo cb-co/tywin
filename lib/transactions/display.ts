@@ -43,6 +43,31 @@ export function amountDisplay(txn: AmountTxn, viewAccountId?: string): AmountDis
   };
 }
 
+export type TitleTxn = {
+  type: string;
+  description: string | null;
+  category: { name: string } | null;
+  account: { name: string } | null;
+};
+
+/**
+ * What a ledger row's title reads, when nothing tells it what to print
+ * directly: the transaction's own description first, then its category,
+ * then — for income specifically, which never carries a category — the
+ * localized "Income" a caller passes in, then the account it posted to, and
+ * finally a generic fallback. Shared by every place a transaction gets a
+ * one-line title (the editable ledger row and the read-only drilldown
+ * sheet), so the two can't quietly drift on what a blank row should say.
+ */
+export function transactionTitle(txn: TitleTxn, incomeLabel: string, fallbackLabel: string): string {
+  return (
+    txn.description ||
+    txn.category?.name ||
+    (txn.type === "income" ? incomeLabel : txn.account?.name) ||
+    fallbackLabel
+  );
+}
+
 /**
  * Month → day → rows. `occurred_at` is a calendar date stored as UTC
  * midnight, so the day key is read in UTC. Relies on the ledger arriving

@@ -156,7 +156,10 @@ const txnFilters = z
   .object({
     type: z.enum(TRANSACTION_TYPES).optional(),
     accountId: z.string().uuid().optional(),
-    categoryId: z.string().uuid().optional(),
+    // `null` (not just omitted) is a deliberate filter for the
+    // uncategorized bucket — see TxnFilters.categoryId.
+    categoryId: z.string().uuid().nullable().optional(),
+    categoryIds: z.array(z.string().uuid().nullable()).optional(),
     search: z.string().max(200).optional(),
     from: z.string().regex(ISO_DAY).optional(),
     to: z.string().regex(ISO_DAY).optional(),
