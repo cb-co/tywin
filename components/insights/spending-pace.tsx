@@ -2,8 +2,8 @@
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { PlateDefs, PLATE_AXIS, PLATE_GRID, PLATE_TOOLTIP_STYLE } from "@/components/papel/plate-defs";
-import { useTranslations } from "next-intl";
-import { formatMoney } from "@/lib/format";
+import { useTranslations, useLocale } from "next-intl";
+import { formatDate, formatMoney } from "@/lib/format";
 import type { Insights } from "@/lib/insights/queries";
 
 export function SpendingPace({
@@ -14,10 +14,16 @@ export function SpendingPace({
   currency: string;
 }) {
   const t = useTranslations("Insights");
+  const locale = useLocale();
   const hasData = data.some((d) => (d.thisMonth ?? 0) > 0 || (d.lastMonth ?? 0) > 0);
   if (!hasData) {
     return <p className="py-10 text-center text-sm text-muted-foreground">{t("spendingPaceEmpty")}</p>;
   }
+  // The axis prints this period's own dates rather than "day 12" — the day
+  // count into a pay-cycle period that doesn't start on the 1st (see
+  // getInsights' pace type comment) used to read as the calendar day, which
+  // is exactly the mix-up this replaces.
+  const tickDate = (v: string) => formatDate(v, locale, { day: "numeric", month: "short" });
 
   return (
     // A number, not "100%": with both dimensions in percent, ResponsiveContainer
@@ -27,7 +33,7 @@ export function SpendingPace({
       <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
         <PlateDefs />
         <CartesianGrid {...PLATE_GRID} />
-        <XAxis dataKey="day" {...PLATE_AXIS} minTickGap={20} />
+        <XAxis dataKey="date" {...PLATE_AXIS} minTickGap={20} tickFormatter={tickDate} />
         <YAxis
           {...PLATE_AXIS}
           width={48}
@@ -36,7 +42,7 @@ export function SpendingPace({
         <Tooltip
           contentStyle={PLATE_TOOLTIP_STYLE}
           formatter={(value) => formatMoney(Number(value), currency)}
-          labelFormatter={(label) => t("dayLabel", { day: label })}
+          labelFormatter={(label) => tickDate(String(label))}
         />
         <Legend wrapperStyle={{ fontSize: 12 }} />
         {/* This chart's two lines are the only Insights legend that isn't

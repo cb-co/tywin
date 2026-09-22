@@ -1,14 +1,13 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { baseCurrencyOf } from "@/lib/profile";
-import { monthEnd, shortMonth } from "@/lib/budgets/month";
-import { getBudgetGroupOverview } from "@/lib/budgets/queries";
+import { shortMonth } from "@/lib/budgets/month";
 import { getExchangeRates, convertToBase } from "@/lib/fx";
 import { CHART_FALLBACK } from "@/lib/chart-series";
 import { splitPayments } from "@/lib/accounts/amortization";
 import { loanPaymentAmounts } from "@/lib/insights/net-worth-history";
 import { currentPeriod } from "@/lib/period/profile";
-import { isWholeMonth, type Period } from "@/lib/period/cycle";
+import { addDays, isWholeMonth, type Period } from "@/lib/period/cycle";
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -33,15 +32,17 @@ function cardLabel(groupName: string | null | undefined, accountName: string): s
 export type Insights = {
   baseCurrency: string;
   distribution: { name: string; value: number; color: string; emoji?: string | null }[];
-  budgetBars: { name: string; used: number; budget: number }[];
-  /** Which dimension `budgetBars` is sliced by, so the card can name what it is
-   *  showing. Only ever one of them — see the switch in getInsights. */
-  budgetBarsBy: "category" | "group";
   trend: { month: string; income: number; expense: number; net: number }[];
   utilization: { id: string; name: string; pct: number; currency: string }[];
   loans: { id: string; name: string; paidPct: number; currency: string }[];
   totalSpend: number;
-  pace: { day: number; thisMonth: number | null; lastMonth: number | null }[];
+  /** `date` is THIS period's calendar date at that point — even for the
+   *  `lastMonth`/`lastPeriod` series, which is plotted against it by
+   *  day-offset, not by its own date. That is what makes the x-axis print a
+   *  real date instead of a bare "day 12", which used to silently mean "the
+   *  12th of the pay-cycle period" rather than the 12th of the calendar
+   *  month a reader would assume from the section's month picker. */
+  pace: { date: string; thisMonth: number | null; lastMonth: number | null }[];
 };
 
 /**
@@ -70,8 +71,9 @@ async function fetchPace(
 ): Promise<Insights["pace"]> {
   if (isWholeMonth(period)) {
     const { data } = await supabase.rpc("spending_pace", { p_month: month });
+    // `r.day` is 1-indexed day-of-month; period.start is that month's 1st.
     return (data ?? []).map((r) => ({
-      day: r.day,
+      date: addDays(period.start, r.day - 1),
       thisMonth: paceValue(r.this_month),
       lastMonth: paceValue(r.last_month),
     }));
@@ -81,7 +83,7 @@ async function fetchPace(
     p_end: period.end,
   });
   return (data ?? []).map((r) => ({
-    day: r.day_offset,
+    date: addDays(period.start, r.day_offset),
     thisMonth: paceValue(r.this_period),
     lastMonth: paceValue(r.last_period),
   }));
@@ -106,17 +108,14 @@ export async function getInsights(month: string): Promise<Insights> {
 
   const [
     { data: dist },
-    { data: usage },
     { data: cashflow },
     { data: cards },
     { data: loans },
     { data: cats },
     { data: accounts },
     pace,
-    groupOverview,
   ] = await Promise.all([
     supabase.rpc("spend_distribution", { p_month: month }),
-    supabase.rpc("category_usage", { p_month: month }),
     supabase.from("monthly_cashflow").select("*").order("month"),
     supabase.from("card_status").select("account_id,currency,utilization_pct"),
     supabase
@@ -127,10 +126,6 @@ export async function getInsights(month: string): Promise<Insights> {
     supabase.from("categories").select("id,name,color,emoji"),
     supabase.from("accounts").select("id,name"),
     fetchPace(supabase, month, period),
-    // The calendar month, not `period`: these bars sit where category_usage's
-    // monthly bars sit (every month-band card but pace is calendar-monthly), and swapping
-    // which slice the card shows must not also swap its clock.
-    getBudgetGroupOverview({ start: month, end: monthEnd(month) }),
   ]);
 
   const tCommon = await getTranslations("Common");
@@ -154,33 +149,6 @@ export async function getInsights(month: string): Promise<Insights> {
         : "var(--muted-foreground)",
     };
   });
-
-  /* Expenses against budget, sliced ONE way.
-     Two stacked charts of the same money sliced two ways is the exact confusion
-     the qualifier/group split exists to remove, so groups replace categories
-     here rather than joining them.
-
-     The switch is on whether the groups have any money in them, not merely on
-     whether any group exists. Someone who makes a single group and never
-     budgets it has said nothing about their plan yet, and flipping the card to
-     an empty state the moment they create one would punish them for trying the
-     feature — with a blank chart, on a screen they did not change. */
-  const barsOf = <T extends { name: string; used: number; budget: number }>(rows: T[]) =>
-    rows
-      .filter((b) => b.budget > 0 || b.used > 0)
-      .sort((a, b) => b.used - b.budget - (a.used - a.budget))
-      .slice(0, 8)
-      .map((b) => ({ name: b.name, used: b.used, budget: b.budget }));
-
-  const groupBars = barsOf(groupOverview.rows);
-  const categoryBars = barsOf(
-    (usage ?? []).map((u) => ({
-      name: catById.get(u.category_id ?? "")?.name ?? "—",
-      used: Number(u.used ?? 0),
-      budget: Number(u.budget ?? 0),
-    })),
-  );
-  const budgetBars = groupBars.length > 0 ? groupBars : categoryBars;
 
   const trend = (cashflow ?? []).slice(-8).map((c) => ({
     month: shortMonth(c.month ?? month),
@@ -220,8 +188,6 @@ export async function getInsights(month: string): Promise<Insights> {
   return {
     baseCurrency,
     distribution,
-    budgetBars,
-    budgetBarsBy: groupBars.length > 0 ? ("group" as const) : ("category" as const),
     trend,
     utilization,
     loans: loanRows,

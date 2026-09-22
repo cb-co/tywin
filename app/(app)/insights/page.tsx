@@ -15,7 +15,6 @@ import {
   SpendingPace,
   NetWorthChart,
 } from "@/components/insights/lazy-charts";
-import { BudgetBars } from "@/components/insights/budget-bars";
 import { DebtHealth } from "@/components/insights/debt-health";
 import { DebtCostList } from "@/components/insights/debt-cost";
 
@@ -117,9 +116,12 @@ export default async function InsightsPage({
           of chrome subtracted from the ~850px viewport where the split is
           wanted.
 
-          The plotted charts and the budget bars run full bleed because they
-          are read along an axis and lose their shape when halved. The debt
-          band is two lists of rows, which pair up fine at half width. */}
+          The Recharts plots (net worth, cash flow, pace) run full bleed
+          because they are read along an axis and lose their shape when
+          halved. Spend distribution ran half-width beside expenses-vs-budget
+          before that card was removed; with nothing left to pair it with it
+          runs full bleed too — the debt band below is the only side-by-side
+          pair left. */}
       <div className="@container space-y-10">
         <Section title={t("sectionPosition")}>
           <Plate figLabel={t("fig", { n: 1 })} title={t("cardNetWorth")} className="@[34rem]:col-span-2">
@@ -139,27 +141,14 @@ export default async function InsightsPage({
           <Plate figLabel={t("fig", { n: 4 })} title={t("cardSpendDistribution")} basis={t("basisWhenCharged")} className="@[34rem]:col-span-2">
             <SpendLedger data={insights.distribution} total={insights.totalSpend} currency={cur} />
           </Plate>
-
-          <Plate
-            figLabel={t("fig", { n: 5 })}
-            title={
-              insights.budgetBarsBy === "group"
-                ? t("cardExpensesVsBudgetGroups")
-                : t("cardExpensesVsBudget")
-            }
-            basis={t("basisWhenPaid")}
-            className="@[34rem]:col-span-2"
-          >
-            <BudgetBars data={insights.budgetBars} currency={cur} />
-          </Plate>
         </Section>
 
         <Section title={t("sectionDebt")}>
-          <Plate figLabel={t("fig", { n: 6 })} title={t("cardDebtHealth")}>
+          <Plate figLabel={t("fig", { n: 5 })} title={t("cardDebtHealth")}>
             <DebtHealth utilization={insights.utilization} loans={insights.loans} />
           </Plate>
 
-          <Plate figLabel={t("fig", { n: 7 })} title={t("debtCostTitle")}>
+          <Plate figLabel={t("fig", { n: 6 })} title={t("debtCostTitle")}>
             <DebtCostList data={debtCost} locale={locale} />
           </Plate>
         </Section>
