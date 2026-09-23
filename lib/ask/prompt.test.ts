@@ -118,6 +118,18 @@ describe("the worked examples", () => {
   it("demonstrates the half-open range on occurred_at", () => {
     expect(exampleQueries().join(" ")).toMatch(/occurred_at >= date '[\d-]+' and occurred_at < date '[\d-]+'/);
   });
+
+  /* The model copies an example's range verbatim, so a date pinned when the
+     example was written answers "last month" with whichever month that was.
+     Every range comes from today — including across the year boundary. */
+  it("dates every range from today", () => {
+    const prompt = systemPrompt({ ...ctx, today: "2027-01-15" });
+    expect(prompt).toContain("occurred_at >= date '2026-12-01' and occurred_at < date '2027-01-01'");
+    expect(prompt).toContain("occurred_at >= date '2026-12-01' and occurred_at < date '2027-02-01'");
+    expect(prompt).toContain("occurred_at >= date '2027-01-01'");
+    const examples = prompt.split("Dates:")[1]?.split("How to answer:")[0] ?? "";
+    expect(examples).not.toMatch(/2026-0[1-9]/);
+  });
 });
 
 describe("the refusal rules the prompt states", () => {

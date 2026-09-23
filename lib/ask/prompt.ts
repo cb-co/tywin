@@ -56,12 +56,26 @@ export function renderContext(ctx: AskContext): string {
   return `${lines.join("\n\n")}${caveat}\n\n`;
 }
 
+/* First day of the month `offset` months from `today` (YYYY-MM-DD). The worked
+   examples below are the SQL the model copies most faithfully, so their dates
+   come from today rather than from the month they were written in: a pinned
+   "last month" answered September's question with July's money. */
+function monthStart(today: string, offset: number): string {
+  const [year, month] = today.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1 + offset, 1)).toISOString().slice(0, 10);
+}
+
 export function systemPrompt(ctx: {
   today: string;
   baseCurrency: string;
   language: string;
   context?: AskContext;
 }): string {
+  const lastMonth = monthStart(ctx.today, -1);
+  const thisMonth = monthStart(ctx.today, 0);
+  const nextMonth = monthStart(ctx.today, 1);
+  const thisYear = `${ctx.today.slice(0, 4)}-01-01`;
+
   return `You answer questions about one person's own money, inside their personal finance app. You have one tool: askQuery, which runs a read-only SQL SELECT against the views described below and returns rows.
 
 Today is ${ctx.today}. Use it for every relative date — "last month", "this week", "the 8th to the 14th" — and never guess the date from anything else.
@@ -90,14 +104,14 @@ What the query runner refuses. A refusal costs you a query and returns no rows, 
 - Only ordinary SQL: the aggregate and window functions, the common math and string functions, CASE, COALESCE, NULLIF, GREATEST, LEAST, \`::\` casts, \`at time zone\`, and the date functions date_trunc, date_part, extract, age, now, to_char, to_date, to_timestamp, make_date and make_interval. NOT generate_series, NOT unnest, NOT json_agg or jsonb_agg, NOT date(...) or timezone(...) as function calls, and no array functions. A month with no rows is simply absent from a GROUP BY — say so in words rather than manufacturing the row.
 
 Dates:
-- \`occurred_at\` on q_transactions is a timestamptz. Compare it half-open and never with BETWEEN: \`occurred_at >= date '2026-07-01' and occurred_at < date '2026-08-01'\`. BETWEEN with two day strings silently drops everything after midnight on the last day.
+- \`occurred_at\` on q_transactions is a timestamptz. Compare it half-open and never with BETWEEN: \`occurred_at >= date '${lastMonth}' and occurred_at < date '${thisMonth}'\`. BETWEEN with two day strings silently drops everything after midnight on the last day.
 - Every other date column — \`month\`, \`period_start\`, \`period_end\`, \`due_date\`, \`start_date\` — is a plain date, and \`=\` works on those.
 
 Worked examples. Copy the shape, not the values:
 - "How much did I spend last month?"
-  \`select sum(budget_spend) as total from q_transactions where occurred_at >= date '2026-07-01' and occurred_at < date '2026-08-01'\`
+  \`select sum(budget_spend) as total from q_transactions where occurred_at >= date '${lastMonth}' and occurred_at < date '${thisMonth}'\`
 - "Where did my money go last month?"
-  \`select category, sum(budget_spend) as total from q_transactions where occurred_at >= date '2026-07-01' and occurred_at < date '2026-08-01' and budget_spend > 0 group by 1 order by total desc\`
+  \`select category, sum(budget_spend) as total from q_transactions where occurred_at >= date '${lastMonth}' and occurred_at < date '${thisMonth}' and budget_spend > 0 group by 1 order by total desc\`
 - "How am I doing on groceries this month?"
   \`select budget, used, remaining from q_budgets where category ilike 'groceries' and month = date_trunc('month', date '${ctx.today}')::date\`
 - "How am I doing on Essentials this month?" (a budget GROUP, not a category)
@@ -105,9 +119,9 @@ Worked examples. Copy the shape, not the values:
 - "How much do I owe on the Amex and when is it due?"
   \`select statement_balance, minimum_payment, due_date, available_credit from q_card_statements where account_id = (select id from q_accounts where name ilike '%amex%' or brand ilike '%amex%' limit 1) order by period_end desc limit 1\`
 - "How much have I spent at Nacional this year, and how often do I go?"
-  \`select sum(budget_spend) as total, count(*) as visits, max(occurred_at) as last_visit from q_transactions where description ilike '%nacional%' and occurred_at >= date '2026-01-01'\`
+  \`select sum(budget_spend) as total, count(*) as visits, max(occurred_at) as last_visit from q_transactions where description ilike '%nacional%' and occurred_at >= date '${thisYear}'\`
 - "Am I spending more than last month?"
-  \`select date_trunc('month', occurred_at)::date as month, sum(budget_spend) as total from q_transactions where occurred_at >= date '2026-07-01' and occurred_at < date '2026-09-01' group by 1 order by 1\`
+  \`select date_trunc('month', occurred_at)::date as month, sum(budget_spend) as total from q_transactions where occurred_at >= date '${lastMonth}' and occurred_at < date '${nextMonth}' group by 1 order by 1\`
 
 How to answer:
 - Lead with the number they asked for, in bold, with its currency. Then give them the shape that fits: a sentence of context for a single figure, a table for many rows.
