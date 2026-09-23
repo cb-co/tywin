@@ -27,7 +27,7 @@ const html = (available: Partial<Available>) =>
 
 describe("AvailableHero", () => {
   it("prints the period serial on the note", () => {
-    expect(html({})).toContain("QNA 2026-09 B");
+    expect(html({})).toContain("QNA 09 B");
   });
   it("keeps net worth on the note", () => {
     expect(html({})).toContain("Net worth");

@@ -141,7 +141,7 @@ export function OverviewMock({
     <SpecimenFrame className="mt-4">
       <div className="space-y-4">
         <div>
-          <Note tone="peso" label={availableLabel} serial="QNA 2026-09 B">
+          <Note tone="peso" label={availableLabel} serial="QNA 09 B">
             <MoneyDisplay
               amount={1840}
               currency="USD"
