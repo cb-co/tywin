@@ -16,6 +16,8 @@ import { takeStatementParseToken } from "@/lib/statements/rate-limit";
 import { suggestAccountMappings, type CardAccountOption } from "@/lib/statements/mapping";
 import { cardBackfillFromSection } from "@/lib/statements/backfill";
 import { resolveCategoryId, type CategoryRuleRow } from "@/lib/statements/categorize";
+import { getCreditKinds } from "@/lib/statements/credit-kind-queries";
+import type { CreditKind } from "@/lib/statements/credit-kind";
 import { baseRate, getExchangeRates } from "@/lib/fx";
 import { baseCurrencyOf, DEFAULT_BASE_CURRENCY } from "@/lib/profile";
 import { becomesTransaction, type LineKind, type ParsedStatement } from "@/lib/statements/types";
@@ -572,6 +574,8 @@ export interface StatementLineDetail {
   mcc: string | null;
   amount: number;
   kind: LineKind;
+  /** Set on `credit` lines only. */
+  creditKind: CreditKind | null;
 }
 
 export async function getStatementLineDetail(statementId: string): Promise<StatementLineDetail[]> {
@@ -579,10 +583,15 @@ export async function getStatementLineDetail(statementId: string): Promise<State
   if (!user) return [];
   const { data } = await supabase
     .from("card_statement_lines")
-    .select("id,line_no,made_on,description,mcc,amount,kind")
+    .select("id,account_id,line_no,made_on,description,mcc,amount,kind")
     .eq("statement_id", statementId)
     .order("line_no");
-  return (data ?? []).map((l) => ({
+  const lines = data ?? [];
+  const creditKinds = await getCreditKinds(
+    supabase,
+    lines.filter((l) => l.kind === "credit"),
+  );
+  return lines.map((l) => ({
     id: l.id,
     lineNo: l.line_no,
     madeOn: l.made_on,
@@ -590,5 +599,6 @@ export async function getStatementLineDetail(statementId: string): Promise<State
     mcc: l.mcc,
     amount: l.amount,
     kind: l.kind,
+    creditKind: creditKinds.get(l.id) ?? null,
   }));
 }

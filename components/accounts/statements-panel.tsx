@@ -210,7 +210,7 @@ export function StatementsPanel({
                             </span>
                           ) : l.amount < 0 ? (
                             <span className="ml-1.5 rounded bg-success/10 px-1 py-0.5 text-[9px] uppercase text-success">
-                              {tTxn("refundBadge")}
+                              {l.creditKind === "cashback" ? tTxn("cashbackBadge") : tTxn("refundBadge")}
                             </span>
                           ) : null}
                         </div>

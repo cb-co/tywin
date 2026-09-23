@@ -16,6 +16,15 @@ export type AmountDisplay = {
   income: boolean;
 };
 
+/** A statement-sourced expense with a negative amount: a refund or cashback credit. */
+export function isStatementCredit(txn: {
+  type: string;
+  statement_line_id: string | null;
+  total_amount: number;
+}): boolean {
+  return txn.type === "expense" && !!txn.statement_line_id && Number(txn.total_amount) < 0;
+}
+
 /**
  * What a ledger row prints as its figure. A statement-sourced expense can be
  * negative (refund, rebate, reversal), which arrives as money in. A payment
@@ -23,9 +32,7 @@ export type AmountDisplay = {
  * cross-currency payment would show the wrong currency's number there.
  */
 export function amountDisplay(txn: AmountTxn, viewAccountId?: string): AmountDisplay {
-  const isStatementCredit =
-    txn.type === "expense" && !!txn.statement_line_id && Number(txn.total_amount) < 0;
-  if (isStatementCredit) {
+  if (isStatementCredit(txn)) {
     return { value: Math.abs(txn.total_amount), currency: txn.currency, sign: "+", income: true };
   }
   if (txn.type === "income") {

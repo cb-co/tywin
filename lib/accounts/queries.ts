@@ -5,6 +5,8 @@ import { addMonths } from "@/lib/budgets/month";
 import { buildCardGroupLines, type CardGroupLine } from "./group-lines";
 import { cardSpendDistribution, type SpendSlice } from "./card-spend";
 import type { FeeLineRow } from "./card-fees";
+import type { LineCashback } from "./cashback";
+import { getCreditKinds } from "@/lib/statements/credit-kind-queries";
 import { sumAccountTransferCosts, type TransferCostRow } from "./transfer-costs";
 import { getExchangeRates, convertToBase } from "@/lib/fx";
 import { netWorthTotal } from "./net-worth";
@@ -183,6 +185,25 @@ export async function getAccountFeeLines(
     kind: r.kind as "fee" | "credit",
     posted_on: r.posted_on ?? "",
   }));
+}
+
+/** Cashback per statement id, summed from the credit lines credit-kind.ts calls cashback. */
+export async function getStatementLineCashback(statementIds: string[]): Promise<LineCashback> {
+  if (statementIds.length === 0) return new Map();
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("card_statement_lines")
+    .select("id,statement_id,account_id,description,mcc,amount")
+    .in("statement_id", statementIds)
+    .eq("kind", "credit");
+  const lines = data ?? [];
+  const kinds = await getCreditKinds(supabase, lines);
+  const sums = new Map<string, number>();
+  for (const l of lines) {
+    if (kinds.get(l.id) !== "cashback") continue;
+    sums.set(l.statement_id, (sums.get(l.statement_id) ?? 0) + Math.abs(Number(l.amount)));
+  }
+  return sums;
 }
 
 /**

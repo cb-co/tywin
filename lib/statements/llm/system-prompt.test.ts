@@ -76,4 +76,16 @@ describe("SYSTEM_PROMPT", () => {
     expect(SYSTEM_PROMPT).toMatch(/does not change the balance/i);
   });
 
+  // Amex's "Credito por Promocion" fell through to an ordinary credit and never reached totalCashback.
+  it("recognizes a bank-issued promotional credit as cashback, distinct from a points balance", () => {
+    expect(SYSTEM_PROMPT).toMatch(/CREDITO POR PROMOCION/i);
+    expect(SYSTEM_PROMPT).toMatch(/Credito por Promocion.*bank crediting money back/i);
+  });
+
+  it("keeps merchant-refund words out of the cashback aliases", () => {
+    const aliases = SYSTEM_PROMPT.match(/totalCashback:\s+(.*)/)?.[1] ?? "";
+    expect(aliases).toContain("REBATE");
+    expect(aliases).not.toMatch(/REEMBOLSO|DEVOLUCI/);
+  });
+
 });

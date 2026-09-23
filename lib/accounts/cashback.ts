@@ -23,19 +23,33 @@
  * ship ahead of the migration — and a `!== null` test would wave that through
  * and render a confident "0.00 earned" built on a column that doesn't exist.
  * Only an actual number counts as reported.
+ *
+ * A statement's own cashback lines (lib/statements/credit-kind.ts) win over its
+ * printed figure; the two describe the same money, so they are never added.
  */
 export interface CashbackStatement {
+  id: string;
   period_end: string;
   cashback_total: number | null | undefined;
 }
 
-const reported = (s: CashbackStatement): boolean => typeof s.cashback_total === "number";
+/** Σ cashback line amounts per statement id, as positive magnitudes. */
+export type LineCashback = ReadonlyMap<string, number>;
 
-export function yearCashback(statements: CashbackStatement[], year: number): number {
+function statementCashback(s: CashbackStatement, fromLines: LineCashback): number | null {
+  const lines = fromLines.get(s.id) ?? 0;
+  if (lines > 0) return lines;
+  return typeof s.cashback_total === "number" ? s.cashback_total : null;
+}
+
+export function yearCashback(
+  statements: CashbackStatement[],
+  year: number,
+  fromLines: LineCashback,
+): number {
   const prefix = `${year}-`;
   return statements.reduce(
-    (sum, s) =>
-      s.period_end.startsWith(prefix) && reported(s) ? sum + (s.cashback_total as number) : sum,
+    (sum, s) => (s.period_end.startsWith(prefix) ? sum + (statementCashback(s, fromLines) ?? 0) : sum),
     0,
   );
 }
@@ -44,7 +58,13 @@ export function yearCashback(statements: CashbackStatement[], year: number): num
  *  Distinguishes "no cashback earned" from "nothing imported that knows about
  *  cashback" — the surfaces stay silent for the latter rather than claiming a
  *  confident zero. */
-export function hasReportedCashback(statements: CashbackStatement[], year: number): boolean {
+export function hasReportedCashback(
+  statements: CashbackStatement[],
+  year: number,
+  fromLines: LineCashback,
+): boolean {
   const prefix = `${year}-`;
-  return statements.some((s) => s.period_end.startsWith(prefix) && reported(s));
+  return statements.some(
+    (s) => s.period_end.startsWith(prefix) && statementCashback(s, fromLines) !== null,
+  );
 }

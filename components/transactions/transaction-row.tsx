@@ -1,7 +1,7 @@
 import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Trash2, Pencil, TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { formatMoney } from "@/lib/format";
-import { amountDisplay, transactionTitle } from "@/lib/transactions/display";
+import { amountDisplay, isStatementCredit, transactionTitle } from "@/lib/transactions/display";
 import type { TransactionWithRefs, QuickAddData } from "@/lib/transactions/queries";
 import { TransactionDialog } from "./transaction-dialog";
 import { Button } from "@/components/ui/button";
@@ -56,11 +56,7 @@ export function TransactionRow({
       ? `${account?.name ?? "—"} → ${toAccount.name}`
       : (account?.name ?? "—");
 
-  // A statement-sourced expense row can carry a negative amount (refund,
-  // rebate, reversal — spec §2.3). "-total_amount" would then be positive
-  // and render as an ordinary red charge, backwards from what happened.
-  const isStatementCredit =
-    txn.type === "expense" && !!txn.statement_line_id && Number(txn.total_amount) < 0;
+  const statementCredit = isStatementCredit(txn);
 
   const amt = amountDisplay(txn, viewAccountId);
   const hasExtras = txn.tax_amount > 0 || txn.fee_amount > 0;
@@ -87,7 +83,9 @@ export function TransactionRow({
           <span className="truncate">{title}</span>
           {txn.exclude_from_budget ? <Mark>{t("excludeFromBudgetBadge")}</Mark> : null}
           {txn.statement_line_id ? <Mark>{t("statementBadge")}</Mark> : null}
-          {isStatementCredit ? <Mark>{t("refundBadge")}</Mark> : null}
+          {statementCredit ? (
+            <Mark>{txn.credit_kind === "cashback" ? t("cashbackBadge") : t("refundBadge")}</Mark>
+          ) : null}
           {txn.fx_fallback ? (
             <Mark title={t("fxFallbackWarning")}>
               <TriangleAlert aria-hidden className="size-2.5" />

@@ -4,6 +4,9 @@ import { getExchangeRates } from "@/lib/fx";
 import { baseCurrencyOf } from "@/lib/profile";
 import { rankCategoryIds, recentSourceAccountId, type RecentRow } from "./defaults";
 import { searchTerms } from "./search";
+import { isStatementCredit } from "./display";
+import { getCreditKinds } from "@/lib/statements/credit-kind-queries";
+import type { CreditKind } from "@/lib/statements/credit-kind";
 
 type Client = Awaited<ReturnType<typeof createClient>>;
 
@@ -14,9 +17,28 @@ function selectTransactions(supabase: Client) {
   return supabase.from("transactions").select(TXN_SELECT);
 }
 
-export type TransactionWithRefs = NonNullable<
-  Awaited<ReturnType<typeof selectTransactions>>["data"]
->[number];
+type TxnRow = NonNullable<Awaited<ReturnType<typeof selectTransactions>>["data"]>[number];
+
+export type TransactionWithRefs = TxnRow & {
+  /** Set on statement credits only. */
+  credit_kind: CreditKind | null;
+};
+
+async function withCreditKinds(supabase: Client, rows: TxnRow[]): Promise<TransactionWithRefs[]> {
+  const lineIds = rows.flatMap((r) =>
+    isStatementCredit(r) && r.statement_line_id ? [r.statement_line_id] : [],
+  );
+  if (lineIds.length === 0) return rows.map((r) => ({ ...r, credit_kind: null }));
+  const { data } = await supabase
+    .from("card_statement_lines")
+    .select("id,account_id,description,mcc")
+    .in("id", lineIds);
+  const kinds = await getCreditKinds(supabase, data ?? []);
+  return rows.map((r) => ({
+    ...r,
+    credit_kind: (r.statement_line_id && kinds.get(r.statement_line_id)) || null,
+  }));
+}
 
 /** Rows per page. Big enough that a statement import doesn't need three
  *  scrolls, small enough that the first paint isn't a month of rows. */
@@ -114,13 +136,13 @@ export async function getTransactions(
   const last = page.at(-1);
 
   return {
-    rows: page,
+    rows: await withCreditKinds(supabase, page),
     nextCursor: hasMore && last ? { occurredAt: last.occurred_at, id: last.id } : null,
   };
 }
 
 /** Transactions touching an account as either source or destination. */
-export async function getAccountTransactions(accountId: string) {
+export async function getAccountTransactions(accountId: string): Promise<TransactionWithRefs[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("transactions")
@@ -128,7 +150,7 @@ export async function getAccountTransactions(accountId: string) {
     .or(`account_id.eq.${accountId},to_account_id.eq.${accountId}`)
     .order("occurred_at", { ascending: false })
     .limit(100);
-  return data ?? [];
+  return withCreditKinds(supabase, data ?? []);
 }
 
 export type QuickAddAccount = {

@@ -13,6 +13,7 @@ import {
   getCardGroupLines,
   getCardSpendByCategory,
   getAccountFeeLines,
+  getStatementLineCashback,
   getAccountCostOfCarry,
   getCardPaymentsInMonth,
   getAccountTransferCosts,
@@ -126,13 +127,6 @@ export default async function AccountDetailPage({
     ? await getWelcomeBonusSpend(supabase, siblings, effectiveBonus!.welcome_bonus_goal_currency!, effectiveBonus!.welcome_bonus_due_date!)
     : 0;
 
-  /* Cashback earned this calendar year, summed off the statements already
-   * loaded above — the anchor rows themselves, so no extra round trip and no
-   * second source of truth to disagree with the statements panel. */
-  const cashbackYear = new Date().getFullYear();
-  const cashbackTotal = isCardType ? yearCashback(statements, cashbackYear) : 0;
-  const cashbackReported = isCardType && hasReportedCashback(statements, cashbackYear);
-
   /* Where this month's charges went, by category. A second round trip rather
    * than a member of the Promise.all above, because it is only worth issuing
    * once `type` says this account is a card — and `type` comes out of that very
@@ -147,17 +141,26 @@ export default async function AccountDetailPage({
    * Issued together with the card report's own round trips: what the card
    * charges you to hold it this calendar year (the fee lines live in
    * card_statement_lines, which this page does not otherwise load), its cost of
-   * carry off the newest statement, and what was paid into it this month. */
+   * carry off the newest statement, what was paid into it this month, and the
+   * cashback its credit lines show this calendar year. */
   const spendMonth = monthStart();
   const feeYear = new Date().getFullYear();
-  const [spendSlices, feeLines, carry, paymentsThisMonth] = isCardType
+  const cashbackYear = feeYear;
+  const cashbackStatementIds = statements
+    .filter((s) => s.period_end.startsWith(`${cashbackYear}-`))
+    .map((s) => s.id);
+  const [spendSlices, feeLines, carry, paymentsThisMonth, lineCashback] = isCardType
     ? await Promise.all([
         getCardSpendByCategory(id, spendMonth, t("uncategorized")),
         getAccountFeeLines(id, feeYear),
         getAccountCostOfCarry(id),
         getCardPaymentsInMonth(id, spendMonth),
+        getStatementLineCashback(cashbackStatementIds),
       ])
-    : [[], [], null, 0];
+    : [[], [], null, 0, new Map<string, number>()];
+  const cashbackTotal = isCardType ? yearCashback(statements, cashbackYear, lineCashback) : 0;
+  const cashbackReported =
+    isCardType && hasReportedCashback(statements, cashbackYear, lineCashback);
   const spendMonthTotal = spendTotal(spendSlices);
   const cardFees = isCardType
     ? summarizeCardFees(feeLines, feeYear)
