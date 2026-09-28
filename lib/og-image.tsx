@@ -44,7 +44,10 @@ export function renderBrandOgImage() {
           viewBox={WORDMARK_VIEWBOX}
           fill="none"
         >
-          <WordmarkPaths color="#1b1530" />
+          {/* Called, not rendered as <WordmarkPaths />: next/og serialises an
+              <svg> subtree as-is and does not unwrap components inside it,
+              so the JSX form rendered nothing. */}
+          {WordmarkPaths({ color: "#1b1530" })}
         </svg>
         <div
           style={{
