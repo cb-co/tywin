@@ -34,20 +34,29 @@ import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 // here runs in plain Node, where pdfjs's own NodeBinaryDataFactory reads
 // standardFontDataUrl with `fs.readFile` instead — a URL would fail outright
 // (Node's fetch has no `file:` scheme), so this has to be a filesystem path,
-// not a URL. Resolved off pdfjs-dist's own package.json so it still points at
-// the right directory however the package is installed; the trailing slash
-// matters; pdfjs concatenates it straight onto the filename. Without this at
-// all, it only warns "Ensure standardFontDataUrl is provided" and falls back
-// to a built-in glyph map that mismaps some characters — never a thrown
-// error, so a statement can silently extract worse text instead of failing.
+// not a URL. Resolved off pdf.mjs — the one pdfjs-dist file guaranteed to be
+// in the deployed function, since it's imported statically above — so it
+// still points at the right directory however the package is installed. NOT
+// off package.json: the tracer doesn't ship it, and resolving it threw
+// MODULE_NOT_FOUND at module load in production, taking down every page that
+// imports this file. The trailing slash matters; pdfjs concatenates it
+// straight onto the filename. Without this at all, it only warns "Ensure
+// standardFontDataUrl is provided" and falls back to a built-in glyph map
+// that mismaps some characters — never a thrown error — so a failed lookup
+// degrades to exactly that rather than crashing the import.
 //
 // Same tracer blindness as @napi-rs/canvas above: these are read by a
 // runtime-built path, invisible to Vercel's file tracer, so
 // next.config.ts's outputFileTracingIncludes ships the directory explicitly.
 const STANDARD_FONT_DATA_URL = (() => {
-  const nodeRequire = process.getBuiltinModule("module").createRequire(import.meta.url);
-  const pkgPath = nodeRequire.resolve("pdfjs-dist/package.json") as string;
-  return `${path.join(path.dirname(pkgPath), "standard_fonts")}/`;
+  try {
+    const nodeRequire = process.getBuiltinModule("module").createRequire(import.meta.url);
+    const pdfPath = nodeRequire.resolve("pdfjs-dist/legacy/build/pdf.mjs") as string;
+    return `${path.join(path.dirname(pdfPath), "..", "..", "standard_fonts")}/`;
+  } catch (err) {
+    console.error("[statements] could not locate pdfjs standard_fonts", err);
+    return undefined;
+  }
 })();
 
 export type ExtractResult =
