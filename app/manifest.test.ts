@@ -8,9 +8,9 @@ test("exposes 192, 512, and a maskable 512 icon", () => {
   expect(result.icons?.[2]?.purpose).toBe("maskable");
 });
 
-test("launches standalone with the paper background and theme colour", () => {
+test("launches standalone with the note-violet splash background and theme colour", () => {
   const result = manifest();
   expect(result.display).toBe("standalone");
-  expect(result.background_color).toBe("#eeebf5");
-  expect(result.theme_color).toBe("#eeebf5");
+  expect(result.background_color).toBe("#4a1f8c");
+  expect(result.theme_color).toBe("#4a1f8c");
 });

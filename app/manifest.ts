@@ -8,11 +8,14 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     scope: "/",
     display: "standalone",
-    // Matches the custom in-app splash's background (components/shell/splash.tsx,
-    // bg-background) so the native OS launch splash blends into it.
-    background_color: "#eeebf5",
-    // Paper, the light default (design/tokens.json).
-    theme_color: "#eeebf5",
+    // Note violet (--note, design/tokens.json): the in-app splash's background
+    // (components/shell/splash.tsx), so the OS launch splash hands over to it
+    // seamlessly. The icons carry the same violet tile, which disappears into
+    // this background and leaves the plate and seal (lib/pwa/icon.tsx).
+    background_color: "#4a1f8c",
+    // Same violet so the launch splash's status bar matches it; the page's
+    // own theme-color meta (app/layout.tsx) takes over once it loads.
+    theme_color: "#4a1f8c",
     icons: [
       { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
       { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
