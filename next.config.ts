@@ -55,9 +55,19 @@ const nextConfig: NextConfig = {
   // imported on purpose: fixing a wrong answer should be a prose edit. Each
   // route entry is traced separately, so /api/v1/ask — its own deployed
   // function, even though it re-exports /api/ask's handler — needs its own entry.
+  //
+  // Same story for pdfjs-dist's standard_fonts/ (lib/statements/extract.ts):
+  // read via a runtime-built fs path, so untraced. The import dialog mounts
+  // from Overview, Wallet, Insights, onboarding, and both accounts pages —
+  // enumerating every one of those routes is exactly the kind of list that
+  // silently drifts (a new entry point ships, its function is missing the
+  // fonts, and it's back to the "worked locally, 500s in prod" failure this
+  // whole file already exists to prevent). "/**" costs ~800KB per function;
+  // that's cheap next to reproducing this bug a third time.
   outputFileTracingIncludes: {
     "/api/ask": ["./lib/ask/schema-doc.md"],
     "/api/v1/ask": ["./lib/ask/schema-doc.md"],
+    "/**": ["./node_modules/pdfjs-dist/standard_fonts/**"],
   },
 
   experimental: {

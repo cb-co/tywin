@@ -15,6 +15,7 @@
 // the tracer ships the package + its platform binary; pdfjs still resolves it
 // through its own require. Kept external via serverExternalPackages — it's a
 // native addon.
+import path from "node:path";
 import "@napi-rs/canvas";
 // Same tracer blindness, second file: in Node pdfjs has no real Worker, so
 // getDocument() falls back to a "fake worker" it loads via
@@ -27,6 +28,27 @@ import "@napi-rs/canvas";
 // globalThis.pdfjsWorker, which pdfjs checks first.
 import "pdfjs-dist/legacy/build/pdf.worker.mjs";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
+
+// The worker fetches each standard (non-embedded) font's glyph data by name
+// on demand. In the browser that goes over `fetch()`, but the fake worker
+// here runs in plain Node, where pdfjs's own NodeBinaryDataFactory reads
+// standardFontDataUrl with `fs.readFile` instead — a URL would fail outright
+// (Node's fetch has no `file:` scheme), so this has to be a filesystem path,
+// not a URL. Resolved off pdfjs-dist's own package.json so it still points at
+// the right directory however the package is installed; the trailing slash
+// matters; pdfjs concatenates it straight onto the filename. Without this at
+// all, it only warns "Ensure standardFontDataUrl is provided" and falls back
+// to a built-in glyph map that mismaps some characters — never a thrown
+// error, so a statement can silently extract worse text instead of failing.
+//
+// Same tracer blindness as @napi-rs/canvas above: these are read by a
+// runtime-built path, invisible to Vercel's file tracer, so
+// next.config.ts's outputFileTracingIncludes ships the directory explicitly.
+const STANDARD_FONT_DATA_URL = (() => {
+  const nodeRequire = process.getBuiltinModule("module").createRequire(import.meta.url);
+  const pkgPath = nodeRequire.resolve("pdfjs-dist/package.json") as string;
+  return `${path.join(path.dirname(pkgPath), "standard_fonts")}/`;
+})();
 
 export type ExtractResult =
   | { ok: true; text: string }
@@ -48,7 +70,11 @@ export async function extractStatementText(
   //
   // isEvalSupported was dropped from DocumentInitParameters in pdfjs-dist 6.x
   // (eval-based code paths were removed); no CSP-relevant flag is needed here.
-  const loadingTask = getDocument({ data: data.slice(), password });
+  const loadingTask = getDocument({
+    data: data.slice(),
+    password,
+    standardFontDataUrl: STANDARD_FONT_DATA_URL,
+  });
   let doc;
   try {
     doc = await loadingTask.promise;
