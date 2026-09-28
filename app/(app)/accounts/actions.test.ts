@@ -21,12 +21,15 @@ vi.mock("next-intl/server", () => ({
 }));
 
 import { createClient } from "@/lib/supabase/server";
-import { createCardStub, addCardLine } from "./actions";
+import { inferCardArt } from "@/lib/accounts/llm/card-art";
+import { DEFERRED_INFERENCE_BUDGET_MS } from "@/lib/llm/budget";
+import { backfillCardArt, createCardStub, addCardLine } from "./actions";
 
 function chainable(result: unknown, extra: Record<string, unknown> = {}) {
   const obj: Record<string, unknown> = { ...extra };
   obj.select = vi.fn(() => obj);
   obj.eq = vi.fn(() => obj);
+  obj.is = vi.fn(() => obj);
   obj.single = vi.fn(() => Promise.resolve(result));
   obj.maybeSingle = vi.fn(() => Promise.resolve(result));
   (obj as { then: unknown }).then = (resolve: (v: unknown) => void) => resolve(result);
@@ -235,5 +238,40 @@ describe("addCardLine", () => {
     expect(r.error).toBeTruthy();
     expect(groupInsert).not.toHaveBeenCalled();
     expect(groupDelete).not.toHaveBeenCalled();
+  });
+});
+
+describe("backfillCardArt", () => {
+  /* The backfill runs after the page has rendered, so nobody waits on it. It
+     gets the deferred budget: under the blocking one, a slow Gemini day meant
+     every retry aborted and the card stayed on the default colour. */
+  it("infers every unresolved card and group on the deferred budget, in parallel", async () => {
+    const update = vi.fn(() => chainable({ error: null }));
+    (createClient as Mock).mockResolvedValue({
+      auth: { getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })) },
+      from: vi.fn((table: string) =>
+        chainable(
+          table === "accounts"
+            ? { data: [{ id: "a1", name: "Visa Gold" }, { id: "a2", name: "Visa Infinite" }] }
+            : { data: [{ id: "g1", name: "AMEX Platinum" }] },
+          { update },
+        ),
+      ),
+    });
+    let inFlight = 0;
+    let peak = 0;
+    (inferCardArt as Mock).mockImplementation(async () => {
+      peak = Math.max(peak, ++inFlight);
+      await new Promise((r) => setTimeout(r, 0));
+      inFlight--;
+      return { accent: "#D4AF37", network: "visa" };
+    });
+
+    const r = await backfillCardArt();
+
+    expect(r.filled).toBe(3);
+    expect(inferCardArt).toHaveBeenCalledWith("Visa Gold", DEFERRED_INFERENCE_BUDGET_MS);
+    expect(inferCardArt).toHaveBeenCalledWith("AMEX Platinum", DEFERRED_INFERENCE_BUDGET_MS);
+    expect(peak).toBe(3);
   });
 });

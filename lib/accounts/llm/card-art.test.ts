@@ -3,8 +3,17 @@ import type { Mock } from "vitest";
 
 vi.mock("ai", () => ({ generateObject: vi.fn() }));
 vi.mock("@ai-sdk/google", () => ({ google: vi.fn(() => "model") }));
+vi.mock("@/lib/llm/budget", async (importOriginal) => {
+  const real = await importOriginal<typeof import("@/lib/llm/budget")>();
+  return { ...real, inferenceSignal: vi.fn(real.inferenceSignal) };
+});
 
 import { generateObject } from "ai";
+import {
+  BLOCKING_INFERENCE_BUDGET_MS,
+  DEFERRED_INFERENCE_BUDGET_MS,
+  inferenceSignal,
+} from "@/lib/llm/budget";
 import { inferCardArt } from "./card-art";
 
 const mockReturn = (object: unknown) =>
@@ -64,6 +73,20 @@ describe("inferCardArt", () => {
     await inferCardArt("BHD León Visa Infinite");
     const { abortSignal } = (generateObject as unknown as Mock).mock.calls[0][0];
     expect(abortSignal).toBeInstanceOf(AbortSignal);
+  });
+
+  // A save waits on the call, so it gets the short budget unless told otherwise.
+  it("uses the blocking budget by default", async () => {
+    mockReturn({ accent: "#1B4B8F", network: "visa" });
+    await inferCardArt("BHD León Visa Infinite");
+    expect(inferenceSignal).toHaveBeenCalledWith(BLOCKING_INFERENCE_BUDGET_MS);
+  });
+
+  // The page backfill waits on nobody, so it can afford a cold or slow call.
+  it("uses the budget it is given", async () => {
+    mockReturn({ accent: "#1B4B8F", network: "visa" });
+    await inferCardArt("BHD León Visa Infinite", DEFERRED_INFERENCE_BUDGET_MS);
+    expect(inferenceSignal).toHaveBeenCalledWith(DEFERRED_INFERENCE_BUDGET_MS);
   });
 
   // An abort is not special-cased: a save must not fail because a guess was slow.

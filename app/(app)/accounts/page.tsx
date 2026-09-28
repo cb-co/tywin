@@ -14,6 +14,11 @@ import { hasCardAccent } from "@/lib/accounts/card-art";
 import { baseCurrencyOf } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
 
+/* The server actions this page invokes run under its segment config, and
+   backfillCardArt can wait out DEFERRED_INFERENCE_BUDGET_MS (90s) on a cold
+   or slow Gemini call. Must be a literal, so it is restated rather than derived. */
+export const maxDuration = 120;
+
 export default async function AccountsPage() {
   const supabase = await createClient();
   const { data: profile } = await supabase

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { accountInput, type AccountInput, cardStubInput, type CardStubInput } from "@/lib/accounts/schema";
 import { hasCardAccent } from "@/lib/accounts/card-art";
 import { inferCardArt } from "@/lib/accounts/llm/card-art";
+import { DEFERRED_INFERENCE_BUDGET_MS } from "@/lib/llm/budget";
 import { dbError } from "@/lib/errors";
 
 type Result = { error?: string; id?: string };
@@ -182,6 +183,12 @@ export async function updateAccount(id: string, input: AccountInput): Promise<Re
  * Failures are swallowed per row. One card whose name the model cannot place
  * must not stop the rest from resolving, and none of this is worth an error in
  * front of someone who only opened a page.
+ *
+ * Runs on DEFERRED_INFERENCE_BUDGET_MS, not the blocking budget the saves use:
+ * the page has already rendered, so the only cost of a slow call is a colour
+ * that appears late. The calls run in parallel so the whole pass is bounded by
+ * one budget rather than one per card, which is what the page's maxDuration is
+ * sized against.
  */
 export async function backfillCardArt(): Promise<{ filled: number }> {
   const { supabase, user } = await requireUser();
@@ -197,30 +204,30 @@ export async function backfillCardArt(): Promise<{ filled: number }> {
     supabase.from("card_groups").select("id, name, art_color").is("art_color", null),
   ]);
 
-  let filled = 0;
-
-  for (const account of accounts ?? []) {
-    const art = await inferCardArt(account.name);
-    if (!art) continue;
-    const { error } = await supabase
-      .from("accounts")
-      .update({ color: art.accent, ...(art.network ? { brand: art.network } : {}) })
-      .eq("id", account.id);
-    if (!error) filled++;
-  }
-
-  for (const group of groups ?? []) {
-    const art = await inferCardArt(group.name);
-    if (!art) continue;
-    const { error } = await supabase
-      .from("card_groups")
-      .update({
-        art_color: art.accent,
-        ...(art.network ? { brand: art.network } : {}),
-      })
-      .eq("id", group.id);
-    if (!error) filled++;
-  }
+  const results = await Promise.all([
+    ...(accounts ?? []).map(async (account) => {
+      const art = await inferCardArt(account.name, DEFERRED_INFERENCE_BUDGET_MS);
+      if (!art) return false;
+      const { error } = await supabase
+        .from("accounts")
+        .update({ color: art.accent, ...(art.network ? { brand: art.network } : {}) })
+        .eq("id", account.id);
+      return !error;
+    }),
+    ...(groups ?? []).map(async (group) => {
+      const art = await inferCardArt(group.name, DEFERRED_INFERENCE_BUDGET_MS);
+      if (!art) return false;
+      const { error } = await supabase
+        .from("card_groups")
+        .update({
+          art_color: art.accent,
+          ...(art.network ? { brand: art.network } : {}),
+        })
+        .eq("id", group.id);
+      return !error;
+    }),
+  ]);
+  const filled = results.filter(Boolean).length;
 
   if (filled > 0) {
     revalidatePath("/accounts");

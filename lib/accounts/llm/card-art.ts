@@ -60,12 +60,18 @@ Judge only from the name. Do not ask questions, do not explain.`;
  * name the model cannot place stays unresolved and simply gets the default,
  * rather than being written a wrong colour that nothing would ever revisit.
  *
- * A call that overruns BLOCKING_INFERENCE_BUDGET_MS aborts and is treated
- * exactly like a card the model could not place. This still runs INSIDE the
- * account save, so the budget is set to protect the save rather than to win the
- * answer — see lib/llm/budget for why no single number does both.
+ * A call that overruns `budgetMs` aborts and is treated exactly like a card the
+ * model could not place. The default is BLOCKING_INFERENCE_BUDGET_MS because
+ * the save callers run INSIDE the account save, where the budget protects the
+ * save rather than winning the answer. The page backfill passes
+ * DEFERRED_INFERENCE_BUDGET_MS: nobody waits on it, and under the blocking
+ * budget a slow endpoint made every retry abort too — see lib/llm/budget for
+ * why no single number does both.
  */
-export async function inferCardArt(name: string): Promise<CardArt | null> {
+export async function inferCardArt(
+  name: string,
+  budgetMs: number = BLOCKING_INFERENCE_BUDGET_MS,
+): Promise<CardArt | null> {
   const trimmed = name.trim();
   if (!trimmed) return null;
 
@@ -75,7 +81,7 @@ export async function inferCardArt(name: string): Promise<CardArt | null> {
       schema: CardArtSchema,
       system: SYSTEM_PROMPT,
       prompt: trimmed,
-      abortSignal: inferenceSignal(BLOCKING_INFERENCE_BUDGET_MS),
+      abortSignal: inferenceSignal(budgetMs),
     });
 
     /* The schema constrains the shape, not the contents: `accent` is a string,
