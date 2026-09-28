@@ -213,7 +213,7 @@ Paper slips: 4px, hairline border, popover fill, perforated top edge, ink 40% sc
 Sidebar: text in ink; the active item prints full ink, semibold, with a 3px bar at the left edge; inactive is soft ink underprint. Bottom band: five equal cells, 10px labels, active adds a 3px top rule over the icon and semibold. Both keep `aria-current="page"`. Focus everywhere is one 2px `currentColor` outline offset 2px, set globally.
 
 ### Splash
-Once per session, full-bleed note violet with a medallion: a small hairline Seal (`fine`, 40px) in the hollow of a rosette guilloche framed by one ring, the wordmark below; held 700ms, fades 420ms; skipped on repeat visits and under reduced motion (a pre-paint script sets `.splash-skip`).
+Once per session, full-bleed note violet with a medallion: a small hairline Seal (`fine`, 40px) in the hollow of a rosette guilloche framed by one ring, the wordmark below; held 700ms, fades 420ms; skipped on repeat visits and under reduced motion (a pre-paint script sets `.splash-skip`). Web only: it covers a tab coming back after a long idle. The native app has none; its OS launch screen hides straight into the shell, and each screen paints its skeleton on the frame it opens.
 
 ### Shipped and marketing-only
 The public pages (`components/marketing/papel/`) consume the global tokens (their own token block is gone) and add page-only pieces: the statement specimen, proofs, the Disponible note with a quincena timeline, drawn cards and perforated cuota strips. The drawn card face on the home page is drawn by the shared `CardFace` primitive (Phase 2), the same component every in-app card now uses.
