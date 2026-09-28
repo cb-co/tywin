@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { MoneyDisplay } from "@/components/ui/money-display";
 import { CardFace } from "@/components/papel/card-face";
 import { inferNetwork, inferLast4 } from "@/lib/accounts/network";
-import { formatPercent } from "@/lib/format";
+import { formatPercent, currencyLabel } from "@/lib/format";
 import type { AccountWithStatus } from "@/lib/accounts/queries";
 
 /**
@@ -104,7 +104,7 @@ export function CardGroupTile({
                     muted line below. */}
                 <p className="text-sm font-medium text-foreground">{a.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {util !== null ? t("usedPercent", { pct: formatPercent(util), currency: a.currency }) : a.currency}
+                  {util !== null ? t("usedPercent", { pct: formatPercent(util), currency: currencyLabel(a.currency) }) : currencyLabel(a.currency)}
                 </p>
               </div>
               <div className="flex items-center gap-2">

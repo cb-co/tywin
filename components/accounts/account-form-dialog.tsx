@@ -5,7 +5,7 @@ import { useForm, useWatch, Controller } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useLocale, useTranslations } from "next-intl";
-import { formatDate } from "@/lib/format";
+import { formatDate, currencyLabel } from "@/lib/format";
 import { useUiSound } from "@/components/sound/sound-provider";
 import {
   accountResolver,
@@ -558,7 +558,7 @@ export function AccountFormDialog({
                         <p className="text-sm font-medium">{t("cardLinesHeading")}</p>
                         {lineSpecs.map((spec) => {
                           const suffix =
-                            spec.key === "installments" ? t("lineInstallments") : spec.currency;
+                            spec.key === "installments" ? t("lineInstallments") : currencyLabel(spec.currency);
                           return (
                             <div
                               key={spec.key}
@@ -578,7 +578,7 @@ export function AccountFormDialog({
                                     on one row reads as a bug. */}
                                 {spec.key === "installments" ? (
                                   <span className="shrink-0 text-xs font-medium text-muted-foreground">
-                                    {spec.currency}
+                                    {currencyLabel(spec.currency)}
                                   </span>
                                 ) : null}
                               </div>

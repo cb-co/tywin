@@ -46,7 +46,7 @@ describe("cardLineSpecs", () => {
 describe("cardLineName", () => {
   test("names currency lines by their currency", () => {
     const [dop, usd] = specs(true, false);
-    expect(cardLineName("Visa Signature", dop, "Cuotas")).toBe("Visa Signature · DOP");
+    expect(cardLineName("Visa Signature", dop, "Cuotas")).toBe("Visa Signature · RD$");
     expect(cardLineName("Visa Signature", usd, "Cuotas")).toBe("Visa Signature · USD");
   });
 
@@ -54,7 +54,7 @@ describe("cardLineName", () => {
      DOP lines, and the group tile headlines the name. */
   test("names the installments line by its label, not DOP", () => {
     const [revolving, cuotas] = specs(false, true, "DOP");
-    expect(cardLineName("Visa Signature", revolving, "Cuotas")).toBe("Visa Signature · DOP");
+    expect(cardLineName("Visa Signature", revolving, "Cuotas")).toBe("Visa Signature · RD$");
     expect(cardLineName("Visa Signature", cuotas, "Cuotas")).toBe("Visa Signature · Cuotas");
   });
 });

@@ -22,6 +22,7 @@ import { baseRate, getExchangeRates } from "@/lib/fx";
 import { baseCurrencyOf, DEFAULT_BASE_CURRENCY } from "@/lib/profile";
 import { becomesTransaction, type LineKind, type ParsedStatement } from "@/lib/statements/types";
 import type { ImportTarget } from "@/lib/statements/import-targets";
+import { currencyLabel } from "@/lib/format";
 
 export interface SectionPreview {
   sectionKey: string;
@@ -405,7 +406,7 @@ export async function confirmStatementImport(
     const opt = target ? optionById.get(target) : undefined;
     if (!opt) return { error: t("unmappedSection", { section: s.sectionKey }) };
     if (opt.currency !== s.currency)
-      return { error: t("currencyMismatch", { section: s.sectionKey, currency: s.currency }) };
+      return { error: t("currencyMismatch", { section: s.sectionKey, currency: currencyLabel(s.currency) }) };
   }
 
   // Two sections mapped to the same account would each delete-by-(account,

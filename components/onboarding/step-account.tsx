@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { CurrencySelect, SavedRow, StepFooter, StepHeading } from "./parts";
 import { isMainAccount, type StepProps } from "./types";
+import { currencyLabel } from "@/lib/format";
 
 /** One plain balance account. Cards and loans have steps of their own. */
 const STARTER_TYPES = ["checking", "savings", "cash", "investment"] as const;
@@ -66,7 +67,7 @@ export function StepAccount({ data, currencies, baseCurrency, onNext, onBack }: 
                     icon={meta.icon}
                     color={meta.color}
                     title={a.name}
-                    subtitle={`${tType(a.type)} · ${a.currency}`}
+                    subtitle={`${tType(a.type)} · ${currencyLabel(a.currency)}`}
                   />
                 );
               })}

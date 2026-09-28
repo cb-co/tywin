@@ -11,6 +11,7 @@ import { currentPeriod } from "@/lib/period/profile";
 import { localDate, type Period } from "@/lib/period/cycle";
 import { computeAvailable, type Available } from "./available";
 import { computeFunding, type ContributionRow } from "@/lib/goals/funding";
+import { currencyLabel } from "@/lib/format";
 
 export type UpcomingItem = {
   key: string;
@@ -219,7 +220,7 @@ export async function getOverview(): Promise<Overview> {
         key: `card-${c.account_id}`,
         date: d.toISOString(),
         title: t("cardPaymentTitle", { name: acct.name }),
-        subtitle: t("creditCardSubtitle", { currency: c.currency ?? acct.currency }),
+        subtitle: t("creditCardSubtitle", { currency: currencyLabel(c.currency ?? acct.currency) }),
         amount,
         currency: c.currency ?? acct.currency,
       });
@@ -232,7 +233,7 @@ export async function getOverview(): Promise<Overview> {
         key: `loan-${l.account_id}`,
         date: d.toISOString(),
         title: t("loanInstallmentTitle", { name: acct.name }),
-        subtitle: t("loanSubtitle", { currency: l.currency ?? acct.currency }),
+        subtitle: t("loanSubtitle", { currency: currencyLabel(l.currency ?? acct.currency) }),
         amount: Number(l.installment_amount ?? 0),
         currency: l.currency ?? acct.currency,
       });
@@ -244,7 +245,7 @@ export async function getOverview(): Promise<Overview> {
         key: `sub-${s.id}`,
         date: d.toISOString(),
         title: s.name,
-        subtitle: t("subscriptionSubtitle", { currency: s.currency }),
+        subtitle: t("subscriptionSubtitle", { currency: currencyLabel(s.currency) }),
         amount: Number(s.amount),
         currency: s.currency,
       });

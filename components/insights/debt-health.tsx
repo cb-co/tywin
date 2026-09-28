@@ -3,7 +3,7 @@ import { LedgerBlock } from "@/components/papel/ledger-block";
 import { LedgerRow } from "@/components/papel/ledger-row";
 import { ProofMark } from "@/components/papel/proof-mark";
 import { RuleMeter } from "@/components/papel/rule-meter";
-import { formatPercent } from "@/lib/format";
+import { formatPercent, currencyLabel } from "@/lib/format";
 import type { Insights } from "@/lib/insights/queries";
 
 export function DebtHealth({
@@ -27,7 +27,7 @@ export function DebtHealth({
             {utilization.map((c) => (
               <LedgerBlock
                 key={c.id}
-                head={<LedgerRow title={`${c.name} · ${c.currency}`} meta={formatPercent(c.pct)} />}
+                head={<LedgerRow title={`${c.name} · ${currencyLabel(c.currency)}`} meta={formatPercent(c.pct)} />}
               >
                 <RuleMeter used={c.pct} total={100} label={c.name} near={c.pct >= 50} />
                 {c.pct >= 80 ? <ProofMark tone="flag">{t("utilizationHigh")}</ProofMark> : null}
@@ -43,7 +43,7 @@ export function DebtHealth({
             {loans.map((l) => (
               <LedgerBlock
                 key={l.id}
-                head={<LedgerRow title={`${l.name} · ${l.currency}`} meta={formatPercent(l.paidPct)} />}
+                head={<LedgerRow title={`${l.name} · ${currencyLabel(l.currency)}`} meta={formatPercent(l.paidPct)} />}
               >
                 <RuleMeter used={l.paidPct} total={100} label={l.name} />
               </LedgerBlock>

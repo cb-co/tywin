@@ -14,6 +14,7 @@ import { getTransactions, type TransactionPage } from "@/lib/transactions/querie
 import { getExchangeRates } from "@/lib/fx";
 import { baseCurrencyOf } from "@/lib/profile";
 import { dbError } from "@/lib/errors";
+import { currencyLabel } from "@/lib/format";
 
 // Statement-sourced rows are editable only in category and notes — the
 // imported line owns everything else. transactionInput requires a positive
@@ -289,7 +290,7 @@ export async function updateTransaction(id: string, input: unknown): Promise<Res
      stay editable — otherwise its description and category are frozen forever
      by a mismatch the user never chose. */
   if (row && parsed.data.account_id !== row.account_id && row.currency !== srcCurrency)
-    return { error: t("accountCurrencyImmutable", { currency: row.currency }) };
+    return { error: t("accountCurrencyImmutable", { currency: currencyLabel(row.currency) }) };
 
   // Never send currency/exchange_rate — the DB forbids changing them. The rate
   // an edit would imply is therefore moot; it stays whatever the insert derived.

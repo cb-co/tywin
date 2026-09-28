@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import type { CurrencyRow } from "@/lib/accounts/queries";
 import { cn } from "@/lib/utils";
+import { currencyLabel } from "@/lib/format";
 
 /** Title and one line of why, the same on every step. */
 export function StepHeading({ title, body }: { title: string; body: string }) {
@@ -119,7 +120,7 @@ export function CurrencySelect({
   compact?: boolean;
 }) {
   const items: Record<string, string> = Object.fromEntries(
-    currencies.map((c) => [c.code, compact ? c.code : `${c.code} · ${c.name}`]),
+    currencies.map((c) => [c.code, compact ? currencyLabel(c.code) : `${currencyLabel(c.code)} · ${c.name}`]),
   );
   return (
     <Select value={value} onValueChange={(v) => onChange(v ?? value)} items={items}>
@@ -129,7 +130,7 @@ export function CurrencySelect({
       <SelectContent>
         {currencies.map((c) => (
           <SelectItem key={c.code} value={c.code}>
-            {c.code} · {c.name}
+            {currencyLabel(c.code)} · {c.name}
           </SelectItem>
         ))}
       </SelectContent>
@@ -151,7 +152,7 @@ export function AccountSelect({
   accounts: { id: string; name: string; currency: string }[];
 }) {
   const items: Record<string, string> = Object.fromEntries(
-    accounts.map((a) => [a.id, `${a.name} · ${a.currency}`]),
+    accounts.map((a) => [a.id, `${a.name} · ${currencyLabel(a.currency)}`]),
   );
   return (
     <Select value={value} onValueChange={(v) => onChange(v ?? value)} items={items}>
@@ -161,7 +162,7 @@ export function AccountSelect({
       <SelectContent>
         {accounts.map((a) => (
           <SelectItem key={a.id} value={a.id}>
-            {a.name} · {a.currency}
+            {a.name} · {currencyLabel(a.currency)}
           </SelectItem>
         ))}
       </SelectContent>

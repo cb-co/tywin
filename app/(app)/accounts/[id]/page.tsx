@@ -30,7 +30,7 @@ import { BalanceChart } from "@/components/accounts/balance-chart-lazy";
 import { createClient } from "@/lib/supabase/server";
 import { baseCurrencyOf } from "@/lib/profile";
 import { accountTypeMeta, hasTransferFees, type AccountType } from "@/lib/accounts/meta";
-import { formatMoney, formatPercent, formatDayOfMonth, formatDate } from "@/lib/format";
+import { formatMoney, formatPercent, formatDayOfMonth, formatDate, currencyLabel } from "@/lib/format";
 import { AccountDetailActions } from "@/components/accounts/account-detail-actions";
 import { StatementsPanel } from "@/components/accounts/statements-panel";
 import { AmortizationTable } from "@/components/accounts/amortization-table";
@@ -228,7 +228,7 @@ export default async function AccountDetailPage({
               {account.name}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {tType(type)} · {currency}
+              {tType(type)} · {currencyLabel(currency)}
               {account.is_archived ? ` · ${t("archived")}` : ""}
             </p>
           </div>

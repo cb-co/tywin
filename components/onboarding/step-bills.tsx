@@ -14,6 +14,7 @@ import { MoneyDisplay } from "@/components/ui/money-display";
 import { cn } from "@/lib/utils";
 import { AccountSelect, SavedRow, StepFooter, StepHeading } from "./parts";
 import { isMainAccount, type StepProps } from "./types";
+import { currencyLabel } from "@/lib/format";
 
 type Row = { name: string; amount: string; day: string; accountId: string; error?: string };
 
@@ -157,7 +158,7 @@ export function StepBills({ data, baseCurrency, onNext, onBack }: StepProps) {
               <div className="grid grid-cols-[1fr_5rem] gap-3">
                 <div className="space-y-2">
                   <Label htmlFor={`wf-bill-${key}-amount`}>
-                    {t("billAmountLabel")} ({currency})
+                    {t("billAmountLabel")} ({currencyLabel(currency)})
                   </Label>
                   <Input
                     id={`wf-bill-${key}-amount`}

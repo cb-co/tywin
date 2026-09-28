@@ -43,7 +43,7 @@ import {
 } from "@/lib/accounts/meta";
 import { destinationAmount } from "@/lib/transactions/money";
 import { crossRate } from "@/lib/fx";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, currencyLabel } from "@/lib/format";
 import { useUiSound } from "@/components/sound/sound-provider";
 
 type FormValues = TransactionFormValues;
@@ -477,7 +477,7 @@ export function TransactionForm({
             id="amount_currency"
             className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground"
           >
-            {displayCurrency}
+            {currencyLabel(displayCurrency)}
           </span>
         </div>
         <FieldError message={errors.amount?.message} />
@@ -498,7 +498,7 @@ export function TransactionForm({
           <div className="space-y-1 pt-1">
             <div className="flex items-center gap-2">
               <Label htmlFor="transfer_rate" required className="text-xs font-normal text-muted-foreground">
-                {t("ratePrefix", { currency: src.currency })}
+                {t("ratePrefix", { currency: currencyLabel(src.currency) })}
               </Label>
               <Input
                 id="transfer_rate"
@@ -511,7 +511,7 @@ export function TransactionForm({
                 required
                 {...register("transfer_rate")}
               />
-              <span className="text-xs text-muted-foreground">{dst.currency}</span>
+              <span className="text-xs text-muted-foreground">{currencyLabel(dst.currency)}</span>
             </div>
             <FieldError message={transferRateError ?? undefined} />
             {marketRate ? (

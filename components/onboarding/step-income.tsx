@@ -22,6 +22,7 @@ import { SEMIMONTHLY_MAX_ANCHOR, semimonthlyStarts } from "@/lib/period/cycle";
 import { cn } from "@/lib/utils";
 import { AccountSelect, SavedRow, StepFooter, StepHeading } from "./parts";
 import { isMainAccount, type StepProps } from "./types";
+import { currencyLabel } from "@/lib/format";
 
 const CHOICES = ["semimonthly", "monthly", "weekly", "irregular"] as const;
 type Choice = (typeof CHOICES)[number];
@@ -184,7 +185,7 @@ export function StepIncome({ data, onNext, onBack }: StepProps) {
                   onKeyDown={(e) => e.key === "Enter" && submit()}
                 />
                 {/* The deposit account decides the currency; shown, not picked. */}
-                <span className="text-sm font-medium text-muted-foreground">{account?.currency}</span>
+                <span className="text-sm font-medium text-muted-foreground">{account ? currencyLabel(account.currency) : null}</span>
               </div>
               <p className="text-xs text-muted-foreground">{t("incomeAmountHint")}</p>
             </div>

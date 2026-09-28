@@ -9,7 +9,7 @@ import { MoneyDisplay } from "@/components/ui/money-display";
 import { CardFace } from "@/components/papel/card-face";
 import { ProofMark } from "@/components/papel/proof-mark";
 import { inferNetwork, inferLast4 } from "@/lib/accounts/network";
-import { formatMoney, formatPercent, formatDayOfMonth } from "@/lib/format";
+import { formatMoney, formatPercent, formatDayOfMonth, currencyLabel } from "@/lib/format";
 import { accountTypeMeta, type AccountType } from "@/lib/accounts/meta";
 import type { AccountWithStatus } from "@/lib/accounts/queries";
 import { MaskedMoney } from "@/components/figure-mask/masked-money";
@@ -50,7 +50,7 @@ export function AccountCard({
               <div className="min-w-0">
                 <p className="truncate font-medium text-foreground">{account.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {tType(type)} · {currency}
+                  {tType(type)} · {currencyLabel(currency)}
                 </p>
               </div>
             </div>

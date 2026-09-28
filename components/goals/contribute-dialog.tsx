@@ -30,6 +30,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { currencyLabel } from "@/lib/format";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -105,7 +106,7 @@ export function ContributeDialog({
      the raw value unless `items` is given on the root, which would show a bare
      UUID here. Same fix as the ledger filters (components/transactions/ledger.tsx). */
   const accountItems: Record<string, string> = Object.fromEntries(
-    accounts.map((a) => [a.id, `${a.name} · ${a.currency}`]),
+    accounts.map((a) => [a.id, `${a.name} · ${currencyLabel(a.currency)}`]),
   );
 
   function onOpenChange(next: boolean) {
@@ -194,7 +195,7 @@ export function ContributeDialog({
                     <SelectContent>
                       {accounts.map((a) => (
                         <SelectItem key={a.id} value={a.id}>
-                          {a.name} · {a.currency}
+                          {a.name} · {currencyLabel(a.currency)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -206,7 +207,7 @@ export function ContributeDialog({
 
             <div className="space-y-2">
               <Label htmlFor="contrib-amount" required>
-                {t("amountLabel", { currency: account?.currency ?? baseCurrency })}
+                {t("amountLabel", { currency: currencyLabel(account?.currency ?? baseCurrency) })}
               </Label>
               <Input
                 id="contrib-amount"

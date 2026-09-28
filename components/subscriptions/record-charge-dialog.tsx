@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, currencyLabel } from "@/lib/format";
 import { estimateSettledAmount, CARD_FX_SPREAD } from "@/lib/subscriptions/charge";
 import { estimateDestinationAmount } from "@/lib/subscriptions/template";
 import type { SubscriptionWithRefs } from "@/lib/subscriptions/queries";
@@ -156,7 +156,7 @@ export function RecordChargeDialog({
               <p id="settled_hint" className="text-xs text-muted-foreground">
                 {settledEstimate != null
                   ? t("estimateHint", { percent: Math.round(CARD_FX_SPREAD * 100) })
-                  : t("noEstimateHint", { currency: accountCurrency })}
+                  : t("noEstimateHint", { currency: currencyLabel(accountCurrency) })}
               </p>
             </div>
           ) : null}
@@ -228,7 +228,7 @@ function CurrencyInput({
         id={`${id}_currency`}
         className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground"
       >
-        {currency}
+        {currencyLabel(currency)}
       </span>
     </div>
   );

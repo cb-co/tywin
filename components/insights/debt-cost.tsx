@@ -3,7 +3,7 @@ import { useTranslations } from "next-intl";
 import { DoubleRule } from "@/components/papel/double-rule";
 import { LedgerRow } from "@/components/papel/ledger-row";
 import { ImportButton } from "@/components/statements/import-button";
-import { formatDate, formatMoney } from "@/lib/format";
+import { formatDate, formatMoney, currencyLabel } from "@/lib/format";
 import type { DebtCost, DebtCostRow } from "@/lib/insights/debt-cost";
 
 function Rows({ rows, locale }: { rows: DebtCostRow[]; locale: string }) {
@@ -18,7 +18,7 @@ function Rows({ rows, locale }: { rows: DebtCostRow[]; locale: string }) {
         >
           <LedgerRow
             title={r.name}
-            subtitle={`${r.currency} · ${r.apr !== null ? `${t("costOfCarryApr", { rate: r.apr })} · ` : ""}${t("costOfCarryAsOf", { date: formatDate(r.asOf, locale) })}`}
+            subtitle={`${currencyLabel(r.currency)} · ${r.apr !== null ? `${t("costOfCarryApr", { rate: r.apr })} · ` : ""}${t("costOfCarryAsOf", { date: formatDate(r.asOf, locale) })}`}
             amount={formatMoney(r.amount, r.currency)}
           />
         </Link>
@@ -70,7 +70,7 @@ export function DebtCostList({ data, locale }: { data: DebtCost; locale: string 
           <div className="space-y-3">
             <DoubleRule className="mx-4" />
             <Subtotal
-              label={t("debtCostCardsMonthly", { currency: cur })}
+              label={t("debtCostCardsMonthly", { currency: currencyLabel(cur) })}
               amount={formatMoney(data.cardsMonthlyBase, cur)}
             />
           </div>
@@ -88,12 +88,12 @@ export function DebtCostList({ data, locale }: { data: DebtCost; locale: string 
           <div className="space-y-1.5">
             <DoubleRule className="mx-4 mb-1.5" />
             <Subtotal
-              label={t("loanInterestMonthly", { currency: cur })}
+              label={t("loanInterestMonthly", { currency: currencyLabel(cur) })}
               amount={formatMoney(data.loansMonthlyBase, cur)}
             />
             <Subtotal
               muted
-              label={t("loanInterestRecorded", { year: String(data.year), currency: cur })}
+              label={t("loanInterestRecorded", { year: String(data.year), currency: currencyLabel(cur) })}
               amount={formatMoney(data.loansYearBase, cur)}
             />
           </div>

@@ -15,6 +15,7 @@ import { hasBrandColor } from "@/lib/subscriptions/brand-color";
 import { inferBrand } from "@/lib/subscriptions/llm/brand";
 import { dbError } from "@/lib/errors";
 import { baseCurrencyOf } from "@/lib/profile";
+import { currencyLabel } from "@/lib/format";
 
 type Result = { error?: string; id?: string };
 
@@ -287,11 +288,11 @@ export async function addCharge(
     settledAmount,
   });
   if ("needsSettledAmount" in settled)
-    return { error: ts("needsSettledAmount", { currency: accountCurrency }) };
+    return { error: ts("needsSettledAmount", { currency: currencyLabel(accountCurrency) }) };
 
   const crossLeg = payment && dstCurrency !== accountCurrency;
   if (crossLeg && !(toAmount && toAmount > 0))
-    return { error: ts("needsToAmount", { currency: dstCurrency! }) };
+    return { error: ts("needsToAmount", { currency: currencyLabel(dstCurrency!) }) };
 
   /* The row is denominated in the account's currency, so the base rate comes
      from that — not from the template's. Converting the 965 pesos actually paid

@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { formatDate } from "./format";
+import { currencyLabel, formatDate, formatMoney } from "./format";
 
 test("formats an ISO date in the given locale", () => {
   expect(formatDate("2026-07-22", "en")).toBe("Jul 22, 2026");
@@ -15,4 +15,17 @@ test("never shifts the date across a UTC-offset boundary", () => {
 
 test("accepts custom Intl.DateTimeFormat options", () => {
   expect(formatDate("2026-07-22", "en", { month: "short", day: "numeric" })).toBe("Jul 22");
+});
+
+// A label has to match the symbol the amounts print with, or the same peso
+// reads as "DOP" in a subtitle and "RD$" in the figure beside it.
+test("labels DOP with the same RD$ the amounts use", () => {
+  expect(currencyLabel("DOP")).toBe("RD$");
+  expect(formatMoney(1, "DOP").startsWith(currencyLabel("DOP"))).toBe(true);
+});
+
+// en-US would print a bare "$" for these, which cannot tell USD from DOP.
+test("keeps the ISO code for every other currency", () => {
+  expect(currencyLabel("USD")).toBe("USD");
+  expect(currencyLabel("EUR")).toBe("EUR");
 });

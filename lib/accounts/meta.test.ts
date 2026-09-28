@@ -12,7 +12,7 @@ test("account options always carry the currency", () => {
   // only thing distinguishing them in a picker.
   const dop = accountOptionLabel({ name: "Visa Infinite", currency: "DOP" });
   const usd = accountOptionLabel({ name: "Visa Infinite", currency: "USD" });
-  expect(dop).toBe("Visa Infinite · DOP");
+  expect(dop).toBe("Visa Infinite · RD$");
   expect(dop).not.toBe(usd);
 });
 

@@ -38,6 +38,21 @@ export function formatMoney(amount: number, currency: string, opts?: MoneyOpts):
   return value;
 }
 
+/**
+ * How a currency is named wherever it appears on its own, without an amount —
+ * "Credit card · RD$", a picker option, the tag beside an amount input.
+ *
+ * Taken from the formatter, so a label can never disagree with the symbol the
+ * figures print. That only holds for the currencies CURRENCY_LOCALE formats
+ * with an unambiguous symbol; every other one keeps its ISO code, because the
+ * en-US narrowSymbol would be a bare "$" that could be any dollar or the peso.
+ */
+export function currencyLabel(currency: string): string {
+  if (!(currency in CURRENCY_LOCALE)) return currency;
+  const part = moneyFormatter(currency).formatToParts(0).find((p) => p.type === "currency");
+  return part?.value ?? currency;
+}
+
 export function formatPercent(n: number): string {
   const rounded = Math.round(n * 10) / 10;
   return `${Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1)}%`;

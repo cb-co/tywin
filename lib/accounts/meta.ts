@@ -9,6 +9,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { SWATCHES } from "@/lib/palette";
+import { currencyLabel } from "@/lib/format";
 export const ACCOUNT_TYPE_VALUES = [
   "checking",
   "savings",
@@ -64,7 +65,7 @@ export function accountOptionLabel(account: {
   name: string;
   currency: string;
 }): string {
-  return `${account.name} · ${account.currency}`;
+  return `${account.name} · ${currencyLabel(account.currency)}`;
 }
 
 export const isCard = (t: AccountType) => t === "credit_card";

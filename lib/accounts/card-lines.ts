@@ -1,3 +1,5 @@
+import { currencyLabel } from "@/lib/format";
+
 /**
  * The currency lines one physical credit card is saved as.
  *
@@ -80,5 +82,5 @@ export function cardLineSpecs({
  * lines, and the group tile headlines the name, not the currency.
  */
 export function cardLineName(cardName: string, spec: CardLineSpec, installmentsLabel: string): string {
-  return `${cardName} · ${spec.key === "installments" ? installmentsLabel : spec.currency}`;
+  return `${cardName} · ${spec.key === "installments" ? installmentsLabel : currencyLabel(spec.currency)}`;
 }

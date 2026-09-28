@@ -20,7 +20,7 @@ import { collapseImportTargets } from "@/lib/statements/import-targets";
 import { isInstallmentSection, suggestLineName } from "@/lib/statements/line-name";
 import { NAME_MAX_LENGTH } from "@/lib/accounts/schema";
 import { MAX_STATEMENT_BYTES } from "@/lib/statements/limits";
-import { formatMoney, formatDate } from "@/lib/format";
+import { formatMoney, formatDate, currencyLabel } from "@/lib/format";
 import { useUiSound } from "@/components/sound/sound-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -323,10 +323,10 @@ export function StatementImportDialog({
       maxLength: NAME_MAX_LENGTH,
       format: (form, card, cur) =>
         form === "plain"
-          ? t("lineNameSuggestion", { card, currency: cur })
+          ? t("lineNameSuggestion", { card, currency: currencyLabel(cur) })
           : form === "installments"
             ? t("lineNameInstallments", { card })
-            : t("lineNameInstallmentsCurrency", { card, currency: cur }),
+            : t("lineNameInstallmentsCurrency", { card, currency: currencyLabel(cur) }),
     });
   }
 
@@ -470,7 +470,7 @@ export function StatementImportDialog({
                           <span className="shrink-0 text-xs text-muted-foreground">
                             {c.last4 ? `•••• ${c.last4}` : ""}
                             {c.last4 && c.currency ? " · " : ""}
-                            {c.currency}
+                            {c.currency ? currencyLabel(c.currency) : null}
                           </span>
                         </button>
                       </li>
@@ -536,7 +536,7 @@ export function StatementImportDialog({
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
                         <div className="min-w-0">
                           <p className="legend text-[11px]">
-                            {s.sectionKey} · {s.currency}
+                            {s.sectionKey} · {currencyLabel(s.currency)}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {formatDate(s.periodStart, locale)} → {formatDate(s.periodEnd, locale)}
@@ -560,7 +560,7 @@ export function StatementImportDialog({
                           items={{
                             none: t("mapSectionNone"),
                             ...Object.fromEntries(
-                              preview.accountOptions.map((a) => [a.id, `${a.name} · ${a.currency}`]),
+                              preview.accountOptions.map((a) => [a.id, `${a.name} · ${currencyLabel(a.currency)}`]),
                             ),
                           }}
                         >
@@ -575,7 +575,7 @@ export function StatementImportDialog({
                               <SelectItem key={a.id} value={a.id}>
                                 <span className="flex flex-col">
                                   <span>{a.name}</span>
-                                  <span className="text-xs text-muted-foreground">{a.currency}</span>
+                                  <span className="text-xs text-muted-foreground">{currencyLabel(a.currency)}</span>
                                 </span>
                               </SelectItem>
                             ))}
@@ -591,7 +591,7 @@ export function StatementImportDialog({
                                 for in its own words. */}
                             {isInstallmentSection(s.sectionKey)
                               ? t("unmatchedInstallments")
-                              : t("unmatchedSection", { currency: s.currency })}
+                              : t("unmatchedSection", { currency: currencyLabel(s.currency) })}
                           </p>
                           <Button
                             variant="outline"
@@ -603,7 +603,7 @@ export function StatementImportDialog({
                           >
                             {isInstallmentSection(s.sectionKey)
                               ? t("addLineInstallmentsButton")
-                              : t("addLineButton", { currency: s.currency })}
+                              : t("addLineButton", { currency: currencyLabel(s.currency) })}
                           </Button>
                         </div>
                       ) : null}
