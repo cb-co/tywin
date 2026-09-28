@@ -18,8 +18,8 @@ import {
   semimonthlyStarts,
   type PayCycle,
 } from "@/lib/period/cycle";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { LanguageSwitcher } from "@/components/language-switcher";
+import { ThemeChoice } from "@/components/theme-toggle";
+import { LanguageChoice } from "@/components/language-switcher";
 import { InstallAppRow } from "@/components/pwa/install-app-row";
 import { Row } from "@/components/settings/row";
 import { Button } from "@/components/ui/button";
@@ -246,6 +246,7 @@ export function SettingsPanel({
       <div className="divide-y divide-(--paper-line) border-y-2 border-(--rule)">
         <Row
           index={0}
+          layout="stacked"
           htmlFor="display-name"
           title={t("displayNameTitle")}
           description={t("displayNameDescription")}
@@ -287,12 +288,13 @@ export function SettingsPanel({
           </form>
         </Row>
 
-        <Row index={1} title={t("signedInAsTitle")} description={t("signedInAsDescription")}>
+        <Row index={1} layout="stacked" title={t("signedInAsTitle")} description={t("signedInAsDescription")}>
           <span className="text-sm text-muted-foreground">{email || "—"}</span>
         </Row>
 
         <Row
           index={2}
+          layout="stacked"
           title={t("baseCurrencyTitle")}
           description={t("baseCurrencyDescription")}
         >
@@ -315,10 +317,10 @@ export function SettingsPanel({
           </Select>
         </Row>
 
-        <Row index={3} title={t("payCycleTitle")} description={t("payCycleDescription")}>
-          <div className="flex flex-col items-end gap-2">
-            <Tabs value={cycle} onValueChange={(v) => onCycle(v as PayCycle)}>
-              <TabsList>
+        <Row index={3} layout="stacked" title={t("payCycleTitle")} description={t("payCycleDescription")}>
+          <div className="flex flex-col items-start gap-2 sm:items-end">
+            <Tabs className="w-full sm:w-auto" value={cycle} onValueChange={(v) => onCycle(v as PayCycle)}>
+              <TabsList className="w-full sm:w-fit">
                 {PAY_CYCLE_VALUES.map((c) => (
                   <TabsTrigger key={c} value={c} disabled={payCyclePending}>
                     {t(PAY_CYCLE_LABEL_KEY[c])}
@@ -395,18 +397,18 @@ export function SettingsPanel({
               </Select>
             )}
 
-            <p className="text-right text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground sm:text-right">
               {t(PAY_CYCLE_HELP_KEY[cycle], { first: semiFirst, second: semiSecond })}
             </p>
           </div>
         </Row>
 
         <Row index={4} title={t("themeTitle")} description={t("themeDescription")}>
-          <ThemeToggle />
+          <ThemeChoice />
         </Row>
 
         <Row index={5} title={t("languageTitle")} description={t("languageDescription")}>
-          <LanguageSwitcher />
+          <LanguageChoice />
         </Row>
 
         <Row
@@ -453,8 +455,8 @@ export function SettingsPanel({
       </div>
 
       <div className="border-y border-destructive/60">
-        <div className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-0.5">
+        <div className="flex items-center justify-between gap-4 py-5">
+          <div className="min-w-0 space-y-0.5">
             <p className="legend text-[11px] text-destructive">{t("dangerZoneTitle")}</p>
             <p className="text-sm text-muted-foreground">{t("deleteAccountDescription")}</p>
           </div>

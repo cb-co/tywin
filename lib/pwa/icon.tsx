@@ -72,9 +72,9 @@ export function SealSvg({ size }: { size: number }) {
 }
 
 /**
- * The app icon is the in-app splash (components/shell/splash.tsx) in
- * miniature: the seal sitting in the hollow of the guilloche plate on a note
- * violet tile. The manifest's background_color is the same violet, so on the
+ * The app icon is the seal sitting on the guilloche plate on a note violet
+ * tile, the same pairing as the in-app splash (components/shell/splash.tsx)
+ * but with the seal large, since an icon is read at a glance. The manifest's background_color is the same violet, so on the
  * OS launch splash the tile disappears and only plate and seal remain.
  *
  * Below 128px the plate's lines merge into a haze, so small icons (the
@@ -91,11 +91,12 @@ export function renderAppIcon({
   // Maskable icons are cropped to the OS's own shape, and Android's launch
   // splash draws from them through a circle about two thirds of the icon
   // wide, so the whole mark stays inside that circle. That also sets how
-  // large it stands on the splash. The seal keeps roughly the splash's
-  // seal-to-plate ratio (80px on a ~312px plate), nudged up to read small.
+  // large it stands on the splash. The seal takes up most of the plate, so
+  // the bird carries the icon at launcher size and the plate reads as the
+  // engraved band around it.
   const plateSize = Math.round(size * (maskable ? 0.68 : 0.9));
   const sealSize = Math.round(
-    plate ? size * (maskable ? 0.2 : 0.27) : size * 0.86,
+    plate ? size * (maskable ? 0.4 : 0.54) : size * 0.86,
   );
   const tileRadius = maskable ? 0 : Math.round(size * 0.22);
 

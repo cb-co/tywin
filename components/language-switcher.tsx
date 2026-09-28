@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,9 +15,9 @@ import {
 import { setLocale } from "@/lib/i18n/actions";
 import { LOCALES, LOCALE_LABEL, type Locale } from "@/lib/i18n/locale";
 
-export function LanguageSwitcher() {
-  const locale = useLocale();
-  const t = useTranslations("Nav");
+/** Switches the UI language and re-renders the server tree in it. */
+function useLocaleChoice() {
+  const locale = useLocale() as Locale;
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -27,6 +28,13 @@ export function LanguageSwitcher() {
       router.refresh();
     });
   }
+
+  return { locale, choose, pending };
+}
+
+export function LanguageSwitcher() {
+  const t = useTranslations("Nav");
+  const { choose, pending } = useLocaleChoice();
 
   return (
     <DropdownMenu>
@@ -50,5 +58,24 @@ export function LanguageSwitcher() {
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/** The same switch as a labelled two-way choice, for Settings, where a bare
+ *  icon doesn't say which language is on. */
+export function LanguageChoice() {
+  const t = useTranslations("Nav");
+  const { locale, choose, pending } = useLocaleChoice();
+
+  return (
+    <Tabs value={locale} onValueChange={(v) => choose(v as Locale)}>
+      <TabsList aria-label={t("language")}>
+        {LOCALES.map((code) => (
+          <TabsTrigger key={code} value={code} disabled={pending}>
+            {LOCALE_LABEL[code]}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </Tabs>
   );
 }

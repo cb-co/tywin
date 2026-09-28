@@ -98,9 +98,14 @@ export function InstallAppRow({ index }: { index: number }) {
   if (state === "unsupported" || state === "installed") return null;
 
   return (
-    <Row index={index} title={t("title")} description={t("description")}>
+    <Row
+      index={index}
+      layout={state === "ios" ? "stacked" : "inline"}
+      title={t("title")}
+      description={t("description")}
+    >
       {state === "ios" ? (
-        <span className="max-w-56 text-right text-sm text-muted-foreground">
+        <span className="block max-w-56 text-sm text-muted-foreground sm:text-right">
           {t("iosInstructions")}
         </span>
       ) : (

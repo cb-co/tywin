@@ -45,17 +45,19 @@ export function Splash() {
       data-leaving={leaving ? "" : undefined}
       className="splash fixed inset-0 z-[100] flex items-center justify-center bg-(--note) text-(--note-ink)"
     >
-      <Guilloche
-        variant="rosette"
-        className="absolute left-1/2 top-1/2 size-[min(80vw,28rem)] -translate-x-1/2 -translate-y-1/2 opacity-40"
-        duration={700}
-      />
-      {/* The seal alone is the centred element, so it sits in the rosette's
-          hollow centre; the wordmark hangs below it instead of sharing the
-          flex column, which pushed the seal above the plate's centre. */}
-      <div className="splash-mark relative">
-        <Seal className="size-20" />
-        <Wordmark className="absolute left-1/2 top-full mt-4 -translate-x-1/2 text-xl" />
+      {/* A medallion: the seal, small and in hairline, sits in the hollow of
+          a guilloche plate framed by a single ring, like a banknote's
+          engraved seal. The wordmark hangs below the medallion, outside the
+          centred element, so the seal stays on the screen's centre. */}
+      <div className="splash-mark relative flex size-[min(72vw,19rem)] items-center justify-center rounded-full border border-(--note-ink)/70 p-1.5">
+        <Guilloche
+          variant="rosette"
+          className="absolute inset-1.5 size-[calc(100%-0.75rem)] opacity-60"
+          lineWidth={0.9}
+          duration={700}
+        />
+        <Seal fine className="relative size-10" />
+        <Wordmark className="absolute left-1/2 top-full mt-6 -translate-x-1/2 text-xl" />
       </div>
     </div>
   );

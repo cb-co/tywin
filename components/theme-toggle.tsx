@@ -1,9 +1,11 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 /**
  * Light/dark, on one tap.
@@ -42,5 +44,31 @@ export function ThemeToggle({ className }: { className?: string }) {
       <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
       <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
     </Button>
+  );
+}
+
+const subscribeNever = () => () => {};
+
+/**
+ * Light/dark as a labelled two-way choice, for Settings, where the bare icon
+ * of `ThemeToggle` doesn't say what it does. The active mode comes from
+ * `resolvedTheme`, which is unknown until hydration, so neither option is
+ * marked on the server's render and the real one lights up after mount.
+ */
+export function ThemeChoice() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const t = useTranslations("Theme");
+  const hydrated = useSyncExternalStore(subscribeNever, () => true, () => false);
+
+  return (
+    <Tabs
+      value={hydrated ? resolvedTheme : null}
+      onValueChange={(v) => setTheme(v as "light" | "dark")}
+    >
+      <TabsList aria-label={t("toggle")}>
+        <TabsTrigger value="light">{t("light")}</TabsTrigger>
+        <TabsTrigger value="dark">{t("dark")}</TabsTrigger>
+      </TabsList>
+    </Tabs>
   );
 }
